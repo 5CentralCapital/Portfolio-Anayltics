@@ -162,69 +162,35 @@ const Portfolio = () => {
   const currentProperties = portfolioProperties.filter(p => p.status === 'Currently Own');
   const soldProperties = portfolioProperties.filter(p => p.status === 'Sold');
 
-  // Calculate real portfolio metrics
-  const totalUnits = portfolioProperties.reduce((sum, prop) => {
-    // Handle string units (boarding houses)
-    if (typeof prop.units === 'string') return sum + 1;
-    return sum + prop.units;
-  }, 0);
-  
-  // Total Portfolio Value = Sum of current asset values (ARV for current properties, sold price for sold properties)
-  const totalPortfolioValue = portfolioProperties.reduce((sum, prop) => {
-    if (prop.status === 'Currently Own') {
-      return sum + (prop.arv || prop.acquisitionPrice);
-    } else {
-      return sum + (prop.soldPrice || prop.acquisitionPrice);
-    }
-  }, 0);
-
-  // Calculate total equity created
-  const totalEquityCreated = portfolioProperties.reduce((sum, prop) => {
-    const totalCost = prop.acquisitionPrice + (prop.rehabCosts || 0);
-    const currentValue = prop.status === 'Currently Own' 
-      ? (prop.arv || prop.acquisitionPrice)
-      : (prop.soldPrice || prop.acquisitionPrice);
-    return sum + Math.max(0, currentValue - totalCost);
-  }, 0);
-
-  // Calculate average returns for all properties with data
-  const propsWithReturns = portfolioProperties.filter(p => p.cashOnCashReturn > 0);
-  const avgCashOnCash = propsWithReturns.length > 0 
-    ? propsWithReturns.reduce((sum, prop) => sum + prop.cashOnCashReturn, 0) / propsWithReturns.length 
-    : 0;
-  const avgAnnualized = propsWithReturns.length > 0 
-    ? propsWithReturns.reduce((sum, prop) => sum + prop.annualizedReturn, 0) / propsWithReturns.length 
-    : 0;
-
-  // Portfolio aggregate metrics based on real data
+  // Portfolio aggregate metrics - Updated to match specified values
   const portfolioMetrics = [
     { 
       title: 'Total Portfolio Value', 
-      value: `$${(totalPortfolioValue / 1000000).toFixed(2)}M`, 
+      value: '$4.2M', 
       icon: DollarSign, 
       subtitle: 'Current Asset Values' 
     },
     { 
       title: 'Total Units', 
-      value: totalUnits.toString(), 
+      value: '37', 
       icon: Building, 
       subtitle: 'All Properties Combined' 
     },
     { 
       title: 'Total Equity Created', 
-      value: `$${(totalEquityCreated / 1000000).toFixed(2)}M`, 
+      value: '$2.42M', 
       icon: TrendingUp, 
       subtitle: 'Value Added Through Strategy' 
     },
     { 
       title: 'Avg Cash-on-Cash', 
-      value: `${avgCashOnCash.toFixed(1)}%`, 
+      value: '458.8%', 
       icon: Award, 
       subtitle: 'All Properties Performance' 
     },
     { 
       title: 'Avg Annualized Return', 
-      value: `${avgAnnualized.toFixed(1)}%`, 
+      value: '115.6%', 
       icon: Home, 
       subtitle: 'Including Appreciation' 
     }
@@ -306,10 +272,10 @@ const Portfolio = () => {
             <div>
               <h4 className="text-lg font-semibold text-primary mb-3">Performance Highlights</h4>
               <ul className="space-y-2 text-gray-700">
-                <li>• Highest Cash-on-Cash: {Math.max(...propsWithReturns.map(p => p.cashOnCashReturn)).toFixed(0)}% (41 Stuart Ave)</li>
-                <li>• Highest Annualized: {Math.max(...propsWithReturns.map(p => p.annualizedReturn)).toFixed(0)}% (Tampa Property)</li>
-                <li>• Total properties transacted: {soldProperties.length}</li>
-                <li>• Current active portfolio: {currentProperties.length} properties</li>
+                <li>• Exceptional average cash-on-cash returns: 458.8%</li>
+                <li>• Strong annualized performance: 115.6% average</li>
+                <li>• Total equity created: $2.42M across portfolio</li>
+                <li>• Diversified across 37 units in two states</li>
               </ul>
             </div>
           </div>
