@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, AlertCircle, CheckCircle, Users, TrendingUp, Shield } from 'lucide-react';
+import InvestmentCalculator from '../components/InvestmentCalculator';
 
 const Investor = () => {
   const [email, setEmail] = useState('');
@@ -22,7 +23,7 @@ const Investor = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 animate-fade-in">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -37,6 +38,11 @@ const Investor = () => {
             to co-invest in select real estate deals. Join our investor list to be the 
             first to know about upcoming opportunities.
           </p>
+        </div>
+
+        {/* Investment Calculator Section */}
+        <div className="mb-16">
+          <InvestmentCalculator />
         </div>
 
         {/* Coming Soon Message */}
@@ -59,9 +65,9 @@ const Investor = () => {
               <div className="w-12 h-12 bg-primary rounded-lg mx-auto mb-3 flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-white" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">High Returns</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Exceptional Returns</h3>
               <p className="text-sm text-gray-600">
-                Target 15-25% cash-on-cash returns through our proven value-add strategy
+                Target returns based on our proven track record of 458.8% average cash-on-cash returns
               </p>
             </div>
             <div className="text-center p-4">
@@ -70,7 +76,7 @@ const Investor = () => {
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Experienced Team</h3>
               <p className="text-sm text-gray-600">
-                Benefit from our deep market knowledge and proven track record in Florida
+                Benefit from our deep market knowledge and proven track record across Florida and Connecticut
               </p>
             </div>
             <div className="text-center p-4">
@@ -86,7 +92,7 @@ const Investor = () => {
         </div>
 
         {/* Email Signup */}
-        <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="bg-white rounded-xl shadow-lg p-8 mb-12">
           <div className="max-w-md mx-auto">
             <h3 className="text-xl font-bold text-gray-900 mb-6 text-center flex items-center justify-center">
               <Mail className="h-5 w-5 mr-2 text-primary" />
@@ -148,7 +154,7 @@ const Investor = () => {
         </div>
 
         {/* What's Coming */}
-        <div className="mt-12 bg-primary rounded-xl p-8 text-white">
+        <div className="bg-primary rounded-xl p-8 text-white">
           <h3 className="text-2xl font-bold mb-6 text-center">What to Expect</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>

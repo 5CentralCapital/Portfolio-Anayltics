@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, MapPin, Target, TrendingUp, User } from 'lucide-react';
+import { Calendar, MapPin, Target, TrendingUp, User, Award, Building } from 'lucide-react';
 
 const Founder = () => {
   return (
@@ -31,12 +31,20 @@ const Founder = () => {
             <div className="md:w-2/3 p-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                 <div className="flex items-center space-x-2 text-gray-600">
-                  <Calendar className="h-4 w-4" />
-                  <span>Born January 19, 1999</span>
+                  <Award className="h-4 w-4" />
+                  <span>5+ years of experience in real estate investing</span>
                 </div>
                 <div className="flex items-center space-x-2 text-gray-600">
                   <MapPin className="h-4 w-4" />
                   <span>Based in Tampa, FL</span>
+                </div>
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <Building className="h-4 w-4" />
+                  <span>11 properties transacted</span>
+                </div>
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>458.8% average cash-on-cash returns</span>
                 </div>
               </div>
 
@@ -44,20 +52,53 @@ const Founder = () => {
               <div className="space-y-4 text-gray-700">
                 <p>
                   Michael McElwee is the founder and driving force behind 5Central Capital LLC. 
-                  Born in 1999, Michael represents a new generation of real estate investors who 
-                  started building wealth through strategic property investments in their early twenties.
+                  With over 5 years of hands-on experience in real estate investing, Michael has 
+                  built a proven track record of exceptional returns through strategic property 
+                  acquisitions and value-add improvements.
                 </p>
                 <p>
-                  Based in Tampa, Florida, Michael has developed deep expertise in the Florida 
-                  multifamily market, with particular focus on value-add opportunities that can 
-                  be transformed through strategic renovations and operational improvements.
+                  Based in Tampa, Florida, Michael has developed deep expertise in both the Florida 
+                  and Connecticut multifamily markets. His portfolio spans 11 properties across 
+                  two states, demonstrating his ability to identify and execute profitable 
+                  investments in diverse market conditions.
                 </p>
                 <p>
-                  Michael is passionate about building long-term wealth through smart real estate 
-                  leverage, utilizing sophisticated financing strategies to maximize returns while 
-                  maintaining sustainable risk profiles.
+                  Michael's approach combines aggressive value creation with strategic financing, 
+                  consistently delivering cash-on-cash returns that far exceed industry standards. 
+                  His focus on building long-term wealth through smart real estate leverage has 
+                  positioned 5Central Capital as a leader in multifamily investment strategy.
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Experience & Expertise Section */}
+        <div className="bg-white rounded-xl shadow-lg p-8 mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <Award className="h-6 w-6 mr-2 text-primary" />
+            Experience & Expertise
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-lg font-semibold text-primary mb-4">Real Estate Investment</h3>
+              <ul className="space-y-2 text-gray-700">
+                <li>• 5+ years of active real estate investing</li>
+                <li>• 11 properties successfully acquired and managed</li>
+                <li>• Expertise in multifamily and boarding house properties</li>
+                <li>• Proven track record in Connecticut and Florida markets</li>
+                <li>• Specialization in value-add renovation strategies</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-primary mb-4">Financial Strategy</h3>
+              <ul className="space-y-2 text-gray-700">
+                <li>• Advanced knowledge of bridge loan financing</li>
+                <li>• Cash-out refinancing and leverage optimization</li>
+                <li>• Portfolio management and performance tracking</li>
+                <li>• Market analysis and deal sourcing expertise</li>
+                <li>• Risk assessment and mitigation strategies</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -103,10 +144,10 @@ const Founder = () => {
             </h3>
             <ul className="space-y-3 text-gray-700">
               <li>• Focus on cash-flowing multifamily properties</li>
-              <li>• Target 3-4x return on invested capital</li>
-              <li>• Use bridge loans to maximize leverage</li>
+              <li>• Target exceptional returns through value-add strategies</li>
+              <li>• Use strategic financing to maximize leverage</li>
               <li>• Refinance and hold for long-term appreciation</li>
-              <li>• Reinvest profits to accelerate growth</li>
+              <li>• Reinvest profits to accelerate portfolio growth</li>
             </ul>
           </div>
 
