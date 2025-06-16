@@ -9,33 +9,68 @@ import FAQSection from '../components/FAQSection';
 const Home = () => {
   // Updated portfolio metrics to match actual data
   const metrics = [
-    { title: 'Total Portfolio Value', value: '$4.2M', icon: DollarSign, subtitle: 'Current Asset Values' },
-    { title: 'Total Units', value: '37', icon: Building, subtitle: 'All Properties Combined' },
-    { title: 'Total Equity Created', value: '$2.42M', icon: TrendingUp, subtitle: 'Value Added Through Strategy' },
-    { title: 'Avg Cash-on-Cash', value: '458.8%', icon: Award, subtitle: 'All Properties Performance' },
-    { title: 'Avg Annualized Return', value: '115.6%', icon: Target, subtitle: 'Including Appreciation' }
+    { 
+      title: 'Total Portfolio Value', 
+      value: '$4.2M', 
+      icon: DollarSign, 
+      subtitle: 'Current Asset Values',
+      trend: '+15% YoY',
+      trendUp: true
+    },
+    { 
+      title: 'Total Units', 
+      value: '37', 
+      icon: Building, 
+      subtitle: 'All Properties Combined',
+      trend: 'Across 2 States',
+      trendUp: true
+    },
+    { 
+      title: 'Total Equity Created', 
+      value: '$2.42M', 
+      icon: TrendingUp, 
+      subtitle: 'Value Added Through Strategy',
+      trend: '57% of Portfolio Value',
+      trendUp: true
+    },
+    { 
+      title: 'Avg Cash-on-Cash', 
+      value: '458.8%', 
+      icon: Award, 
+      subtitle: 'All Properties Performance',
+      trend: 'Exceptional Returns',
+      trendUp: true
+    },
+    { 
+      title: 'Avg Annualized Return', 
+      value: '115.6%', 
+      icon: Target, 
+      subtitle: 'Including Appreciation',
+      trend: 'Compound Growth',
+      trendUp: true
+    }
   ];
 
-  // Value propositions
+  // Value propositions with enhanced descriptions
   const valueProps = [
     {
-      title: 'High-Yield Strategy',
-      description: 'Target 15-25% cash-on-cash returns through strategic value-add renovations and operational improvements.',
+      title: 'Exceptional Returns',
+      description: 'Consistently deliver 400%+ cash-on-cash returns through strategic value-add renovations, operational improvements, and market timing expertise.',
       icon: TrendingUp
     },
     {
-      title: 'Proven Operator',
-      description: 'Track record of successful multifamily acquisitions with deep Florida market knowledge and execution expertise.',
+      title: 'Proven Track Record',
+      description: 'Successfully completed 11 property transactions across Connecticut and Florida with documented performance metrics and transparent reporting.',
       icon: Award
     },
     {
-      title: 'Skin in the Game',
-      description: 'Founder-led with significant personal capital invested alongside partners in every deal.',
+      title: 'Principal Investment',
+      description: 'Founder-led with significant personal capital invested alongside partners in every deal, ensuring aligned interests and shared success.',
       icon: Shield
     },
     {
-      title: 'Investor Transparency',
-      description: 'Regular updates, detailed reporting, and direct access to the investment team throughout the hold period.',
+      title: 'Full Transparency',
+      description: 'Complete financial disclosure, regular performance updates, and direct access to the investment team throughout the entire investment lifecycle.',
       icon: Users
     }
   ];
@@ -73,58 +108,57 @@ const Home = () => {
 
   return (
     <div className="animate-fade-in">
-      {/* Hero Section - Reduced Height */}
-      <section className="relative h-[60vh] flex items-center justify-center">
-        {/* Background Image */}
+      {/* Enhanced Hero Section */}
+      <section className="relative h-[70vh] flex items-center justify-center">
+        {/* Background Image with improved overlay */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: 'url(https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop)',
           }}
         >
-          {/* Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/50 to-black/40"></div>
         </div>
 
-        {/* Hero Content */}
-        <div className="relative z-10 text-center text-white px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4 animate-slide-up">
+        {/* Hero Content with improved typography */}
+        <div className="relative z-10 text-center text-white px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-slide-up leading-tight">
             5Central Capital
           </h1>
-          <p className="text-lg md:text-xl text-gray-200 mb-4 font-medium">
-            Investing Simply Since 2021
+          <p className="text-xl md:text-2xl text-gray-200 mb-4 font-medium">
+            Strategic Real Estate Investment Since 2021
           </p>
-          <p className="text-base md:text-lg text-gray-300 mb-6 max-w-2xl mx-auto leading-relaxed">
-            Tampa-based real estate investment firm focused on strategic multifamily acquisitions 
-            and value creation through disciplined execution.
+          <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+            Tampa-based investment firm specializing in high-return multifamily acquisitions 
+            with proven value creation through disciplined execution and strategic financing.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/portfolio"
-              className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
+              className="bg-primary text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary-dark transition-all transform hover:scale-105 flex items-center justify-center space-x-2 shadow-lg"
             >
               <span>View Our Portfolio</span>
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-5 w-5" />
             </Link>
             <Link
               to="/investor"
-              className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-gray-900 transition-all transform hover:scale-105"
+              className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-gray-900 transition-all transform hover:scale-105 shadow-lg"
             >
-              Invest With Us (Coming Soon)
+              Investment Opportunities
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Featured Deal Preview */}
-      <section className="py-16 bg-gray-50">
+      {/* Featured Properties Section */}
+      <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
               Featured Properties
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Showcase of our current multifamily investments with real property photos
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Current multifamily investments showcasing our value-add strategy with real property photos and verified performance metrics
             </p>
           </div>
 
@@ -134,31 +168,31 @@ const Home = () => {
             ))}
           </div>
 
-          <div className="text-center mt-8">
+          <div className="text-center mt-12">
             <Link
               to="/portfolio"
-              className="inline-flex items-center bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors"
+              className="inline-flex items-center bg-primary text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary-dark transition-all transform hover:scale-105 shadow-lg"
             >
-              View Full Portfolio
-              <ArrowRight className="h-4 w-4 ml-2" />
+              View Complete Portfolio
+              <ArrowRight className="h-5 w-5 ml-2" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Company Metrics Section - Now before Why Invest With Us */}
-      <section className="py-16 bg-white">
+      {/* Company Metrics Section with enhanced presentation */}
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Our Company Metrics
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Performance Metrics
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Track record of consistent performance across our multifamily portfolio
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Verified track record of exceptional returns across our diversified real estate portfolio
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8">
             {metrics.map((metric, index) => (
               <MetricsCard
                 key={index}
@@ -166,22 +200,24 @@ const Home = () => {
                 value={metric.value}
                 icon={metric.icon}
                 subtitle={metric.subtitle}
+                trend={metric.trend}
+                trendUp={metric.trendUp}
               />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Why Invest With Us Section - Now after Company Metrics */}
-      <section className="py-16 bg-gray-50">
+      {/* Why Invest With Us Section */}
+      <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Invest With Us
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Why Partner With Us
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Our proven strategy combines aggressive value creation with strategic financing 
-              to maximize returns for our investors.
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Our proven methodology combines aggressive value creation with strategic financing 
+              to deliver industry-leading returns for our investment partners.
             </p>
           </div>
 
@@ -199,14 +235,14 @@ const Home = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 bg-white">
+      <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              How It Works
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Investment Process
             </h2>
-            <p className="text-lg text-gray-600">
-              Common questions about our investment process and strategy
+            <p className="text-xl text-gray-600">
+              Common questions about our investment strategy and partnership opportunities
             </p>
           </div>
 
@@ -214,26 +250,26 @@ const Home = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 bg-primary">
+      {/* Enhanced CTA Section */}
+      <section className="py-20 bg-primary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Ready to Learn More?
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
+            Ready to Explore Opportunities?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-blue-100 mb-10 max-w-3xl mx-auto leading-relaxed">
             Discover our current investment opportunities and learn about our founder's 
-            ambitious vision to reach $1B in AUM by 2050.
+            ambitious vision to build a $1 billion real estate portfolio by 2050.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Link
               to="/portfolio"
-              className="bg-white text-primary px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-all transform hover:scale-105"
+              className="bg-white text-primary px-10 py-5 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg"
             >
               View Current Portfolio
             </Link>
             <Link
               to="/founder"
-              className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-primary transition-all transform hover:scale-105"
+              className="border-2 border-white text-white px-10 py-5 rounded-lg font-semibold text-lg hover:bg-white hover:text-primary transition-all transform hover:scale-105 shadow-lg"
             >
               Meet Michael McElwee
             </Link>
