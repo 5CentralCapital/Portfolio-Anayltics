@@ -28,7 +28,7 @@ const FeaturedDealCard: React.FC<FeaturedDealCardProps> = ({ deal }) => {
     }).format(amount);
   };
 
-  // Updated image mapping for featured deals
+  // Fixed image mapping for featured deals
   const getPropertyImage = (name: string) => {
     const imageMap: { [key: string]: string } = {
       '3408 E Dr MLK BLVD': '/3408 E DR MLK BLVD.jpeg',
@@ -53,10 +53,14 @@ const FeaturedDealCard: React.FC<FeaturedDealCardProps> = ({ deal }) => {
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
               onError={(e) => {
+                console.log(`Failed to load featured image: ${propertyImage} for ${deal.name}`);
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
                 const fallback = target.nextElementSibling as HTMLElement;
                 if (fallback) fallback.style.display = 'flex';
+              }}
+              onLoad={() => {
+                console.log(`Successfully loaded featured image: ${propertyImage} for ${deal.name}`);
               }}
             />
             <div className="hidden absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">

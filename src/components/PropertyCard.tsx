@@ -36,7 +36,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     return `${value.toFixed(1)}%`;
   };
 
-  // Updated property image mapping with exact file name matches
+  // Fixed property image mapping with exact file name matches
   const getPropertyImage = (address: string) => {
     const imageMap: { [key: string]: string } = {
       '1 Harmony St': '/1 Harmony St.jpeg',
@@ -69,10 +69,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
               onError={(e) => {
+                console.log(`Failed to load image: ${propertyImage} for ${property.address}`);
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
                 const fallback = target.nextElementSibling as HTMLElement;
                 if (fallback) fallback.style.display = 'flex';
+              }}
+              onLoad={() => {
+                console.log(`Successfully loaded image: ${propertyImage} for ${property.address}`);
               }}
             />
             <div className="hidden absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
