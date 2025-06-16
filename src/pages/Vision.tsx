@@ -1,11 +1,12 @@
 import React from 'react';
-import { Calendar, DollarSign, TrendingUp, Target, Building2 } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, Target, Building2, Home } from 'lucide-react';
 
 const Vision = () => {
   const milestones = [
     {
       year: '2030',
       target: '$10M AUM',
+      units: '71 Units',
       status: 'upcoming',
       description: 'Build foundation with 5-8 properties, establish proven systems',
       strategies: [
@@ -16,8 +17,22 @@ const Vision = () => {
       ]
     },
     {
+      year: '2035',
+      target: '$50M AUM',
+      units: '357 Units',
+      status: 'upcoming',
+      description: 'Scale operations with larger properties and refined processes',
+      strategies: [
+        'Target 20-50 unit properties across Florida',
+        'Develop standardized renovation and management processes',
+        'Build institutional relationships with lenders',
+        'Consider strategic partnerships for larger deals'
+      ]
+    },
+    {
       year: '2040',
-      target: '$100M Portfolio',
+      target: '$100M AUM',
+      units: '500 Units',
       status: 'future',
       description: 'Scale operations, larger properties, potential partnerships',
       strategies: [
@@ -28,8 +43,22 @@ const Vision = () => {
       ]
     },
     {
+      year: '2045',
+      target: '$500M AUM',
+      units: '2,500 Units',
+      status: 'future',
+      description: 'Regional expansion and institutional-scale operations',
+      strategies: [
+        'Large multifamily complexes (100+ units)',
+        'Expand to Southeast regional markets',
+        'Institutional capital partnerships',
+        'Professional management company operations'
+      ]
+    },
+    {
       year: '2050',
       target: '$1B AUM',
+      units: '5,000 Units',
       status: 'vision',
       description: 'Industry leadership, legacy wealth creation',
       strategies: [
@@ -92,9 +121,15 @@ const Vision = () => {
                       </span>
                     </div>
                     
-                    <h3 className="text-xl font-semibold text-primary mb-3">
-                      {milestone.target}
-                    </h3>
+                    <div className="mb-4">
+                      <h3 className="text-xl font-semibold text-primary mb-1">
+                        {milestone.target}
+                      </h3>
+                      <div className="flex items-center text-gray-600 mb-3">
+                        <Home className="h-4 w-4 mr-1" />
+                        <span className="text-sm font-medium">{milestone.units}</span>
+                      </div>
+                    </div>
                     
                     <p className="text-gray-600 mb-4">
                       {milestone.description}
@@ -189,6 +224,28 @@ const Vision = () => {
                 </ul>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Unit Growth Visualization */}
+        <div className="mt-12 bg-white rounded-xl shadow-lg p-8">
+          <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <Home className="h-6 w-6 mr-2 text-primary" />
+            Portfolio Growth Trajectory
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {milestones.map((milestone, index) => (
+              <div key={milestone.year} className="text-center p-4 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-bold text-primary mb-1">{milestone.year}</div>
+                <div className="text-sm text-gray-600 mb-2">{milestone.target}</div>
+                <div className="text-lg font-semibold text-gray-900">{milestone.units}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 text-center">
+            <p className="text-gray-600 text-sm">
+              Unit calculations based on $140K/unit for 2030-2035 targets and $200K/unit for 2040-2050 targets
+            </p>
           </div>
         </div>
 
