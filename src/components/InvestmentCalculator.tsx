@@ -6,8 +6,8 @@ const InvestmentCalculator: React.FC = () => {
   const [investmentDuration, setInvestmentDuration] = useState<string>('5');
   const [showTooltip, setShowTooltip] = useState<string | null>(null);
 
-  // Portfolio average annualized return (115.6% from portfolio data)
-  const averageAnnualizedReturn = 115.6;
+  // Updated to 30% annual return
+  const averageAnnualizedReturn = 30;
 
   // Calculate returns
   const calculateReturns = () => {
@@ -89,8 +89,8 @@ const InvestmentCalculator: React.FC = () => {
           Investment Return Calculator
         </h3>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Calculate potential returns based on our portfolio's verified {averageAnnualizedReturn}% average annualized return. 
-          This calculator uses actual performance data from our completed transactions.
+          Calculate potential returns based on our target {averageAnnualizedReturn}% annual return strategy. 
+          This calculator demonstrates the power of compound growth in real estate investments.
         </p>
       </div>
 
@@ -162,9 +162,10 @@ const InvestmentCalculator: React.FC = () => {
               Calculation Methodology
             </h4>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Based on {averageAnnualizedReturn}% average annualized return from our portfolio</li>
+              <li>• Based on {averageAnnualizedReturn}% target annual return strategy</li>
               <li>• Uses compound growth formula: A = P(1 + r)^t</li>
-              <li>• Calculations assume consistent annual performance</li>
+              <li>• Assumes consistent annual performance compounding</li>
+              <li>• Conservative estimate based on market opportunities</li>
               <li>• Past performance does not guarantee future results</li>
             </ul>
           </div>
@@ -215,7 +216,7 @@ const InvestmentCalculator: React.FC = () => {
             
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
               <TrendingUp className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-              <p className="text-sm text-purple-700 mb-1">Annual Return Rate</p>
+              <p className="text-sm text-purple-700 mb-1">Target Annual Return</p>
               <p className="text-lg font-bold text-purple-800">{averageAnnualizedReturn}%</p>
             </div>
           </div>
@@ -224,10 +225,11 @@ const InvestmentCalculator: React.FC = () => {
             <h5 className="font-semibold text-amber-900 mb-2">Important Disclaimers</h5>
             <ul className="text-sm text-amber-800 space-y-1">
               <li>• Calculations are for illustrative purposes only</li>
-              <li>• Based on historical performance of completed deals</li>
-              <li>• Future results may vary significantly</li>
+              <li>• Based on target return strategy, not guaranteed results</li>
+              <li>• Actual returns may vary significantly from projections</li>
               <li>• Real estate investments carry inherent risks</li>
               <li>• Consult with financial advisors before investing</li>
+              <li>• Market conditions and property performance may affect returns</li>
             </ul>
           </div>
         </div>
