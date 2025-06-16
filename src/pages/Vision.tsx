@@ -1,11 +1,11 @@
 import React from 'react';
 import { Calendar, DollarSign, TrendingUp, Target, Building2 } from 'lucide-react';
 
-const Goals = () => {
+const Vision = () => {
   const milestones = [
     {
       year: '2030',
-      target: '$10M Net Worth',
+      target: '$10M AUM',
       status: 'upcoming',
       description: 'Build foundation with 5-8 properties, establish proven systems',
       strategies: [
@@ -29,7 +29,7 @@ const Goals = () => {
     },
     {
       year: '2050',
-      target: '$1B Net Worth',
+      target: '$1B AUM',
       status: 'vision',
       description: 'Industry leadership, legacy wealth creation',
       strategies: [
@@ -56,10 +56,10 @@ const Goals = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Our Ambitious Goals
+            Our Vision
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            A clear roadmap to building $1 billion in net worth through strategic multifamily 
+            A clear roadmap to building $1 billion in AUM through strategic multifamily 
             real estate investments over the next 25 years.
           </p>
         </div>
@@ -201,10 +201,10 @@ const Goals = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="/deals"
+              href="/portfolio"
               className="bg-white text-primary px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
             >
-              View Current Deals
+              View Current Portfolio
             </a>
             <a
               href="/investor"
@@ -219,4 +219,4 @@ const Goals = () => {
   );
 };
 
-export default Goals;
+export default Vision;

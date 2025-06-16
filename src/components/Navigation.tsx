@@ -12,7 +12,7 @@ const Navigation = () => {
     { path: '/', label: 'Home' },
     { path: '/portfolio', label: 'Portfolio' },
     { path: '/founder', label: 'Founder' },
-    { path: '/goals', label: 'Goals' },
+    { path: '/vision', label: 'Vision' },
     { path: '/investor', label: 'Investor' },
   ];
 

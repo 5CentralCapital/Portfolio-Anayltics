@@ -213,7 +213,7 @@ const Home = () => {
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
             Discover our current investment opportunities and learn about our founder's 
-            ambitious goals to reach $1B in net worth by 2050.
+            ambitious vision to reach $1B in AUM by 2050.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

@@ -83,7 +83,7 @@ const Founder = () => {
             <p>
               "Every deal we pursue must meet strict criteria: strong cash flow potential, significant 
               value-add opportunity, and the ability to refinance and retain the property for long-term 
-              wealth building. This disciplined approach is what will get us to $1 billion in net worth 
+              wealth building. This disciplined approach is what will get us to $1 billion in AUM 
               by 2050."
             </p>
             <p>
@@ -129,21 +129,21 @@ const Founder = () => {
         <div className="mt-12 bg-primary rounded-xl p-8 text-center text-white">
           <h3 className="text-2xl font-bold mb-4">Ready to Build Wealth Together?</h3>
           <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-            Learn more about our ambitious goals and how we plan to reach $1 billion in net worth 
+            Learn more about our ambitious vision and how we plan to reach $1 billion in AUM 
             through strategic multifamily investments.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="/goals"
+              href="/vision"
               className="bg-white text-primary px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
             >
-              View Our Goals
+              View Our Vision
             </a>
             <a
-              href="/deals"
+              href="/portfolio"
               className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary transition-colors"
             >
-              See Current Deals
+              See Current Portfolio
             </a>
           </div>
         </div>

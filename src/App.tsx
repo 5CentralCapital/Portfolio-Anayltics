@@ -5,7 +5,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Portfolio from './pages/Portfolio';
 import Founder from './pages/Founder';
-import Goals from './pages/Goals';
+import Vision from './pages/Vision';
 import Investor from './pages/Investor';
 import InvestorPortal from './pages/InvestorPortal';
 
@@ -20,7 +20,8 @@ function App() {
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/deals" element={<Portfolio />} /> {/* Redirect old URL */}
             <Route path="/founder" element={<Founder />} />
-            <Route path="/goals" element={<Goals />} />
+            <Route path="/vision" element={<Vision />} />
+            <Route path="/goals" element={<Vision />} /> {/* Redirect old URL */}
             <Route path="/investor" element={<Investor />} />
             <Route path="/investor-portal" element={<InvestorPortal />} />
           </Routes>

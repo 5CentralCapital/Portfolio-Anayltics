@@ -29,8 +29,8 @@ const Footer = () => {
               <a href="/founder" className="block text-gray-300 hover:text-white transition-colors">
                 About Michael
               </a>
-              <a href="/goals" className="block text-gray-300 hover:text-white transition-colors">
-                Our Goals
+              <a href="/vision" className="block text-gray-300 hover:text-white transition-colors">
+                Our Vision
               </a>
               <a href="/investor" className="block text-gray-300 hover:text-white transition-colors">
                 Investor Information
