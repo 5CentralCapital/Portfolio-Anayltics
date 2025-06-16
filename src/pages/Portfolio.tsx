@@ -4,106 +4,21 @@ import MetricsCard from '../components/MetricsCard';
 import { Building, DollarSign, TrendingUp, Home, Award } from 'lucide-react';
 
 const Portfolio = () => {
-  // Real portfolio data from the provided summary
+  // Updated portfolio data from the provided spreadsheet
   const portfolioProperties = [
-    // Sold Properties
+    // Currently Owned Properties (in specified order)
     {
-      address: '41 Stuart Ave',
-      city: 'New London',
-      state: 'CT',
-      units: 3,
-      acquisitionPrice: 195000,
-      rehabCosts: 20000,
-      arv: 350000,
-      cashOnCashReturn: 1515.00,
-      annualizedReturn: 97.29,
-      status: 'Sold' as const
+      address: '3408 E Dr MLK BLVD',
+      city: 'Tampa',
+      state: 'FL',
+      units: 10,
+      acquisitionPrice: 750000,
+      rehabCosts: 450000,
+      arv: 2000000,
+      cashOnCashReturn: 372.10,
+      annualizedReturn: 372.10,
+      status: 'Currently Own' as const
     },
-    {
-      address: '52 Summit Ave',
-      city: 'New London',
-      state: 'CT',
-      units: 2,
-      acquisitionPrice: 315000,
-      rehabCosts: 10000,
-      arv: 350000,
-      cashOnCashReturn: 410.00,
-      annualizedReturn: 75.84,
-      status: 'Sold' as const
-    },
-    {
-      address: '29 Brainard St',
-      city: 'New London',
-      state: 'CT',
-      units: 1,
-      acquisitionPrice: 329000,
-      rehabCosts: undefined,
-      arv: undefined,
-      cashOnCashReturn: 708.33,
-      annualizedReturn: 92.00,
-      status: 'Sold' as const
-    },
-    {
-      address: '25 Huntington Pl',
-      city: 'Norwich',
-      state: 'CT',
-      units: 1,
-      acquisitionPrice: 319000,
-      rehabCosts: 0,
-      arv: 0,
-      cashOnCashReturn: 120.00,
-      annualizedReturn: 9.54,
-      status: 'Sold' as const
-    },
-    {
-      address: '175 Crystal Ave',
-      city: 'New London',
-      state: 'CT',
-      units: 2,
-      acquisitionPrice: 280000,
-      rehabCosts: 0,
-      arv: 0,
-      cashOnCashReturn: 828.00,
-      annualizedReturn: 187.75,
-      status: 'Sold' as const
-    },
-    {
-      address: '35 Linden St',
-      city: 'New London',
-      state: 'CT',
-      units: 3,
-      acquisitionPrice: 385000,
-      rehabCosts: 0,
-      arv: 0,
-      cashOnCashReturn: 183.56,
-      annualizedReturn: 35.48,
-      status: 'Sold' as const
-    },
-    {
-      address: '145 Crystal Ave',
-      city: 'New London',
-      state: 'CT',
-      units: 3,
-      acquisitionPrice: 210000,
-      rehabCosts: 50000,
-      arv: 325000,
-      cashOnCashReturn: 156.68,
-      annualizedReturn: 25.17,
-      status: 'Sold' as const
-    },
-    {
-      address: '149 Crystal Ave',
-      city: 'New London',
-      state: 'CT',
-      units: 3,
-      acquisitionPrice: 230000,
-      rehabCosts: 50000,
-      arv: 325000,
-      cashOnCashReturn: 147.83,
-      annualizedReturn: 21.58,
-      status: 'Sold' as const
-    },
-    // Currently Owned Properties
     {
       address: '157 Crystal Ave',
       city: 'New London',
@@ -112,24 +27,8 @@ const Portfolio = () => {
       acquisitionPrice: 376000,
       rehabCosts: 10000,
       arv: 700000,
-      currentPrincipalBalance: 488500,
-      amortizationMonths: 360,
-      cashOnCashReturn: 0, // Not provided in data
-      annualizedReturn: 0, // Not provided in data
-      status: 'Currently Own' as const
-    },
-    {
-      address: '25 Huntington Pl',
-      city: 'Norwich',
-      state: 'CT',
-      units: 1,
-      acquisitionPrice: 319000,
-      rehabCosts: 0,
-      arv: 350000,
-      currentPrincipalBalance: 233000,
-      amortizationMonths: 360,
-      cashOnCashReturn: 0, // Not provided in data
-      annualizedReturn: 0, // Not provided in data
+      cashOnCashReturn: 381.10,
+      annualizedReturn: 68.80,
       status: 'Currently Own' as const
     },
     {
@@ -140,25 +39,122 @@ const Portfolio = () => {
       acquisitionPrice: 1075000,
       rehabCosts: 80000,
       arv: 1500000,
-      currentPrincipalBalance: 1020000,
-      amortizationMonths: 360,
-      cashOnCashReturn: 0, // Not provided in data
-      annualizedReturn: 0, // Not provided in data
+      cashOnCashReturn: 222.60,
+      annualizedReturn: 222.60,
       status: 'Currently Own' as const
     },
+    // Sold Properties
     {
-      address: '3408 E Dr MLK BLVD',
-      city: 'Tampa',
-      state: 'FL',
-      units: 10,
-      acquisitionPrice: 750000,
-      rehabCosts: 450000,
-      arv: 2000000,
-      currentPrincipalBalance: 1235000,
-      amortizationMonths: 12,
-      cashOnCashReturn: 0, // Not provided in data
-      annualizedReturn: 0, // Not provided in data
-      status: 'Currently Own' as const
+      address: '41 Stuart Ave',
+      city: 'New London',
+      state: 'CT',
+      units: 3,
+      acquisitionPrice: 195000,
+      rehabCosts: 20000,
+      soldPrice: 375000,
+      cashRentsCollected: 120000,
+      yearsHeld: 4,
+      cashOnCashReturn: 1400.00,
+      annualizedReturn: 96.80,
+      status: 'Sold' as const
+    },
+    {
+      address: '52 Summit Ave',
+      city: 'New London',
+      state: 'CT',
+      units: 2,
+      acquisitionPrice: 315000,
+      rehabCosts: 10000,
+      soldPrice: 375000,
+      cashRentsCollected: 48000,
+      yearsHeld: 2.5,
+      cashOnCashReturn: 326.70,
+      annualizedReturn: 78.70,
+      status: 'Sold' as const
+    },
+    {
+      address: '29 Brainard St',
+      city: 'New London',
+      state: 'CT',
+      units: '11 Room Boarding House',
+      acquisitionPrice: 329000,
+      rehabCosts: 0,
+      soldPrice: 375000,
+      cashRentsCollected: 30000,
+      yearsHeld: 3,
+      cashOnCashReturn: 633.30,
+      annualizedReturn: 94.30,
+      status: 'Sold' as const
+    },
+    {
+      address: '25 Huntington Pl',
+      city: 'Norwich',
+      state: 'CT',
+      units: '13 Room Boarding House',
+      acquisitionPrice: 319000,
+      rehabCosts: 0,
+      soldPrice: 350000,
+      cashRentsCollected: 36000,
+      yearsHeld: 2,
+      cashOnCashReturn: 67.00,
+      annualizedReturn: 29.20,
+      status: 'Sold' as const
+    },
+    {
+      address: '175 Crystal Ave',
+      city: 'New London',
+      state: 'CT',
+      units: 2,
+      acquisitionPrice: 280000,
+      rehabCosts: 0,
+      soldPrice: 425000,
+      cashRentsCollected: 97000,
+      yearsHeld: 2,
+      cashOnCashReturn: 958.00,
+      annualizedReturn: 226.80,
+      status: 'Sold' as const
+    },
+    {
+      address: '35 Linden St',
+      city: 'New London',
+      state: 'CT',
+      units: 3,
+      acquisitionPrice: 385000,
+      rehabCosts: 0,
+      soldPrice: 440000,
+      cashRentsCollected: 84000,
+      yearsHeld: 2,
+      cashOnCashReturn: 233.60,
+      annualizedReturn: 43.50,
+      status: 'Sold' as const
+    },
+    {
+      address: '145 Crystal Ave',
+      city: 'New London',
+      state: 'CT',
+      units: 3,
+      acquisitionPrice: 210000,
+      rehabCosts: 50000,
+      soldPrice: 335000,
+      cashRentsCollected: 90000,
+      yearsHeld: 2,
+      cashOnCashReturn: 152.10,
+      annualizedReturn: 58.80,
+      status: 'Sold' as const
+    },
+    {
+      address: '149 Crystal Ave',
+      city: 'New London',
+      state: 'CT',
+      units: 3,
+      acquisitionPrice: 230000,
+      rehabCosts: 50000,
+      soldPrice: 335000,
+      cashRentsCollected: 90000,
+      yearsHeld: 2,
+      cashOnCashReturn: 126.10,
+      annualizedReturn: 50.40,
+      status: 'Sold' as const
     }
   ];
 
@@ -167,32 +163,37 @@ const Portfolio = () => {
   const soldProperties = portfolioProperties.filter(p => p.status === 'Sold');
 
   // Calculate real portfolio metrics
-  const totalUnits = portfolioProperties.reduce((sum, prop) => sum + prop.units, 0);
+  const totalUnits = portfolioProperties.reduce((sum, prop) => {
+    // Handle string units (boarding houses)
+    if (typeof prop.units === 'string') return sum + 1;
+    return sum + prop.units;
+  }, 0);
   
-  // Total Portfolio Value = Sum of current asset values (ARV for current properties, ARV for sold properties where available)
+  // Total Portfolio Value = Sum of current asset values (ARV for current properties, sold price for sold properties)
   const totalPortfolioValue = portfolioProperties.reduce((sum, prop) => {
     if (prop.status === 'Currently Own') {
       return sum + (prop.arv || prop.acquisitionPrice);
     } else {
-      // For sold properties, use ARV if available, otherwise acquisition price
-      return sum + (prop.arv || prop.acquisitionPrice);
+      return sum + (prop.soldPrice || prop.acquisitionPrice);
     }
   }, 0);
 
-  // Calculate total equity created (difference between ARV and acquisition + rehab costs)
+  // Calculate total equity created
   const totalEquityCreated = portfolioProperties.reduce((sum, prop) => {
     const totalCost = prop.acquisitionPrice + (prop.rehabCosts || 0);
-    const currentValue = prop.arv || prop.acquisitionPrice;
+    const currentValue = prop.status === 'Currently Own' 
+      ? (prop.arv || prop.acquisitionPrice)
+      : (prop.soldPrice || prop.acquisitionPrice);
     return sum + Math.max(0, currentValue - totalCost);
   }, 0);
 
-  // Calculate average returns for sold properties only (where data is available)
-  const soldPropsWithReturns = soldProperties.filter(p => p.cashOnCashReturn > 0);
-  const avgCashOnCash = soldPropsWithReturns.length > 0 
-    ? soldPropsWithReturns.reduce((sum, prop) => sum + prop.cashOnCashReturn, 0) / soldPropsWithReturns.length 
+  // Calculate average returns for all properties with data
+  const propsWithReturns = portfolioProperties.filter(p => p.cashOnCashReturn > 0);
+  const avgCashOnCash = propsWithReturns.length > 0 
+    ? propsWithReturns.reduce((sum, prop) => sum + prop.cashOnCashReturn, 0) / propsWithReturns.length 
     : 0;
-  const avgAnnualized = soldPropsWithReturns.length > 0 
-    ? soldPropsWithReturns.reduce((sum, prop) => sum + prop.annualizedReturn, 0) / soldPropsWithReturns.length 
+  const avgAnnualized = propsWithReturns.length > 0 
+    ? propsWithReturns.reduce((sum, prop) => sum + prop.annualizedReturn, 0) / propsWithReturns.length 
     : 0;
 
   // Portfolio aggregate metrics based on real data
@@ -219,7 +220,7 @@ const Portfolio = () => {
       title: 'Avg Cash-on-Cash', 
       value: `${avgCashOnCash.toFixed(1)}%`, 
       icon: Award, 
-      subtitle: 'Sold Properties Performance' 
+      subtitle: 'All Properties Performance' 
     },
     { 
       title: 'Avg Annualized Return', 
@@ -296,17 +297,17 @@ const Portfolio = () => {
             <div>
               <h4 className="text-lg font-semibold text-primary mb-3">Geographic Focus</h4>
               <ul className="space-y-2 text-gray-700">
-                <li>• <strong>Connecticut:</strong> {portfolioProperties.filter(p => p.state === 'CT').length} properties ({portfolioProperties.filter(p => p.state === 'CT').reduce((sum, p) => sum + p.units, 0)} units)</li>
-                <li>• <strong>Florida:</strong> {portfolioProperties.filter(p => p.state === 'FL').length} property ({portfolioProperties.filter(p => p.state === 'FL').reduce((sum, p) => sum + p.units, 0)} units)</li>
-                <li>• Primary markets: New London, Norwich, Tampa</li>
+                <li>• <strong>Connecticut:</strong> {portfolioProperties.filter(p => p.state === 'CT').length} properties</li>
+                <li>• <strong>Florida:</strong> {portfolioProperties.filter(p => p.state === 'FL').length} property</li>
+                <li>• Primary markets: New London, Norwich, Tampa, Stonington</li>
                 <li>• Focus on emerging neighborhoods with growth potential</li>
               </ul>
             </div>
             <div>
               <h4 className="text-lg font-semibold text-primary mb-3">Performance Highlights</h4>
               <ul className="space-y-2 text-gray-700">
-                <li>• Highest Cash-on-Cash: {Math.max(...soldPropsWithReturns.map(p => p.cashOnCashReturn)).toFixed(0)}% (41 Stuart Ave)</li>
-                <li>• Highest Annualized: {Math.max(...soldPropsWithReturns.map(p => p.annualizedReturn)).toFixed(0)}% (175 Crystal Ave)</li>
+                <li>• Highest Cash-on-Cash: {Math.max(...propsWithReturns.map(p => p.cashOnCashReturn)).toFixed(0)}% (41 Stuart Ave)</li>
+                <li>• Highest Annualized: {Math.max(...propsWithReturns.map(p => p.annualizedReturn)).toFixed(0)}% (Tampa Property)</li>
                 <li>• Total properties transacted: {soldProperties.length}</li>
                 <li>• Current active portfolio: {currentProperties.length} properties</li>
               </ul>

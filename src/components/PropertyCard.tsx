@@ -5,12 +5,13 @@ interface PropertyData {
   address: string;
   city: string;
   state: string;
-  units: number;
+  units: number | string;
   acquisitionPrice: number;
   rehabCosts?: number;
+  soldPrice?: number;
   arv?: number;
-  currentPrincipalBalance?: number;
-  amortizationMonths?: number;
+  cashRentsCollected?: number;
+  yearsHeld?: number;
   cashOnCashReturn: number;
   annualizedReturn: number;
   status: 'Currently Own' | 'Sold';
@@ -65,7 +66,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           </div>
           <div className="flex items-center text-gray-600">
             <Building className="h-4 w-4 mr-1" />
-            <span className="text-sm">Units: {property.units} {property.units === 1 ? 'Apartment' : 'Apartments'}</span>
+            <span className="text-sm">Units: {property.units}</span>
           </div>
         </div>
 
@@ -84,20 +85,21 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
               <span className="text-gray-600">Renovation Budget:</span>
               <span className="font-semibold">{formatCurrency(property.rehabCosts)}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">After Repair Value:</span>
-              <span className="font-semibold">{formatCurrency(property.arv)}</span>
-            </div>
-            {property.currentPrincipalBalance && (
+            {property.status === 'Sold' ? (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Sold Price:</span>
+                  <span className="font-semibold">{formatCurrency(property.soldPrice)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Cash/Rents Collected:</span>
+                  <span className="font-semibold">{formatCurrency(property.cashRentsCollected)}</span>
+                </div>
+              </>
+            ) : (
               <div className="flex justify-between">
-                <span className="text-gray-600">Current Mortgage Balance:</span>
-                <span className="font-semibold">{formatCurrency(property.currentPrincipalBalance)}</span>
-              </div>
-            )}
-            {property.amortizationMonths && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Loan Term:</span>
-                <span className="font-semibold">{property.amortizationMonths} months</span>
+                <span className="text-gray-600">After Repair Value:</span>
+                <span className="font-semibold">{formatCurrency(property.arv)}</span>
               </div>
             )}
           </div>
@@ -118,6 +120,15 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
               <span className="text-sm text-gray-600">Annualized Return:</span>
               <span className="font-semibold text-primary">{formatPercentage(property.annualizedReturn)}</span>
             </div>
+            {property.status === 'Sold' && property.yearsHeld && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600 flex items-center">
+                  <Calendar className="h-3 w-3 mr-1" />
+                  Years Held:
+                </span>
+                <span className="font-semibold text-gray-900">{property.yearsHeld}</span>
+              </div>
+            )}
           </div>
         </div>
 

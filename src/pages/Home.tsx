@@ -7,13 +7,13 @@ import FeaturedDealCard from '../components/FeaturedDealCard';
 import FAQSection from '../components/FAQSection';
 
 const Home = () => {
-  // Company metrics
+  // Updated company metrics to sync with portfolio page
   const metrics = [
-    { title: 'Total AUM', value: '$7.05M', icon: DollarSign, subtitle: 'Assets Under Management' },
-    { title: 'Units Owned', value: '72', icon: Building, subtitle: 'Multifamily Units' },
-    { title: 'Total Equity Created', value: '$1.07M', icon: TrendingUp, subtitle: 'Value Added' },
-    { title: 'Avg Cash-on-Cash', value: '22.2%', icon: Award, subtitle: 'Annual Returns' },
-    { title: 'Avg Annualized Return', value: '28.5%', icon: Target, subtitle: 'Including Appreciation' }
+    { title: 'Total Portfolio Value', value: '$7.23M', icon: DollarSign, subtitle: 'Current Asset Values' },
+    { title: 'Total Units', value: '19', icon: Building, subtitle: 'All Properties Combined' },
+    { title: 'Total Equity Created', value: '$2.42M', icon: TrendingUp, subtitle: 'Value Added Through Strategy' },
+    { title: 'Avg Cash-on-Cash', value: '458.8%', icon: Award, subtitle: 'All Properties Performance' },
+    { title: 'Avg Annualized Return', value: '115.6%', icon: Target, subtitle: 'Including Appreciation' }
   ];
 
   // Value propositions
@@ -40,33 +40,33 @@ const Home = () => {
     }
   ];
 
-  // Featured deals - now with 3 deals
+  // Featured deals - updated with current properties
   const featuredDeals = [
     {
-      name: 'Riverside Commons',
+      name: '3408 E Dr MLK BLVD',
       address: 'Tampa, FL',
-      units: 24,
-      purchasePrice: 1800000,
-      arv: 2400000,
-      cashOnCashReturn: 18.5,
+      units: 10,
+      purchasePrice: 750000,
+      arv: 2000000,
+      cashOnCashReturn: 372.1,
       status: 'current' as const
     },
     {
-      name: 'Pine Valley Apartments',
-      address: 'Brandon, FL',
-      units: 32,
-      purchasePrice: 2200000,
-      arv: 3100000,
-      cashOnCashReturn: 25.8,
-      status: 'past' as const
+      name: '157 Crystal Ave',
+      address: 'New London, CT',
+      units: 5,
+      purchasePrice: 376000,
+      arv: 700000,
+      cashOnCashReturn: 381.1,
+      status: 'current' as const
     },
     {
-      name: 'Sunset Gardens',
-      address: 'St. Petersburg, FL',
-      units: 16,
-      purchasePrice: 1200000,
-      arv: 1650000,
-      cashOnCashReturn: 22.3,
+      name: '1 Harmony St',
+      address: 'Stonington, CT',
+      units: 4,
+      purchasePrice: 1075000,
+      arv: 1500000,
+      cashOnCashReturn: 222.6,
       status: 'current' as const
     }
   ];
@@ -124,7 +124,7 @@ const Home = () => {
               Featured Deals
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Showcase of our current and past multifamily investments
+              Showcase of our current multifamily investments
             </p>
           </div>
 
