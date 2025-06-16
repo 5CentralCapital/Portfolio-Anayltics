@@ -7,10 +7,10 @@ import FeaturedDealCard from '../components/FeaturedDealCard';
 import FAQSection from '../components/FAQSection';
 
 const Home = () => {
-  // Updated company metrics to match portfolio page calculations
+  // Updated company metrics to match portfolio calculations
   const metrics = [
-    { title: 'Total Portfolio Value', value: '$7.23M', icon: DollarSign, subtitle: 'Current Asset Values' },
-    { title: 'Total Units', value: '19', icon: Building, subtitle: 'All Properties Combined' },
+    { title: 'Total Portfolio Value', value: '$4.2M', icon: DollarSign, subtitle: 'Current Asset Values' },
+    { title: 'Total Units', value: '37', icon: Building, subtitle: 'All Properties Combined' },
     { title: 'Total Equity Created', value: '$2.42M', icon: TrendingUp, subtitle: 'Value Added Through Strategy' },
     { title: 'Avg Cash-on-Cash', value: '458.8%', icon: Award, subtitle: 'All Properties Performance' },
     { title: 'Avg Annualized Return', value: '115.6%', icon: Target, subtitle: 'Including Appreciation' }

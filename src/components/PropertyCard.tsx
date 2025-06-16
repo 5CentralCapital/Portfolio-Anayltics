@@ -33,7 +33,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   };
 
   const formatPercentage = (value: number) => {
-    return `${value.toFixed(2)}%`;
+    return `${value.toFixed(1)}%`;
   };
 
   // Get the appropriate image for each property
@@ -41,9 +41,15 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     const imageMap: { [key: string]: string } = {
       '1 Harmony St': '/1 Harmony St.jpeg',
       '145 Crystal Ave': '/145 Crystal Ave.jpg',
+      '149 Crystal Ave': '/149 Crystal ave.jpeg',
       '29 Brainard St': '/29 brainard st.jpeg',
       '25 Huntington Pl': '/25 huntington pkl.jpeg',
-      '3408 E Dr MLK BLVD': '/3408 E DR MLK BLVD.jpeg'
+      '3408 E Dr MLK BLVD': '/3408 E DR MLK BLVD.jpeg',
+      '41 Stuart Ave': '/41 stuart ave.jpeg',
+      '52 Summit Ave': '/52 summit ave.jpeg',
+      '175 Crystal Ave': '/175 Crystal Ave.jpeg',
+      '35 Linden St': '/35 linden st.jpeg',
+      '157 Crystal Ave': '/157 Crystal Ave.jpg'
     };
     
     return imageMap[address] || null;
@@ -58,7 +64,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
         {propertyImage ? (
           <img 
             src={propertyImage} 
-            alt={`${property.address}, ${property.city}, ${property.state}`}
+            alt={`${property.address}, ${property.city}, ${property.state} - Real estate investment property`}
             className="w-full h-full object-cover"
             onError={(e) => {
               // Fallback to placeholder if image fails to load
