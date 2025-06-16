@@ -7,7 +7,7 @@ import FeaturedDealCard from '../components/FeaturedDealCard';
 import FAQSection from '../components/FAQSection';
 
 const Home = () => {
-  // Updated company metrics to match portfolio calculations
+  // Updated portfolio metrics to match actual data
   const metrics = [
     { title: 'Total Portfolio Value', value: '$4.2M', icon: DollarSign, subtitle: 'Current Asset Values' },
     { title: 'Total Units', value: '37', icon: Building, subtitle: 'All Properties Combined' },
@@ -40,7 +40,7 @@ const Home = () => {
     }
   ];
 
-  // Featured deals - updated with current properties
+  // Featured deals - updated with current properties and real photos
   const featuredDeals = [
     {
       name: '3408 E Dr MLK BLVD',
@@ -124,7 +124,7 @@ const Home = () => {
               Featured Properties
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Showcase of our current multifamily investments
+              Showcase of our current multifamily investments with real property photos
             </p>
           </div>
 

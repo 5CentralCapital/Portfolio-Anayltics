@@ -49,7 +49,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
       '52 Summit Ave': '/52 summit ave.jpeg',
       '175 Crystal Ave': '/175 Crystal Ave.jpeg',
       '35 Linden St': '/35 linden st.jpeg',
-      '157 Crystal Ave': '/157 Crystal Ave.jpg'
+      '157 Crystal Ave': '/157 Crystal Ave.jpeg'
     };
     
     return imageMap[address] || null;

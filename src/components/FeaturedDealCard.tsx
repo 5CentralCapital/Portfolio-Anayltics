@@ -28,14 +28,49 @@ const FeaturedDealCard: React.FC<FeaturedDealCardProps> = ({ deal }) => {
     }).format(amount);
   };
 
+  // Get the appropriate image for each property
+  const getPropertyImage = (name: string) => {
+    const imageMap: { [key: string]: string } = {
+      '3408 E Dr MLK BLVD': '/3408 E DR MLK BLVD.jpeg',
+      '157 Crystal Ave': '/157 Crystal Ave.jpeg',
+      '1 Harmony St': '/1 Harmony St.jpeg'
+    };
+    
+    return imageMap[name] || null;
+  };
+
+  const propertyImage = getPropertyImage(deal.name);
+
   return (
     <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-      {/* Property Image Placeholder */}
-      <div className="h-32 bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
-        <div className="text-center text-gray-500">
-          <Home className="h-8 w-8 mx-auto mb-1" />
-          <p className="text-xs">Property Photo</p>
-        </div>
+      {/* Property Image */}
+      <div className="h-32 bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center overflow-hidden">
+        {propertyImage ? (
+          <img 
+            src={propertyImage} 
+            alt={`${deal.name}, ${deal.address} - Real estate investment property`}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              // Fallback to placeholder if image fails to load
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              target.parentElement!.innerHTML = `
+                <div class="text-center text-gray-500">
+                  <svg class="h-8 w-8 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z"></path>
+                  </svg>
+                  <p class="text-xs">Property Photo</p>
+                </div>
+              `;
+            }}
+          />
+        ) : (
+          <div className="text-center text-gray-500">
+            <Home className="h-8 w-8 mx-auto mb-1" />
+            <p className="text-xs">Property Photo</p>
+          </div>
+        )}
       </div>
 
       <div className="p-4">
