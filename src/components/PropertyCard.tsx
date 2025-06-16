@@ -36,7 +36,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     return `${value.toFixed(1)}%`;
   };
 
-  // Get the appropriate image for each property with improved mapping
+  // Updated property image mapping with exact file name matches
   const getPropertyImage = (address: string) => {
     const imageMap: { [key: string]: string } = {
       '1 Harmony St': '/1 Harmony St.jpeg',
@@ -45,10 +45,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
       '29 Brainard St': '/29 brainard st.jpeg',
       '25 Huntington Pl': '/25 huntington pkl.jpeg',
       '3408 E Dr MLK BLVD': '/3408 E DR MLK BLVD.jpeg',
-      '41 Stuart Ave': '/41 stuart ave.jpeg',
-      '52 Summit Ave': '/52 summit ave.jpeg',
+      '41 Stuart Ave': '/41 Stuart Ave.jpeg',
+      '52 Summit Ave': '/52 Summit Ave.jpeg',
       '175 Crystal Ave': '/175 Crystal Ave.jpeg',
-      '35 Linden St': '/35 linden st.jpeg',
+      '35 Linden St': '/35 Linden St.jpeg',
       '157 Crystal Ave': '/157 Crystal Ave.jpeg'
     };
     

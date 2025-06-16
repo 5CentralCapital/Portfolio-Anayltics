@@ -28,7 +28,7 @@ const FeaturedDealCard: React.FC<FeaturedDealCardProps> = ({ deal }) => {
     }).format(amount);
   };
 
-  // Get the appropriate image for each property
+  // Updated image mapping for featured deals
   const getPropertyImage = (name: string) => {
     const imageMap: { [key: string]: string } = {
       '3408 E Dr MLK BLVD': '/3408 E DR MLK BLVD.jpeg',
