@@ -116,7 +116,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Featured Deal Preview - Now above Why Invest With Us */}
+      {/* Featured Deal Preview */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -146,34 +146,8 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Why Invest With Us Section */}
+      {/* Company Metrics Section - Now before Why Invest With Us */}
       <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Invest With Us
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Our proven strategy combines aggressive value creation with strategic financing 
-              to maximize returns for our investors.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {valueProps.map((prop, index) => (
-              <ValuePropCard
-                key={index}
-                title={prop.title}
-                description={prop.description}
-                icon={prop.icon}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Company Metrics Section - Now below Why Invest With Us */}
-      <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -192,6 +166,32 @@ const Home = () => {
                 value={metric.value}
                 icon={metric.icon}
                 subtitle={metric.subtitle}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Invest With Us Section - Now after Company Metrics */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Why Invest With Us
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Our proven strategy combines aggressive value creation with strategic financing 
+              to maximize returns for our investors.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {valueProps.map((prop, index) => (
+              <ValuePropCard
+                key={index}
+                title={prop.title}
+                description={prop.description}
+                icon={prop.icon}
               />
             ))}
           </div>
