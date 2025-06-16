@@ -23,8 +23,8 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <div className="space-y-2">
-              <a href="/deals" className="block text-gray-300 hover:text-white transition-colors">
-                Current Deals
+              <a href="/portfolio" className="block text-gray-300 hover:text-white transition-colors">
+                Portfolio
               </a>
               <a href="/founder" className="block text-gray-300 hover:text-white transition-colors">
                 About Michael

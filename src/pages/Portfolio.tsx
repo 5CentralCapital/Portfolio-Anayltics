@@ -1,10 +1,10 @@
 import React from 'react';
 import DealCard from '../components/DealCard';
-import StatsCard from '../components/StatsCard';
-import { Building, DollarSign, TrendingUp, Home } from 'lucide-react';
+import MetricsCard from '../components/MetricsCard';
+import { Building, DollarSign, TrendingUp, Home, Award } from 'lucide-react';
 
-const Deals = () => {
-  // Sample deals data
+const Portfolio = () => {
+  // Current deals (owned properties)
   const currentDeals = [
     {
       id: '1',
@@ -36,6 +36,7 @@ const Deals = () => {
     },
   ];
 
+  // Past deals (sold properties)
   const pastDeals = [
     {
       id: '3',
@@ -55,23 +56,14 @@ const Deals = () => {
 
   const allDeals = [...currentDeals, ...pastDeals];
   
-  // Calculate portfolio stats
-  const totalPortfolioValue = allDeals.reduce((sum, deal) => sum + deal.arv, 0);
-  const totalEquity = allDeals.reduce((sum, deal) => sum + deal.remainingEquity, 0);
-  const totalUnits = allDeals.reduce((sum, deal) => sum + deal.units, 0);
-  const avgCashOnCash = allDeals.reduce((sum, deal) => sum + deal.cashOnCashReturn, 0) / allDeals.length;
-
-  const formatCurrency = (amount: number) => {
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
-    }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  // Portfolio aggregate metrics
+  const portfolioMetrics = [
+    { title: 'Total AUM', value: '$7.05M', icon: DollarSign, subtitle: 'Assets Under Management' },
+    { title: 'Units Owned', value: '72', icon: Building, subtitle: 'Multifamily Units' },
+    { title: 'Total Equity Created', value: '$1.07M', icon: TrendingUp, subtitle: 'Value Added' },
+    { title: 'Avg CoC Return', value: '22.2%', icon: Award, subtitle: 'Cash-on-Cash' },
+    { title: 'Avg Annualized Return', value: '28.5%', icon: Home, subtitle: 'Including Appreciation' }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 animate-fade-in">
@@ -87,34 +79,26 @@ const Deals = () => {
           </p>
         </div>
 
-        {/* Portfolio Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <StatsCard
-            title="Total Portfolio Value"
-            value={formatCurrency(totalPortfolioValue)}
-            icon={Building}
-          />
-          <StatsCard
-            title="Total Equity"
-            value={formatCurrency(totalEquity)}
-            icon={DollarSign}
-          />
-          <StatsCard
-            title="Average Cash-on-Cash"
-            value={`${avgCashOnCash.toFixed(1)}%`}
-            icon={TrendingUp}
-          />
-          <StatsCard
-            title="Units Owned"
-            value={totalUnits.toString()}
-            icon={Home}
-          />
+        {/* Aggregate Metrics Bar */}
+        <div className="mb-16">
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Portfolio Performance</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {portfolioMetrics.map((metric, index) => (
+              <MetricsCard
+                key={index}
+                title={metric.title}
+                value={metric.value}
+                icon={metric.icon}
+                subtitle={metric.subtitle}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Current Deals */}
+        {/* Currently Owned Section */}
         <section className="mb-16">
           <div className="flex items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Current Deals</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Currently Owned</h2>
             <span className="ml-4 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
               {currentDeals.length} Active
             </span>
@@ -126,7 +110,7 @@ const Deals = () => {
           </div>
         </section>
 
-        {/* Past Deals */}
+        {/* Past Deals Section */}
         <section>
           <div className="flex items-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900">Past Deals</h2>
@@ -165,9 +149,32 @@ const Deals = () => {
             </div>
           </div>
         </section>
+
+        {/* CTA Section */}
+        <section className="mt-16 bg-primary rounded-xl p-8 text-center text-white">
+          <h3 className="text-2xl font-bold mb-4">Interested in Our Next Deal?</h3>
+          <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
+            Join our investor list to be the first to know about upcoming investment opportunities 
+            with similar risk-adjusted returns.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="/investor"
+              className="bg-white text-primary px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+            >
+              Join Investor List
+            </a>
+            <a
+              href="/founder"
+              className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary transition-colors"
+            >
+              Meet the Team
+            </a>
+          </div>
+        </section>
       </div>
     </div>
   );
 };
 
-export default Deals;
+export default Portfolio;

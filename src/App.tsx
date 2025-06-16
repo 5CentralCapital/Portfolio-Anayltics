@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import Footer from './components/Footer';
 import Home from './pages/Home';
-import Deals from './pages/Deals';
+import Portfolio from './pages/Portfolio';
 import Founder from './pages/Founder';
 import Goals from './pages/Goals';
 import Investor from './pages/Investor';
@@ -17,7 +17,8 @@ function App() {
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/deals" element={<Deals />} />
+            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/deals" element={<Portfolio />} /> {/* Redirect old URL */}
             <Route path="/founder" element={<Founder />} />
             <Route path="/goals" element={<Goals />} />
             <Route path="/investor" element={<Investor />} />

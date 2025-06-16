@@ -10,7 +10,7 @@ const Navigation = () => {
 
   const navLinks = [
     { path: '/', label: 'Home' },
-    { path: '/deals', label: 'Deals' },
+    { path: '/portfolio', label: 'Portfolio' },
     { path: '/founder', label: 'Founder' },
     { path: '/goals', label: 'Goals' },
     { path: '/investor', label: 'Investor' },
@@ -38,6 +38,12 @@ const Navigation = () => {
                 {link.label}
               </Link>
             ))}
+            <Link
+              to="/investor"
+              className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-dark transition-colors"
+            >
+              Invest
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -69,6 +75,13 @@ const Navigation = () => {
                   {link.label}
                 </Link>
               ))}
+              <Link
+                to="/investor"
+                onClick={() => setIsOpen(false)}
+                className="bg-primary text-white py-2 px-4 rounded font-semibold hover:bg-primary-dark transition-colors text-center"
+              >
+                Invest
+              </Link>
             </div>
           </div>
         )}
