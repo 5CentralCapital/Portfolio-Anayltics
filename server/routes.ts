@@ -62,13 +62,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const investorLeads = await storage.getInvestorLeads();
 
       // Calculate portfolio statistics
-      const activeProperties = properties.filter(p => p.status === 'active');
-      const soldProperties = properties.filter(p => p.status === 'sold');
+      const activeProperties = properties.filter(p => p.status === 'Currently Own');
+      const soldProperties = properties.filter(p => p.status === 'Sold');
       
       const totalProperties = properties.length;
-      const totalUnits = properties.reduce((sum, p) => sum + (p.units || 0), 0);
-      const totalValue = activeProperties.reduce((sum, p) => sum + Number(p.currentValue || p.acquisitionPrice || 0), 0);
-      const monthlyRent = activeProperties.reduce((sum, p) => sum + Number(p.monthlyRent || 0), 0);
+      const totalUnits = properties.reduce((sum, p) => sum + (p.apartments || 0), 0);
+      const totalValue = activeProperties.reduce((sum, p) => sum + Number(p.arvAtTimePurchased || p.acquisitionPrice || 0), 0);
+      const monthlyRent = activeProperties.reduce((sum, p) => sum + Number(p.cashFlow || 0), 0);
       const avgCashOnCash = properties.length > 0 
         ? properties.reduce((sum, p) => sum + Number(p.cashOnCashReturn || 0), 0) / properties.length 
         : 0;
@@ -142,16 +142,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         address: p.address,
         city: p.city,
         state: p.state,
-        units: p.units,
+        units: p.apartments, // Updated to use apartments from new schema
         acquisition_price: Number(p.acquisitionPrice),
-        current_value: Number(p.currentValue || p.acquisitionPrice),
-        monthly_rent: Number(p.monthlyRent),
+        current_value: p.salePrice ? Number(p.salePrice) : Number(p.arvAtTimePurchased || p.acquisitionPrice),
+        monthly_rent: Number(p.cashFlow || 0), // Using cash flow as monthly rent equivalent
         cash_on_cash_return: Number(p.cashOnCashReturn),
         annualized_return: Number(p.annualizedReturn),
-        status: p.status,
-        equity_created: Number(p.currentValue || p.acquisitionPrice) - Number(p.acquisitionPrice),
-        rental_yield: p.monthlyRent && p.currentValue 
-          ? (Number(p.monthlyRent) * 12 / Number(p.currentValue)) * 100 
+        status: p.status === "Currently Own" ? "active" : "sold",
+        equity_created: Number(p.totalProfits || 0),
+        rental_yield: p.cashFlow && p.acquisitionPrice 
+          ? (Number(p.cashFlow) * 12 / Number(p.acquisitionPrice)) * 100 
           : 0,
       }));
 
