@@ -47,13 +47,13 @@ const PortfolioCards = () => {
     state: property.state,
     units: property.units,
     acquisitionPrice: property.acquisition_price,
-    rehabCosts: property.rehab_costs || undefined,
+    rehabCosts: property.rehab_costs > 0 ? property.rehab_costs : undefined,
     soldPrice: property.status === 'sold' ? property.current_value : undefined,
     arv: property.current_value,
-    cashRentsCollected: property.monthly_rent * 12,
-    yearsHeld: property.years_held || 1,
-    cashOnCashReturn: property.cash_on_cash_return, // Static values from database
-    annualizedReturn: property.annualized_return, // Static values from database
+    cashRentsCollected: property.monthly_rent > 0 ? property.monthly_rent * 12 : undefined,
+    yearsHeld: property.years_held,
+    cashOnCashReturn: property.cash_on_cash_return,
+    annualizedReturn: property.annualized_return,
     status: property.status === 'active' ? 'Currently Own' as const : 'Sold' as const
   })) || [];
 
