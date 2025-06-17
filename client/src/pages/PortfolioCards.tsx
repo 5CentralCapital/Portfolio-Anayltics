@@ -40,7 +40,7 @@ const PortfolioCards = () => {
     );
   }
 
-  // Transform API data to match PropertyCard interface
+  // Transform API data to match PropertyCard interface - direct database mapping
   const portfolioProperties = properties?.map((property: any) => ({
     address: property.address,
     city: property.city,
@@ -50,7 +50,7 @@ const PortfolioCards = () => {
     rehabCosts: property.rehab_costs > 0 ? property.rehab_costs : undefined,
     soldPrice: property.status === 'sold' ? property.current_value : undefined,
     arv: property.current_value,
-    cashRentsCollected: property.monthly_rent > 0 ? property.monthly_rent * 12 : undefined,
+    cashRentsCollected: property.monthly_rent > 0 ? property.monthly_rent : undefined,
     yearsHeld: property.years_held,
     cashOnCashReturn: property.cash_on_cash_return,
     annualizedReturn: property.annualized_return,

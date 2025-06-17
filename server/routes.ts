@@ -147,8 +147,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rehab_costs: Number(p.rehabCosts || 0),
         current_value: p.salePrice ? Number(p.salePrice) : Number(p.arvAtTimePurchased || p.acquisitionPrice),
         monthly_rent: Number(p.cashFlow || 0),
-        cash_on_cash_return: Number(p.cashOnCashReturn), // Static values from database
-        annualized_return: Number(p.annualizedReturn), // Static values from database
+        cash_on_cash_return: Number(p.cashOnCashReturn),
+        annualized_return: Number(p.annualizedReturn),
         status: p.status === "Currently Own" ? "active" : "sold",
         equity_created: Number(p.totalProfits || 0),
         total_profits: Number(p.totalProfits || 0),
