@@ -115,6 +115,7 @@ const AdminLogin: React.FC = () => {
                     onChange={handleChange}
                     className="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                     placeholder="admin@5central.capital"
+                    placeholder="michael@5central.capital"
                   />
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Key className="h-4 w-4 text-gray-400" />
@@ -228,7 +229,7 @@ const AdminLogin: React.FC = () => {
                         value={resetEmail}
                         onChange={(e) => setResetEmail(e.target.value)}
                         className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                        placeholder="admin@5central.capital"
+                       placeholder="michael@5central.capital"
                       />
                     </div>
                   </div>
@@ -259,7 +260,7 @@ const AdminLogin: React.FC = () => {
             <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-4">
               <div className="text-sm text-blue-800">
                 <p className="font-medium mb-2">For demonstration purposes:</p>
-                <p><strong>Email:</strong> admin@5central.capital</p>
+                <p><strong>Email:</strong> michael@5central.capital</p>
                 <p><strong>Password:</strong> admin123</p>
                 <p className="text-xs text-blue-600 mt-2">
                   Note: In production, this would use enterprise-grade authentication with MFA.

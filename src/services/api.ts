@@ -22,6 +22,7 @@ class ApiService {
     const url = `${API_BASE_URL}${endpoint}`;
     
     const config: RequestInit = {
+      mode: 'cors',
       headers: {
         'Content-Type': 'application/json',
         ...(this.token && { Authorization: `Bearer ${this.token}` }),
@@ -31,7 +32,13 @@ class ApiService {
     };
 
     try {
+      console.log(`Making API request to: ${url}`);
       const response = await fetch(url, config);
+      
+      if (!response.ok) {
+        console.error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+      
       const data = await response.json();
 
       if (!response.ok) {
@@ -40,7 +47,17 @@ class ApiService {
 
       return { data };
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error('API request failed:', {
+        url,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
+      // Provide more specific error messages
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        return { error: 'Failed to connect to server. Please ensure the backend is running on port 3001.' };
+      }
+      
       return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }

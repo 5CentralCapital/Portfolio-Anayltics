@@ -52,15 +52,29 @@ class Database {
         const adminId = uuidv4();
         const hashedPassword = bcrypt.hashSync('admin123', 10);
         
+        // First, update existing admin user email if it exists
         this.db.run(
-            `INSERT OR IGNORE INTO users (id, email, password_hash, role, first_name, last_name) 
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [adminId, 'admin@5central.capital', hashedPassword, 'admin', 'Admin', 'User'],
+            `UPDATE users SET email = ? WHERE email = ?`,
+            ['michael@5central.capital', 'admin@5central.capital'],
+            (err) => {
+                if (err) {
+                    console.error('Error updating admin email:', err);
+                } else {
+                    console.log('Admin email updated to michael@5central.capital');
+                }
+            }
+        );
+        
+        // Create or update admin user with new email
+        this.db.run(
+            `INSERT OR REPLACE INTO users (id, email, password_hash, role, first_name, last_name, failed_login_attempts, locked_until) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [adminId, 'michael@5central.capital', hashedPassword, 'admin', 'Michael', 'McElwee', 0, null],
             (err) => {
                 if (err) {
                     console.error('Error creating admin user:', err);
                 } else {
-                    console.log('Default admin user created');
+                    console.log('Admin user created/updated: michael@5central.capital');
                 }
             }
         );
