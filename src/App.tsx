@@ -9,6 +9,8 @@ import Founder from './pages/Founder';
 import Vision from './pages/Vision';
 import Investor from './pages/Investor';
 import InvestorPortal from './pages/InvestorPortal';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
             <Route path="/goals" element={<Vision />} /> {/* Redirect old URL */}
             <Route path="/investor" element={<Investor />} />
             <Route path="/investor-portal" element={<InvestorPortal />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
           </Routes>
         </main>
         <Footer />

@@ -1,0 +1,27 @@
+{
+  "name": "5central-analytics-server",
+  "version": "1.0.0",
+  "description": "Backend server for 5Central Capital analytics dashboard",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "sqlite3": "^5.1.6",
+    "uuid": "^9.0.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": ["analytics", "dashboard", "real-estate", "business-intelligence"],
+  "author": "5Central Capital",
+  "license": "MIT"
+}
