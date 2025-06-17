@@ -39,8 +39,8 @@ const Navigation = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center space-x-2 group">
-            <Building2 className="h-8 w-8 text-primary group-hover:text-primary-light transition-colors duration-200" />
-            <span className="text-xl font-bold text-primary group-hover:text-primary-light transition-colors duration-200">
+            <Building2 className="h-8 w-8 text-primary group-hover:text-blue-700 transition-colors duration-200" />
+            <span className="text-xl font-bold text-primary group-hover:text-blue-700 transition-colors duration-200">
               5Central Capital
             </span>
           </Link>
@@ -65,7 +65,7 @@ const Navigation = () => {
             ))}
             <Link
               to="/investor"
-              className="bg-primary text-white px-6 py-2 rounded-lg font-semibold hover:bg-primary-dark transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
+              className="bg-primary text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
             >
               Invest
             </Link>
@@ -105,7 +105,7 @@ const Navigation = () => {
             <Link
               to="/investor"
               onClick={() => setIsOpen(false)}
-              className="bg-primary text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-dark transition-all duration-200 text-center mt-2"
+              className="bg-primary text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 text-center mt-2"
             >
               Invest
             </Link>
