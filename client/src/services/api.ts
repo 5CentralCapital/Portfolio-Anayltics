@@ -55,7 +55,7 @@ class ApiService {
       
       // Provide more specific error messages
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        return { error: 'Failed to connect to server. Please ensure the backend is running on port 3001.' };
+        return { error: 'Failed to connect to server. Please ensure the backend is running.' };
       }
       
       return { error: error instanceof Error ? error.message : 'Unknown error' };
@@ -127,19 +127,19 @@ class ApiService {
     if (status) params.append('status', status);
     params.append('limit', limit.toString());
     
-    return this.request<any[]>(`/analytics/investor-leads?${params}`);
+    return this.request<any[]>(`/investor-leads?${params}`);
   }
 
   async addMetrics(metrics: {
-    metric_date: string;
+    metricDate: string;
     revenue: number;
     expenses: number;
-    customer_acquisition_cost: number;
-    customer_lifetime_value: number;
-    monthly_recurring_revenue: number;
-    churn_rate: number;
+    customerAcquisitionCost: number;
+    customerLifetimeValue: number;
+    monthlyRecurringRevenue: number;
+    churnRate: number;
   }) {
-    return this.request('/analytics/metrics', {
+    return this.request('/metrics', {
       method: 'POST',
       body: JSON.stringify(metrics),
     });
@@ -147,13 +147,14 @@ class ApiService {
 
   async exportData(type: string, format: string = 'json', startDate?: string, endDate?: string) {
     const params = new URLSearchParams();
+    params.append('type', type);
     params.append('format', format);
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/analytics/export/${type}?${params}`,
+        `${API_BASE_URL}/export?${params}`,
         {
           headers: {
             ...(this.token && { Authorization: `Bearer ${this.token}` }),
