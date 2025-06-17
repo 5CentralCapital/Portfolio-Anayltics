@@ -129,6 +129,21 @@ class Database {
                 annualized_return: 68.8,
                 status: 'active',
                 acquisition_date: '2022-03-20'
+            },
+            {
+                address: '1 Harmony St',
+                city: 'Stonington',
+                state: 'CT',
+                units: 4,
+                acquisition_price: 1075000,
+                rehab_costs: 80000,
+                arv: 1500000,
+                current_value: 1400000,
+                monthly_rent: 8000,
+                cash_on_cash_return: 222.6,
+                annualized_return: 222.6,
+                status: 'active',
+                acquisition_date: '2023-01-10'
             }
         ];
 
@@ -152,6 +167,59 @@ class Database {
                     property.annualized_return,
                     property.status,
                     property.acquisition_date
+                ]
+            );
+        });
+
+        // Sample investor leads
+        const leads = [
+            {
+                email: 'john.investor@email.com',
+                first_name: 'John',
+                last_name: 'Smith',
+                phone: '555-0123',
+                investment_amount: 100000,
+                accredited_status: 1,
+                source: 'Website',
+                status: 'new'
+            },
+            {
+                email: 'sarah.capital@email.com',
+                first_name: 'Sarah',
+                last_name: 'Johnson',
+                phone: '555-0456',
+                investment_amount: 250000,
+                accredited_status: 1,
+                source: 'Referral',
+                status: 'qualified'
+            },
+            {
+                email: 'mike.wealth@email.com',
+                first_name: 'Michael',
+                last_name: 'Brown',
+                phone: '555-0789',
+                investment_amount: 500000,
+                accredited_status: 1,
+                source: 'LinkedIn',
+                status: 'contacted'
+            }
+        ];
+
+        leads.forEach(lead => {
+            this.db.run(
+                `INSERT OR IGNORE INTO investor_leads 
+                 (id, email, first_name, last_name, phone, investment_amount, accredited_status, source, status)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    require('uuid').v4(),
+                    lead.email,
+                    lead.first_name,
+                    lead.last_name,
+                    lead.phone,
+                    lead.investment_amount,
+                    lead.accredited_status,
+                    lead.source,
+                    lead.status
                 ]
             );
         });

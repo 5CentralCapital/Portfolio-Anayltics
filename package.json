@@ -7,10 +7,12 @@
     "dev": "vite",
     "dev:server": "cd server && node app.js",
     "dev:full": "concurrently \"npm run dev\" \"npm run dev:server\"",
+    "start:server": "cd server && npm start",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "cd server && node app.js"
+    "server": "cd server && node app.js",
+    "health": "curl -f http://localhost:3001/health || exit 1"
   },
   "dependencies": {
     "lucide-react": "^0.344.0",

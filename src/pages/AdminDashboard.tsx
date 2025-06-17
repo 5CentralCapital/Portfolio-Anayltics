@@ -70,6 +70,7 @@ const AdminDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [refreshing, setRefreshing] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (!apiService.isAuthenticated()) {
@@ -101,8 +102,10 @@ const AdminDashboard: React.FC = () => {
       setRevenueData(revenueRes.data || []);
       setPropertyData(propertyRes.data || []);
       setInvestorLeads(leadsRes.data || []);
+      setRetryCount(0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+      setRetryCount(prev => prev + 1);
     } finally {
       setLoading(false);
     }
@@ -115,13 +118,20 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    await apiService.logout();
+    try {
+      await apiService.logout();
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
     navigate('/');
   };
 
   const handleExport = async (type: string, format: string = 'csv') => {
     try {
-      await apiService.exportData(type, format);
+      const result = await apiService.exportData(type, format);
+      if (result.error) {
+        setError(`Failed to export ${type} data: ${result.error}`);
+      }
     } catch (err) {
       setError(`Failed to export ${type} data`);
     }

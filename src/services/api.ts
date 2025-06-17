@@ -134,29 +134,38 @@ class ApiService {
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
 
-    const response = await fetch(
-      `${API_BASE_URL}/analytics/export/${type}?${params}`,
-      {
-        headers: {
-          ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        },
-      }
-    );
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/analytics/export/${type}?${params}`,
+        {
+          headers: {
+            ...(this.token && { Authorization: `Bearer ${this.token}` }),
+          },
+        }
+      );
 
-    if (format === 'csv') {
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${type}_export.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      return { data: 'Export downloaded successfully' };
-    } else {
-      const data = await response.json();
-      return { data };
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+
+      if (format === 'csv') {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${type}_export.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        return { data: 'Export downloaded successfully' };
+      } else {
+        const data = await response.json();
+        return { data };
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      return { error: error instanceof Error ? error.message : 'Export failed' };
     }
   }
 

@@ -102,11 +102,22 @@ app.use('/api/*', (req, res) => {
     res.status(404).json({ error: 'API endpoint not found' });
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`API available at: http://localhost:${PORT}/api`);
+    console.log(`Health check at: http://localhost:${PORT}/health`);
 });
 
 // Graceful shutdown
