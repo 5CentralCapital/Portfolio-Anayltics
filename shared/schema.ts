@@ -52,6 +52,7 @@ export const properties = pgTable("properties", {
   address: text("address").notNull(),
   city: text("city").notNull(),
   state: text("state").notNull(),
+  zipCode: text("zip_code"),
   acquisitionDate: date("acquisition_date"),
   acquisitionPrice: decimal("acquisition_price", { precision: 15, scale: 2 }).notNull(),
   rehabCosts: decimal("rehab_costs", { precision: 15, scale: 2 }).default("0"),
