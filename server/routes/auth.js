@@ -2,7 +2,16 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const database = require('../config/database');
-const { generateToken, authenticateToken } = require('../middleware/auth');
+const { 
+    generateToken, 
+    authenticateToken, 
+    trackLoginAttempt,
+    isUserLockedOut,
+    lockUserAccount,
+    resetFailedAttempts,
+    incrementFailedAttempts,
+    MAX_LOGIN_ATTEMPTS
+} = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -10,6 +19,8 @@ const router = express.Router();
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+        const ipAddress = req.ip;
+        const userAgent = req.get('User-Agent');
 
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required' });
@@ -22,18 +33,44 @@ router.post('/login', async (req, res) => {
             async (err, user) => {
                 if (err) {
                     console.error('Database error:', err);
+                    trackLoginAttempt(email, ipAddress, false, userAgent);
                     return res.status(500).json({ error: 'Internal server error' });
                 }
 
                 if (!user) {
+                    trackLoginAttempt(email, ipAddress, false, userAgent);
                     return res.status(401).json({ error: 'Invalid credentials' });
+                }
+
+                // Check if user is locked out
+                if (isUserLockedOut(user)) {
+                    trackLoginAttempt(email, ipAddress, false, userAgent);
+                    return res.status(423).json({ 
+                        error: 'Account temporarily locked due to multiple failed login attempts. Please try again later.' 
+                    });
                 }
 
                 // Verify password
                 const isValidPassword = await bcrypt.compare(password, user.password_hash);
                 if (!isValidPassword) {
+                    trackLoginAttempt(email, ipAddress, false, userAgent);
+                    incrementFailedAttempts(user.id);
+                    
+                    // Check if we should lock the account
+                    const newFailedAttempts = (user.failed_login_attempts || 0) + 1;
+                    if (newFailedAttempts >= MAX_LOGIN_ATTEMPTS) {
+                        lockUserAccount(user.id);
+                        return res.status(423).json({ 
+                            error: 'Account locked due to multiple failed login attempts. Please try again later.' 
+                        });
+                    }
+                    
                     return res.status(401).json({ error: 'Invalid credentials' });
                 }
+
+                // Reset failed attempts on successful login
+                resetFailedAttempts(user.id);
+                trackLoginAttempt(email, ipAddress, true, userAgent);
 
                 // Generate JWT token
                 const token = generateToken(user);
@@ -43,8 +80,8 @@ router.post('/login', async (req, res) => {
                 const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
                 database.getDb().run(
-                    'INSERT INTO sessions (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
-                    [sessionId, user.id, token, expiresAt.toISOString()],
+                    'INSERT INTO sessions (id, user_id, token, expires_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)',
+                    [sessionId, user.id, token, expiresAt.toISOString(), ipAddress, userAgent],
                     (err) => {
                         if (err) {
                             console.error('Session creation error:', err);
@@ -160,6 +197,29 @@ router.post('/change-password', authenticateToken, async (req, res) => {
         );
     } catch (error) {
         console.error('Change password error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Password reset request endpoint (for future implementation)
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+        
+        // In a real implementation, this would:
+        // 1. Generate a secure reset token
+        // 2. Store it in the database with expiration
+        // 3. Send an email with reset link
+        
+        // For demo purposes, just return success
+        res.json({ message: 'Password reset instructions sent to your email' });
+        
+    } catch (error) {
+        console.error('Forgot password error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

@@ -86,10 +86,21 @@ const Footer = () => {
             <p className="text-blue-100 text-center md:text-left">
               © {currentYear} 5Central Capital LLC. All rights reserved.
             </p>
-            <div className="flex space-x-6 text-sm text-blue-100">
-              <span>Professional Real Estate Investment</span>
-              <span>•</span>
-              <span>Tampa, FL</span>
+            <div className="flex items-center space-x-6 text-sm text-blue-100">
+              <div className="flex space-x-6">
+                <span>Professional Real Estate Investment</span>
+                <span>•</span>
+                <span>Tampa, FL</span>
+              </div>
+              <div className="hidden md:block">
+                <a
+                  href="/admin-login"
+                  className="text-blue-200 hover:text-white transition-colors duration-200 text-xs opacity-60 hover:opacity-100"
+                  title="Administrator Access"
+                >
+                  Admin
+                </a>
+              </div>
             </div>
           </div>
         </div>

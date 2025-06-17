@@ -3,6 +3,8 @@ const database = require('../config/database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 const JWT_EXPIRES_IN = '24h';
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutes
 
 // Generate JWT token
 const generateToken = (user) => {
@@ -14,6 +16,59 @@ const generateToken = (user) => {
         },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN }
+    );
+};
+
+// Track login attempts for security
+const trackLoginAttempt = (email, ipAddress, success, userAgent) => {
+    const { v4: uuidv4 } = require('uuid');
+    database.getDb().run(
+        `INSERT INTO login_attempts (id, email, ip_address, success, user_agent)
+         VALUES (?, ?, ?, ?, ?)`,
+        [uuidv4(), email, ipAddress, success, userAgent],
+        (err) => {
+            if (err) console.error('Error tracking login attempt:', err);
+        }
+    );
+};
+
+// Check if user is locked out
+const isUserLockedOut = (user) => {
+    if (!user.locked_until) return false;
+    return new Date(user.locked_until) > new Date();
+};
+
+// Lock user account after failed attempts
+const lockUserAccount = (userId) => {
+    const lockUntil = new Date(Date.now() + LOCKOUT_TIME);
+    database.getDb().run(
+        `UPDATE users SET failed_login_attempts = ?, locked_until = ? WHERE id = ?`,
+        [MAX_LOGIN_ATTEMPTS, lockUntil.toISOString(), userId],
+        (err) => {
+            if (err) console.error('Error locking user account:', err);
+        }
+    );
+};
+
+// Reset failed login attempts on successful login
+const resetFailedAttempts = (userId) => {
+    database.getDb().run(
+        `UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = ?`,
+        [userId],
+        (err) => {
+            if (err) console.error('Error resetting failed attempts:', err);
+        }
+    );
+};
+
+// Increment failed login attempts
+const incrementFailedAttempts = (userId) => {
+    database.getDb().run(
+        `UPDATE users SET failed_login_attempts = failed_login_attempts + 1 WHERE id = ?`,
+        [userId],
+        (err) => {
+            if (err) console.error('Error incrementing failed attempts:', err);
+        }
     );
 };
 
@@ -104,5 +159,11 @@ module.exports = {
     authenticateToken,
     authorizeRole,
     auditLog,
+    trackLoginAttempt,
+    isUserLockedOut,
+    lockUserAccount,
+    resetFailedAttempts,
+    incrementFailedAttempts,
+    MAX_LOGIN_ATTEMPTS,
     JWT_SECRET
 };
