@@ -6,6 +6,10 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
+    "audit": "node scripts/database-audit.js",
+    "fix-duplicates": "node scripts/fix-duplicates.js",
+    "validate-data": "node scripts/data-validation.js",
+    "db-maintenance": "npm run audit && npm run fix-duplicates && npm run validate-data",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
