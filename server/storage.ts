@@ -95,18 +95,18 @@ export class DatabaseStorage implements IStorage {
 
   // Company metrics operations
   async getCompanyMetrics(startDate?: string, endDate?: string): Promise<CompanyMetric[]> {
-    let query = db.select().from(companyMetrics);
-    
     if (startDate && endDate) {
-      query = query.where(
-        and(
-          gte(companyMetrics.metricDate, startDate),
-          lte(companyMetrics.metricDate, endDate)
+      return await db.select().from(companyMetrics)
+        .where(
+          and(
+            gte(companyMetrics.metricDate, startDate),
+            lte(companyMetrics.metricDate, endDate)
+          )
         )
-      );
+        .orderBy(desc(companyMetrics.metricDate));
     }
     
-    return await query.orderBy(desc(companyMetrics.metricDate));
+    return await db.select().from(companyMetrics).orderBy(desc(companyMetrics.metricDate));
   }
 
   async getLatestCompanyMetrics(): Promise<CompanyMetric | undefined> {
@@ -124,13 +124,16 @@ export class DatabaseStorage implements IStorage {
 
   // Investor leads operations
   async getInvestorLeads(status?: string, limit: number = 50): Promise<InvestorLead[]> {
-    let query = db.select().from(investorLeads);
-    
     if (status) {
-      query = query.where(eq(investorLeads.status, status as any));
+      return await db.select().from(investorLeads)
+        .where(eq(investorLeads.status, status as any))
+        .orderBy(desc(investorLeads.createdAt))
+        .limit(limit);
     }
     
-    return await query.orderBy(desc(investorLeads.createdAt)).limit(limit);
+    return await db.select().from(investorLeads)
+      .orderBy(desc(investorLeads.createdAt))
+      .limit(limit);
   }
 
   async createInvestorLead(lead: InsertInvestorLead): Promise<InvestorLead> {

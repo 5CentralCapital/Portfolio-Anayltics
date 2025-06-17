@@ -1,5 +1,5 @@
 // API service for communicating with the backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = '/api';
 
 interface ApiResponse<T> {
   data?: T;
@@ -107,19 +107,19 @@ class ApiService {
 
   // Analytics methods
   async getDashboardData() {
-    return this.request<any>('/analytics/dashboard');
+    return this.request<any>('/dashboard');
   }
 
   async getRevenueTrends(period: string = '12') {
-    return this.request<any[]>(`/analytics/revenue-trends?period=${period}`);
+    return this.request<any[]>(`/revenue-trends?period=${period}`);
   }
 
   async getSalesPerformance(period: string = '30') {
-    return this.request<any[]>(`/analytics/sales-performance?period=${period}`);
+    return this.request<any[]>(`/sales-performance?period=${period}`);
   }
 
   async getPropertyPerformance() {
-    return this.request<any[]>('/analytics/property-performance');
+    return this.request<any[]>('/property-performance');
   }
 
   async getInvestorLeads(status?: string, limit: number = 50) {
