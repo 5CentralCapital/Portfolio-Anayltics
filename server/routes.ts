@@ -61,7 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const latestMetrics = await storage.getLatestCompanyMetrics();
       const investorLeads = await storage.getInvestorLeads();
 
-      // Calculate portfolio statistics with dynamic calculations
+      // Calculate portfolio statistics
       const activeProperties = properties.filter(p => p.status === 'Currently Own');
       const soldProperties = properties.filter(p => p.status === 'Sold');
       
@@ -69,40 +69,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalUnits = properties.reduce((sum, p) => sum + (p.apartments || 0), 0);
       const totalValue = activeProperties.reduce((sum, p) => sum + Number(p.arvAtTimePurchased || p.acquisitionPrice || 0), 0);
       const monthlyRent = activeProperties.reduce((sum, p) => sum + Number(p.cashFlow || 0), 0);
-      
-      // Calculate dynamic average Cash-on-Cash return
       const avgCashOnCash = properties.length > 0 
-        ? properties.reduce((sum, p) => {
-            const initialCapital = Number(p.initialCapitalRequired);
-            const cashFlow = Number(p.cashFlow || 0);
-            const dynamicCOC = initialCapital > 0 ? (cashFlow * 12 / initialCapital) * 100 : 0;
-            return sum + dynamicCOC;
-          }, 0) / properties.length 
+        ? properties.reduce((sum, p) => sum + Number(p.cashOnCashReturn || 0), 0) / properties.length 
         : 0;
-      
-      // Calculate dynamic average annualized return
       const avgAnnualizedReturn = properties.length > 0
-        ? properties.reduce((sum, p) => {
-            const acquisitionPrice = Number(p.acquisitionPrice);
-            const rehabCosts = Number(p.rehabCosts || 0);
-            const totalInvestment = acquisitionPrice + rehabCosts;
-            const cashFlow = Number(p.cashFlow || 0);
-            const yearsHeld = Number(p.yearsHeld || 1);
-            const totalProfits = Number(p.totalProfits || 0);
-            
-            let dynamicAnnualizedReturn = 0;
-            if (p.status === "Sold" && yearsHeld > 0) {
-              const totalReturn = totalProfits + (cashFlow * 12 * yearsHeld);
-              dynamicAnnualizedReturn = (totalReturn / totalInvestment / yearsHeld) * 100;
-            } else if (p.status === "Currently Own" && yearsHeld > 0) {
-              const currentValue = Number(p.arvAtTimePurchased || acquisitionPrice);
-              const unrealizedGains = currentValue - totalInvestment;
-              const totalCashFlow = cashFlow * 12 * yearsHeld;
-              const totalReturn = unrealizedGains + totalCashFlow;
-              dynamicAnnualizedReturn = (totalReturn / totalInvestment / yearsHeld) * 100;
-            }
-            return sum + dynamicAnnualizedReturn;
-          }, 0) / properties.length 
+        ? properties.reduce((sum, p) => sum + Number(p.annualizedReturn || 0), 0) / properties.length 
         : 0;
 
       const dashboardData = {
@@ -165,60 +136,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const properties = await storage.getProperties();
       
-      // Transform properties with dynamic calculations
-      const transformedProperties = properties.map(p => {
-        const acquisitionPrice = Number(p.acquisitionPrice);
-        const rehabCosts = Number(p.rehabCosts || 0);
-        const totalInvestment = acquisitionPrice + rehabCosts;
-        const initialCapital = Number(p.initialCapitalRequired);
-        const cashFlow = Number(p.cashFlow || 0);
-        const yearsHeld = Number(p.yearsHeld || 1);
-        const salePrice = Number(p.salePrice || 0);
-        const totalProfits = Number(p.totalProfits || 0);
-        
-        // Calculate dynamic Cash-on-Cash Return
-        // COC = (Annual Cash Flow / Initial Cash Investment) * 100
-        const dynamicCashOnCash = initialCapital > 0 
-          ? (cashFlow * 12 / initialCapital) * 100 
-          : 0;
-        
-        // Calculate dynamic Annualized Return
-        // For sold properties: ((Total Profits + Annual Cash Flow * Years) / Initial Investment) / Years * 100
-        // For active properties: ((Current Value - Total Investment + Annual Cash Flow * Years) / Initial Investment) / Years * 100
-        let dynamicAnnualizedReturn = 0;
-        if (p.status === "Sold" && yearsHeld > 0) {
-          const totalReturn = totalProfits + (cashFlow * 12 * yearsHeld);
-          dynamicAnnualizedReturn = (totalReturn / totalInvestment / yearsHeld) * 100;
-        } else if (p.status === "Currently Own" && yearsHeld > 0) {
-          const currentValue = Number(p.arvAtTimePurchased || acquisitionPrice);
-          const unrealizedGains = currentValue - totalInvestment;
-          const totalCashFlow = cashFlow * 12 * yearsHeld;
-          const totalReturn = unrealizedGains + totalCashFlow;
-          dynamicAnnualizedReturn = (totalReturn / totalInvestment / yearsHeld) * 100;
-        }
-
-        return {
-          id: p.id.toString(),
-          address: p.address,
-          city: p.city,
-          state: p.state,
-          units: p.apartments,
-          acquisition_price: acquisitionPrice,
-          rehab_costs: rehabCosts,
-          current_value: p.status === "Sold" ? salePrice : Number(p.arvAtTimePurchased || acquisitionPrice),
-          monthly_rent: cashFlow,
-          cash_on_cash_return: Math.round(dynamicCashOnCash * 100) / 100, // Dynamic calculation
-          annualized_return: Math.round(dynamicAnnualizedReturn * 100) / 100, // Dynamic calculation
-          status: p.status === "Currently Own" ? "active" : "sold",
-          equity_created: p.status === "Sold" ? totalProfits : (Number(p.arvAtTimePurchased || acquisitionPrice) - totalInvestment),
-          total_profits: totalProfits,
-          years_held: yearsHeld,
-          initial_capital: initialCapital,
-          rental_yield: cashFlow && acquisitionPrice 
-            ? (cashFlow * 12 / acquisitionPrice) * 100 
-            : 0,
-        };
-      });
+      // Transform properties to match the expected format
+      const transformedProperties = properties.map(p => ({
+        id: p.id.toString(),
+        address: p.address,
+        city: p.city,
+        state: p.state,
+        units: p.apartments,
+        acquisition_price: Number(p.acquisitionPrice),
+        rehab_costs: Number(p.rehabCosts || 0),
+        current_value: p.salePrice ? Number(p.salePrice) : Number(p.arvAtTimePurchased || p.acquisitionPrice),
+        monthly_rent: Number(p.cashFlow || 0),
+        cash_on_cash_return: Number(p.cashOnCashReturn), // Static values from database
+        annualized_return: Number(p.annualizedReturn), // Static values from database
+        status: p.status === "Currently Own" ? "active" : "sold",
+        equity_created: Number(p.totalProfits || 0),
+        total_profits: Number(p.totalProfits || 0),
+        years_held: Number(p.yearsHeld || 1),
+        initial_capital: Number(p.initialCapitalRequired),
+        rental_yield: p.cashFlow && p.acquisitionPrice 
+          ? (Number(p.cashFlow) * 12 / Number(p.acquisitionPrice)) * 100 
+          : 0,
+      }));
 
       res.json(transformedProperties);
     } catch (error) {

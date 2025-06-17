@@ -52,8 +52,8 @@ const PortfolioCards = () => {
     arv: property.current_value,
     cashRentsCollected: property.monthly_rent * 12,
     yearsHeld: property.years_held || 1,
-    cashOnCashReturn: property.cash_on_cash_return, // Now dynamically calculated
-    annualizedReturn: property.annualized_return, // Now dynamically calculated
+    cashOnCashReturn: property.cash_on_cash_return, // Static values from database
+    annualizedReturn: property.annualized_return, // Static values from database
     status: property.status === 'active' ? 'Currently Own' as const : 'Sold' as const
   })) || [];
 
