@@ -183,8 +183,10 @@ export default function DealDemo() {
     // Calculate ARV based on proforma NOI
     const arv = proformaNOI / marketCapRate;
     
-    // Calculate all-in cost
-    const allInCost = purchasePrice + totalRehab + kpis.totalClosingCosts + kpis.totalHoldingCosts;
+    // Calculate all-in cost using available data
+    const closingCosts = kpis.totalClosingCosts || 0;
+    const holdingCosts = kpis.totalHoldingCosts || 0;
+    const allInCost = purchasePrice + totalRehab + closingCosts + holdingCosts;
     
     // Calculate loan metrics
     const purchaseLoanAmount = purchasePrice * ltcPercentage;
@@ -203,7 +205,7 @@ export default function DealDemo() {
     // Calculate cash flow and returns
     const currentCashFlow = currentNOI - (monthlyDebtService * 12);
     const proformaCashFlow = proformaNOI - (monthlyDebtService * 12);
-    const totalCashInvested = downPayment + totalRehab + kpis.totalClosingCosts + kpis.totalHoldingCosts;
+    const totalCashInvested = downPayment + totalRehab + closingCosts + holdingCosts;
     const cashOnCashReturn = proformaCashFlow / totalCashInvested;
     const capRate = proformaNOI / purchasePrice;
     const dscr = proformaNOI / (monthlyDebtService * 12);
@@ -211,6 +213,8 @@ export default function DealDemo() {
     const ltv = purchaseLoanAmount / arv;
     
     const totalProfit = cashOut + proformaCashFlow + (arv - allInCost);
+    const equityMultiple = totalCashInvested > 0 ? (totalProfit + totalCashInvested) / totalCashInvested : 0;
+    const irr = totalCashInvested > 0 ? Math.pow(totalProfit / totalCashInvested + 1, 1/5) - 1 : 0; // 5-year IRR approximation
     
     return {
       // Current performance
@@ -244,6 +248,8 @@ export default function DealDemo() {
       ltc,
       ltv,
       totalProfit,
+      equityMultiple,
+      irr,
       otherMonthlyIncome,
       otherProformaIncome
     };
@@ -1149,27 +1155,12 @@ export default function DealDemo() {
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <h3 className="font-medium text-green-800 mb-2">Current NOI</h3>
-                    <div className="text-2xl font-bold text-green-600">{formatCurrency(kpis.netOperatingIncome / 12)}</div>
+                    <div className="text-2xl font-bold text-green-600">{formatCurrency(realTimeKPIs.currentNOI / 12)}</div>
                     <div className="text-sm text-green-600">Monthly</div>
                   </div>
                   <div>
                     <h3 className="font-medium text-blue-800 mb-2">Proforma NOI</h3>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {formatCurrency(
-                        dealData.units.reduce((sum: number, unit: any) => 
-                          sum + Number(unit.marketRent || 1300), 0
-                        ) + (realTimeKPIs.otherMonthlyIncome * 12 / 12) -
-                        dealData.expenses.reduce((sum: number, expense: any) => {
-                          const proformaRent = dealData.units.reduce((unitSum: number, unit: any) => 
-                            unitSum + Number(unit.marketRent || 1300), 0
-                          );
-                          return sum + (expense.isPercentOfRent 
-                            ? proformaRent * parseFloat(expense.percentage)
-                            : Number(expense.monthlyAmount)
-                          );
-                        }, 0)
-                      )}
-                    </div>
+                    <div className="text-2xl font-bold text-blue-600">{formatCurrency(realTimeKPIs.proformaNOI / 12)}</div>
                     <div className="text-sm text-blue-600">Monthly (at market rents)</div>
                   </div>
                 </div>
@@ -1798,15 +1789,15 @@ export default function DealDemo() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">IRR (5-year)</span>
                   <span className={`font-semibold ${
-                    ((kpis as any)?.irr || 0) > 0.15 ? "text-green-600" : 
-                    ((kpis as any)?.irr || 0) > 0.10 ? "text-yellow-600" : "text-red-600"
+                    (realTimeKPIs.irr || 0) > 0.15 ? "text-green-600" : 
+                    (realTimeKPIs.irr || 0) > 0.10 ? "text-yellow-600" : "text-red-600"
                   }`}>
-                    {formatPercent((kpis as any)?.irr || 0)}
+                    {formatPercent(realTimeKPIs.irr)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Equity Multiple</span>
-                  <span className="font-semibold">{((kpis as any)?.equityMultiple || 0).toFixed(2)}x</span>
+                  <span className="font-semibold">{(realTimeKPIs.equityMultiple || 0).toFixed(2)}x</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Cap Rate</span>
