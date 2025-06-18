@@ -379,7 +379,7 @@ export default function DealDemo() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Purchase Loan</label>
-                    <p className="text-2xl font-bold">{formatCurrency(derivedValues.purchaseLoanAmount)}</p>
+                    <p className="text-2xl font-bold">{formatCurrency(realTimeKPIs.purchaseLoanAmount)}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Total Rehab</label>
@@ -395,11 +395,11 @@ export default function DealDemo() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Refinance Loan</label>
-                    <p className="text-2xl font-bold">{formatCurrency(derivedValues.refinanceLoanAmount)}</p>
+                    <p className="text-2xl font-bold">{formatCurrency(realTimeKPIs.refinanceLoanAmount)}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Cash Out</label>
-                    <p className="text-2xl font-bold text-green-600">{formatCurrency(derivedValues.cashOut)}</p>
+                    <p className="text-2xl font-bold text-green-600">{formatCurrency(realTimeKPIs.cashOut)}</p>
                   </div>
                 </div>
               </div>
@@ -574,11 +574,11 @@ export default function DealDemo() {
                       </div>
                       <div className="bg-gray-50 p-3 rounded">
                         <label className="block text-sm font-medium text-gray-600">Purchase Loan</label>
-                        <p className="text-lg font-bold">{formatCurrency(derivedValues.purchaseLoanAmount)}</p>
+                        <p className="text-lg font-bold">{formatCurrency(realTimeKPIs.purchaseLoanAmount)}</p>
                       </div>
                       <div className="bg-gray-50 p-3 rounded">
                         <label className="block text-sm font-medium text-gray-600">Refinance Loan</label>
-                        <p className="text-lg font-bold">{formatCurrency(derivedValues.refinanceLoanAmount)}</p>
+                        <p className="text-lg font-bold">{formatCurrency(realTimeKPIs.refinanceLoanAmount)}</p>
                       </div>
                       <div className="bg-green-50 p-3 rounded">
                         <label className="block text-sm font-medium text-gray-600">Total Profit</label>
@@ -920,7 +920,7 @@ export default function DealDemo() {
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-sm font-bold text-green-600">
-                            {formatCurrency((kpis.grossRentalIncome + kpis.totalOtherIncome) / 12)}
+                            {formatCurrency((realTimeKPIs.currentGrossRentalIncome + kpis.totalOtherIncome) / 12)}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -1008,7 +1008,7 @@ export default function DealDemo() {
                               <input
                                 type="number"
                                 value={expenseData[index]?.currentAmount || (expense.isPercentOfRent 
-                                  ? (kpis.grossRentalIncome * parseFloat(expense.percentage) / 12).toFixed(0)
+                                  ? (realTimeKPIs.currentGrossRentalIncome * parseFloat(expense.percentage) / 12).toFixed(0)
                                   : Number(expense.monthlyAmount)
                                 )}
                                 onChange={(e) => {
@@ -1023,7 +1023,7 @@ export default function DealDemo() {
                             ) : (
                               <span className="text-sm font-medium">
                                 {formatCurrency(expenseData[index]?.currentAmount || (expense.isPercentOfRent 
-                                  ? (kpis.grossRentalIncome * parseFloat(expense.percentage)) / 12
+                                  ? (realTimeKPIs.currentGrossRentalIncome * parseFloat(expense.percentage)) / 12
                                   : Number(expense.monthlyAmount))
                                 )}
                               </span>
@@ -1195,10 +1195,10 @@ export default function DealDemo() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {Array.from({ length: 12 }, (_, i) => {
-                      const monthlyIncome = (kpis.grossRentalIncome + kpis.totalOtherIncome) / 12;
+                      const monthlyIncome = (realTimeKPIs.currentGrossRentalIncome + kpis.totalOtherIncome) / 12;
                       const monthlyExpenses = kpis.totalOperatingExpenses / 12;
                       const monthlyNOI = kpis.netOperatingIncome / 12;
-                      const monthlyDebtService = kpis.monthlyDebtService;
+                      const monthlyDebtService = realTimeKPIs.monthlyDebtService;
                       const monthlyCashFlow = monthlyNOI - monthlyDebtService;
                       
                       return (
@@ -1488,7 +1488,7 @@ export default function DealDemo() {
                             {editingLoans ? (
                               <input
                                 type="number"
-                                value={loanData.find((l: any) => l.loanType === 'acquisition')?.loanAmount || derivedValues.purchaseLoanAmount}
+                                value={loanData.find((l: any) => l.loanType === 'acquisition')?.loanAmount || realTimeKPIs.purchaseLoanAmount}
                                 onChange={(e) => {
                                   const newData = [...loanData];
                                   const loanIndex = newData.findIndex((l: any) => l.loanType === 'acquisition');
@@ -1502,7 +1502,7 @@ export default function DealDemo() {
                                 className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm font-bold">{formatCurrency(loanData.find((l: any) => l.loanType === 'acquisition')?.loanAmount || derivedValues.purchaseLoanAmount)}</span>
+                              <span className="text-sm font-bold">{formatCurrency(loanData.find((l: any) => l.loanType === 'acquisition')?.loanAmount || realTimeKPIs.purchaseLoanAmount)}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
@@ -1570,7 +1570,7 @@ export default function DealDemo() {
                             )}
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-sm font-medium">{formatCurrency(kpis.monthlyDebtService)}</span>
+                            <span className="text-sm font-medium">{formatCurrency(realTimeKPIs.monthlyDebtService)}</span>
                           </td>
                         </tr>
                       ))}
@@ -1622,7 +1622,7 @@ export default function DealDemo() {
                           {editingLoans ? (
                             <input
                               type="number"
-                              value={loanData.find((l: any) => l.loanType === 'refinance')?.loanAmount || kpis.newLoanAmount}
+                              value={loanData.find((l: any) => l.loanType === 'refinance')?.loanAmount || realTimeKPIs.refinanceLoanAmount}
                               onChange={(e) => {
                                 const newData = [...loanData];
                                 const loanIndex = newData.findIndex((l: any) => l.loanType === 'refinance');
@@ -1636,7 +1636,7 @@ export default function DealDemo() {
                               className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
                             />
                           ) : (
-                            <span className="text-sm font-bold">{formatCurrency(loanData.find((l: any) => l.loanType === 'refinance')?.loanAmount || kpis.newLoanAmount)}</span>
+                            <span className="text-sm font-bold">{formatCurrency(loanData.find((l: any) => l.loanType === 'refinance')?.loanAmount || realTimeKPIs.refinanceLoanAmount)}</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
@@ -1705,7 +1705,7 @@ export default function DealDemo() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-sm font-bold text-green-600">{formatCurrency(kpis.cashOut)}</span>
+                          <span className="text-sm font-bold text-green-600">{formatCurrency(realTimeKPIs.cashOut)}</span>
                         </td>
                       </tr>
                     </tbody>
@@ -1724,22 +1724,22 @@ export default function DealDemo() {
                   </div>
                   <div className="bg-white p-4 rounded shadow-sm">
                     <h3 className="font-medium text-gray-800">Monthly Debt Service</h3>
-                    <p className="text-xl font-bold text-blue-600">{formatCurrency(kpis.monthlyDebtService)}</p>
+                    <p className="text-xl font-bold text-blue-600">{formatCurrency(realTimeKPIs.monthlyDebtService)}</p>
                     <p className="text-sm text-gray-600">Acquisition loan</p>
                   </div>
                   <div className="bg-white p-4 rounded shadow-sm">
                     <h3 className="font-medium text-gray-800">DSCR</h3>
                     <p className={`text-xl font-bold ${
-                      (kpis.dscr || 0) >= 1.25 ? "text-green-600" : 
-                      (kpis.dscr || 0) >= 1.15 ? "text-yellow-600" : "text-red-600"
+                      (realTimeKPIs.dscr || 0) >= 1.25 ? "text-green-600" : 
+                      (realTimeKPIs.dscr || 0) >= 1.15 ? "text-yellow-600" : "text-red-600"
                     }`}>
-                      {(kpis.dscr || 0).toFixed(2)}x
+                      {(realTimeKPIs.dscr || 0).toFixed(2)}x
                     </p>
                     <p className="text-sm text-gray-600">Debt coverage ratio</p>
                   </div>
                   <div className="bg-white p-4 rounded shadow-sm">
                     <h3 className="font-medium text-gray-800">Total Profit</h3>
-                    <p className="text-xl font-bold text-green-600">{formatCurrency(kpis.totalProfit)}</p>
+                    <p className="text-xl font-bold text-green-600">{formatCurrency(realTimeKPIs.totalProfit)}</p>
                     <p className="text-sm text-gray-600">From refinance</p>
                   </div>
                 </div>
@@ -1823,12 +1823,12 @@ export default function DealDemo() {
                   <span className="text-sm text-gray-600">DSCR</span>
                   <div className="flex items-center space-x-2">
                     <span className={`font-semibold ${
-                      (kpis.dscr || 0) >= 1.25 ? "text-green-600" : 
-                      (kpis.dscr || 0) >= 1.15 ? "text-yellow-600" : "text-red-600"
+                      (realTimeKPIs.dscr || 0) >= 1.25 ? "text-green-600" : 
+                      (realTimeKPIs.dscr || 0) >= 1.15 ? "text-yellow-600" : "text-red-600"
                     }`}>
-                      {(kpis.dscr || 0).toFixed(2)}x
+                      {(realTimeKPIs.dscr || 0).toFixed(2)}x
                     </span>
-                    {(kpis.dscr || 0) >= 1.25 ? (
+                    {(realTimeKPIs.dscr || 0) >= 1.25 ? (
                       <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Low Risk</span>
                     ) : (
                       <AlertTriangle className="h-4 w-4 text-yellow-600" />
@@ -1857,23 +1857,23 @@ export default function DealDemo() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">New Loan Amount</span>
                   <span className="font-semibold">
-                    {formatCurrency(kpis.newLoanAmount)}
+                    {formatCurrency(realTimeKPIs.refinanceLoanAmount)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Cash Out</span>
                   <span className={`font-semibold ${
-                    (kpis.cashOut || 0) > 0 ? "text-green-600" : "text-gray-600"
+                    (realTimeKPIs.cashOut || 0) > 0 ? "text-green-600" : "text-gray-600"
                   }`}>
-                    {formatCurrency(kpis.cashOut)}
+                    {formatCurrency(realTimeKPIs.cashOut)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center border-t pt-3">
                   <span className="text-sm font-medium">Total Profit</span>
                   <span className={`text-lg font-bold ${
-                    (kpis.totalProfit || 0) > 0 ? "text-green-600" : "text-red-600"
+                    (realTimeKPIs.totalProfit || 0) > 0 ? "text-green-600" : "text-red-600"
                   }`}>
-                    {formatCurrency(kpis.totalProfit)}
+                    {formatCurrency(realTimeKPIs.totalProfit)}
                   </span>
                 </div>
               </div>
