@@ -23,7 +23,8 @@ export default function DealDemo() {
   const [editingExpenses, setEditingExpenses] = useState(false);
   const [editingRehab, setEditingRehab] = useState(false);
   const [editingLoans, setEditingLoans] = useState(false);
-  const [editingHeader, setEditingHeader] = useState(false);
+  const [editingDealName, setEditingDealName] = useState(false);
+  const [editingAssumptionField, setEditingAssumptionField] = useState<string | null>(null);
   const [assumptions, setAssumptions] = useState<any>({});
   const [rentRollData, setRentRollData] = useState<any[]>([]);
   const [incomeData, setIncomeData] = useState<any[]>([]);
@@ -284,43 +285,34 @@ export default function DealDemo() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          {editingHeader ? (
-            <div className="space-y-2">
+          <div>
+            {editingDealName ? (
               <input
                 type="text"
                 defaultValue={deal.name}
+                onBlur={() => setEditingDealName(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setEditingDealName(false);
+                  }
+                }}
                 className="text-3xl font-bold border-b-2 border-blue-500 bg-transparent outline-none"
                 placeholder="Deal Name"
+                autoFocus
               />
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  defaultValue={deal.address}
-                  className="text-lg text-gray-600 border-b border-gray-300 bg-transparent outline-none"
-                  placeholder="Address"
-                />
-                <input
-                  type="text"
-                  defaultValue={deal.city}
-                  className="text-lg text-gray-600 border-b border-gray-300 bg-transparent outline-none"
-                  placeholder="City"
-                />
-                <input
-                  type="text"
-                  defaultValue={deal.state}
-                  className="text-lg text-gray-600 border-b border-gray-300 bg-transparent outline-none w-16"
-                  placeholder="State"
-                />
-              </div>
-            </div>
-          ) : (
-            <div>
-              <h1 className="text-3xl font-bold">{deal.name}</h1>
-              <p className="text-lg text-gray-600">
-                {deal.address}, {deal.city}, {deal.state}
-              </p>
-            </div>
-          )}
+            ) : (
+              <h1 
+                className="text-3xl font-bold cursor-pointer hover:text-blue-600"
+                onDoubleClick={() => setEditingDealName(true)}
+                title="Double-click to edit"
+              >
+                {deal.name}
+              </h1>
+            )}
+            <p className="text-lg text-gray-600">
+              {deal.address}, {deal.city}, {deal.state}
+            </p>
+          </div>
         </div>
         <div className="flex items-center space-x-2">
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -330,28 +322,6 @@ export default function DealDemo() {
           }`}>
             {deal.status}
           </span>
-          <button
-            onClick={() => setEditingHeader(!editingHeader)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2 ${
-              editingHeader 
-                ? 'bg-green-600 text-white hover:bg-green-700' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            <Edit className="h-4 w-4" />
-            <span>{editingHeader ? 'Save Header' : 'Edit Header'}</span>
-          </button>
-          <button
-            onClick={() => setEditingAssumptions(!editingAssumptions)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2 ${
-              editingAssumptions 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            <Edit className="h-4 w-4" />
-            <span>{editingAssumptions ? 'Save Changes' : 'Edit Assumptions'}</span>
-          </button>
         </div>
       </div>
 
@@ -390,7 +360,29 @@ export default function DealDemo() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                   <div>
                     <label className="text-sm font-medium text-gray-600">Purchase Price</label>
-                    <p className="text-2xl font-bold">{formatCurrency(assumptions.purchasePrice || Number(deal.purchasePrice))}</p>
+                    {editingAssumptionField === 'purchasePrice' ? (
+                      <input
+                        type="number"
+                        value={assumptions.purchasePrice || Number(deal.purchasePrice)}
+                        onChange={(e) => updateAssumption('purchasePrice', e.target.value)}
+                        onBlur={() => setEditingAssumptionField(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setEditingAssumptionField(null);
+                          }
+                        }}
+                        className="text-2xl font-bold border-b-2 border-blue-500 bg-transparent outline-none w-full"
+                        autoFocus
+                      />
+                    ) : (
+                      <p 
+                        className="text-2xl font-bold cursor-pointer hover:text-blue-600"
+                        onDoubleClick={() => setEditingAssumptionField('purchasePrice')}
+                        title="Double-click to edit"
+                      >
+                        {formatCurrency(assumptions.purchasePrice || Number(deal.purchasePrice))}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Down Payment</label>
