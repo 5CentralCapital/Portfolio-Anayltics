@@ -85,6 +85,140 @@ export const investorLeads = pgTable("investor_leads", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Deal analysis tables for comprehensive property underwriting
+export const deals = pgTable("deals", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  zipCode: text("zip_code"),
+  units: integer("units").notNull(),
+  status: text("status", { enum: ["underwriting", "active", "closed", "archived"] }).default("underwriting"),
+  
+  // Acquisition details
+  purchasePrice: decimal("purchase_price", { precision: 15, scale: 2 }).notNull(),
+  marketCapRate: decimal("market_cap_rate", { precision: 5, scale: 4 }).notNull(),
+  exitCapRate: decimal("exit_cap_rate", { precision: 5, scale: 4 }),
+  
+  // Operating assumptions
+  vacancyRate: decimal("vacancy_rate", { precision: 5, scale: 4 }).default("0.05"),
+  badDebtRate: decimal("bad_debt_rate", { precision: 5, scale: 4 }).default("0.02"),
+  annualRentGrowth: decimal("annual_rent_growth", { precision: 5, scale: 4 }).default("0.03"),
+  annualExpenseInflation: decimal("annual_expense_inflation", { precision: 5, scale: 4 }).default("0.03"),
+  
+  // Reserves
+  capexReservePerUnit: decimal("capex_reserve_per_unit", { precision: 10, scale: 2 }).default("500"),
+  operatingReserveMonths: integer("operating_reserve_months").default(6),
+  
+  // Timeline
+  startToStabilizationMonths: integer("start_to_stabilization_months").default(12),
+  projectedRefiMonth: integer("projected_refi_month").default(24),
+  
+  // Team
+  assignedPM: text("assigned_pm"),
+  assignedGC: text("assigned_gc"),
+  underwritingOwner: text("underwriting_owner"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const dealRehab = pgTable("deal_rehab", {
+  id: serial("id").primaryKey(),
+  dealId: integer("deal_id").notNull().references(() => deals.id, { onDelete: "cascade" }),
+  category: text("category").notNull(), // "flooring", "kitchen", "bath", etc.
+  description: text("description").notNull(),
+  costPerUnit: decimal("cost_per_unit", { precision: 10, scale: 2 }),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull(),
+  bidStatus: text("bid_status", { enum: ["estimated", "bid_received", "contracted"] }).default("estimated"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const dealUnits = pgTable("deal_units", {
+  id: serial("id").primaryKey(),
+  dealId: integer("deal_id").notNull().references(() => deals.id, { onDelete: "cascade" }),
+  unitNumber: text("unit_number").notNull(),
+  bedrooms: integer("bedrooms").notNull(),
+  bathrooms: decimal("bathrooms", { precision: 3, scale: 1 }).notNull(),
+  sqft: integer("sqft"),
+  currentRent: decimal("current_rent", { precision: 10, scale: 2 }).default("0"),
+  marketRent: decimal("market_rent", { precision: 10, scale: 2 }).notNull(),
+  isOccupied: boolean("is_occupied").default(false),
+  leaseExpiry: date("lease_expiry"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const dealExpenses = pgTable("deal_expenses", {
+  id: serial("id").primaryKey(),
+  dealId: integer("deal_id").notNull().references(() => deals.id, { onDelete: "cascade" }),
+  category: text("category").notNull(), // "management", "maintenance", "insurance", etc.
+  description: text("description").notNull(),
+  monthlyAmount: decimal("monthly_amount", { precision: 10, scale: 2 }).notNull(),
+  isPercentOfRent: boolean("is_percent_of_rent").default(false),
+  percentage: decimal("percentage", { precision: 5, scale: 4 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const dealClosingCosts = pgTable("deal_closing_costs", {
+  id: serial("id").primaryKey(),
+  dealId: integer("deal_id").notNull().references(() => deals.id, { onDelete: "cascade" }),
+  category: text("category").notNull(), // "title", "inspection", "legal", etc.
+  description: text("description").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const dealHoldingCosts = pgTable("deal_holding_costs", {
+  id: serial("id").primaryKey(),
+  dealId: integer("deal_id").notNull().references(() => deals.id, { onDelete: "cascade" }),
+  category: text("category").notNull(), // "insurance", "utilities", "security", etc.
+  description: text("description").notNull(),
+  monthlyAmount: decimal("monthly_amount", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const dealLoans = pgTable("deal_loans", {
+  id: serial("id").primaryKey(),
+  dealId: integer("deal_id").notNull().references(() => deals.id, { onDelete: "cascade" }),
+  loanType: text("loan_type", { enum: ["acquisition", "refinance", "construction"] }).notNull(),
+  loanAmount: decimal("loan_amount", { precision: 15, scale: 2 }).notNull(),
+  interestRate: decimal("interest_rate", { precision: 5, scale: 4 }).notNull(),
+  termYears: integer("term_years").notNull(),
+  amortizationYears: integer("amortization_years").notNull(),
+  ioMonths: integer("io_months").default(0),
+  ltcPercent: decimal("ltc_percent", { precision: 5, scale: 4 }),
+  ltvPercent: decimal("ltv_percent", { precision: 5, scale: 4 }),
+  points: decimal("points", { precision: 5, scale: 4 }).default("0"),
+  lenderFees: decimal("lender_fees", { precision: 10, scale: 2 }).default("0"),
+  appraisalCost: decimal("appraisal_cost", { precision: 10, scale: 2 }).default("0"),
+  legalCost: decimal("legal_cost", { precision: 10, scale: 2 }).default("0"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const dealOtherIncome = pgTable("deal_other_income", {
+  id: serial("id").primaryKey(),
+  dealId: integer("deal_id").notNull().references(() => deals.id, { onDelete: "cascade" }),
+  category: text("category").notNull(), // "laundry", "parking", "rubs", etc.
+  description: text("description").notNull(),
+  monthlyAmount: decimal("monthly_amount", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const dealComps = pgTable("deal_comps", {
+  id: serial("id").primaryKey(),
+  dealId: integer("deal_id").notNull().references(() => deals.id, { onDelete: "cascade" }),
+  type: text("type", { enum: ["sale", "rent"] }).notNull(),
+  address: text("address").notNull(),
+  units: integer("units"),
+  pricePerUnit: decimal("price_per_unit", { precision: 10, scale: 2 }),
+  capRate: decimal("cap_rate", { precision: 5, scale: 4 }),
+  rentPerSqft: decimal("rent_per_sqft", { precision: 10, scale: 2 }),
+  distance: decimal("distance", { precision: 5, scale: 2 }), // miles
+  adjustments: text("adjustments"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -112,6 +246,52 @@ export const insertInvestorLeadSchema = createInsertSchema(investorLeads).omit({
   updatedAt: true,
 });
 
+export const insertDealSchema = createInsertSchema(deals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDealRehabSchema = createInsertSchema(dealRehab).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDealUnitsSchema = createInsertSchema(dealUnits).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDealExpensesSchema = createInsertSchema(dealExpenses).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDealClosingCostsSchema = createInsertSchema(dealClosingCosts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDealHoldingCostsSchema = createInsertSchema(dealHoldingCosts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDealLoansSchema = createInsertSchema(dealLoans).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDealOtherIncomeSchema = createInsertSchema(dealOtherIncome).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDealCompsSchema = createInsertSchema(dealComps).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -121,3 +301,23 @@ export type CompanyMetric = typeof companyMetrics.$inferSelect;
 export type InsertCompanyMetric = z.infer<typeof insertCompanyMetricSchema>;
 export type InvestorLead = typeof investorLeads.$inferSelect;
 export type InsertInvestorLead = z.infer<typeof insertInvestorLeadSchema>;
+
+// Deal analysis types
+export type Deal = typeof deals.$inferSelect;
+export type InsertDeal = z.infer<typeof insertDealSchema>;
+export type DealRehab = typeof dealRehab.$inferSelect;
+export type InsertDealRehab = z.infer<typeof insertDealRehabSchema>;
+export type DealUnits = typeof dealUnits.$inferSelect;
+export type InsertDealUnits = z.infer<typeof insertDealUnitsSchema>;
+export type DealExpenses = typeof dealExpenses.$inferSelect;
+export type InsertDealExpenses = z.infer<typeof insertDealExpensesSchema>;
+export type DealClosingCosts = typeof dealClosingCosts.$inferSelect;
+export type InsertDealClosingCosts = z.infer<typeof insertDealClosingCostsSchema>;
+export type DealHoldingCosts = typeof dealHoldingCosts.$inferSelect;
+export type InsertDealHoldingCosts = z.infer<typeof insertDealHoldingCostsSchema>;
+export type DealLoans = typeof dealLoans.$inferSelect;
+export type InsertDealLoans = z.infer<typeof insertDealLoansSchema>;
+export type DealOtherIncome = typeof dealOtherIncome.$inferSelect;
+export type InsertDealOtherIncome = z.infer<typeof insertDealOtherIncomeSchema>;
+export type DealComps = typeof dealComps.$inferSelect;
+export type InsertDealComps = z.infer<typeof insertDealCompsSchema>;
