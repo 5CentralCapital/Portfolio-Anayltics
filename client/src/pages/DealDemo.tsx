@@ -2233,7 +2233,53 @@ export default function DealDemo() {
             </div>
           )}
         </div>
+
+        {/* KPI Panel */}
+        <div className="col-span-4">
+          <div className="bg-white border border-gray-200 rounded-lg p-6 sticky top-6">
+            <h2 className="text-lg font-semibold mb-4">Real-Time KPIs</h2>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Cash Flow</span>
+                <span className={`text-lg font-bold ${
+                  (realTimeKPIs.currentCashFlow || 0) > 0 ? "text-green-600" : "text-red-600"
+                }`}>
+                  {formatCurrency(realTimeKPIs.currentCashFlow)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Cap Rate</span>
+                <span className="text-lg font-bold text-blue-600">
+                  {((realTimeKPIs.capRate || 0) * 100).toFixed(2)}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Cash-on-Cash</span>
+                <span className="text-lg font-bold text-blue-600">
+                  {((realTimeKPIs.cashOnCashReturn || 0) * 100).toFixed(2)}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">DSCR</span>
+                <span className={`text-lg font-bold ${
+                  (realTimeKPIs.dscr || 0) >= 1.25 ? "text-green-600" : "text-red-600"
+                }`}>
+                  {(realTimeKPIs.dscr || 0).toFixed(2)}x
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Total Profit</span>
+                <span className={`text-lg font-bold ${
+                  (realTimeKPIs.totalProfit || 0) > 0 ? "text-green-600" : "text-red-600"
+                }`}>
+                  {formatCurrency(realTimeKPIs.totalProfit)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+    </div>
 
       {/* Save Deal Modal */}
       {showSaveModal && (
