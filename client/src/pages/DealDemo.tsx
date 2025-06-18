@@ -124,15 +124,15 @@ export default function DealDemo() {
 
   // Calculate real-time KPIs based on current data
   const calculateRealTimeKPIs = () => {
-    const purchasePrice = assumptions.purchasePrice || Number(deal.purchasePrice);
-    const ltcPercentage = assumptions.ltcPercentage || 0.80;
-    const refinanceLTV = assumptions.refinanceLTV || 0.75;
-    const marketCapRate = assumptions.marketCapRate || Number(deal.marketCapRate);
-    const vacancyRate = assumptions.vacancyRate || Number(deal.vacancyRate);
-    const badDebtRate = assumptions.badDebtRate || Number(deal.badDebtRate);
+    const purchasePrice = Number(assumptions.purchasePrice) || Number(deal.purchasePrice) || 0;
+    const ltcPercentage = Number(assumptions.ltcPercentage) || 0.80;
+    const refinanceLTV = Number(assumptions.refinanceLTV) || 0.75;
+    const marketCapRate = Number(assumptions.marketCapRate) || Number(deal.marketCapRate) || 0.06;
+    const vacancyRate = Number(assumptions.vacancyRate) || Number(deal.vacancyRate) || 0.05;
+    const badDebtRate = Number(assumptions.badDebtRate) || Number(deal.badDebtRate) || 0.02;
     
     // Calculate rent roll totals from current data
-    const currentRentRoll = rentRollData.length > 0 ? rentRollData : units;
+    const currentRentRoll = rentRollData.length > 0 ? rentRollData : (units || []);
     const currentMonthlyRent = currentRentRoll.reduce((sum: number, unit: any) => 
       sum + (unit.isOccupied ? Number(unit.currentRent || 0) : 0), 0
     );
@@ -141,7 +141,7 @@ export default function DealDemo() {
     );
     
     // Calculate income from current data
-    const currentIncomeData = incomeData.length > 0 ? incomeData : otherIncome;
+    const currentIncomeData = incomeData.length > 0 ? incomeData : (otherIncome || []);
     const otherMonthlyIncome = currentIncomeData.reduce((sum: number, income: any) => 
       sum + Number(income.monthlyAmount || 0), 0
     );
@@ -150,7 +150,7 @@ export default function DealDemo() {
     );
     
     // Calculate expenses from current data
-    const currentExpenseData = expenseData.length > 0 ? expenseData : expenses;
+    const currentExpenseData = expenseData.length > 0 ? expenseData : (expenses || []);
     const currentMonthlyExpenses = currentExpenseData.reduce((sum: number, expense: any) => {
       if (expense.isPercentOfRent) {
         return sum + (currentMonthlyRent * parseFloat(expense.percentage || 0));
@@ -165,7 +165,7 @@ export default function DealDemo() {
     }, 0);
     
     // Calculate rehab total from current data
-    const currentRehabData = rehabData.length > 0 ? rehabData : rehabItems;
+    const currentRehabData = rehabData.length > 0 ? rehabData : (rehabItems || []);
     const totalRehab = currentRehabData.reduce((sum: number, item: any) => 
       sum + Number(item.totalCost || 0), 0
     );
@@ -191,7 +191,7 @@ export default function DealDemo() {
     const allInCost = purchasePrice + totalRehab + closingCosts + holdingCosts;
     
     // Get dynamic loan data
-    const currentLoanData = loanData.length > 0 ? loanData : loans;
+    const currentLoanData = loanData.length > 0 ? loanData : (loans || []);
     const acquisitionLoan = currentLoanData.find((l: any) => l.loanType === 'acquisition') || currentLoanData[0];
     const refinanceLoan = currentLoanData.find((l: any) => l.loanType === 'refinance');
     
@@ -290,10 +290,29 @@ export default function DealDemo() {
             {editingDealName ? (
               <input
                 type="text"
-                defaultValue={deal.name}
-                onBlur={() => setEditingDealName(false)}
+                value={editingDealNameValue}
+                onChange={(e) => setEditingDealNameValue(e.target.value)}
+                onBlur={() => {
+                  // Save the deal name change
+                  if (editingDealNameValue.trim()) {
+                    setDealData(prev => ({
+                      ...prev,
+                      deal: { ...prev.deal, name: editingDealNameValue }
+                    }));
+                  }
+                  setEditingDealName(false);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
+                    if (editingDealNameValue.trim()) {
+                      setDealData(prev => ({
+                        ...prev,
+                        deal: { ...prev.deal, name: editingDealNameValue }
+                      }));
+                    }
+                    setEditingDealName(false);
+                  }
+                  if (e.key === 'Escape') {
                     setEditingDealName(false);
                   }
                 }}
@@ -304,7 +323,10 @@ export default function DealDemo() {
             ) : (
               <h1 
                 className="text-3xl font-bold cursor-pointer hover:text-blue-600"
-                onDoubleClick={() => setEditingDealName(true)}
+                onDoubleClick={() => {
+                  setEditingDealNameValue(deal.name);
+                  setEditingDealName(true);
+                }}
                 title="Double-click to edit"
               >
                 {deal.name}
