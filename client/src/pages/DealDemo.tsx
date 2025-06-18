@@ -43,13 +43,14 @@ export default function DealDemo() {
   const [loanData, setLoanData] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchDeal = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/deals/1');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        // Fetch deal data
+        const dealResponse = await fetch('/api/deals/1');
+        if (!dealResponse.ok) {
+          throw new Error(`HTTP error! status: ${dealResponse.status}`);
         }
-        const data = await response.json();
+        const data = await dealResponse.json();
         setDealData(data);
         
         // Initialize assumptions with deal data
@@ -75,6 +76,13 @@ export default function DealDemo() {
         setExpenseData(data.expenses || []);
         setRehabData(data.rehabItems || []);
         setLoanData(data.loans || []);
+
+        // Fetch saved deals
+        const savedResponse = await fetch('/api/saved-deals');
+        if (savedResponse.ok) {
+          const savedDealsData = await savedResponse.json();
+          setSavedDeals(savedDealsData);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load deal');
       } finally {
@@ -82,7 +90,7 @@ export default function DealDemo() {
       }
     };
 
-    fetchDeal();
+    fetchData();
   }, []);
 
   const formatCurrency = (value: number) => {
@@ -130,6 +138,106 @@ export default function DealDemo() {
       ...prev,
       [key]: isNaN(numValue) ? 0 : numValue
     }));
+  };
+
+  // Save deal functionality
+  const saveDeal = async () => {
+    if (!saveModalName.trim()) return;
+    
+    try {
+      const currentState = {
+        name: saveModalName,
+        description: saveModalDescription,
+        originalDealId: dealData.deal.id,
+        assumptions: JSON.stringify(assumptions),
+        rentRollData: JSON.stringify(rentRollData),
+        incomeData: JSON.stringify(incomeData),
+        expenseData: JSON.stringify(expenseData),
+        rehabData: JSON.stringify(rehabData),
+        loanData: JSON.stringify(loanData),
+        calculatedKpis: JSON.stringify(realTimeKPIs)
+      };
+
+      const response = await fetch('/api/saved-deals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentState)
+      });
+
+      if (response.ok) {
+        const newSavedDeal = await response.json();
+        setSavedDeals(prev => [newSavedDeal, ...prev]);
+        setShowSaveModal(false);
+        setSaveModalName('');
+        setSaveModalDescription('');
+      }
+    } catch (error) {
+      console.error('Error saving deal:', error);
+    }
+  };
+
+  // Load deal functionality
+  const loadSavedDeal = async (savedDealId: number) => {
+    try {
+      const response = await fetch(`/api/saved-deals/${savedDealId}`);
+      if (response.ok) {
+        const savedDeal = await response.json();
+        
+        // Restore all data from saved state
+        setAssumptions(JSON.parse(savedDeal.assumptions));
+        setRentRollData(JSON.parse(savedDeal.rentRollData || '[]'));
+        setIncomeData(JSON.parse(savedDeal.incomeData || '[]'));
+        setExpenseData(JSON.parse(savedDeal.expenseData || '[]'));
+        setRehabData(JSON.parse(savedDeal.rehabData || '[]'));
+        setLoanData(JSON.parse(savedDeal.loanData || '[]'));
+        
+        // Switch to overview tab
+        setActiveTab('overview');
+      }
+    } catch (error) {
+      console.error('Error loading saved deal:', error);
+    }
+  };
+
+  // Export deal functionality
+  const exportDeal = (savedDeal: any) => {
+    const exportData = {
+      name: savedDeal.name,
+      description: savedDeal.description,
+      createdAt: savedDeal.createdAt,
+      assumptions: JSON.parse(savedDeal.assumptions),
+      rentRollData: JSON.parse(savedDeal.rentRollData || '[]'),
+      incomeData: JSON.parse(savedDeal.incomeData || '[]'),
+      expenseData: JSON.parse(savedDeal.expenseData || '[]'),
+      rehabData: JSON.parse(savedDeal.rehabData || '[]'),
+      loanData: JSON.parse(savedDeal.loanData || '[]'),
+      calculatedKpis: JSON.parse(savedDeal.calculatedKpis || '{}')
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${savedDeal.name.replace(/[^a-z0-9]/gi, '_')}_deal_export.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Delete saved deal
+  const deleteSavedDeal = async (savedDealId: number) => {
+    try {
+      const response = await fetch(`/api/saved-deals/${savedDealId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        setSavedDeals(prev => prev.filter(deal => deal.id !== savedDealId));
+      }
+    } catch (error) {
+      console.error('Error deleting saved deal:', error);
+    }
   };
 
   // Calculate real-time KPIs based on current data
@@ -289,7 +397,8 @@ export default function DealDemo() {
     { id: 'income', label: 'Income & Expense', icon: DollarSign },
     { id: 'proforma', label: '12 Month Proforma', icon: Calendar },
     { id: 'rehab', label: 'Rehab Budget', icon: Wrench },
-    { id: 'loans', label: 'Loans', icon: Calculator }
+    { id: 'loans', label: 'Loans', icon: Calculator },
+    { id: 'saved', label: 'Saved Deals', icon: Archive }
   ];
 
   return (
@@ -356,6 +465,13 @@ export default function DealDemo() {
           }`}>
             {deal.status}
           </span>
+          <button
+            onClick={() => setShowSaveModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+          >
+            <Save className="h-4 w-4" />
+            <span>Save Deal</span>
+          </button>
         </div>
       </div>
 
@@ -2022,9 +2138,160 @@ export default function DealDemo() {
                 </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Saved Deals Tab */}
+          {activeTab === 'saved' && (
+            <div className="space-y-6">
+              {/* Saved Deals List */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Saved Deals</h2>
+                  <div className="text-sm text-gray-600">
+                    {savedDeals.length} saved deal{savedDeals.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                
+                {savedDeals.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Archive className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                    <p>No saved deals yet</p>
+                    <p className="text-sm">Click "Save Deal" to save your current analysis</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Group saved deals by property name */}
+                    {Object.entries(
+                      savedDeals.reduce((groups: any, deal: any) => {
+                        const propertyName = deal.name.split(' - ')[0] || deal.name;
+                        if (!groups[propertyName]) groups[propertyName] = [];
+                        groups[propertyName].push(deal);
+                        return groups;
+                      }, {})
+                    ).map(([propertyName, deals]: [string, any]) => (
+                      <div key={propertyName} className="border border-gray-200 rounded-lg p-4">
+                        <h3 className="font-medium text-gray-900 mb-3">{propertyName}</h3>
+                        <div className="space-y-2">
+                          {(deals as any[]).map((deal: any) => (
+                            <div
+                              key={deal.id}
+                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-3">
+                                  <div>
+                                    <p className="font-medium text-gray-900">{deal.name}</p>
+                                    {deal.description && (
+                                      <p className="text-sm text-gray-600">{deal.description}</p>
+                                    )}
+                                    <p className="text-xs text-gray-500">
+                                      Saved {new Date(deal.createdAt).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => loadSavedDeal(deal.id)}
+                                  className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm flex items-center space-x-1"
+                                >
+                                  <Upload className="h-3 w-3" />
+                                  <span>Load</span>
+                                </button>
+                                
+                                <button
+                                  onClick={() => exportDeal(deal)}
+                                  className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm flex items-center space-x-1"
+                                >
+                                  <Download className="h-3 w-3" />
+                                  <span>Export</span>
+                                </button>
+                                
+                                <button
+                                  onClick={() => deleteSavedDeal(deal.id)}
+                                  className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm flex items-center space-x-1"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                  <span>Delete</span>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Save Deal Modal */}
+      {showSaveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold mb-4">Save Current Deal Analysis</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Deal Name *
+                </label>
+                <input
+                  type="text"
+                  value={saveModalName}
+                  onChange={(e) => setSaveModalName(e.target.value)}
+                  placeholder="e.g., Maple Street Apartments - High Cap Rate Scenario"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={saveModalDescription}
+                  onChange={(e) => setSaveModalDescription(e.target.value)}
+                  placeholder="Brief description of this analysis scenario..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowSaveModal(false);
+                  setSaveModalName('');
+                  setSaveModalDescription('');
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveDeal}
+                disabled={!saveModalName.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                <Save className="h-4 w-4" />
+                <span>Save Deal</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
