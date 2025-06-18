@@ -17,14 +17,15 @@ export default function DealDemo() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
-  const [editingAssumptions, setEditingAssumptions] = useState(false);
+
   const [editingRentRoll, setEditingRentRoll] = useState(false);
   const [editingIncome, setEditingIncome] = useState(false);
   const [editingExpenses, setEditingExpenses] = useState(false);
   const [editingRehab, setEditingRehab] = useState(false);
   const [editingLoans, setEditingLoans] = useState(false);
-  const [editingDealName, setEditingDealName] = useState(false);
   const [editingAssumptionField, setEditingAssumptionField] = useState<string | null>(null);
+  const [editingDealName, setEditingDealName] = useState(false);
+  const [editingDealNameValue, setEditingDealNameValue] = useState('');
   const [assumptions, setAssumptions] = useState<any>({});
   const [rentRollData, setRentRollData] = useState<any[]>([]);
   const [incomeData, setIncomeData] = useState<any[]>([]);
@@ -452,8 +453,122 @@ export default function DealDemo() {
                 </div>
               </div>
 
-              {/* Editable Assumptions */}
-              {editingAssumptions && (
+              {/* Operating Assumptions */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h2 className="text-lg font-semibold mb-4">Operating Assumptions</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Unit Count</label>
+                    {editingAssumptionField === 'units' ? (
+                      <input
+                        type="number"
+                        value={assumptions.units || deal.units}
+                        onChange={(e) => updateAssumption('units', e.target.value)}
+                        onBlur={() => setEditingAssumptionField(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setEditingAssumptionField(null);
+                          }
+                        }}
+                        className="text-2xl font-bold border-b-2 border-blue-500 bg-transparent outline-none w-full"
+                        autoFocus
+                      />
+                    ) : (
+                      <p 
+                        className="text-2xl font-bold cursor-pointer hover:text-blue-600"
+                        onDoubleClick={() => setEditingAssumptionField('units')}
+                        title="Double-click to edit"
+                      >
+                        {assumptions.units || deal.units}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Market Cap Rate</label>
+                    {editingAssumptionField === 'marketCapRate' ? (
+                      <input
+                        type="number"
+                        step="0.001"
+                        value={(assumptions.marketCapRate * 100).toFixed(3)}
+                        onChange={(e) => updateAssumption('marketCapRate', (parseFloat(e.target.value) / 100).toString())}
+                        onBlur={() => setEditingAssumptionField(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setEditingAssumptionField(null);
+                          }
+                        }}
+                        className="text-2xl font-bold border-b-2 border-blue-500 bg-transparent outline-none w-full"
+                        autoFocus
+                      />
+                    ) : (
+                      <p 
+                        className="text-2xl font-bold cursor-pointer hover:text-blue-600"
+                        onDoubleClick={() => setEditingAssumptionField('marketCapRate')}
+                        title="Double-click to edit"
+                      >
+                        {formatPercent(assumptions.marketCapRate || deal.marketCapRate)}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Vacancy Rate</label>
+                    {editingAssumptionField === 'vacancyRate' ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={(assumptions.vacancyRate * 100).toFixed(1)}
+                        onChange={(e) => updateAssumption('vacancyRate', (parseFloat(e.target.value) / 100).toString())}
+                        onBlur={() => setEditingAssumptionField(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setEditingAssumptionField(null);
+                          }
+                        }}
+                        className="text-2xl font-bold border-b-2 border-blue-500 bg-transparent outline-none w-full"
+                        autoFocus
+                      />
+                    ) : (
+                      <p 
+                        className="text-2xl font-bold cursor-pointer hover:text-blue-600"
+                        onDoubleClick={() => setEditingAssumptionField('vacancyRate')}
+                        title="Double-click to edit"
+                      >
+                        {formatPercent(assumptions.vacancyRate || deal.vacancyRate)}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">LTC Percentage</label>
+                    {editingAssumptionField === 'ltcPercentage' ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={(assumptions.ltcPercentage * 100).toFixed(1)}
+                        onChange={(e) => updateAssumption('ltcPercentage', (parseFloat(e.target.value) / 100).toString())}
+                        onBlur={() => setEditingAssumptionField(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setEditingAssumptionField(null);
+                          }
+                        }}
+                        className="text-2xl font-bold border-b-2 border-blue-500 bg-transparent outline-none w-full"
+                        autoFocus
+                      />
+                    ) : (
+                      <p 
+                        className="text-2xl font-bold cursor-pointer hover:text-blue-600"
+                        onDoubleClick={() => setEditingAssumptionField('ltcPercentage')}
+                        title="Double-click to edit"
+                      >
+                        {formatPercent(assumptions.ltcPercentage || 0.80)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Old Editable Assumptions - Remove this section */}
+              {false && (
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-lg font-semibold mb-4">Investment Assumptions</h2>
                   
