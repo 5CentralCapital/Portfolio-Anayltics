@@ -1,8 +1,37 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema } from "@shared/schema";
+import { kpiService } from "./kpi.service";
+import { 
+  insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
+  insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
+  insertDealClosingCostsSchema, insertDealHoldingCostsSchema, insertDealLoansSchema,
+  insertDealOtherIncomeSchema, insertDealCompsSchema
+} from "@shared/schema";
 import { z } from "zod";
+
+// WebSocket connections for real-time KPI updates
+const dealConnections = new Map<number, Set<WebSocket>>();
+
+// Helper function to broadcast KPI updates
+async function broadcastKPIUpdate(dealId: number) {
+  const connections = dealConnections.get(dealId);
+  if (!connections || connections.size === 0) return;
+
+  try {
+    const kpis = await kpiService.calculateKPIs(dealId);
+    const message = JSON.stringify({ type: 'kpi_update', dealId, kpis });
+    
+    connections.forEach(ws => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(message);
+      }
+    });
+  } catch (error) {
+    console.error('Error broadcasting KPI update:', error);
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
@@ -280,6 +309,196 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Deal Analysis Routes
+  
+  // Get all deals
+  app.get("/api/deals", async (req, res) => {
+    try {
+      const deals = await storage.getDeals();
+      res.json(deals);
+    } catch (error) {
+      console.error("Get deals error:", error);
+      res.status(500).json({ error: "Failed to fetch deals" });
+    }
+  });
+
+  // Get single deal with KPIs
+  app.get("/api/deals/:id", async (req, res) => {
+    try {
+      const dealId = parseInt(req.params.id);
+      const deal = await storage.getDeal(dealId);
+      
+      if (!deal) {
+        return res.status(404).json({ error: "Deal not found" });
+      }
+
+      const kpis = await kpiService.calculateKPIs(dealId);
+      
+      // Get all related data
+      const [rehabItems, units, expenses, closingCosts, holdingCosts, loans, otherIncome, comps] = await Promise.all([
+        storage.getDealRehab(dealId),
+        storage.getDealUnits(dealId),
+        storage.getDealExpenses(dealId),
+        storage.getDealClosingCosts(dealId),
+        storage.getDealHoldingCosts(dealId),
+        storage.getDealLoans(dealId),
+        storage.getDealOtherIncome(dealId),
+        storage.getDealComps(dealId)
+      ]);
+
+      res.json({
+        deal,
+        kpis,
+        rehabItems,
+        units,
+        expenses,
+        closingCosts,
+        holdingCosts,
+        loans,
+        otherIncome,
+        comps
+      });
+    } catch (error) {
+      console.error("Get deal error:", error);
+      res.status(500).json({ error: "Failed to fetch deal" });
+    }
+  });
+
+  // Create new deal
+  app.post("/api/deals", async (req, res) => {
+    try {
+      const dealData = insertDealSchema.parse(req.body);
+      const deal = await storage.createDeal(dealData);
+      res.status(201).json(deal);
+    } catch (error) {
+      console.error("Create deal error:", error);
+      res.status(500).json({ error: "Failed to create deal" });
+    }
+  });
+
+  // Update deal
+  app.put("/api/deals/:id", async (req, res) => {
+    try {
+      const dealId = parseInt(req.params.id);
+      const dealData = insertDealSchema.partial().parse(req.body);
+      const deal = await storage.updateDeal(dealId, dealData);
+      
+      if (!deal) {
+        return res.status(404).json({ error: "Deal not found" });
+      }
+
+      await broadcastKPIUpdate(dealId);
+      res.json(deal);
+    } catch (error) {
+      console.error("Update deal error:", error);
+      res.status(500).json({ error: "Failed to update deal" });
+    }
+  });
+
+  // Rehab routes
+  app.post("/api/deals/:dealId/rehab", async (req, res) => {
+    try {
+      const dealId = parseInt(req.params.dealId);
+      const rehabData = insertDealRehabSchema.parse({ ...req.body, dealId });
+      const rehab = await storage.createDealRehab(rehabData);
+      
+      await broadcastKPIUpdate(dealId);
+      res.status(201).json(rehab);
+    } catch (error) {
+      console.error("Create rehab error:", error);
+      res.status(500).json({ error: "Failed to create rehab item" });
+    }
+  });
+
+  app.put("/api/deals/:dealId/rehab/:id", async (req, res) => {
+    try {
+      const dealId = parseInt(req.params.dealId);
+      const id = parseInt(req.params.id);
+      const rehabData = insertDealRehabSchema.partial().parse(req.body);
+      const rehab = await storage.updateDealRehab(id, rehabData);
+      
+      if (!rehab) {
+        return res.status(404).json({ error: "Rehab item not found" });
+      }
+
+      await broadcastKPIUpdate(dealId);
+      res.json(rehab);
+    } catch (error) {
+      console.error("Update rehab error:", error);
+      res.status(500).json({ error: "Failed to update rehab item" });
+    }
+  });
+
+  app.delete("/api/deals/:dealId/rehab/:id", async (req, res) => {
+    try {
+      const dealId = parseInt(req.params.dealId);
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteDealRehab(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Rehab item not found" });
+      }
+
+      await broadcastKPIUpdate(dealId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete rehab error:", error);
+      res.status(500).json({ error: "Failed to delete rehab item" });
+    }
+  });
+
+  // Units routes
+  app.post("/api/deals/:dealId/units", async (req, res) => {
+    try {
+      const dealId = parseInt(req.params.dealId);
+      const unitData = insertDealUnitsSchema.parse({ ...req.body, dealId });
+      const unit = await storage.createDealUnits(unitData);
+      
+      await broadcastKPIUpdate(dealId);
+      res.status(201).json(unit);
+    } catch (error) {
+      console.error("Create unit error:", error);
+      res.status(500).json({ error: "Failed to create unit" });
+    }
+  });
+
   const httpServer = createServer(app);
+
+  // WebSocket server for real-time KPI updates
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+
+  wss.on('connection', (ws, req) => {
+    console.log('WebSocket client connected');
+
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        if (data.type === 'subscribe_deal' && data.dealId) {
+          const dealId = parseInt(data.dealId);
+          
+          if (!dealConnections.has(dealId)) {
+            dealConnections.set(dealId, new Set());
+          }
+          
+          dealConnections.get(dealId)!.add(ws);
+          console.log(`Client subscribed to deal ${dealId}`);
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    });
+
+    ws.on('close', () => {
+      dealConnections.forEach((connections, dealId) => {
+        connections.delete(ws);
+        if (connections.size === 0) {
+          dealConnections.delete(dealId);
+        }
+      });
+      console.log('WebSocket client disconnected');
+    });
+  });
+  
   return httpServer;
 }
