@@ -59,11 +59,11 @@ export default function DealDemo() {
         });
         
         // Initialize editable data states
-        setRentRollData(data.deal.units || []);
-        setIncomeData(data.deal.otherIncome || []);
-        setExpenseData(data.deal.expenses || []);
-        setRehabData(data.deal.rehabItems || []);
-        setLoanData(data.deal.loans || []);
+        setRentRollData(data.units || []);
+        setIncomeData(data.otherIncome || []);
+        setExpenseData(data.expenses || []);
+        setRehabData(data.rehabItems || []);
+        setLoanData(data.loans || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load deal');
       } finally {
@@ -111,7 +111,7 @@ export default function DealDemo() {
     );
   }
 
-  const { deal, kpis } = dealData;
+  const { deal, kpis, units, expenses, otherIncome, rehabItems, loans } = dealData;
 
   const updateAssumption = (key: string, value: string) => {
     setAssumptions((prev: any) => ({
@@ -514,7 +514,7 @@ export default function DealDemo() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {Array.from({ length: assumptions.units || deal.units }, (_, index) => {
-                      const unit = dealData.units[index] || {};
+                      const unit = units[index] || {};
                       const unitNumber = unit.unitNumber || `Unit ${index + 1}`;
                       const currentRent = Number(unit.currentRent) || 1200;
                       const marketRent = Number(unit.marketRent) || 1300;
@@ -711,7 +711,7 @@ export default function DealDemo() {
                       </tr>
                       
                       {/* Other Income Rows */}
-                      {(incomeData.length > 0 ? incomeData : dealData.otherIncome).map((income: any, index: number) => (
+                      {(incomeData.length > 0 ? incomeData : otherIncome).map((income: any, index: number) => (
                         <tr key={income.id || index}>
                           <td className="px-4 py-3">
                             {editingIncome ? (

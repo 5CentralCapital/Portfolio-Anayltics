@@ -49,6 +49,8 @@ function App() {
               <Route path="/deals" element={<DealsList />} />
               <Route path="/deal-analysis/:id" element={<DealAnalysis />} />
               <Route path="/deal-demo" element={<DealDemo />} />
+              <Route path="/demo-deal" element={<DealDemo />} />
+              <Route path="/demodeal" element={<DealDemo />} />
             </Routes>
           </main>
           <Footer />
