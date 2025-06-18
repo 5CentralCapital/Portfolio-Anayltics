@@ -32,8 +32,12 @@ export default function DealDemo() {
         
         // Initialize assumptions with deal data
         setAssumptions({
+          purchasePrice: Number(data.deal.purchasePrice),
+          units: data.deal.units,
+          ltcPercentage: 0.80, // Default 80% LTC
           marketCapRate: data.deal.marketCapRate,
           exitCapRate: data.deal.exitCapRate,
+          refinanceLTV: 0.75, // Default 75% refinance LTV
           vacancyRate: data.deal.vacancyRate,
           badDebtRate: data.deal.badDebtRate,
           annualRentGrowth: data.deal.annualRentGrowth,
@@ -97,6 +101,29 @@ export default function DealDemo() {
       [key]: parseFloat(value) || value
     }));
   };
+
+  // Calculate derived values from assumptions
+  const calculateDerivedValues = () => {
+    const purchasePrice = assumptions.purchasePrice || Number(deal.purchasePrice);
+    const ltcPercentage = assumptions.ltcPercentage || 0.80;
+    const refinanceLTV = assumptions.refinanceLTV || 0.75;
+    
+    const purchaseLoanAmount = purchasePrice * ltcPercentage;
+    const downPayment = purchasePrice * (1 - ltcPercentage);
+    const refinanceLoanAmount = kpis.arv * refinanceLTV;
+    const cashOut = Math.max(0, refinanceLoanAmount - purchaseLoanAmount);
+    const totalProfit = cashOut + (kpis.cashFlow * (assumptions.projectedRefiMonth / 12)) + (kpis.arv - kpis.allInCost);
+    
+    return {
+      purchaseLoanAmount,
+      downPayment,
+      refinanceLoanAmount,
+      cashOut,
+      totalProfit
+    };
+  };
+
+  const derivedValues = calculateDerivedValues();
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Building },
@@ -173,7 +200,19 @@ export default function DealDemo() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                   <div>
                     <label className="text-sm font-medium text-gray-600">Purchase Price</label>
-                    <p className="text-2xl font-bold">{formatCurrency(Number(deal.purchasePrice))}</p>
+                    <p className="text-2xl font-bold">{formatCurrency(assumptions.purchasePrice || Number(deal.purchasePrice))}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Down Payment</label>
+                    <p className="text-2xl font-bold">{formatCurrency(derivedValues.downPayment)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Purchase Loan</label>
+                    <p className="text-2xl font-bold">{formatCurrency(derivedValues.purchaseLoanAmount)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Total Rehab</label>
+                    <p className="text-2xl font-bold">{formatCurrency(kpis.totalRehab)}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">All-In Cost</label>
@@ -184,8 +223,12 @@ export default function DealDemo() {
                     <p className="text-2xl font-bold">{formatCurrency(kpis.arv)}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Total Rehab</label>
-                    <p className="text-2xl font-bold">{formatCurrency(kpis.totalRehab)}</p>
+                    <label className="text-sm font-medium text-gray-600">Refinance Loan</label>
+                    <p className="text-2xl font-bold">{formatCurrency(derivedValues.refinanceLoanAmount)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Cash Out</label>
+                    <p className="text-2xl font-bold text-green-600">{formatCurrency(derivedValues.cashOut)}</p>
                   </div>
                 </div>
               </div>
@@ -231,65 +274,145 @@ export default function DealDemo() {
               {editingAssumptions && (
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-lg font-semibold mb-4">Investment Assumptions</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Market Cap Rate</label>
-                      <input
-                        type="number"
-                        step="0.001"
-                        value={(assumptions.marketCapRate * 100).toFixed(2)}
-                        onChange={(e) => updateAssumption('marketCapRate', (parseFloat(e.target.value) / 100).toString())}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      />
+                  
+                  {/* Primary Deal Parameters */}
+                  <div className="mb-6">
+                    <h3 className="text-md font-medium text-gray-800 mb-3">Deal Parameters</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price</label>
+                        <input
+                          type="number"
+                          value={assumptions.purchasePrice || Number(deal.purchasePrice)}
+                          onChange={(e) => updateAssumption('purchasePrice', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Unit Count</label>
+                        <input
+                          type="number"
+                          value={assumptions.units || deal.units}
+                          onChange={(e) => updateAssumption('units', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">LTC (%)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={(assumptions.ltcPercentage * 100).toFixed(1)}
+                          onChange={(e) => updateAssumption('ltcPercentage', (parseFloat(e.target.value) / 100).toString())}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Refinance LTV (%)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={(assumptions.refinanceLTV * 100).toFixed(1)}
+                          onChange={(e) => updateAssumption('refinanceLTV', (parseFloat(e.target.value) / 100).toString())}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Exit Cap Rate</label>
-                      <input
-                        type="number"
-                        step="0.001"
-                        value={(assumptions.exitCapRate * 100).toFixed(2)}
-                        onChange={(e) => updateAssumption('exitCapRate', (parseFloat(e.target.value) / 100).toString())}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      />
+                  </div>
+
+                  {/* Cap Rates */}
+                  <div className="mb-6">
+                    <h3 className="text-md font-medium text-gray-800 mb-3">Cap Rates</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Market Cap Rate (%)</label>
+                        <input
+                          type="number"
+                          step="0.001"
+                          value={(assumptions.marketCapRate * 100).toFixed(3)}
+                          onChange={(e) => updateAssumption('marketCapRate', (parseFloat(e.target.value) / 100).toString())}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Exit Cap Rate (%)</label>
+                        <input
+                          type="number"
+                          step="0.001"
+                          value={(assumptions.exitCapRate * 100).toFixed(3)}
+                          onChange={(e) => updateAssumption('exitCapRate', (parseFloat(e.target.value) / 100).toString())}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Vacancy Rate (%)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={(assumptions.vacancyRate * 100).toFixed(1)}
-                        onChange={(e) => updateAssumption('vacancyRate', (parseFloat(e.target.value) / 100).toString())}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      />
+                  </div>
+
+                  {/* Operating Assumptions */}
+                  <div>
+                    <h3 className="text-md font-medium text-gray-800 mb-3">Operating Assumptions</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Vacancy Rate (%)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={(assumptions.vacancyRate * 100).toFixed(1)}
+                          onChange={(e) => updateAssumption('vacancyRate', (parseFloat(e.target.value) / 100).toString())}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Bad Debt Rate (%)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={(assumptions.badDebtRate * 100).toFixed(1)}
+                          onChange={(e) => updateAssumption('badDebtRate', (parseFloat(e.target.value) / 100).toString())}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Annual Rent Growth (%)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={(assumptions.annualRentGrowth * 100).toFixed(1)}
+                          onChange={(e) => updateAssumption('annualRentGrowth', (parseFloat(e.target.value) / 100).toString())}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Hold Period (Months)</label>
+                        <input
+                          type="number"
+                          value={assumptions.projectedRefiMonth}
+                          onChange={(e) => updateAssumption('projectedRefiMonth', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Bad Debt Rate (%)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={(assumptions.badDebtRate * 100).toFixed(1)}
-                        onChange={(e) => updateAssumption('badDebtRate', (parseFloat(e.target.value) / 100).toString())}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Annual Rent Growth (%)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={(assumptions.annualRentGrowth * 100).toFixed(1)}
-                        onChange={(e) => updateAssumption('annualRentGrowth', (parseFloat(e.target.value) / 100).toString())}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Hold Period (Months)</label>
-                      <input
-                        type="number"
-                        value={assumptions.projectedRefiMonth}
-                        onChange={(e) => updateAssumption('projectedRefiMonth', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      />
+                  </div>
+
+                  {/* Calculated Values Display */}
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <h3 className="text-md font-medium text-gray-800 mb-3">Calculated Values</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-gray-50 p-3 rounded">
+                        <label className="block text-sm font-medium text-gray-600">Down Payment</label>
+                        <p className="text-lg font-bold">{formatCurrency(derivedValues.downPayment)}</p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded">
+                        <label className="block text-sm font-medium text-gray-600">Purchase Loan</label>
+                        <p className="text-lg font-bold">{formatCurrency(derivedValues.purchaseLoanAmount)}</p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded">
+                        <label className="block text-sm font-medium text-gray-600">Refinance Loan</label>
+                        <p className="text-lg font-bold">{formatCurrency(derivedValues.refinanceLoanAmount)}</p>
+                      </div>
+                      <div className="bg-green-50 p-3 rounded">
+                        <label className="block text-sm font-medium text-gray-600">Total Profit</label>
+                        <p className="text-lg font-bold text-green-600">{formatCurrency(derivedValues.totalProfit)}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
