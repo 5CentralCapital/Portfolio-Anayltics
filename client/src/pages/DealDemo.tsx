@@ -1157,47 +1157,71 @@ export default function DealDemo() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {dealData.rehabItems.map((item: any, index: number) => (
+                    {(rehabData.length > 0 ? rehabData : dealData.rehabItems).map((item: any, index: number) => (
                       <tr key={item.id || index}>
                         <td className="px-4 py-3">
                           {editingRehab ? (
                             <input
                               type="text"
-                              defaultValue={item.category}
+                              value={rehabData[index]?.category || item.category}
+                              onChange={(e) => {
+                                const newData = [...rehabData];
+                                if (!newData[index]) newData[index] = { ...item };
+                                newData[index].category = e.target.value;
+                                setRehabData(newData);
+                              }}
                               placeholder="e.g., Kitchen, HVAC"
                               className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                             />
                           ) : (
-                            <span className="text-sm font-medium">{item.category}</span>
+                            <span className="text-sm font-medium">{rehabData[index]?.category || item.category}</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           {editingRehab ? (
                             <input
                               type="text"
-                              defaultValue={item.description}
+                              value={rehabData[index]?.description || item.description}
+                              onChange={(e) => {
+                                const newData = [...rehabData];
+                                if (!newData[index]) newData[index] = { ...item };
+                                newData[index].description = e.target.value;
+                                setRehabData(newData);
+                              }}
                               placeholder="Detailed description"
                               className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                             />
                           ) : (
-                            <span className="text-sm">{item.description}</span>
+                            <span className="text-sm">{rehabData[index]?.description || item.description}</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           {editingRehab ? (
                             <input
                               type="number"
-                              defaultValue={Number(item.totalCost)}
+                              value={rehabData[index]?.totalCost || Number(item.totalCost)}
+                              onChange={(e) => {
+                                const newData = [...rehabData];
+                                if (!newData[index]) newData[index] = { ...item };
+                                newData[index].totalCost = Number(e.target.value);
+                                setRehabData(newData);
+                              }}
                               className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
                             />
                           ) : (
-                            <span className="text-sm font-bold">{formatCurrency(Number(item.totalCost))}</span>
+                            <span className="text-sm font-bold">{formatCurrency(rehabData[index]?.totalCost || Number(item.totalCost))}</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           {editingRehab ? (
                             <select
-                              defaultValue={item.bidStatus}
+                              value={rehabData[index]?.bidStatus || item.bidStatus}
+                              onChange={(e) => {
+                                const newData = [...rehabData];
+                                if (!newData[index]) newData[index] = { ...item };
+                                newData[index].bidStatus = e.target.value;
+                                setRehabData(newData);
+                              }}
                               className="px-3 py-2 border border-gray-300 rounded text-sm"
                             >
                               <option value="estimated">Estimated</option>
@@ -1207,29 +1231,57 @@ export default function DealDemo() {
                             </select>
                           ) : (
                             <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              item.bidStatus === 'contracted' ? 'bg-green-100 text-green-800' :
-                              item.bidStatus === 'bid_received' ? 'bg-blue-100 text-blue-800' :
-                              item.bidStatus === 'completed' ? 'bg-purple-100 text-purple-800' :
+                              (rehabData[index]?.bidStatus || item.bidStatus) === 'contracted' ? 'bg-green-100 text-green-800' :
+                              (rehabData[index]?.bidStatus || item.bidStatus) === 'bid_received' ? 'bg-blue-100 text-blue-800' :
+                              (rehabData[index]?.bidStatus || item.bidStatus) === 'completed' ? 'bg-purple-100 text-purple-800' :
                               'bg-yellow-100 text-yellow-800'
                             }`}>
-                              {item.bidStatus.replace('_', ' ').toUpperCase()}
+                              {(rehabData[index]?.bidStatus || item.bidStatus).replace('_', ' ').toUpperCase()}
                             </span>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-sm text-gray-600">
-                            {formatCurrency(Number(item.totalCost) / (assumptions.units || deal.units))}
+                            {formatCurrency((rehabData[index]?.totalCost || Number(item.totalCost)) / (assumptions.units || deal.units))}
                           </span>
                         </td>
                         {editingRehab && (
                           <td className="px-4 py-3">
-                            <button className="text-red-600 hover:text-red-800 text-sm">
+                            <button 
+                              onClick={() => {
+                                const newData = rehabData.filter((_, i) => i !== index);
+                                setRehabData(newData);
+                              }}
+                              className="text-red-600 hover:text-red-800 text-sm"
+                            >
                               Delete
                             </button>
                           </td>
                         )}
                       </tr>
                     ))}
+                    
+                    {editingRehab && (
+                      <tr>
+                        <td colSpan={editingRehab ? 6 : 5} className="px-4 py-3">
+                          <button 
+                            onClick={() => {
+                              const newItem = {
+                                id: Date.now(),
+                                category: 'New Item',
+                                description: '',
+                                totalCost: 0,
+                                bidStatus: 'estimated'
+                              };
+                              setRehabData([...rehabData, newItem]);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 text-sm"
+                          >
+                            + Add Rehab Item
+                          </button>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
                 
@@ -1304,29 +1356,49 @@ export default function DealDemo() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {dealData.loans.filter((loan: any) => loan.loanType === 'acquisition').map((loan: any, index: number) => (
+                      {(loanData.length > 0 ? loanData.filter((loan: any) => loan.loanType === 'acquisition') : dealData.loans.filter((loan: any) => loan.loanType === 'acquisition')).map((loan: any, index: number) => (
                         <tr key={index}>
                           <td className="px-4 py-3">
                             {editingLoans ? (
                               <input
                                 type="text"
-                                defaultValue="Local Bank"
+                                value={loanData.find((l: any) => l.loanType === 'acquisition')?.lenderName || "Local Bank"}
+                                onChange={(e) => {
+                                  const newData = [...loanData];
+                                  const loanIndex = newData.findIndex((l: any) => l.loanType === 'acquisition');
+                                  if (loanIndex >= 0) {
+                                    newData[loanIndex].lenderName = e.target.value;
+                                  } else {
+                                    newData.push({ ...loan, lenderName: e.target.value });
+                                  }
+                                  setLoanData(newData);
+                                }}
                                 placeholder="Lender name"
                                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm font-medium">Local Bank</span>
+                              <span className="text-sm font-medium">{loanData.find((l: any) => l.loanType === 'acquisition')?.lenderName || "Local Bank"}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingLoans ? (
                               <input
                                 type="number"
-                                defaultValue={derivedValues.purchaseLoanAmount}
+                                value={loanData.find((l: any) => l.loanType === 'acquisition')?.loanAmount || derivedValues.purchaseLoanAmount}
+                                onChange={(e) => {
+                                  const newData = [...loanData];
+                                  const loanIndex = newData.findIndex((l: any) => l.loanType === 'acquisition');
+                                  if (loanIndex >= 0) {
+                                    newData[loanIndex].loanAmount = Number(e.target.value);
+                                  } else {
+                                    newData.push({ ...loan, loanAmount: Number(e.target.value) });
+                                  }
+                                  setLoanData(newData);
+                                }}
                                 className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm font-bold">{formatCurrency(derivedValues.purchaseLoanAmount)}</span>
+                              <span className="text-sm font-bold">{formatCurrency(loanData.find((l: any) => l.loanType === 'acquisition')?.loanAmount || derivedValues.purchaseLoanAmount)}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
@@ -1334,33 +1406,63 @@ export default function DealDemo() {
                               <input
                                 type="number"
                                 step="0.001"
-                                defaultValue={(Number(loan.interestRate) * 100).toFixed(3)}
+                                value={loanData.find((l: any) => l.loanType === 'acquisition')?.interestRate ? (Number(loanData.find((l: any) => l.loanType === 'acquisition').interestRate) * 100).toFixed(3) : (Number(loan.interestRate) * 100).toFixed(3)}
+                                onChange={(e) => {
+                                  const newData = [...loanData];
+                                  const loanIndex = newData.findIndex((l: any) => l.loanType === 'acquisition');
+                                  if (loanIndex >= 0) {
+                                    newData[loanIndex].interestRate = Number(e.target.value) / 100;
+                                  } else {
+                                    newData.push({ ...loan, interestRate: Number(e.target.value) / 100 });
+                                  }
+                                  setLoanData(newData);
+                                }}
                                 className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm">{(Number(loan.interestRate) * 100).toFixed(3)}%</span>
+                              <span className="text-sm">{loanData.find((l: any) => l.loanType === 'acquisition')?.interestRate ? (Number(loanData.find((l: any) => l.loanType === 'acquisition').interestRate) * 100).toFixed(3) : (Number(loan.interestRate) * 100).toFixed(3)}%</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingLoans ? (
                               <input
                                 type="number"
-                                defaultValue={loan.termYears}
+                                value={loanData.find((l: any) => l.loanType === 'acquisition')?.termYears || loan.termYears}
+                                onChange={(e) => {
+                                  const newData = [...loanData];
+                                  const loanIndex = newData.findIndex((l: any) => l.loanType === 'acquisition');
+                                  if (loanIndex >= 0) {
+                                    newData[loanIndex].termYears = Number(e.target.value);
+                                  } else {
+                                    newData.push({ ...loan, termYears: Number(e.target.value) });
+                                  }
+                                  setLoanData(newData);
+                                }}
                                 className="w-16 px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm">{loan.termYears}</span>
+                              <span className="text-sm">{loanData.find((l: any) => l.loanType === 'acquisition')?.termYears || loan.termYears}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingLoans ? (
                               <input
                                 type="number"
-                                defaultValue={loan.amortizationYears}
+                                value={loanData.find((l: any) => l.loanType === 'acquisition')?.amortizationYears || loan.amortizationYears}
+                                onChange={(e) => {
+                                  const newData = [...loanData];
+                                  const loanIndex = newData.findIndex((l: any) => l.loanType === 'acquisition');
+                                  if (loanIndex >= 0) {
+                                    newData[loanIndex].amortizationYears = Number(e.target.value);
+                                  } else {
+                                    newData.push({ ...loan, amortizationYears: Number(e.target.value) });
+                                  }
+                                  setLoanData(newData);
+                                }}
                                 className="w-16 px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm">{loan.amortizationYears}</span>
+                              <span className="text-sm">{loanData.find((l: any) => l.loanType === 'acquisition')?.amortizationYears || loan.amortizationYears}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
@@ -1394,23 +1496,43 @@ export default function DealDemo() {
                           {editingLoans ? (
                             <input
                               type="text"
-                              defaultValue="Permanent Lender"
+                              value={loanData.find((l: any) => l.loanType === 'refinance')?.lenderName || "Permanent Lender"}
+                              onChange={(e) => {
+                                const newData = [...loanData];
+                                const loanIndex = newData.findIndex((l: any) => l.loanType === 'refinance');
+                                if (loanIndex >= 0) {
+                                  newData[loanIndex].lenderName = e.target.value;
+                                } else {
+                                  newData.push({ loanType: 'refinance', lenderName: e.target.value });
+                                }
+                                setLoanData(newData);
+                              }}
                               placeholder="Lender name"
                               className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                             />
                           ) : (
-                            <span className="text-sm font-medium">Permanent Lender</span>
+                            <span className="text-sm font-medium">{loanData.find((l: any) => l.loanType === 'refinance')?.lenderName || "Permanent Lender"}</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           {editingLoans ? (
                             <input
                               type="number"
-                              defaultValue={kpis.newLoanAmount}
+                              value={loanData.find((l: any) => l.loanType === 'refinance')?.loanAmount || kpis.newLoanAmount}
+                              onChange={(e) => {
+                                const newData = [...loanData];
+                                const loanIndex = newData.findIndex((l: any) => l.loanType === 'refinance');
+                                if (loanIndex >= 0) {
+                                  newData[loanIndex].loanAmount = Number(e.target.value);
+                                } else {
+                                  newData.push({ loanType: 'refinance', loanAmount: Number(e.target.value) });
+                                }
+                                setLoanData(newData);
+                              }}
                               className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
                             />
                           ) : (
-                            <span className="text-sm font-bold">{formatCurrency(kpis.newLoanAmount)}</span>
+                            <span className="text-sm font-bold">{formatCurrency(loanData.find((l: any) => l.loanType === 'refinance')?.loanAmount || kpis.newLoanAmount)}</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
@@ -1418,22 +1540,42 @@ export default function DealDemo() {
                             <input
                               type="number"
                               step="0.001"
-                              defaultValue="5.500"
+                              value={loanData.find((l: any) => l.loanType === 'refinance')?.interestRate ? (Number(loanData.find((l: any) => l.loanType === 'refinance').interestRate) * 100).toFixed(3) : "5.500"}
+                              onChange={(e) => {
+                                const newData = [...loanData];
+                                const loanIndex = newData.findIndex((l: any) => l.loanType === 'refinance');
+                                if (loanIndex >= 0) {
+                                  newData[loanIndex].interestRate = Number(e.target.value) / 100;
+                                } else {
+                                  newData.push({ loanType: 'refinance', interestRate: Number(e.target.value) / 100 });
+                                }
+                                setLoanData(newData);
+                              }}
                               className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
                             />
                           ) : (
-                            <span className="text-sm">5.500%</span>
+                            <span className="text-sm">{loanData.find((l: any) => l.loanType === 'refinance')?.interestRate ? (Number(loanData.find((l: any) => l.loanType === 'refinance').interestRate) * 100).toFixed(3) : "5.500"}%</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           {editingLoans ? (
                             <input
                               type="number"
-                              defaultValue={30}
+                              value={loanData.find((l: any) => l.loanType === 'refinance')?.termYears || 30}
+                              onChange={(e) => {
+                                const newData = [...loanData];
+                                const loanIndex = newData.findIndex((l: any) => l.loanType === 'refinance');
+                                if (loanIndex >= 0) {
+                                  newData[loanIndex].termYears = Number(e.target.value);
+                                } else {
+                                  newData.push({ loanType: 'refinance', termYears: Number(e.target.value) });
+                                }
+                                setLoanData(newData);
+                              }}
                               className="w-16 px-3 py-2 border border-gray-300 rounded text-sm"
                             />
                           ) : (
-                            <span className="text-sm">30</span>
+                            <span className="text-sm">{loanData.find((l: any) => l.loanType === 'refinance')?.termYears || 30}</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
@@ -1441,11 +1583,21 @@ export default function DealDemo() {
                             <input
                               type="number"
                               step="0.1"
-                              defaultValue={(assumptions.refinanceLtv * 100) || 75}
+                              value={loanData.find((l: any) => l.loanType === 'refinance')?.ltv ? (loanData.find((l: any) => l.loanType === 'refinance').ltv * 100).toFixed(1) : ((assumptions.refinanceLtv * 100) || 75)}
+                              onChange={(e) => {
+                                const newData = [...loanData];
+                                const loanIndex = newData.findIndex((l: any) => l.loanType === 'refinance');
+                                if (loanIndex >= 0) {
+                                  newData[loanIndex].ltv = Number(e.target.value) / 100;
+                                } else {
+                                  newData.push({ loanType: 'refinance', ltv: Number(e.target.value) / 100 });
+                                }
+                                setLoanData(newData);
+                              }}
                               className="w-16 px-3 py-2 border border-gray-300 rounded text-sm"
                             />
                           ) : (
-                            <span className="text-sm">{((assumptions.refinanceLtv * 100) || 75).toFixed(1)}%</span>
+                            <span className="text-sm">{loanData.find((l: any) => l.loanType === 'refinance')?.ltv ? (loanData.find((l: any) => l.loanType === 'refinance').ltv * 100).toFixed(1) : ((assumptions.refinanceLtv * 100) || 75).toFixed(1)}%</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
