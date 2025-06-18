@@ -9,7 +9,12 @@ import {
   Users,
   Calendar,
   Home,
-  Wrench
+  Wrench,
+  Save,
+  Download,
+  Upload,
+  Trash2,
+  Archive
 } from 'lucide-react';
 
 export default function DealDemo() {
@@ -26,6 +31,10 @@ export default function DealDemo() {
   const [editingAssumptionField, setEditingAssumptionField] = useState<string | null>(null);
   const [editingDealName, setEditingDealName] = useState(false);
   const [editingDealNameValue, setEditingDealNameValue] = useState('');
+  const [savedDeals, setSavedDeals] = useState<any[]>([]);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [saveModalName, setSaveModalName] = useState('');
+  const [saveModalDescription, setSaveModalDescription] = useState('');
   const [assumptions, setAssumptions] = useState<any>({});
   const [rentRollData, setRentRollData] = useState<any[]>([]);
   const [incomeData, setIncomeData] = useState<any[]>([]);

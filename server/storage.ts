@@ -455,6 +455,35 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(dealComps).where(eq(dealComps.id, id));
     return result.rowCount > 0;
   }
+
+  // Saved deals operations
+  async getSavedDeals(): Promise<SavedDeal[]> {
+    return db.select().from(savedDeals).orderBy(desc(savedDeals.createdAt));
+  }
+
+  async getSavedDeal(id: number): Promise<SavedDeal | undefined> {
+    const result = await db.select().from(savedDeals).where(eq(savedDeals.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createSavedDeal(savedDeal: InsertSavedDeal): Promise<SavedDeal> {
+    const [result] = await db.insert(savedDeals).values(savedDeal).returning();
+    return result;
+  }
+
+  async updateSavedDeal(id: number, savedDeal: Partial<InsertSavedDeal>): Promise<SavedDeal | undefined> {
+    const [result] = await db
+      .update(savedDeals)
+      .set({ ...savedDeal, updatedAt: new Date() })
+      .where(eq(savedDeals.id, id))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteSavedDeal(id: number): Promise<boolean> {
+    const result = await db.delete(savedDeals).where(eq(savedDeals.id, id));
+    return result.rowCount > 0;
+  }
 }
 
 export const storage = new DatabaseStorage();

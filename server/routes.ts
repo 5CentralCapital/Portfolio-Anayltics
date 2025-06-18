@@ -7,7 +7,7 @@ import {
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
   insertDealClosingCostsSchema, insertDealHoldingCostsSchema, insertDealLoansSchema,
-  insertDealOtherIncomeSchema, insertDealCompsSchema
+  insertDealOtherIncomeSchema, insertDealCompsSchema, insertSavedDealSchema
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -459,6 +459,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Create unit error:", error);
       res.status(500).json({ error: "Failed to create unit" });
+    }
+  });
+
+  // Saved deals routes
+  app.get("/api/saved-deals", async (req, res) => {
+    try {
+      const savedDeals = await storage.getSavedDeals();
+      res.json(savedDeals);
+    } catch (error) {
+      console.error("Error fetching saved deals:", error);
+      res.status(500).json({ error: "Failed to fetch saved deals" });
+    }
+  });
+
+  app.get("/api/saved-deals/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const savedDeal = await storage.getSavedDeal(id);
+      
+      if (!savedDeal) {
+        return res.status(404).json({ error: "Saved deal not found" });
+      }
+      
+      res.json(savedDeal);
+    } catch (error) {
+      console.error("Error fetching saved deal:", error);
+      res.status(500).json({ error: "Failed to fetch saved deal" });
+    }
+  });
+
+  app.post("/api/saved-deals", async (req, res) => {
+    try {
+      const validatedData = insertSavedDealSchema.parse(req.body);
+      const savedDeal = await storage.createSavedDeal(validatedData);
+      res.status(201).json(savedDeal);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid saved deal data", details: error.errors });
+      }
+      console.error("Error creating saved deal:", error);
+      res.status(500).json({ error: "Failed to create saved deal" });
+    }
+  });
+
+  app.put("/api/saved-deals/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertSavedDealSchema.partial().parse(req.body);
+      const savedDeal = await storage.updateSavedDeal(id, validatedData);
+      
+      if (!savedDeal) {
+        return res.status(404).json({ error: "Saved deal not found" });
+      }
+      
+      res.json(savedDeal);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid saved deal data", details: error.errors });
+      }
+      console.error("Error updating saved deal:", error);
+      res.status(500).json({ error: "Failed to update saved deal" });
+    }
+  });
+
+  app.delete("/api/saved-deals/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSavedDeal(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Saved deal not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting saved deal:", error);
+      res.status(500).json({ error: "Failed to delete saved deal" });
     }
   });
 
