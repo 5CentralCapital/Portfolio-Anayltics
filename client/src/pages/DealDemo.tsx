@@ -23,7 +23,13 @@ export default function DealDemo() {
   const [editingExpenses, setEditingExpenses] = useState(false);
   const [editingRehab, setEditingRehab] = useState(false);
   const [editingLoans, setEditingLoans] = useState(false);
+  const [editingHeader, setEditingHeader] = useState(false);
   const [assumptions, setAssumptions] = useState<any>({});
+  const [rentRollData, setRentRollData] = useState<any[]>([]);
+  const [incomeData, setIncomeData] = useState<any[]>([]);
+  const [expenseData, setExpenseData] = useState<any[]>([]);
+  const [rehabData, setRehabData] = useState<any[]>([]);
+  const [loanData, setLoanData] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchDeal = async () => {
@@ -51,6 +57,13 @@ export default function DealDemo() {
           operatingReserveMonths: data.deal.operatingReserveMonths,
           projectedRefiMonth: data.deal.projectedRefiMonth
         });
+        
+        // Initialize editable data states
+        setRentRollData(data.deal.units || []);
+        setIncomeData(data.deal.otherIncome || []);
+        setExpenseData(data.deal.expenses || []);
+        setRehabData(data.deal.rehabItems || []);
+        setLoanData(data.deal.loans || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load deal');
       } finally {
@@ -143,11 +156,44 @@ export default function DealDemo() {
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">{deal.name}</h1>
-          <p className="text-lg text-gray-600">
-            {deal.address}, {deal.city}, {deal.state}
-          </p>
+        <div className="flex-1">
+          {editingHeader ? (
+            <div className="space-y-2">
+              <input
+                type="text"
+                defaultValue={deal.name}
+                className="text-3xl font-bold border-b-2 border-blue-500 bg-transparent outline-none"
+                placeholder="Deal Name"
+              />
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  defaultValue={deal.address}
+                  className="text-lg text-gray-600 border-b border-gray-300 bg-transparent outline-none"
+                  placeholder="Address"
+                />
+                <input
+                  type="text"
+                  defaultValue={deal.city}
+                  className="text-lg text-gray-600 border-b border-gray-300 bg-transparent outline-none"
+                  placeholder="City"
+                />
+                <input
+                  type="text"
+                  defaultValue={deal.state}
+                  className="text-lg text-gray-600 border-b border-gray-300 bg-transparent outline-none w-16"
+                  placeholder="State"
+                />
+              </div>
+            </div>
+          ) : (
+            <div>
+              <h1 className="text-3xl font-bold">{deal.name}</h1>
+              <p className="text-lg text-gray-600">
+                {deal.address}, {deal.city}, {deal.state}
+              </p>
+            </div>
+          )}
         </div>
         <div className="flex items-center space-x-2">
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -157,6 +203,17 @@ export default function DealDemo() {
           }`}>
             {deal.status}
           </span>
+          <button
+            onClick={() => setEditingHeader(!editingHeader)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2 ${
+              editingHeader 
+                ? 'bg-green-600 text-white hover:bg-green-700' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <Edit className="h-4 w-4" />
+            <span>{editingHeader ? 'Save Header' : 'Edit Header'}</span>
+          </button>
           <button
             onClick={() => setEditingAssumptions(!editingAssumptions)}
             className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2 ${
@@ -469,7 +526,13 @@ export default function DealDemo() {
                             {editingRentRoll ? (
                               <input
                                 type="text"
-                                defaultValue={unitNumber}
+                                value={rentRollData[index]?.unitNumber || unitNumber}
+                                onChange={(e) => {
+                                  const newData = [...rentRollData];
+                                  if (!newData[index]) newData[index] = {};
+                                  newData[index].unitNumber = e.target.value;
+                                  setRentRollData(newData);
+                                }}
                                 className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             ) : (
@@ -480,62 +543,98 @@ export default function DealDemo() {
                             {editingRentRoll ? (
                               <input
                                 type="text"
-                                defaultValue={isOccupied ? 'Tenant Name' : ''}
+                                value={rentRollData[index]?.tenantName || (isOccupied ? 'Tenant Name' : '')}
+                                onChange={(e) => {
+                                  const newData = [...rentRollData];
+                                  if (!newData[index]) newData[index] = {};
+                                  newData[index].tenantName = e.target.value;
+                                  setRentRollData(newData);
+                                }}
                                 placeholder="Tenant name"
                                 className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm">{isOccupied ? 'Tenant Name' : 'Vacant'}</span>
+                              <span className="text-sm">{rentRollData[index]?.tenantName || (isOccupied ? 'Tenant Name' : 'Vacant')}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingRentRoll ? (
                               <input
                                 type="date"
-                                defaultValue={isOccupied ? '2024-01-15' : ''}
+                                value={rentRollData[index]?.leaseStart || (isOccupied ? '2024-01-15' : '')}
+                                onChange={(e) => {
+                                  const newData = [...rentRollData];
+                                  if (!newData[index]) newData[index] = {};
+                                  newData[index].leaseStart = e.target.value;
+                                  setRentRollData(newData);
+                                }}
                                 className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm">{isOccupied ? '01/15/2024' : '-'}</span>
+                              <span className="text-sm">{rentRollData[index]?.leaseStart || (isOccupied ? '01/15/2024' : '-')}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingRentRoll ? (
                               <input
                                 type="date"
-                                defaultValue={isOccupied ? '2025-01-15' : ''}
+                                value={rentRollData[index]?.leaseEnd || (isOccupied ? '2025-01-15' : '')}
+                                onChange={(e) => {
+                                  const newData = [...rentRollData];
+                                  if (!newData[index]) newData[index] = {};
+                                  newData[index].leaseEnd = e.target.value;
+                                  setRentRollData(newData);
+                                }}
                                 className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm">{isOccupied ? '01/15/2025' : '-'}</span>
+                              <span className="text-sm">{rentRollData[index]?.leaseEnd || (isOccupied ? '01/15/2025' : '-')}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingRentRoll ? (
                               <input
                                 type="number"
-                                defaultValue={currentRent}
+                                value={rentRollData[index]?.currentRent || currentRent}
+                                onChange={(e) => {
+                                  const newData = [...rentRollData];
+                                  if (!newData[index]) newData[index] = {};
+                                  newData[index].currentRent = Number(e.target.value);
+                                  setRentRollData(newData);
+                                }}
                                 className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm font-medium">{formatCurrency(currentRent)}</span>
+                              <span className="text-sm font-medium">{formatCurrency(rentRollData[index]?.currentRent || currentRent)}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingRentRoll ? (
                               <input
                                 type="number"
-                                defaultValue={marketRent}
+                                value={rentRollData[index]?.marketRent || marketRent}
+                                onChange={(e) => {
+                                  const newData = [...rentRollData];
+                                  if (!newData[index]) newData[index] = {};
+                                  newData[index].marketRent = Number(e.target.value);
+                                  setRentRollData(newData);
+                                }}
                                 className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm font-medium">{formatCurrency(marketRent)}</span>
+                              <span className="text-sm font-medium">{formatCurrency(rentRollData[index]?.marketRent || marketRent)}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingRentRoll ? (
                               <select
-                                defaultValue={isOccupied ? 'occupied' : 'vacant'}
+                                value={rentRollData[index]?.isOccupied !== undefined ? (rentRollData[index].isOccupied ? 'occupied' : 'vacant') : (isOccupied ? 'occupied' : 'vacant')}
+                                onChange={(e) => {
+                                  const newData = [...rentRollData];
+                                  if (!newData[index]) newData[index] = {};
+                                  newData[index].isOccupied = e.target.value === 'occupied';
+                                  setRentRollData(newData);
+                                }}
                                 className="px-2 py-1 border border-gray-300 rounded text-sm"
                               >
                                 <option value="occupied">Occupied</option>
@@ -543,11 +642,11 @@ export default function DealDemo() {
                               </select>
                             ) : (
                               <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                isOccupied 
+                                (rentRollData[index]?.isOccupied !== undefined ? rentRollData[index].isOccupied : isOccupied)
                                   ? 'bg-green-100 text-green-800' 
                                   : 'bg-red-100 text-red-800'
                               }`}>
-                                {isOccupied ? 'Occupied' : 'Vacant'}
+                                {(rentRollData[index]?.isOccupied !== undefined ? rentRollData[index].isOccupied : isOccupied) ? 'Occupied' : 'Vacant'}
                               </span>
                             )}
                           </td>
@@ -612,58 +711,104 @@ export default function DealDemo() {
                       </tr>
                       
                       {/* Other Income Rows */}
-                      {dealData.otherIncome.map((income: any, index: number) => (
+                      {(incomeData.length > 0 ? incomeData : dealData.otherIncome).map((income: any, index: number) => (
                         <tr key={income.id || index}>
                           <td className="px-4 py-3">
                             {editingIncome ? (
                               <input
                                 type="text"
-                                defaultValue={income.category}
+                                value={incomeData[index]?.category || income.category}
+                                onChange={(e) => {
+                                  const newData = [...incomeData];
+                                  if (!newData[index]) newData[index] = { ...income };
+                                  newData[index].category = e.target.value;
+                                  setIncomeData(newData);
+                                }}
                                 placeholder="Income category"
                                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm">{income.category}</span>
+                              <span className="text-sm">{incomeData[index]?.category || income.category}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingIncome ? (
                               <input
                                 type="text"
-                                defaultValue={income.description}
+                                value={incomeData[index]?.description || income.description}
+                                onChange={(e) => {
+                                  const newData = [...incomeData];
+                                  if (!newData[index]) newData[index] = { ...income };
+                                  newData[index].description = e.target.value;
+                                  setIncomeData(newData);
+                                }}
                                 placeholder="Description"
                                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm">{income.description}</span>
+                              <span className="text-sm">{incomeData[index]?.description || income.description}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingIncome ? (
                               <input
                                 type="number"
-                                defaultValue={Number(income.monthlyAmount)}
+                                value={incomeData[index]?.monthlyAmount || Number(income.monthlyAmount)}
+                                onChange={(e) => {
+                                  const newData = [...incomeData];
+                                  if (!newData[index]) newData[index] = { ...income };
+                                  newData[index].monthlyAmount = Number(e.target.value);
+                                  setIncomeData(newData);
+                                }}
                                 placeholder="Current amount"
                                 className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm font-medium">{formatCurrency(Number(income.monthlyAmount))}</span>
+                              <span className="text-sm font-medium">{formatCurrency(incomeData[index]?.monthlyAmount || Number(income.monthlyAmount))}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingIncome ? (
                               <input
                                 type="number"
-                                defaultValue={Number(income.monthlyAmount)}
+                                value={incomeData[index]?.proformaAmount || incomeData[index]?.monthlyAmount || Number(income.monthlyAmount)}
+                                onChange={(e) => {
+                                  const newData = [...incomeData];
+                                  if (!newData[index]) newData[index] = { ...income };
+                                  newData[index].proformaAmount = Number(e.target.value);
+                                  setIncomeData(newData);
+                                }}
                                 placeholder="Proforma amount"
                                 className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm font-medium">{formatCurrency(Number(income.monthlyAmount))}</span>
+                              <span className="text-sm font-medium">{formatCurrency(incomeData[index]?.proformaAmount || incomeData[index]?.monthlyAmount || Number(income.monthlyAmount))}</span>
                             )}
                           </td>
                         </tr>
                       ))}
+                      
+                      {editingIncome && (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-3">
+                            <button 
+                              onClick={() => {
+                                const newIncome = {
+                                  id: Date.now(),
+                                  category: 'New Income',
+                                  description: '',
+                                  monthlyAmount: 0,
+                                  proformaAmount: 0
+                                };
+                                setIncomeData([...incomeData, newIncome]);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 text-sm"
+                            >
+                              + Add Income Item
+                            </button>
+                          </td>
+                        </tr>
+                      )}
                       
                       <tr className="bg-green-100 font-bold">
                         <td className="px-4 py-3" colSpan={2}>
@@ -716,49 +861,67 @@ export default function DealDemo() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {dealData.expenses.map((expense: any, index: number) => (
+                      {(expenseData.length > 0 ? expenseData : dealData.expenses).map((expense: any, index: number) => (
                         <tr key={expense.id || index}>
                           <td className="px-4 py-3">
                             {editingExpenses ? (
                               <input
                                 type="text"
-                                defaultValue={expense.category}
+                                value={expenseData[index]?.category || expense.category}
+                                onChange={(e) => {
+                                  const newData = [...expenseData];
+                                  if (!newData[index]) newData[index] = { ...expense };
+                                  newData[index].category = e.target.value;
+                                  setExpenseData(newData);
+                                }}
                                 placeholder="Expense category"
                                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm">{expense.category}</span>
+                              <span className="text-sm">{expenseData[index]?.category || expense.category}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingExpenses ? (
                               <input
                                 type="text"
-                                defaultValue={expense.description}
+                                value={expenseData[index]?.description || expense.description}
+                                onChange={(e) => {
+                                  const newData = [...expenseData];
+                                  if (!newData[index]) newData[index] = { ...expense };
+                                  newData[index].description = e.target.value;
+                                  setExpenseData(newData);
+                                }}
                                 placeholder="Description"
                                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm">{expense.description}</span>
+                              <span className="text-sm">{expenseData[index]?.description || expense.description}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingExpenses ? (
                               <input
                                 type="number"
-                                defaultValue={expense.isPercentOfRent 
+                                value={expenseData[index]?.currentAmount || (expense.isPercentOfRent 
                                   ? (kpis.grossRentalIncome * parseFloat(expense.percentage) / 12).toFixed(0)
                                   : Number(expense.monthlyAmount)
-                                }
+                                )}
+                                onChange={(e) => {
+                                  const newData = [...expenseData];
+                                  if (!newData[index]) newData[index] = { ...expense };
+                                  newData[index].currentAmount = Number(e.target.value);
+                                  setExpenseData(newData);
+                                }}
                                 placeholder="Current amount"
                                 className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
                               <span className="text-sm font-medium">
-                                {expense.isPercentOfRent 
-                                  ? formatCurrency((kpis.grossRentalIncome * parseFloat(expense.percentage)) / 12)
-                                  : formatCurrency(Number(expense.monthlyAmount))
-                                }
+                                {formatCurrency(expenseData[index]?.currentAmount || (expense.isPercentOfRent 
+                                  ? (kpis.grossRentalIncome * parseFloat(expense.percentage)) / 12
+                                  : Number(expense.monthlyAmount))
+                                )}
                               </span>
                             )}
                           </td>
@@ -766,32 +929,45 @@ export default function DealDemo() {
                             {editingExpenses ? (
                               <input
                                 type="number"
-                                defaultValue={expense.isPercentOfRent 
+                                value={expenseData[index]?.proformaAmount || (expense.isPercentOfRent 
                                   ? (dealData.units.reduce((sum: number, unit: any) => 
                                       sum + Number(unit.marketRent || 1300), 0
                                     ) * parseFloat(expense.percentage)).toFixed(0)
                                   : Number(expense.monthlyAmount)
-                                }
+                                )}
+                                onChange={(e) => {
+                                  const newData = [...expenseData];
+                                  if (!newData[index]) newData[index] = { ...expense };
+                                  newData[index].proformaAmount = Number(e.target.value);
+                                  setExpenseData(newData);
+                                }}
                                 placeholder="Proforma amount"
                                 className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
                               <span className="text-sm font-medium">
-                                {expense.isPercentOfRent 
-                                  ? formatCurrency(
-                                      dealData.units.reduce((sum: number, unit: any) => 
-                                        sum + Number(unit.marketRent || 1300), 0
-                                      ) * parseFloat(expense.percentage)
-                                    )
-                                  : formatCurrency(Number(expense.monthlyAmount))
-                                }
+                                {formatCurrency(expenseData[index]?.proformaAmount || (expense.isPercentOfRent 
+                                  ? dealData.units.reduce((sum: number, unit: any) => 
+                                      sum + Number(unit.marketRent || 1300), 0
+                                    ) * parseFloat(expense.percentage)
+                                  : Number(expense.monthlyAmount))
+                                )}
                               </span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingExpenses ? (
                               <select
-                                defaultValue={expense.isPercentOfRent ? 'percentage' : 'fixed'}
+                                value={expenseData[index]?.isPercentOfRent !== undefined 
+                                  ? (expenseData[index].isPercentOfRent ? 'percentage' : 'fixed')
+                                  : (expense.isPercentOfRent ? 'percentage' : 'fixed')
+                                }
+                                onChange={(e) => {
+                                  const newData = [...expenseData];
+                                  if (!newData[index]) newData[index] = { ...expense };
+                                  newData[index].isPercentOfRent = e.target.value === 'percentage';
+                                  setExpenseData(newData);
+                                }}
                                 className="px-3 py-2 border border-gray-300 rounded text-sm"
                               >
                                 <option value="fixed">Fixed</option>
@@ -799,12 +975,38 @@ export default function DealDemo() {
                               </select>
                             ) : (
                               <span className="text-xs px-2 py-1 bg-gray-100 rounded">
-                                {expense.isPercentOfRent ? `${(parseFloat(expense.percentage) * 100).toFixed(1)}%` : 'Fixed'}
+                                {(expenseData[index]?.isPercentOfRent !== undefined ? expenseData[index].isPercentOfRent : expense.isPercentOfRent) 
+                                  ? `${(parseFloat(expense.percentage) * 100).toFixed(1)}%` 
+                                  : 'Fixed'
+                                }
                               </span>
                             )}
                           </td>
                         </tr>
                       ))}
+                      
+                      {editingExpenses && (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-3">
+                            <button 
+                              onClick={() => {
+                                const newExpense = {
+                                  id: Date.now(),
+                                  category: 'New Expense',
+                                  description: '',
+                                  currentAmount: 0,
+                                  proformaAmount: 0,
+                                  isPercentOfRent: false
+                                };
+                                setExpenseData([...expenseData, newExpense]);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 text-sm"
+                            >
+                              + Add Expense Item
+                            </button>
+                          </td>
+                        </tr>
+                      )}
                       
                       <tr className="bg-red-100 font-bold">
                         <td className="px-4 py-3" colSpan={2}>
