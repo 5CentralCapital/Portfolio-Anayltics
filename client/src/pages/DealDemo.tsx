@@ -1761,27 +1761,27 @@ export default function DealDemo() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-gray-600">ARV</label>
-                    <p className="text-lg font-semibold">{formatCurrency(kpis.arv)}</p>
+                    <p className="text-lg font-semibold">{formatCurrency(realTimeKPIs.arv)}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-600">All-In Cost</label>
-                    <p className="text-lg font-semibold">{formatCurrency(kpis.allInCost)}</p>
+                    <p className="text-lg font-semibold">{formatCurrency(realTimeKPIs.allInCost)}</p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-600">Cash Flow</label>
                     <p className={`text-lg font-semibold ${
-                      (kpis.cashFlow || 0) > 0 ? "text-green-600" : "text-red-600"
+                      (realTimeKPIs.currentCashFlow || 0) > 0 ? "text-green-600" : "text-red-600"
                     }`}>
-                      {formatCurrency(kpis.cashFlow)}
+                      {formatCurrency(realTimeKPIs.currentCashFlow)}
                     </p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-600">Cash-on-Cash</label>
                     <p className={`text-lg font-semibold ${
-                      (kpis.cashOnCashReturn || 0) > 0.12 ? "text-green-600" : 
-                      (kpis.cashOnCashReturn || 0) > 0.08 ? "text-yellow-600" : "text-red-600"
+                      (realTimeKPIs.cashOnCashReturn || 0) > 0.12 ? "text-green-600" : 
+                      (realTimeKPIs.cashOnCashReturn || 0) > 0.08 ? "text-yellow-600" : "text-red-600"
                     }`}>
-                      {formatPercent(kpis.cashOnCashReturn)}
+                      {formatPercent(realTimeKPIs.cashOnCashReturn)}
                     </p>
                   </div>
                 </div>
@@ -1798,19 +1798,19 @@ export default function DealDemo() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">IRR (5-year)</span>
                   <span className={`font-semibold ${
-                    (kpis.irr || 0) > 0.15 ? "text-green-600" : 
-                    (kpis.irr || 0) > 0.10 ? "text-yellow-600" : "text-red-600"
+                    ((kpis as any)?.irr || 0) > 0.15 ? "text-green-600" : 
+                    ((kpis as any)?.irr || 0) > 0.10 ? "text-yellow-600" : "text-red-600"
                   }`}>
-                    {formatPercent(kpis.irr)}
+                    {formatPercent((kpis as any)?.irr || 0)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Equity Multiple</span>
-                  <span className="font-semibold">{(kpis.equityMultiple || 0).toFixed(2)}x</span>
+                  <span className="font-semibold">{((kpis as any)?.equityMultiple || 0).toFixed(2)}x</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Cap Rate</span>
-                  <span className="font-semibold">{formatPercent(kpis.capRate)}</span>
+                  <span className="font-semibold">{formatPercent(realTimeKPIs.capRate)}</span>
                 </div>
               </div>
             </div>
