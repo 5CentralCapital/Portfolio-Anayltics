@@ -861,7 +861,7 @@ export default function DealDemo() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {(expenseData.length > 0 ? expenseData : dealData.expenses).map((expense: any, index: number) => (
+                      {(expenseData.length > 0 ? expenseData : expenses).map((expense: any, index: number) => (
                         <tr key={expense.id || index}>
                           <td className="px-4 py-3">
                             {editingExpenses ? (
@@ -930,7 +930,7 @@ export default function DealDemo() {
                               <input
                                 type="number"
                                 value={expenseData[index]?.proformaAmount || (expense.isPercentOfRent 
-                                  ? (dealData.units.reduce((sum: number, unit: any) => 
+                                  ? (units.reduce((sum: number, unit: any) => 
                                       sum + Number(unit.marketRent || 1300), 0
                                     ) * parseFloat(expense.percentage)).toFixed(0)
                                   : Number(expense.monthlyAmount)
@@ -947,7 +947,7 @@ export default function DealDemo() {
                             ) : (
                               <span className="text-sm font-medium">
                                 {formatCurrency(expenseData[index]?.proformaAmount || (expense.isPercentOfRent 
-                                  ? dealData.units.reduce((sum: number, unit: any) => 
+                                  ? units.reduce((sum: number, unit: any) => 
                                       sum + Number(unit.marketRent || 1300), 0
                                     ) * parseFloat(expense.percentage)
                                   : Number(expense.monthlyAmount))
@@ -1157,7 +1157,7 @@ export default function DealDemo() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {(rehabData.length > 0 ? rehabData : dealData.rehabItems).map((item: any, index: number) => (
+                    {(rehabData.length > 0 ? rehabData : rehabItems).map((item: any, index: number) => (
                       <tr key={item.id || index}>
                         <td className="px-4 py-3">
                           {editingRehab ? (
@@ -1356,7 +1356,7 @@ export default function DealDemo() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {(loanData.length > 0 ? loanData.filter((loan: any) => loan.loanType === 'acquisition') : dealData.loans.filter((loan: any) => loan.loanType === 'acquisition')).map((loan: any, index: number) => (
+                      {(loanData.length > 0 ? loanData.filter((loan: any) => loan.loanType === 'acquisition') : loans.filter((loan: any) => loan.loanType === 'acquisition')).map((loan: any, index: number) => (
                         <tr key={index}>
                           <td className="px-4 py-3">
                             {editingLoans ? (
