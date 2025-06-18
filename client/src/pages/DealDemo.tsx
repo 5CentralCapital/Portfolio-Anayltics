@@ -120,28 +120,136 @@ export default function DealDemo() {
     }));
   };
 
-  // Calculate derived values from assumptions
-  const calculateDerivedValues = () => {
+  // Calculate real-time KPIs based on current data
+  const calculateRealTimeKPIs = () => {
     const purchasePrice = assumptions.purchasePrice || Number(deal.purchasePrice);
     const ltcPercentage = assumptions.ltcPercentage || 0.80;
     const refinanceLTV = assumptions.refinanceLTV || 0.75;
+    const marketCapRate = assumptions.marketCapRate || Number(deal.marketCapRate);
+    const vacancyRate = assumptions.vacancyRate || Number(deal.vacancyRate);
+    const badDebtRate = assumptions.badDebtRate || Number(deal.badDebtRate);
     
+    // Calculate rent roll totals from current data
+    const currentRentRoll = rentRollData.length > 0 ? rentRollData : units;
+    const currentMonthlyRent = currentRentRoll.reduce((sum: number, unit: any) => 
+      sum + (unit.isOccupied ? Number(unit.currentRent || 0) : 0), 0
+    );
+    const marketMonthlyRent = currentRentRoll.reduce((sum: number, unit: any) => 
+      sum + Number(unit.marketRent || 0), 0
+    );
+    
+    // Calculate income from current data
+    const currentIncomeData = incomeData.length > 0 ? incomeData : otherIncome;
+    const otherMonthlyIncome = currentIncomeData.reduce((sum: number, income: any) => 
+      sum + Number(income.monthlyAmount || 0), 0
+    );
+    const otherProformaIncome = currentIncomeData.reduce((sum: number, income: any) => 
+      sum + Number(income.proformaAmount || income.monthlyAmount || 0), 0
+    );
+    
+    // Calculate expenses from current data
+    const currentExpenseData = expenseData.length > 0 ? expenseData : expenses;
+    const currentMonthlyExpenses = currentExpenseData.reduce((sum: number, expense: any) => {
+      if (expense.isPercentOfRent) {
+        return sum + (currentMonthlyRent * parseFloat(expense.percentage || 0));
+      }
+      return sum + Number(expense.currentAmount || expense.monthlyAmount || 0);
+    }, 0);
+    const proformaMonthlyExpenses = currentExpenseData.reduce((sum: number, expense: any) => {
+      if (expense.isPercentOfRent) {
+        return sum + (marketMonthlyRent * parseFloat(expense.percentage || 0));
+      }
+      return sum + Number(expense.proformaAmount || expense.monthlyAmount || 0);
+    }, 0);
+    
+    // Calculate rehab total from current data
+    const currentRehabData = rehabData.length > 0 ? rehabData : rehabItems;
+    const totalRehab = currentRehabData.reduce((sum: number, item: any) => 
+      sum + Number(item.totalCost || 0), 0
+    );
+    
+    // Calculate gross rental income
+    const currentGrossRentalIncome = (currentMonthlyRent + otherMonthlyIncome) * 12;
+    const proformaGrossRentalIncome = (marketMonthlyRent + otherProformaIncome) * 12;
+    
+    // Calculate effective gross income (after vacancy and bad debt)
+    const currentEffectiveGrossIncome = currentGrossRentalIncome * (1 - vacancyRate - badDebtRate);
+    const proformaEffectiveGrossIncome = proformaGrossRentalIncome * (1 - vacancyRate - badDebtRate);
+    
+    // Calculate NOI
+    const currentNOI = currentEffectiveGrossIncome - (currentMonthlyExpenses * 12);
+    const proformaNOI = proformaEffectiveGrossIncome - (proformaMonthlyExpenses * 12);
+    
+    // Calculate ARV based on proforma NOI
+    const arv = proformaNOI / marketCapRate;
+    
+    // Calculate all-in cost
+    const allInCost = purchasePrice + totalRehab + kpis.totalClosingCosts + kpis.totalHoldingCosts;
+    
+    // Calculate loan metrics
     const purchaseLoanAmount = purchasePrice * ltcPercentage;
     const downPayment = purchasePrice * (1 - ltcPercentage);
-    const refinanceLoanAmount = kpis.arv * refinanceLTV;
+    const refinanceLoanAmount = arv * refinanceLTV;
     const cashOut = Math.max(0, refinanceLoanAmount - purchaseLoanAmount);
-    const totalProfit = cashOut + (kpis.cashFlow * (assumptions.projectedRefiMonth / 12)) + (kpis.arv - kpis.allInCost);
+    
+    // Calculate monthly debt service (assuming same loan terms)
+    const currentLoan = loans.find((l: any) => l.loanType === 'acquisition') || loans[0];
+    const interestRate = currentLoan ? Number(currentLoan.interestRate) : 0.0725;
+    const termYears = currentLoan ? Number(currentLoan.termYears) : 30;
+    const monthlyRate = interestRate / 12;
+    const numPayments = termYears * 12;
+    const monthlyDebtService = purchaseLoanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+    
+    // Calculate cash flow and returns
+    const currentCashFlow = currentNOI - (monthlyDebtService * 12);
+    const proformaCashFlow = proformaNOI - (monthlyDebtService * 12);
+    const totalCashInvested = downPayment + totalRehab + kpis.totalClosingCosts + kpis.totalHoldingCosts;
+    const cashOnCashReturn = proformaCashFlow / totalCashInvested;
+    const capRate = proformaNOI / purchasePrice;
+    const dscr = proformaNOI / (monthlyDebtService * 12);
+    const ltc = purchaseLoanAmount / allInCost;
+    const ltv = purchaseLoanAmount / arv;
+    
+    const totalProfit = cashOut + proformaCashFlow + (arv - allInCost);
     
     return {
+      // Current performance
+      currentGrossRentalIncome,
+      currentEffectiveGrossIncome,
+      currentNOI,
+      currentCashFlow,
+      currentMonthlyRent,
+      currentMonthlyExpenses,
+      
+      // Proforma performance
+      proformaGrossRentalIncome,
+      proformaEffectiveGrossIncome,
+      proformaNOI,
+      proformaCashFlow,
+      marketMonthlyRent,
+      proformaMonthlyExpenses,
+      
+      // Key metrics
+      arv,
+      totalRehab,
+      allInCost,
       purchaseLoanAmount,
       downPayment,
       refinanceLoanAmount,
       cashOut,
-      totalProfit
+      monthlyDebtService,
+      cashOnCashReturn,
+      capRate,
+      dscr,
+      ltc,
+      ltv,
+      totalProfit,
+      otherMonthlyIncome,
+      otherProformaIncome
     };
   };
 
-  const derivedValues = calculateDerivedValues();
+  const realTimeKPIs = calculateRealTimeKPIs();
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Building },
@@ -267,7 +375,7 @@ export default function DealDemo() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Down Payment</label>
-                    <p className="text-2xl font-bold">{formatCurrency(derivedValues.downPayment)}</p>
+                    <p className="text-2xl font-bold">{formatCurrency(realTimeKPIs.downPayment)}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Purchase Loan</label>
@@ -462,7 +570,7 @@ export default function DealDemo() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="bg-gray-50 p-3 rounded">
                         <label className="block text-sm font-medium text-gray-600">Down Payment</label>
-                        <p className="text-lg font-bold">{formatCurrency(derivedValues.downPayment)}</p>
+                        <p className="text-lg font-bold">{formatCurrency(realTimeKPIs.downPayment)}</p>
                       </div>
                       <div className="bg-gray-50 p-3 rounded">
                         <label className="block text-sm font-medium text-gray-600">Purchase Loan</label>
@@ -697,15 +805,11 @@ export default function DealDemo() {
                           <span className="text-sm text-blue-600">Total from rent roll</span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-sm font-bold text-blue-800">{formatCurrency(kpis.grossRentalIncome / 12)}</span>
+                          <span className="text-sm font-bold text-blue-800">{formatCurrency(realTimeKPIs.currentMonthlyRent)}</span>
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-sm font-bold text-blue-800">
-                            {formatCurrency(
-                              dealData.units.reduce((sum: number, unit: any) => 
-                                sum + Number(unit.marketRent || 1300), 0
-                              )
-                            )}
+                            {formatCurrency(realTimeKPIs.marketMonthlyRent)}
                           </span>
                         </td>
                       </tr>
@@ -1615,8 +1719,8 @@ export default function DealDemo() {
                 <div className="grid grid-cols-4 gap-4">
                   <div className="bg-white p-4 rounded shadow-sm">
                     <h3 className="font-medium text-gray-800">Down Payment</h3>
-                    <p className="text-xl font-bold text-blue-600">{formatCurrency(derivedValues.downPayment)}</p>
-                    <p className="text-sm text-gray-600">{((derivedValues.downPayment / (assumptions.purchasePrice || deal.purchasePrice)) * 100).toFixed(1)}% of purchase</p>
+                    <p className="text-xl font-bold text-blue-600">{formatCurrency(realTimeKPIs.downPayment)}</p>
+                    <p className="text-sm text-gray-600">{((realTimeKPIs.downPayment / (assumptions.purchasePrice || deal.purchasePrice)) * 100).toFixed(1)}% of purchase</p>
                   </div>
                   <div className="bg-white p-4 rounded shadow-sm">
                     <h3 className="font-medium text-gray-800">Monthly Debt Service</h3>
