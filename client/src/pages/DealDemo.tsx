@@ -21,6 +21,8 @@ export default function DealDemo() {
   const [editingRentRoll, setEditingRentRoll] = useState(false);
   const [editingIncome, setEditingIncome] = useState(false);
   const [editingExpenses, setEditingExpenses] = useState(false);
+  const [editingRehab, setEditingRehab] = useState(false);
+  const [editingLoans, setEditingLoans] = useState(false);
   const [assumptions, setAssumptions] = useState<any>({});
 
   useEffect(() => {
@@ -456,79 +458,84 @@ export default function DealDemo() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {Array.from({ length: assumptions.units || deal.units }, (_, index) => {
                       const unit = dealData.units[index] || {};
+                      const unitNumber = unit.unitNumber || `Unit ${index + 1}`;
+                      const currentRent = Number(unit.currentRent) || 1200;
+                      const marketRent = Number(unit.marketRent) || 1300;
+                      const isOccupied = unit.isOccupied !== undefined ? unit.isOccupied : true;
+                      
                       return (
                         <tr key={index}>
                           <td className="px-4 py-3">
                             {editingRentRoll ? (
                               <input
                                 type="text"
-                                defaultValue={unit.unitNumber || `Unit ${index + 1}`}
+                                defaultValue={unitNumber}
                                 className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm font-medium">{unit.unitNumber || `Unit ${index + 1}`}</span>
+                              <span className="text-sm font-medium">{unitNumber}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingRentRoll ? (
                               <input
                                 type="text"
-                                defaultValue={unit.isOccupied ? 'Tenant Name' : ''}
+                                defaultValue={isOccupied ? 'Tenant Name' : ''}
                                 placeholder="Tenant name"
                                 className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm">{unit.isOccupied ? 'Tenant Name' : 'Vacant'}</span>
+                              <span className="text-sm">{isOccupied ? 'Tenant Name' : 'Vacant'}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingRentRoll ? (
                               <input
                                 type="date"
-                                defaultValue={unit.isOccupied ? '2024-01-15' : ''}
+                                defaultValue={isOccupied ? '2024-01-15' : ''}
                                 className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm">{unit.isOccupied ? '01/15/2024' : '-'}</span>
+                              <span className="text-sm">{isOccupied ? '01/15/2024' : '-'}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingRentRoll ? (
                               <input
                                 type="date"
-                                defaultValue={unit.isOccupied ? '2025-01-15' : ''}
+                                defaultValue={isOccupied ? '2025-01-15' : ''}
                                 className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm">{unit.isOccupied ? '01/15/2025' : '-'}</span>
+                              <span className="text-sm">{isOccupied ? '01/15/2025' : '-'}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingRentRoll ? (
                               <input
                                 type="number"
-                                defaultValue={Number(unit.currentRent) || 1200}
+                                defaultValue={currentRent}
                                 className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm font-medium">{formatCurrency(Number(unit.currentRent) || 1200)}</span>
+                              <span className="text-sm font-medium">{formatCurrency(currentRent)}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingRentRoll ? (
                               <input
                                 type="number"
-                                defaultValue={Number(unit.marketRent) || 1300}
+                                defaultValue={marketRent}
                                 className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm font-medium">{formatCurrency(Number(unit.marketRent) || 1300)}</span>
+                              <span className="text-sm font-medium">{formatCurrency(marketRent)}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             {editingRentRoll ? (
                               <select
-                                defaultValue={unit.isOccupied ? 'occupied' : 'vacant'}
+                                defaultValue={isOccupied ? 'occupied' : 'vacant'}
                                 className="px-2 py-1 border border-gray-300 rounded text-sm"
                               >
                                 <option value="occupied">Occupied</option>
@@ -536,11 +543,11 @@ export default function DealDemo() {
                               </select>
                             ) : (
                               <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                unit.isOccupied 
+                                isOccupied 
                                   ? 'bg-green-100 text-green-800' 
                                   : 'bg-red-100 text-red-800'
                               }`}>
-                                {unit.isOccupied ? 'Occupied' : 'Vacant'}
+                                {isOccupied ? 'Occupied' : 'Vacant'}
                               </span>
                             )}
                           </td>
@@ -924,141 +931,140 @@ export default function DealDemo() {
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">Rehab Budget Detail</h2>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
-                  + Add Rehab Item
+                <button 
+                  onClick={() => setEditingRehab(!editingRehab)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    editingRehab 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {editingRehab ? 'Save Changes' : 'Edit Rehab'}
                 </button>
               </div>
-              <div className="space-y-4">
-                {dealData.rehabItems.map((item: any, index: number) => (
-                  <div key={item.id || index} className="border border-gray-200 rounded-lg p-4">
-                    <div className="grid grid-cols-12 gap-4 items-start">
-                      <div className="col-span-3">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                        <input
-                          type="text"
-                          defaultValue={item.category}
-                          placeholder="e.g., Kitchen, HVAC"
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <input
-                          type="text"
-                          defaultValue={item.description}
-                          placeholder="Detailed description"
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Total Cost</label>
-                        <input
-                          type="number"
-                          defaultValue={Number(item.totalCost)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Bid Status</label>
-                        <select
-                          defaultValue={item.bidStatus}
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        >
-                          <option value="estimated">Estimated</option>
-                          <option value="bid_received">Bid Received</option>
-                          <option value="contracted">Contracted</option>
-                          <option value="completed">Completed</option>
-                        </select>
-                      </div>
-                      <div className="col-span-1 flex items-end">
-                        <button className="text-red-600 hover:text-red-800 text-sm p-2">
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {/* Additional Fields */}
-                    <div className="grid grid-cols-12 gap-4 mt-3">
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Contractor</label>
-                        <input
-                          type="text"
-                          placeholder="Contractor name"
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                        <input
-                          type="date"
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                        <input
-                          type="date"
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                        <select className="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                          <option value="low">Low</option>
-                          <option value="medium">Medium</option>
-                          <option value="high">High</option>
-                          <option value="critical">Critical</option>
-                        </select>
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">% Complete</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          placeholder="0"
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Per Unit Cost</label>
-                        <input
-                          type="number"
-                          value={(Number(item.totalCost) / (assumptions.units || deal.units)).toFixed(0)}
-                          readOnly
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-gray-50"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Cost</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bid Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Per Unit Cost</th>
+                      {editingRehab && <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {dealData.rehabItems.map((item: any, index: number) => (
+                      <tr key={item.id || index}>
+                        <td className="px-4 py-3">
+                          {editingRehab ? (
+                            <input
+                              type="text"
+                              defaultValue={item.category}
+                              placeholder="e.g., Kitchen, HVAC"
+                              className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm font-medium">{item.category}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editingRehab ? (
+                            <input
+                              type="text"
+                              defaultValue={item.description}
+                              placeholder="Detailed description"
+                              className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm">{item.description}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editingRehab ? (
+                            <input
+                              type="number"
+                              defaultValue={Number(item.totalCost)}
+                              className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm font-bold">{formatCurrency(Number(item.totalCost))}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editingRehab ? (
+                            <select
+                              defaultValue={item.bidStatus}
+                              className="px-3 py-2 border border-gray-300 rounded text-sm"
+                            >
+                              <option value="estimated">Estimated</option>
+                              <option value="bid_received">Bid Received</option>
+                              <option value="contracted">Contracted</option>
+                              <option value="completed">Completed</option>
+                            </select>
+                          ) : (
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              item.bidStatus === 'contracted' ? 'bg-green-100 text-green-800' :
+                              item.bidStatus === 'bid_received' ? 'bg-blue-100 text-blue-800' :
+                              item.bidStatus === 'completed' ? 'bg-purple-100 text-purple-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {item.bidStatus.replace('_', ' ').toUpperCase()}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-gray-600">
+                            {formatCurrency(Number(item.totalCost) / (assumptions.units || deal.units))}
+                          </span>
+                        </td>
+                        {editingRehab && (
+                          <td className="px-4 py-3">
+                            <button className="text-red-600 hover:text-red-800 text-sm">
+                              Delete
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
                 
-                {/* Rehab Summary */}
-                <div className="border-t-2 border-gray-300 pt-4">
-                  <div className="grid grid-cols-3 gap-6">
-                    <div className="bg-blue-50 p-4 rounded">
-                      <h3 className="font-medium text-blue-800">Total Rehab Budget</h3>
-                      <p className="text-2xl font-bold text-blue-600">{formatCurrency(kpis.totalRehab)}</p>
-                      <p className="text-sm text-blue-600">{formatCurrency(kpis.totalRehab / (assumptions.units || deal.units))} per unit</p>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded">
-                      <h3 className="font-medium text-green-800">Contracted</h3>
-                      <p className="text-xl font-bold text-green-600">
-                        {formatCurrency(dealData.rehabItems
-                          .filter((item: any) => item.bidStatus === 'contracted')
-                          .reduce((sum: number, item: any) => sum + Number(item.totalCost), 0)
-                        )}
-                      </p>
-                    </div>
-                    <div className="bg-yellow-50 p-4 rounded">
-                      <h3 className="font-medium text-yellow-800">Estimated</h3>
-                      <p className="text-xl font-bold text-yellow-600">
-                        {formatCurrency(dealData.rehabItems
-                          .filter((item: any) => item.bidStatus === 'estimated')
-                          .reduce((sum: number, item: any) => sum + Number(item.totalCost), 0)
-                        )}
-                      </p>
-                    </div>
+                {editingRehab && (
+                  <div className="mt-4">
+                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+                      + Add Rehab Item
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Rehab Summary */}
+              <div className="border-t-2 border-gray-300 pt-4 mt-6">
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="bg-blue-50 p-4 rounded">
+                    <h3 className="font-medium text-blue-800">Total Rehab Budget</h3>
+                    <p className="text-2xl font-bold text-blue-600">{formatCurrency(kpis.totalRehab)}</p>
+                    <p className="text-sm text-blue-600">{formatCurrency(kpis.totalRehab / (assumptions.units || deal.units))} per unit</p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded">
+                    <h3 className="font-medium text-green-800">Contracted</h3>
+                    <p className="text-xl font-bold text-green-600">
+                      {formatCurrency(dealData.rehabItems
+                        .filter((item: any) => item.bidStatus === 'contracted')
+                        .reduce((sum: number, item: any) => sum + Number(item.totalCost), 0)
+                      )}
+                    </p>
+                  </div>
+                  <div className="bg-yellow-50 p-4 rounded">
+                    <h3 className="font-medium text-yellow-800">Estimated</h3>
+                    <p className="text-xl font-bold text-yellow-600">
+                      {formatCurrency(dealData.rehabItems
+                        .filter((item: any) => item.bidStatus === 'estimated')
+                        .reduce((sum: number, item: any) => sum + Number(item.totalCost), 0)
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1067,167 +1073,216 @@ export default function DealDemo() {
 
           {/* Loans Tab */}
           {activeTab === 'loans' && (
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Loan Structure</h2>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
-                  + Add Loan
-                </button>
+            <div className="space-y-6">
+              {/* Acquisition Loan */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Acquisition Loan</h2>
+                  <button 
+                    onClick={() => setEditingLoans(!editingLoans)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      editingLoans 
+                        ? 'bg-green-600 text-white hover:bg-green-700' 
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {editingLoans ? 'Save Changes' : 'Edit Loans'}
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lender</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loan Amount</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rate (%)</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Term (Years)</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amortization</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monthly Payment</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {dealData.loans.filter((loan: any) => loan.loanType === 'acquisition').map((loan: any, index: number) => (
+                        <tr key={index}>
+                          <td className="px-4 py-3">
+                            {editingLoans ? (
+                              <input
+                                type="text"
+                                defaultValue="Local Bank"
+                                placeholder="Lender name"
+                                className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm font-medium">Local Bank</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingLoans ? (
+                              <input
+                                type="number"
+                                defaultValue={derivedValues.purchaseLoanAmount}
+                                className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm font-bold">{formatCurrency(derivedValues.purchaseLoanAmount)}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingLoans ? (
+                              <input
+                                type="number"
+                                step="0.001"
+                                defaultValue={(Number(loan.interestRate) * 100).toFixed(3)}
+                                className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm">{(Number(loan.interestRate) * 100).toFixed(3)}%</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingLoans ? (
+                              <input
+                                type="number"
+                                defaultValue={loan.termYears}
+                                className="w-16 px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm">{loan.termYears}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingLoans ? (
+                              <input
+                                type="number"
+                                defaultValue={loan.amortizationYears}
+                                className="w-16 px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm">{loan.amortizationYears}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-medium">{formatCurrency(kpis.monthlyDebtService)}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div className="space-y-4">
-                {dealData.loans.map((loan: any, index: number) => (
-                  <div key={loan.id || index} className="border border-gray-200 rounded-lg p-4">
-                    <div className="grid grid-cols-12 gap-4">
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Loan Type</label>
-                        <select
-                          defaultValue={loan.loanType}
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        >
-                          <option value="acquisition">Acquisition</option>
-                          <option value="rehab">Rehab</option>
-                          <option value="bridge">Bridge</option>
-                          <option value="permanent">Permanent</option>
-                          <option value="refinance">Refinance</option>
-                        </select>
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Loan Amount</label>
-                        <input
-                          type="number"
-                          defaultValue={Number(loan.loanAmount)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Interest Rate (%)</label>
-                        <input
-                          type="number"
-                          step="0.001"
-                          defaultValue={(Number(loan.interestRate) * 100).toFixed(3)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Term (Years)</label>
-                        <input
-                          type="number"
-                          defaultValue={loan.termYears}
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Amortization</label>
-                        <input
-                          type="number"
-                          defaultValue={loan.amortizationYears}
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">IO Months</label>
-                        <input
-                          type="number"
-                          defaultValue={loan.ioMonths}
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-1 flex items-end">
-                        <button className="text-red-600 hover:text-red-800 text-sm p-2">
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {/* Additional Loan Details */}
-                    <div className="grid grid-cols-12 gap-4 mt-3">
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Lender</label>
-                        <input
-                          type="text"
-                          placeholder="Lender name"
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Points (%)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          defaultValue={(Number(loan.points) * 100).toFixed(2)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Lender Fees</label>
-                        <input
-                          type="number"
-                          defaultValue={Number(loan.lenderFees)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Payment</label>
-                        <input
-                          type="number"
-                          value={(kpis.monthlyDebtService || 0).toFixed(0)}
-                          readOnly
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-gray-50"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Closing Date</label>
-                        <input
-                          type="date"
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Maturity Date</label>
-                        <input
-                          type="date"
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                    </div>
+
+              {/* Refinance Loan */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h2 className="text-lg font-semibold mb-4">Refinance Loan (Exit Strategy)</h2>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lender</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loan Amount</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rate (%)</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Term (Years)</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">LTV (%)</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cash Out</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      <tr>
+                        <td className="px-4 py-3">
+                          {editingLoans ? (
+                            <input
+                              type="text"
+                              defaultValue="Permanent Lender"
+                              placeholder="Lender name"
+                              className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm font-medium">Permanent Lender</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editingLoans ? (
+                            <input
+                              type="number"
+                              defaultValue={kpis.newLoanAmount}
+                              className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm font-bold">{formatCurrency(kpis.newLoanAmount)}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editingLoans ? (
+                            <input
+                              type="number"
+                              step="0.001"
+                              defaultValue="5.500"
+                              className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm">5.500%</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editingLoans ? (
+                            <input
+                              type="number"
+                              defaultValue={30}
+                              className="w-16 px-3 py-2 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm">30</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editingLoans ? (
+                            <input
+                              type="number"
+                              step="0.1"
+                              defaultValue={(assumptions.refinanceLtv * 100) || 75}
+                              className="w-16 px-3 py-2 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm">{((assumptions.refinanceLtv * 100) || 75).toFixed(1)}%</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-bold text-green-600">{formatCurrency(kpis.cashOut)}</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Loan Summary */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h2 className="text-lg font-semibold mb-4">Loan Summary & Metrics</h2>
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="bg-white p-4 rounded shadow-sm">
+                    <h3 className="font-medium text-gray-800">Down Payment</h3>
+                    <p className="text-xl font-bold text-blue-600">{formatCurrency(derivedValues.downPayment)}</p>
+                    <p className="text-sm text-gray-600">{((derivedValues.downPayment / (assumptions.purchasePrice || deal.purchasePrice)) * 100).toFixed(1)}% of purchase</p>
                   </div>
-                ))}
-                
-                {/* Loan Summary */}
-                <div className="border-t-2 border-gray-300 pt-4">
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="bg-blue-50 p-4 rounded">
-                      <h3 className="font-medium text-blue-800">Total Loan Amount</h3>
-                      <p className="text-xl font-bold text-blue-600">
-                        {formatCurrency(dealData.loans.reduce((sum: number, loan: any) => sum + Number(loan.loanAmount), 0))}
-                      </p>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded">
-                      <h3 className="font-medium text-green-800">Weighted Avg Rate</h3>
-                      <p className="text-xl font-bold text-green-600">
-                        {dealData.loans.length > 0 ? (
-                          (dealData.loans.reduce((sum: number, loan: any) => 
-                            sum + (Number(loan.interestRate) * Number(loan.loanAmount)), 0) / 
-                           dealData.loans.reduce((sum: number, loan: any) => sum + Number(loan.loanAmount), 0) * 100
-                          ).toFixed(2)
-                        ) : '0.00'}%
-                      </p>
-                    </div>
-                    <div className="bg-yellow-50 p-4 rounded">
-                      <h3 className="font-medium text-yellow-800">Monthly Debt Service</h3>
-                      <p className="text-xl font-bold text-yellow-600">
-                        {formatCurrency(kpis.monthlyDebtService)}
-                      </p>
-                    </div>
-                    <div className="bg-purple-50 p-4 rounded">
-                      <h3 className="font-medium text-purple-800">DSCR</h3>
-                      <p className={`text-xl font-bold ${
-                        (kpis.dscr || 0) >= 1.25 ? "text-green-600" : 
-                        (kpis.dscr || 0) >= 1.15 ? "text-yellow-600" : "text-red-600"
-                      }`}>
-                        {(kpis.dscr || 0).toFixed(2)}x
-                      </p>
-                    </div>
+                  <div className="bg-white p-4 rounded shadow-sm">
+                    <h3 className="font-medium text-gray-800">Monthly Debt Service</h3>
+                    <p className="text-xl font-bold text-blue-600">{formatCurrency(kpis.monthlyDebtService)}</p>
+                    <p className="text-sm text-gray-600">Acquisition loan</p>
+                  </div>
+                  <div className="bg-white p-4 rounded shadow-sm">
+                    <h3 className="font-medium text-gray-800">DSCR</h3>
+                    <p className={`text-xl font-bold ${
+                      (kpis.dscr || 0) >= 1.25 ? "text-green-600" : 
+                      (kpis.dscr || 0) >= 1.15 ? "text-yellow-600" : "text-red-600"
+                    }`}>
+                      {(kpis.dscr || 0).toFixed(2)}x
+                    </p>
+                    <p className="text-sm text-gray-600">Debt coverage ratio</p>
+                  </div>
+                  <div className="bg-white p-4 rounded shadow-sm">
+                    <h3 className="font-medium text-gray-800">Total Profit</h3>
+                    <p className="text-xl font-bold text-green-600">{formatCurrency(kpis.totalProfit)}</p>
+                    <p className="text-sm text-gray-600">From refinance</p>
                   </div>
                 </div>
               </div>
