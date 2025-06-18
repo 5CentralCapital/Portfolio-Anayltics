@@ -188,29 +188,42 @@ export default function DealDemo() {
     const holdingCosts = kpis.totalHoldingCosts || 0;
     const allInCost = purchasePrice + totalRehab + closingCosts + holdingCosts;
     
-    // Calculate loan metrics
-    const purchaseLoanAmount = purchasePrice * ltcPercentage;
-    const downPayment = purchasePrice * (1 - ltcPercentage);
-    const refinanceLoanAmount = arv * refinanceLTV;
-    const cashOut = Math.max(0, refinanceLoanAmount - purchaseLoanAmount);
+    // Get dynamic loan data
+    const currentLoanData = loanData.length > 0 ? loanData : loans;
+    const acquisitionLoan = currentLoanData.find((l: any) => l.loanType === 'acquisition') || currentLoanData[0];
+    const refinanceLoan = currentLoanData.find((l: any) => l.loanType === 'refinance');
     
-    // Calculate monthly debt service (assuming same loan terms)
-    const currentLoan = loans.find((l: any) => l.loanType === 'acquisition') || loans[0];
-    const interestRate = currentLoan ? Number(currentLoan.interestRate) : 0.0725;
-    const termYears = currentLoan ? Number(currentLoan.termYears) : 30;
+    // Calculate loan metrics using dynamic data
+    const loanAmount = acquisitionLoan ? Number(acquisitionLoan.loanAmount) : purchasePrice * ltcPercentage;
+    const interestRate = acquisitionLoan ? Number(acquisitionLoan.interestRate) / 100 : 0.0725;
+    const termYears = acquisitionLoan ? Number(acquisitionLoan.termYears) : 30;
+    const downPayment = purchasePrice - loanAmount;
+    
+    // Calculate refinance metrics
+    const refinanceLoanAmount = refinanceLoan ? Number(refinanceLoan.loanAmount) : arv * refinanceLTV;
+    const refinanceRate = refinanceLoan ? Number(refinanceLoan.interestRate) / 100 : interestRate;
+    const refinanceTermYears = refinanceLoan ? Number(refinanceLoan.termYears) : termYears;
+    
+    // Calculate cash out correctly: refinance loan minus remaining acquisition loan balance
+    const remainingBalance = loanAmount; // Simplified - in reality this would be calculated based on amortization
+    const cashOut = Math.max(0, refinanceLoanAmount - remainingBalance - totalRehab);
+    
+    // Calculate monthly debt service for acquisition loan
     const monthlyRate = interestRate / 12;
     const numPayments = termYears * 12;
-    const monthlyDebtService = purchaseLoanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+    const monthlyDebtService = loanAmount > 0 && monthlyRate > 0 
+      ? loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1)
+      : 0;
     
     // Calculate cash flow and returns
     const currentCashFlow = currentNOI - (monthlyDebtService * 12);
     const proformaCashFlow = proformaNOI - (monthlyDebtService * 12);
     const totalCashInvested = downPayment + totalRehab + closingCosts + holdingCosts;
-    const cashOnCashReturn = proformaCashFlow / totalCashInvested;
-    const capRate = proformaNOI / purchasePrice;
-    const dscr = proformaNOI / (monthlyDebtService * 12);
-    const ltc = purchaseLoanAmount / allInCost;
-    const ltv = purchaseLoanAmount / arv;
+    const cashOnCashReturn = totalCashInvested > 0 ? proformaCashFlow / totalCashInvested : 0;
+    const capRate = purchasePrice > 0 ? proformaNOI / purchasePrice : 0;
+    const dscr = monthlyDebtService > 0 ? proformaNOI / (monthlyDebtService * 12) : 0;
+    const ltc = allInCost > 0 ? loanAmount / allInCost : 0;
+    const ltv = arv > 0 ? loanAmount / arv : 0;
     
     const totalProfit = cashOut + proformaCashFlow + (arv - allInCost);
     const equityMultiple = totalCashInvested > 0 ? (totalProfit + totalCashInvested) / totalCashInvested : 0;
@@ -237,7 +250,7 @@ export default function DealDemo() {
       arv,
       totalRehab,
       allInCost,
-      purchaseLoanAmount,
+      loanAmount,
       downPayment,
       refinanceLoanAmount,
       cashOut,
@@ -385,7 +398,7 @@ export default function DealDemo() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Purchase Loan</label>
-                    <p className="text-2xl font-bold">{formatCurrency(realTimeKPIs.purchaseLoanAmount)}</p>
+                    <p className="text-2xl font-bold">{formatCurrency(realTimeKPIs.loanAmount)}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Total Rehab</label>
@@ -580,7 +593,7 @@ export default function DealDemo() {
                       </div>
                       <div className="bg-gray-50 p-3 rounded">
                         <label className="block text-sm font-medium text-gray-600">Purchase Loan</label>
-                        <p className="text-lg font-bold">{formatCurrency(realTimeKPIs.purchaseLoanAmount)}</p>
+                        <p className="text-lg font-bold">{formatCurrency(realTimeKPIs.loanAmount)}</p>
                       </div>
                       <div className="bg-gray-50 p-3 rounded">
                         <label className="block text-sm font-medium text-gray-600">Refinance Loan</label>
@@ -709,11 +722,11 @@ export default function DealDemo() {
                             {editingRentRoll ? (
                               <input
                                 type="number"
-                                value={rentRollData[index]?.currentRent || currentRent}
+                                value={rentRollData[index]?.currentRent || currentRent || 0}
                                 onChange={(e) => {
                                   const newData = [...rentRollData];
                                   if (!newData[index]) newData[index] = {};
-                                  newData[index].currentRent = Number(e.target.value);
+                                  newData[index].currentRent = Number(e.target.value) || 0;
                                   setRentRollData(newData);
                                 }}
                                 className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
@@ -726,11 +739,11 @@ export default function DealDemo() {
                             {editingRentRoll ? (
                               <input
                                 type="number"
-                                value={rentRollData[index]?.marketRent || marketRent}
+                                value={rentRollData[index]?.marketRent || marketRent || 0}
                                 onChange={(e) => {
                                   const newData = [...rentRollData];
                                   if (!newData[index]) newData[index] = {};
-                                  newData[index].marketRent = Number(e.target.value);
+                                  newData[index].marketRent = Number(e.target.value) || 0;
                                   setRentRollData(newData);
                                 }}
                                 className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
@@ -1479,7 +1492,7 @@ export default function DealDemo() {
                             {editingLoans ? (
                               <input
                                 type="number"
-                                value={loanData.find((l: any) => l.loanType === 'acquisition')?.loanAmount || realTimeKPIs.purchaseLoanAmount}
+                                value={loanData.find((l: any) => l.loanType === 'acquisition')?.loanAmount || realTimeKPIs.loanAmount}
                                 onChange={(e) => {
                                   const newData = [...loanData];
                                   const loanIndex = newData.findIndex((l: any) => l.loanType === 'acquisition');
@@ -1493,7 +1506,7 @@ export default function DealDemo() {
                                 className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm font-bold">{formatCurrency(loanData.find((l: any) => l.loanType === 'acquisition')?.loanAmount || realTimeKPIs.purchaseLoanAmount)}</span>
+                              <span className="text-sm font-bold">{formatCurrency(loanData.find((l: any) => l.loanType === 'acquisition')?.loanAmount || realTimeKPIs.loanAmount)}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
