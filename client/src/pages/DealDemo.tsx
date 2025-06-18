@@ -383,7 +383,7 @@ export default function DealDemo() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Total Rehab</label>
-                    <p className="text-2xl font-bold">{formatCurrency(kpis.totalRehab)}</p>
+                    <p className="text-2xl font-bold">{formatCurrency(realTimeKPIs.totalRehab)}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">All-In Cost</label>
@@ -582,7 +582,7 @@ export default function DealDemo() {
                       </div>
                       <div className="bg-green-50 p-3 rounded">
                         <label className="block text-sm font-medium text-gray-600">Total Profit</label>
-                        <p className="text-lg font-bold text-green-600">{formatCurrency(derivedValues.totalProfit)}</p>
+                        <p className="text-lg font-bold text-green-600">{formatCurrency(realTimeKPIs.totalProfit)}</p>
                       </div>
                     </div>
                   </div>
@@ -920,7 +920,7 @@ export default function DealDemo() {
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-sm font-bold text-green-600">
-                            {formatCurrency((realTimeKPIs.currentGrossRentalIncome + kpis.totalOtherIncome) / 12)}
+                            {formatCurrency((realTimeKPIs.currentGrossRentalIncome + realTimeKPIs.otherMonthlyIncome * 12) / 12)}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -928,7 +928,7 @@ export default function DealDemo() {
                             {formatCurrency(
                               dealData.units.reduce((sum: number, unit: any) => 
                                 sum + Number(unit.marketRent || 1300), 0
-                              ) + (kpis.totalOtherIncome / 12)
+                              ) + (realTimeKPIs.otherMonthlyIncome * 12 / 12)
                             )}
                           </span>
                         </td>
@@ -1118,7 +1118,7 @@ export default function DealDemo() {
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-sm font-bold text-red-600">
-                            {formatCurrency(kpis.totalOperatingExpenses / 12)}
+                            {formatCurrency(realTimeKPIs.currentMonthlyExpenses * 12 / 12)}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -1158,7 +1158,7 @@ export default function DealDemo() {
                       {formatCurrency(
                         dealData.units.reduce((sum: number, unit: any) => 
                           sum + Number(unit.marketRent || 1300), 0
-                        ) + (kpis.totalOtherIncome / 12) -
+                        ) + (realTimeKPIs.otherMonthlyIncome * 12 / 12) -
                         dealData.expenses.reduce((sum: number, expense: any) => {
                           const proformaRent = dealData.units.reduce((unitSum: number, unit: any) => 
                             unitSum + Number(unit.marketRent || 1300), 0
@@ -1195,8 +1195,8 @@ export default function DealDemo() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {Array.from({ length: 12 }, (_, i) => {
-                      const monthlyIncome = (realTimeKPIs.currentGrossRentalIncome + kpis.totalOtherIncome) / 12;
-                      const monthlyExpenses = kpis.totalOperatingExpenses / 12;
+                      const monthlyIncome = (realTimeKPIs.currentGrossRentalIncome + realTimeKPIs.otherMonthlyIncome * 12) / 12;
+                      const monthlyExpenses = realTimeKPIs.currentMonthlyExpenses * 12 / 12;
                       const monthlyNOI = kpis.netOperatingIncome / 12;
                       const monthlyDebtService = realTimeKPIs.monthlyDebtService;
                       const monthlyCashFlow = monthlyNOI - monthlyDebtService;
@@ -1403,13 +1403,13 @@ export default function DealDemo() {
                 <div className="grid grid-cols-3 gap-6">
                   <div className="bg-blue-50 p-4 rounded">
                     <h3 className="font-medium text-blue-800">Total Rehab Budget</h3>
-                    <p className="text-2xl font-bold text-blue-600">{formatCurrency(kpis.totalRehab)}</p>
-                    <p className="text-sm text-blue-600">{formatCurrency(kpis.totalRehab / (assumptions.units || deal.units))} per unit</p>
+                    <p className="text-2xl font-bold text-blue-600">{formatCurrency(realTimeKPIs.totalRehab)}</p>
+                    <p className="text-sm text-blue-600">{formatCurrency(realTimeKPIs.totalRehab / (assumptions.units || deal.units))} per unit</p>
                   </div>
                   <div className="bg-green-50 p-4 rounded">
                     <h3 className="font-medium text-green-800">Contracted</h3>
                     <p className="text-xl font-bold text-green-600">
-                      {formatCurrency(dealData.rehabItems
+                      {formatCurrency((rehabData.length > 0 ? rehabData : rehabItems)
                         .filter((item: any) => item.bidStatus === 'contracted')
                         .reduce((sum: number, item: any) => sum + Number(item.totalCost), 0)
                       )}
