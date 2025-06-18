@@ -711,8 +711,281 @@ export default function DealDemo() {
             </div>
           )}
 
-          {/* Placeholder for other tabs */}
-          {activeTab !== 'saved' && activeTab !== 'overview' && (
+          {/* Rent Roll Tab */}
+          {activeTab === 'rentroll' && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Rent Roll</h2>
+                <button
+                  onClick={() => setEditingRentRoll(!editingRentRoll)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    editingRentRoll 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {editingRentRoll ? 'Save Changes' : 'Edit Rent Roll'}
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sqft</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Current Rent</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Market Rent</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tenant</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lease End</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {(rentRollData.length > 0 ? rentRollData : units).map((unit: any, index: number) => (
+                      <tr key={index}>
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-medium">{unit.unitNumber}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm">{unit.unitType}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm">{unit.squareFeet}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {editingRentRoll ? (
+                            <input
+                              type="number"
+                              value={rentRollData.find((r: any) => r.unitNumber === unit.unitNumber)?.currentRent || unit.currentRent}
+                              onChange={(e) => {
+                                const newData = [...rentRollData];
+                                const unitIndex = newData.findIndex((r: any) => r.unitNumber === unit.unitNumber);
+                                if (unitIndex >= 0) {
+                                  newData[unitIndex].currentRent = Number(e.target.value);
+                                } else {
+                                  newData.push({ ...unit, currentRent: Number(e.target.value) });
+                                }
+                                setRentRollData(newData);
+                              }}
+                              className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm font-bold">{formatCurrency(unit.currentRent)}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {editingRentRoll ? (
+                            <input
+                              type="number"
+                              value={rentRollData.find((r: any) => r.unitNumber === unit.unitNumber)?.marketRent || unit.marketRent}
+                              onChange={(e) => {
+                                const newData = [...rentRollData];
+                                const unitIndex = newData.findIndex((r: any) => r.unitNumber === unit.unitNumber);
+                                if (unitIndex >= 0) {
+                                  newData[unitIndex].marketRent = Number(e.target.value);
+                                } else {
+                                  newData.push({ ...unit, marketRent: Number(e.target.value) });
+                                }
+                                setRentRollData(newData);
+                              }}
+                              className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm font-bold text-blue-600">{formatCurrency(unit.marketRent)}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm">{unit.tenantName || 'Vacant'}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm">{unit.leaseEndDate || 'N/A'}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Income & Expense Tab */}
+          {activeTab === 'income' && (
+            <div className="space-y-6">
+              {/* Income Section */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Other Income</h2>
+                  <button
+                    onClick={() => setEditingIncome(!editingIncome)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      editingIncome 
+                        ? 'bg-green-600 text-white hover:bg-green-700' 
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {editingIncome ? 'Save Changes' : 'Edit Income'}
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Income Source</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monthly Amount</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Annual Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {(incomeData.length > 0 ? incomeData : otherIncome).map((income: any, index: number) => (
+                        <tr key={index}>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-medium">{income.incomeName}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingIncome ? (
+                              <input
+                                type="number"
+                                value={incomeData.find((i: any) => i.incomeName === income.incomeName)?.monthlyAmount || (income.annualAmount / 12)}
+                                onChange={(e) => {
+                                  const newData = [...incomeData];
+                                  const incomeIndex = newData.findIndex((i: any) => i.incomeName === income.incomeName);
+                                  if (incomeIndex >= 0) {
+                                    newData[incomeIndex].monthlyAmount = Number(e.target.value);
+                                    newData[incomeIndex].annualAmount = Number(e.target.value) * 12;
+                                  } else {
+                                    newData.push({
+                                      ...income,
+                                      monthlyAmount: Number(e.target.value),
+                                      annualAmount: Number(e.target.value) * 12
+                                    });
+                                  }
+                                  setIncomeData(newData);
+                                }}
+                                className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm font-bold">{formatCurrency((income.annualAmount || 0) / 12)}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold text-green-600">
+                              {formatCurrency(incomeData.find((i: any) => i.incomeName === income.incomeName)?.annualAmount || income.annualAmount)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Expense Section */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Operating Expenses</h2>
+                  <button
+                    onClick={() => setEditingExpenses(!editingExpenses)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      editingExpenses 
+                        ? 'bg-green-600 text-white hover:bg-green-700' 
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {editingExpenses ? 'Save Changes' : 'Edit Expenses'}
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expense Category</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount/Percentage</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monthly Amount</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Annual Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {(expenseData.length > 0 ? expenseData : expenses).map((expense: any, index: number) => (
+                        <tr key={index}>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-medium">{expense.expenseName}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm">{expense.isPercentOfRent ? 'Percentage' : 'Fixed'}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingExpenses ? (
+                              expense.isPercentOfRent ? (
+                                <input
+                                  type="number"
+                                  step="0.001"
+                                  value={((expenseData.find((e: any) => e.expenseName === expense.expenseName)?.percentage || expense.percentage) * 100).toFixed(3)}
+                                  onChange={(e) => {
+                                    const newData = [...expenseData];
+                                    const expenseIndex = newData.findIndex((ex: any) => ex.expenseName === expense.expenseName);
+                                    if (expenseIndex >= 0) {
+                                      newData[expenseIndex].percentage = Number(e.target.value) / 100;
+                                    } else {
+                                      newData.push({ ...expense, percentage: Number(e.target.value) / 100 });
+                                    }
+                                    setExpenseData(newData);
+                                  }}
+                                  className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
+                                />
+                              ) : (
+                                <input
+                                  type="number"
+                                  value={expenseData.find((e: any) => e.expenseName === expense.expenseName)?.annualAmount || expense.annualAmount}
+                                  onChange={(e) => {
+                                    const newData = [...expenseData];
+                                    const expenseIndex = newData.findIndex((ex: any) => ex.expenseName === expense.expenseName);
+                                    if (expenseIndex >= 0) {
+                                      newData[expenseIndex].annualAmount = Number(e.target.value);
+                                    } else {
+                                      newData.push({ ...expense, annualAmount: Number(e.target.value) });
+                                    }
+                                    setExpenseData(newData);
+                                  }}
+                                  className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
+                                />
+                              )
+                            ) : (
+                              <span className="text-sm">
+                                {expense.isPercentOfRent 
+                                  ? `${((expense.percentage || 0) * 100).toFixed(3)}%`
+                                  : formatCurrency(expense.annualAmount)
+                                }
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold">
+                              {expense.isPercentOfRent
+                                ? formatCurrency((realTimeKPIs.proformaGrossRentalIncome * (expense.percentage || 0)) / 12)
+                                : formatCurrency((expense.annualAmount || 0) / 12)
+                              }
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold text-red-600">
+                              {expense.isPercentOfRent
+                                ? formatCurrency(realTimeKPIs.proformaGrossRentalIncome * (expense.percentage || 0))
+                                : formatCurrency(expense.annualAmount || 0)
+                              }
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Placeholder for remaining tabs */}
+          {!['saved', 'overview', 'rentroll', 'income'].includes(activeTab) && (
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-lg font-semibold mb-4">{tabs.find(t => t.id === activeTab)?.label}</h2>
               <p className="text-gray-600">Tab content for {activeTab} coming soon...</p>
