@@ -116,9 +116,10 @@ export default function DealDemo() {
   const { deal, kpis, units, expenses, otherIncome, rehabItems, loans } = dealData;
 
   const updateAssumption = (key: string, value: string) => {
+    const numValue = parseFloat(value);
     setAssumptions((prev: any) => ({
       ...prev,
-      [key]: parseFloat(value) || value
+      [key]: isNaN(numValue) ? 0 : numValue
     }));
   };
 
@@ -183,7 +184,7 @@ export default function DealDemo() {
     const proformaNOI = proformaEffectiveGrossIncome - (proformaMonthlyExpenses * 12);
     
     // Calculate ARV based on proforma NOI
-    const arv = proformaNOI / marketCapRate;
+    const arv = marketCapRate > 0 ? proformaNOI / marketCapRate : 0;
     
     // Calculate all-in cost using available data
     const closingCosts = kpis.totalClosingCosts || 0;
@@ -229,7 +230,8 @@ export default function DealDemo() {
     
     const totalProfit = cashOut + proformaCashFlow + (arv - allInCost);
     const equityMultiple = totalCashInvested > 0 ? (totalProfit + totalCashInvested) / totalCashInvested : 0;
-    const irr = totalCashInvested > 0 ? Math.pow(totalProfit / totalCashInvested + 1, 1/5) - 1 : 0; // 5-year IRR approximation
+    const irrBase = totalCashInvested > 0 ? totalProfit / totalCashInvested + 1 : 1;
+    const irr = irrBase > 0 ? Math.pow(irrBase, 1/5) - 1 : 0; // 5-year IRR approximation
     
     return {
       // Current performance
