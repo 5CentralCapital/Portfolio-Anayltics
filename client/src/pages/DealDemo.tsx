@@ -544,11 +544,178 @@ export default function DealDemo() {
             </div>
           )}
 
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              {/* Key Investment Metrics */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h2 className="text-lg font-semibold mb-4">Key Investment Metrics</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Purchase Price</label>
+                    {editingAssumptionField === 'purchasePrice' ? (
+                      <input
+                        type="number"
+                        value={assumptions.purchasePrice || Number(deal.purchasePrice)}
+                        onChange={(e) => updateAssumption('purchasePrice', e.target.value)}
+                        onBlur={() => setEditingAssumptionField(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setEditingAssumptionField(null);
+                          }
+                        }}
+                        className="text-2xl font-bold border-b-2 border-blue-500 bg-transparent outline-none w-full"
+                        autoFocus
+                      />
+                    ) : (
+                      <p 
+                        className="text-2xl font-bold cursor-pointer hover:text-blue-600"
+                        onDoubleClick={() => setEditingAssumptionField('purchasePrice')}
+                        title="Double-click to edit"
+                      >
+                        {formatCurrency(assumptions.purchasePrice || Number(deal.purchasePrice))}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Down Payment</label>
+                    <p className="text-2xl font-bold">{formatCurrency(realTimeKPIs.downPayment)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Purchase Loan</label>
+                    <p className="text-2xl font-bold">{formatCurrency(realTimeKPIs.loanAmount)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Cap Rate</label>
+                    <p className="text-2xl font-bold">{((realTimeKPIs.capRate || 0) * 100).toFixed(2)}%</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Cash Flow</label>
+                    <p className={`text-2xl font-bold ${
+                      (realTimeKPIs.currentCashFlow || 0) > 0 ? "text-green-600" : "text-red-600"
+                    }`}>
+                      {formatCurrency(realTimeKPIs.currentCashFlow)}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Cash-on-Cash Return</label>
+                    <p className={`text-2xl font-bold ${
+                      (realTimeKPIs.cashOnCashReturn || 0) > 0.12 ? "text-green-600" : 
+                      (realTimeKPIs.cashOnCashReturn || 0) > 0.08 ? "text-yellow-600" : "text-red-600"
+                    }`}>
+                      {((realTimeKPIs.cashOnCashReturn || 0) * 100).toFixed(2)}%
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Refinance Loan</label>
+                    <p className="text-2xl font-bold">{formatCurrency(realTimeKPIs.refinanceLoanAmount)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Total Profit</label>
+                    <p className={`text-2xl font-bold ${
+                      (realTimeKPIs.totalProfit || 0) > 0 ? "text-green-600" : "text-red-600"
+                    }`}>
+                      {formatCurrency(realTimeKPIs.totalProfit)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assumptions Panel */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h2 className="text-lg font-semibold mb-4">Investment Assumptions</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">LTC Percentage</label>
+                    {editingAssumptionField === 'ltcPercentage' ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={((assumptions.ltcPercentage || 0.80) * 100).toFixed(0)}
+                        onChange={(e) => updateAssumption('ltcPercentage', (Number(e.target.value) / 100).toString())}
+                        onBlur={() => setEditingAssumptionField(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setEditingAssumptionField(null);
+                          }
+                        }}
+                        className="text-lg font-bold border-b-2 border-blue-500 bg-transparent outline-none w-full"
+                        autoFocus
+                      />
+                    ) : (
+                      <p 
+                        className="text-lg font-bold cursor-pointer hover:text-blue-600"
+                        onDoubleClick={() => setEditingAssumptionField('ltcPercentage')}
+                        title="Double-click to edit"
+                      >
+                        {((assumptions.ltcPercentage || 0.80) * 100).toFixed(0)}%
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Exit Cap Rate</label>
+                    {editingAssumptionField === 'exitCapRate' ? (
+                      <input
+                        type="number"
+                        step="0.001"
+                        value={((assumptions.exitCapRate || deal.exitCapRate) * 100).toFixed(3)}
+                        onChange={(e) => updateAssumption('exitCapRate', (Number(e.target.value) / 100).toString())}
+                        onBlur={() => setEditingAssumptionField(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setEditingAssumptionField(null);
+                          }
+                        }}
+                        className="text-lg font-bold border-b-2 border-blue-500 bg-transparent outline-none w-full"
+                        autoFocus
+                      />
+                    ) : (
+                      <p 
+                        className="text-lg font-bold cursor-pointer hover:text-blue-600"
+                        onDoubleClick={() => setEditingAssumptionField('exitCapRate')}
+                        title="Double-click to edit"
+                      >
+                        {((assumptions.exitCapRate || deal.exitCapRate) * 100).toFixed(3)}%
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Refinance LTV</label>
+                    {editingAssumptionField === 'refinanceLTV' ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={((assumptions.refinanceLTV || 0.75) * 100).toFixed(0)}
+                        onChange={(e) => updateAssumption('refinanceLTV', (Number(e.target.value) / 100).toString())}
+                        onBlur={() => setEditingAssumptionField(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setEditingAssumptionField(null);
+                          }
+                        }}
+                        className="text-lg font-bold border-b-2 border-blue-500 bg-transparent outline-none w-full"
+                        autoFocus
+                      />
+                    ) : (
+                      <p 
+                        className="text-lg font-bold cursor-pointer hover:text-blue-600"
+                        onDoubleClick={() => setEditingAssumptionField('refinanceLTV')}
+                        title="Double-click to edit"
+                      >
+                        {((assumptions.refinanceLTV || 0.75) * 100).toFixed(0)}%
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Placeholder for other tabs */}
-          {activeTab !== 'saved' && (
+          {activeTab !== 'saved' && activeTab !== 'overview' && (
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-lg font-semibold mb-4">{tabs.find(t => t.id === activeTab)?.label}</h2>
-              <p className="text-gray-600">Tab content for {activeTab} goes here...</p>
+              <p className="text-gray-600">Tab content for {activeTab} coming soon...</p>
             </div>
           )}
         </div>
