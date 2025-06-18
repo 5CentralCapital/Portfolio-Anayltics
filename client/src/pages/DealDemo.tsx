@@ -18,6 +18,9 @@ export default function DealDemo() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [editingAssumptions, setEditingAssumptions] = useState(false);
+  const [editingRentRoll, setEditingRentRoll] = useState(false);
+  const [editingIncome, setEditingIncome] = useState(false);
+  const [editingExpenses, setEditingExpenses] = useState(false);
   const [assumptions, setAssumptions] = useState<any>({});
 
   useEffect(() => {
@@ -426,8 +429,15 @@ export default function DealDemo() {
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">Unit Rent Roll</h2>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
-                  + Add Unit
+                <button 
+                  onClick={() => setEditingRentRoll(!editingRentRoll)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    editingRentRoll 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {editingRentRoll ? 'Save Changes' : 'Edit Rent Roll'}
                 </button>
               </div>
               <div className="overflow-x-auto">
@@ -441,71 +451,102 @@ export default function DealDemo() {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Current Rent</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Market Rent</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {dealData.units.map((unit: any) => (
-                      <tr key={unit.id}>
-                        <td className="px-4 py-3">
-                          <input
-                            type="text"
-                            defaultValue={unit.unitNumber}
-                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <input
-                            type="text"
-                            defaultValue={unit.isOccupied ? 'Tenant Name' : ''}
-                            placeholder="Tenant name"
-                            className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <input
-                            type="date"
-                            defaultValue={unit.isOccupied ? '2024-01-15' : ''}
-                            className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <input
-                            type="date"
-                            defaultValue={unit.isOccupied ? '2025-01-15' : ''}
-                            className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <input
-                            type="number"
-                            defaultValue={Number(unit.currentRent)}
-                            className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <input
-                            type="number"
-                            defaultValue={Number(unit.marketRent)}
-                            className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <select
-                            defaultValue={unit.isOccupied ? 'occupied' : 'vacant'}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm"
-                          >
-                            <option value="occupied">Occupied</option>
-                            <option value="vacant">Vacant</option>
-                          </select>
-                        </td>
-                        <td className="px-4 py-3">
-                          <button className="text-red-600 hover:text-red-800 text-sm">
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {Array.from({ length: assumptions.units || deal.units }, (_, index) => {
+                      const unit = dealData.units[index] || {};
+                      return (
+                        <tr key={index}>
+                          <td className="px-4 py-3">
+                            {editingRentRoll ? (
+                              <input
+                                type="text"
+                                defaultValue={unit.unitNumber || `Unit ${index + 1}`}
+                                className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm font-medium">{unit.unitNumber || `Unit ${index + 1}`}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingRentRoll ? (
+                              <input
+                                type="text"
+                                defaultValue={unit.isOccupied ? 'Tenant Name' : ''}
+                                placeholder="Tenant name"
+                                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm">{unit.isOccupied ? 'Tenant Name' : 'Vacant'}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingRentRoll ? (
+                              <input
+                                type="date"
+                                defaultValue={unit.isOccupied ? '2024-01-15' : ''}
+                                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm">{unit.isOccupied ? '01/15/2024' : '-'}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingRentRoll ? (
+                              <input
+                                type="date"
+                                defaultValue={unit.isOccupied ? '2025-01-15' : ''}
+                                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm">{unit.isOccupied ? '01/15/2025' : '-'}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingRentRoll ? (
+                              <input
+                                type="number"
+                                defaultValue={Number(unit.currentRent) || 1200}
+                                className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm font-medium">{formatCurrency(Number(unit.currentRent) || 1200)}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingRentRoll ? (
+                              <input
+                                type="number"
+                                defaultValue={Number(unit.marketRent) || 1300}
+                                className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm font-medium">{formatCurrency(Number(unit.marketRent) || 1300)}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingRentRoll ? (
+                              <select
+                                defaultValue={unit.isOccupied ? 'occupied' : 'vacant'}
+                                className="px-2 py-1 border border-gray-300 rounded text-sm"
+                              >
+                                <option value="occupied">Occupied</option>
+                                <option value="vacant">Vacant</option>
+                              </select>
+                            ) : (
+                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                unit.isOccupied 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {unit.isOccupied ? 'Occupied' : 'Vacant'}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -515,124 +556,308 @@ export default function DealDemo() {
           {/* Income & Expense Tab */}
           {activeTab === 'income' && (
             <div className="space-y-6">
-              {/* Other Income Section */}
+              {/* Income Section */}
               <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">Other Income</h2>
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
-                    + Add Income
+                  <h2 className="text-lg font-semibold">Income</h2>
+                  <button 
+                    onClick={() => setEditingIncome(!editingIncome)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      editingIncome 
+                        ? 'bg-green-600 text-white hover:bg-green-700' 
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {editingIncome ? 'Save Changes' : 'Edit Income'}
                   </button>
                 </div>
-                <div className="space-y-3">
-                  {dealData.otherIncome.map((income: any) => (
-                    <div key={income.id} className="flex items-center space-x-4 p-3 border border-gray-200 rounded">
-                      <input
-                        type="text"
-                        defaultValue={income.category}
-                        placeholder="Income category"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
-                      />
-                      <input
-                        type="text"
-                        defaultValue={income.description}
-                        placeholder="Description"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
-                      />
-                      <input
-                        type="number"
-                        defaultValue={Number(income.monthlyAmount)}
-                        placeholder="Monthly amount"
-                        className="w-32 px-3 py-2 border border-gray-300 rounded text-sm"
-                      />
-                      <button className="text-red-600 hover:text-red-800 text-sm px-2">
-                        Delete
-                      </button>
-                    </div>
-                  ))}
-                  <div className="border-t pt-3 flex justify-between items-center font-bold">
-                    <span>Total Other Income</span>
-                    <span>{formatCurrency(kpis.totalOtherIncome / 12)}</span>
-                  </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Current Monthly</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proforma Monthly</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {/* Fixed Rental Income Row */}
+                      <tr className="bg-blue-50">
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-semibold text-blue-800">Rental Income</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-blue-600">Total from rent roll</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-bold text-blue-800">{formatCurrency(kpis.grossRentalIncome / 12)}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-bold text-blue-800">
+                            {formatCurrency(
+                              dealData.units.reduce((sum: number, unit: any) => 
+                                sum + Number(unit.marketRent || 1300), 0
+                              )
+                            )}
+                          </span>
+                        </td>
+                      </tr>
+                      
+                      {/* Other Income Rows */}
+                      {dealData.otherIncome.map((income: any, index: number) => (
+                        <tr key={income.id || index}>
+                          <td className="px-4 py-3">
+                            {editingIncome ? (
+                              <input
+                                type="text"
+                                defaultValue={income.category}
+                                placeholder="Income category"
+                                className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm">{income.category}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingIncome ? (
+                              <input
+                                type="text"
+                                defaultValue={income.description}
+                                placeholder="Description"
+                                className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm">{income.description}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingIncome ? (
+                              <input
+                                type="number"
+                                defaultValue={Number(income.monthlyAmount)}
+                                placeholder="Current amount"
+                                className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm font-medium">{formatCurrency(Number(income.monthlyAmount))}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingIncome ? (
+                              <input
+                                type="number"
+                                defaultValue={Number(income.monthlyAmount)}
+                                placeholder="Proforma amount"
+                                className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm font-medium">{formatCurrency(Number(income.monthlyAmount))}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      
+                      <tr className="bg-green-100 font-bold">
+                        <td className="px-4 py-3" colSpan={2}>
+                          <span className="text-sm font-bold">Total Income</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-bold text-green-600">
+                            {formatCurrency((kpis.grossRentalIncome + kpis.totalOtherIncome) / 12)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-bold text-green-600">
+                            {formatCurrency(
+                              dealData.units.reduce((sum: number, unit: any) => 
+                                sum + Number(unit.marketRent || 1300), 0
+                              ) + (kpis.totalOtherIncome / 12)
+                            )}
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
-              {/* Operating Expenses Section */}
+              {/* Expenses Section */}
               <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold">Operating Expenses</h2>
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
-                    + Add Expense
+                  <button 
+                    onClick={() => setEditingExpenses(!editingExpenses)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      editingExpenses 
+                        ? 'bg-green-600 text-white hover:bg-green-700' 
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {editingExpenses ? 'Save Changes' : 'Edit Expenses'}
                   </button>
                 </div>
-                <div className="space-y-3">
-                  {dealData.expenses.map((expense: any) => (
-                    <div key={expense.id} className="flex items-center space-x-4 p-3 border border-gray-200 rounded">
-                      <input
-                        type="text"
-                        defaultValue={expense.category}
-                        placeholder="Expense category"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
-                      />
-                      <input
-                        type="text"
-                        defaultValue={expense.description}
-                        placeholder="Description"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
-                      />
-                      <select
-                        defaultValue={expense.isPercentOfRent ? 'percentage' : 'fixed'}
-                        className="px-3 py-2 border border-gray-300 rounded text-sm"
-                      >
-                        <option value="fixed">Fixed Amount</option>
-                        <option value="percentage">% of Rent</option>
-                      </select>
-                      {expense.isPercentOfRent ? (
-                        <input
-                          type="number"
-                          step="0.01"
-                          defaultValue={(parseFloat(expense.percentage) * 100).toFixed(2)}
-                          placeholder="Percentage"
-                          className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      ) : (
-                        <input
-                          type="number"
-                          defaultValue={Number(expense.monthlyAmount)}
-                          placeholder="Monthly amount"
-                          className="w-32 px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
-                      )}
-                      <button className="text-red-600 hover:text-red-800 text-sm px-2">
-                        Delete
-                      </button>
-                    </div>
-                  ))}
-                  <div className="border-t pt-3 flex justify-between items-center font-bold">
-                    <span>Total Expenses</span>
-                    <span>{formatCurrency(kpis.totalOperatingExpenses / 12)}</span>
-                  </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Current Monthly</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proforma Monthly</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {dealData.expenses.map((expense: any, index: number) => (
+                        <tr key={expense.id || index}>
+                          <td className="px-4 py-3">
+                            {editingExpenses ? (
+                              <input
+                                type="text"
+                                defaultValue={expense.category}
+                                placeholder="Expense category"
+                                className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm">{expense.category}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingExpenses ? (
+                              <input
+                                type="text"
+                                defaultValue={expense.description}
+                                placeholder="Description"
+                                className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm">{expense.description}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingExpenses ? (
+                              <input
+                                type="number"
+                                defaultValue={expense.isPercentOfRent 
+                                  ? (kpis.grossRentalIncome * parseFloat(expense.percentage) / 12).toFixed(0)
+                                  : Number(expense.monthlyAmount)
+                                }
+                                placeholder="Current amount"
+                                className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm font-medium">
+                                {expense.isPercentOfRent 
+                                  ? formatCurrency((kpis.grossRentalIncome * parseFloat(expense.percentage)) / 12)
+                                  : formatCurrency(Number(expense.monthlyAmount))
+                                }
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingExpenses ? (
+                              <input
+                                type="number"
+                                defaultValue={expense.isPercentOfRent 
+                                  ? (dealData.units.reduce((sum: number, unit: any) => 
+                                      sum + Number(unit.marketRent || 1300), 0
+                                    ) * parseFloat(expense.percentage)).toFixed(0)
+                                  : Number(expense.monthlyAmount)
+                                }
+                                placeholder="Proforma amount"
+                                className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm font-medium">
+                                {expense.isPercentOfRent 
+                                  ? formatCurrency(
+                                      dealData.units.reduce((sum: number, unit: any) => 
+                                        sum + Number(unit.marketRent || 1300), 0
+                                      ) * parseFloat(expense.percentage)
+                                    )
+                                  : formatCurrency(Number(expense.monthlyAmount))
+                                }
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingExpenses ? (
+                              <select
+                                defaultValue={expense.isPercentOfRent ? 'percentage' : 'fixed'}
+                                className="px-3 py-2 border border-gray-300 rounded text-sm"
+                              >
+                                <option value="fixed">Fixed</option>
+                                <option value="percentage">% of Rent</option>
+                              </select>
+                            ) : (
+                              <span className="text-xs px-2 py-1 bg-gray-100 rounded">
+                                {expense.isPercentOfRent ? `${(parseFloat(expense.percentage) * 100).toFixed(1)}%` : 'Fixed'}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      
+                      <tr className="bg-red-100 font-bold">
+                        <td className="px-4 py-3" colSpan={2}>
+                          <span className="text-sm font-bold">Total Expenses</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-bold text-red-600">
+                            {formatCurrency(kpis.totalOperatingExpenses / 12)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-bold text-red-600">
+                            {formatCurrency(
+                              dealData.expenses.reduce((sum: number, expense: any) => {
+                                const proformaRent = dealData.units.reduce((unitSum: number, unit: any) => 
+                                  unitSum + Number(unit.marketRent || 1300), 0
+                                );
+                                return sum + (expense.isPercentOfRent 
+                                  ? proformaRent * parseFloat(expense.percentage)
+                                  : Number(expense.monthlyAmount)
+                                );
+                              }, 0)
+                            )}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3"></td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
-              {/* Income Summary */}
+              {/* NOI Summary */}
               <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-                <h2 className="text-lg font-semibold mb-4">Monthly Income Summary</h2>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span>Gross Rental Income</span>
-                    <span className="font-semibold">{formatCurrency(kpis.grossRentalIncome / 12)}</span>
+                <h2 className="text-lg font-semibold mb-4">Net Operating Income Summary</h2>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-medium text-green-800 mb-2">Current NOI</h3>
+                    <div className="text-2xl font-bold text-green-600">{formatCurrency(kpis.netOperatingIncome / 12)}</div>
+                    <div className="text-sm text-green-600">Monthly</div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span>Other Income</span>
-                    <span className="font-semibold">{formatCurrency(kpis.totalOtherIncome / 12)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Total Operating Expenses</span>
-                    <span className="font-semibold text-red-600">({formatCurrency(kpis.totalOperatingExpenses / 12)})</span>
-                  </div>
-                  <div className="border-t pt-3 flex justify-between items-center font-bold text-lg">
-                    <span>Net Operating Income</span>
-                    <span className="text-green-600">{formatCurrency(kpis.netOperatingIncome / 12)}</span>
+                  <div>
+                    <h3 className="font-medium text-blue-800 mb-2">Proforma NOI</h3>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {formatCurrency(
+                        dealData.units.reduce((sum: number, unit: any) => 
+                          sum + Number(unit.marketRent || 1300), 0
+                        ) + (kpis.totalOtherIncome / 12) -
+                        dealData.expenses.reduce((sum: number, expense: any) => {
+                          const proformaRent = dealData.units.reduce((unitSum: number, unit: any) => 
+                            unitSum + Number(unit.marketRent || 1300), 0
+                          );
+                          return sum + (expense.isPercentOfRent 
+                            ? proformaRent * parseFloat(expense.percentage)
+                            : Number(expense.monthlyAmount)
+                          );
+                        }, 0)
+                      )}
+                    </div>
+                    <div className="text-sm text-blue-600">Monthly (at market rents)</div>
                   </div>
                 </div>
               </div>
