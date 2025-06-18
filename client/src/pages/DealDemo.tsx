@@ -130,7 +130,8 @@ export default function DealDemo() {
     { id: 'rentroll', label: 'Rent Roll', icon: Users },
     { id: 'income', label: 'Income & Expense', icon: DollarSign },
     { id: 'proforma', label: '12 Month Proforma', icon: Calendar },
-    { id: 'rehab', label: 'Rehab Budget', icon: Wrench }
+    { id: 'rehab', label: 'Rehab Budget', icon: Wrench },
+    { id: 'loans', label: 'Loans', icon: Calculator }
   ];
 
   return (
@@ -423,47 +424,85 @@ export default function DealDemo() {
           {/* Rent Roll Tab */}
           {activeTab === 'rentroll' && (
             <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h2 className="text-lg font-semibold mb-4">Unit Rent Roll</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Unit Rent Roll</h2>
+                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+                  + Add Unit
+                </button>
+              </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lease Start</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lease End</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Rent</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Market Rent</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tenant Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lease Start</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lease End</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Current Rent</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Market Rent</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {dealData.units.map((unit: any) => (
                       <tr key={unit.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{unit.unitNumber}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {unit.isOccupied ? 'Tenant Name' : 'Vacant'}
+                        <td className="px-4 py-3">
+                          <input
+                            type="text"
+                            defaultValue={unit.unitNumber}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                          />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {unit.isOccupied ? '01/15/2024' : '-'}
+                        <td className="px-4 py-3">
+                          <input
+                            type="text"
+                            defaultValue={unit.isOccupied ? 'Tenant Name' : ''}
+                            placeholder="Tenant name"
+                            className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
+                          />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {unit.isOccupied ? '01/15/2025' : '-'}
+                        <td className="px-4 py-3">
+                          <input
+                            type="date"
+                            defaultValue={unit.isOccupied ? '2024-01-15' : ''}
+                            className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
+                          />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatCurrency(Number(unit.currentRent))}
+                        <td className="px-4 py-3">
+                          <input
+                            type="date"
+                            defaultValue={unit.isOccupied ? '2025-01-15' : ''}
+                            className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
+                          />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatCurrency(Number(unit.marketRent))}
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            defaultValue={Number(unit.currentRent)}
+                            className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+                          />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            unit.isOccupied 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {unit.isOccupied ? 'Occupied' : 'Vacant'}
-                          </span>
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            defaultValue={Number(unit.marketRent)}
+                            className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <select
+                            defaultValue={unit.isOccupied ? 'occupied' : 'vacant'}
+                            className="px-2 py-1 border border-gray-300 rounded text-sm"
+                          >
+                            <option value="occupied">Occupied</option>
+                            <option value="vacant">Vacant</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button className="text-red-600 hover:text-red-800 text-sm">
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -476,41 +515,120 @@ export default function DealDemo() {
           {/* Income & Expense Tab */}
           {activeTab === 'income' && (
             <div className="space-y-6">
+              {/* Other Income Section */}
               <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h2 className="text-lg font-semibold mb-4">Monthly Income</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Other Income</h2>
+                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+                    + Add Income
+                  </button>
+                </div>
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Gross Rental Income</span>
-                    <span className="font-semibold">{formatCurrency(kpis.grossRentalIncome / 12)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Other Income</span>
-                    <span className="font-semibold">{formatCurrency(kpis.totalOtherIncome / 12)}</span>
-                  </div>
+                  {dealData.otherIncome.map((income: any) => (
+                    <div key={income.id} className="flex items-center space-x-4 p-3 border border-gray-200 rounded">
+                      <input
+                        type="text"
+                        defaultValue={income.category}
+                        placeholder="Income category"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                      />
+                      <input
+                        type="text"
+                        defaultValue={income.description}
+                        placeholder="Description"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                      />
+                      <input
+                        type="number"
+                        defaultValue={Number(income.monthlyAmount)}
+                        placeholder="Monthly amount"
+                        className="w-32 px-3 py-2 border border-gray-300 rounded text-sm"
+                      />
+                      <button className="text-red-600 hover:text-red-800 text-sm px-2">
+                        Delete
+                      </button>
+                    </div>
+                  ))}
                   <div className="border-t pt-3 flex justify-between items-center font-bold">
-                    <span>Total Income</span>
-                    <span>{formatCurrency((kpis.grossRentalIncome + kpis.totalOtherIncome) / 12)}</span>
+                    <span>Total Other Income</span>
+                    <span>{formatCurrency(kpis.totalOtherIncome / 12)}</span>
                   </div>
                 </div>
               </div>
 
+              {/* Operating Expenses Section */}
               <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h2 className="text-lg font-semibold mb-4">Monthly Expenses</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Operating Expenses</h2>
+                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+                    + Add Expense
+                  </button>
+                </div>
                 <div className="space-y-3">
                   {dealData.expenses.map((expense: any) => (
-                    <div key={expense.id} className="flex justify-between items-center">
-                      <span className="text-gray-600">{expense.category}</span>
-                      <span className="font-semibold">
-                        {expense.isPercentOfRent 
-                          ? `${(parseFloat(expense.percentage) * 100).toFixed(1)}% (${formatCurrency((kpis.grossRentalIncome * parseFloat(expense.percentage)) / 12)})`
-                          : formatCurrency(Number(expense.monthlyAmount))
-                        }
-                      </span>
+                    <div key={expense.id} className="flex items-center space-x-4 p-3 border border-gray-200 rounded">
+                      <input
+                        type="text"
+                        defaultValue={expense.category}
+                        placeholder="Expense category"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                      />
+                      <input
+                        type="text"
+                        defaultValue={expense.description}
+                        placeholder="Description"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                      />
+                      <select
+                        defaultValue={expense.isPercentOfRent ? 'percentage' : 'fixed'}
+                        className="px-3 py-2 border border-gray-300 rounded text-sm"
+                      >
+                        <option value="fixed">Fixed Amount</option>
+                        <option value="percentage">% of Rent</option>
+                      </select>
+                      {expense.isPercentOfRent ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          defaultValue={(parseFloat(expense.percentage) * 100).toFixed(2)}
+                          placeholder="Percentage"
+                          className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      ) : (
+                        <input
+                          type="number"
+                          defaultValue={Number(expense.monthlyAmount)}
+                          placeholder="Monthly amount"
+                          className="w-32 px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      )}
+                      <button className="text-red-600 hover:text-red-800 text-sm px-2">
+                        Delete
+                      </button>
                     </div>
                   ))}
                   <div className="border-t pt-3 flex justify-between items-center font-bold">
                     <span>Total Expenses</span>
                     <span>{formatCurrency(kpis.totalOperatingExpenses / 12)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Income Summary */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                <h2 className="text-lg font-semibold mb-4">Monthly Income Summary</h2>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span>Gross Rental Income</span>
+                    <span className="font-semibold">{formatCurrency(kpis.grossRentalIncome / 12)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Other Income</span>
+                    <span className="font-semibold">{formatCurrency(kpis.totalOtherIncome / 12)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Total Operating Expenses</span>
+                    <span className="font-semibold text-red-600">({formatCurrency(kpis.totalOperatingExpenses / 12)})</span>
                   </div>
                   <div className="border-t pt-3 flex justify-between items-center font-bold text-lg">
                     <span>Net Operating Income</span>
@@ -579,34 +697,313 @@ export default function DealDemo() {
           {/* Rehab Tab */}
           {activeTab === 'rehab' && (
             <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h2 className="text-lg font-semibold mb-4">Rehab Budget Detail</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Rehab Budget Detail</h2>
+                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+                  + Add Rehab Item
+                </button>
+              </div>
               <div className="space-y-4">
                 {dealData.rehabItems.map((item: any, index: number) => (
                   <div key={item.id || index} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-lg">{item.category}</h3>
-                        <p className="text-gray-600 mt-1">{item.description}</p>
-                        <div className="mt-2 flex items-center space-x-4">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            item.bidStatus === 'contracted' ? 'bg-green-100 text-green-800' :
-                            item.bidStatus === 'bid_received' ? 'bg-blue-100 text-blue-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {item.bidStatus.replace('_', ' ').toUpperCase()}
-                          </span>
-                        </div>
+                    <div className="grid grid-cols-12 gap-4 items-start">
+                      <div className="col-span-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <input
+                          type="text"
+                          defaultValue={item.category}
+                          placeholder="e.g., Kitchen, HVAC"
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold">{formatCurrency(Number(item.totalCost))}</p>
-                        <p className="text-sm text-gray-500">{formatCurrency(Number(item.totalCost) / deal.units)} per unit</p>
+                      <div className="col-span-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <input
+                          type="text"
+                          defaultValue={item.description}
+                          placeholder="Detailed description"
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Total Cost</label>
+                        <input
+                          type="number"
+                          defaultValue={Number(item.totalCost)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Bid Status</label>
+                        <select
+                          defaultValue={item.bidStatus}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        >
+                          <option value="estimated">Estimated</option>
+                          <option value="bid_received">Bid Received</option>
+                          <option value="contracted">Contracted</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </div>
+                      <div className="col-span-1 flex items-end">
+                        <button className="text-red-600 hover:text-red-800 text-sm p-2">
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Additional Fields */}
+                    <div className="grid grid-cols-12 gap-4 mt-3">
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Contractor</label>
+                        <input
+                          type="text"
+                          placeholder="Contractor name"
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                        <select className="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+                          <option value="low">Low</option>
+                          <option value="medium">Medium</option>
+                          <option value="high">High</option>
+                          <option value="critical">Critical</option>
+                        </select>
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">% Complete</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          placeholder="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Per Unit Cost</label>
+                        <input
+                          type="number"
+                          value={(Number(item.totalCost) / (assumptions.units || deal.units)).toFixed(0)}
+                          readOnly
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-gray-50"
+                        />
                       </div>
                     </div>
                   </div>
                 ))}
-                <div className="border-t-2 border-gray-300 pt-4 flex justify-between items-center">
-                  <span className="text-xl font-bold">Total Rehab Budget</span>
-                  <span className="text-2xl font-bold text-blue-600">{formatCurrency(kpis.totalRehab)}</span>
+                
+                {/* Rehab Summary */}
+                <div className="border-t-2 border-gray-300 pt-4">
+                  <div className="grid grid-cols-3 gap-6">
+                    <div className="bg-blue-50 p-4 rounded">
+                      <h3 className="font-medium text-blue-800">Total Rehab Budget</h3>
+                      <p className="text-2xl font-bold text-blue-600">{formatCurrency(kpis.totalRehab)}</p>
+                      <p className="text-sm text-blue-600">{formatCurrency(kpis.totalRehab / (assumptions.units || deal.units))} per unit</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded">
+                      <h3 className="font-medium text-green-800">Contracted</h3>
+                      <p className="text-xl font-bold text-green-600">
+                        {formatCurrency(dealData.rehabItems
+                          .filter((item: any) => item.bidStatus === 'contracted')
+                          .reduce((sum: number, item: any) => sum + Number(item.totalCost), 0)
+                        )}
+                      </p>
+                    </div>
+                    <div className="bg-yellow-50 p-4 rounded">
+                      <h3 className="font-medium text-yellow-800">Estimated</h3>
+                      <p className="text-xl font-bold text-yellow-600">
+                        {formatCurrency(dealData.rehabItems
+                          .filter((item: any) => item.bidStatus === 'estimated')
+                          .reduce((sum: number, item: any) => sum + Number(item.totalCost), 0)
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Loans Tab */}
+          {activeTab === 'loans' && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Loan Structure</h2>
+                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+                  + Add Loan
+                </button>
+              </div>
+              <div className="space-y-4">
+                {dealData.loans.map((loan: any, index: number) => (
+                  <div key={loan.id || index} className="border border-gray-200 rounded-lg p-4">
+                    <div className="grid grid-cols-12 gap-4">
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Loan Type</label>
+                        <select
+                          defaultValue={loan.loanType}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        >
+                          <option value="acquisition">Acquisition</option>
+                          <option value="rehab">Rehab</option>
+                          <option value="bridge">Bridge</option>
+                          <option value="permanent">Permanent</option>
+                          <option value="refinance">Refinance</option>
+                        </select>
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Loan Amount</label>
+                        <input
+                          type="number"
+                          defaultValue={Number(loan.loanAmount)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Interest Rate (%)</label>
+                        <input
+                          type="number"
+                          step="0.001"
+                          defaultValue={(Number(loan.interestRate) * 100).toFixed(3)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Term (Years)</label>
+                        <input
+                          type="number"
+                          defaultValue={loan.termYears}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Amortization</label>
+                        <input
+                          type="number"
+                          defaultValue={loan.amortizationYears}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">IO Months</label>
+                        <input
+                          type="number"
+                          defaultValue={loan.ioMonths}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-1 flex items-end">
+                        <button className="text-red-600 hover:text-red-800 text-sm p-2">
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Additional Loan Details */}
+                    <div className="grid grid-cols-12 gap-4 mt-3">
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Lender</label>
+                        <input
+                          type="text"
+                          placeholder="Lender name"
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Points (%)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          defaultValue={(Number(loan.points) * 100).toFixed(2)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Lender Fees</label>
+                        <input
+                          type="number"
+                          defaultValue={Number(loan.lenderFees)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Payment</label>
+                        <input
+                          type="number"
+                          value={(kpis.monthlyDebtService || 0).toFixed(0)}
+                          readOnly
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-gray-50"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Closing Date</label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Maturity Date</label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Loan Summary */}
+                <div className="border-t-2 border-gray-300 pt-4">
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="bg-blue-50 p-4 rounded">
+                      <h3 className="font-medium text-blue-800">Total Loan Amount</h3>
+                      <p className="text-xl font-bold text-blue-600">
+                        {formatCurrency(dealData.loans.reduce((sum: number, loan: any) => sum + Number(loan.loanAmount), 0))}
+                      </p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded">
+                      <h3 className="font-medium text-green-800">Weighted Avg Rate</h3>
+                      <p className="text-xl font-bold text-green-600">
+                        {dealData.loans.length > 0 ? (
+                          (dealData.loans.reduce((sum: number, loan: any) => 
+                            sum + (Number(loan.interestRate) * Number(loan.loanAmount)), 0) / 
+                           dealData.loans.reduce((sum: number, loan: any) => sum + Number(loan.loanAmount), 0) * 100
+                          ).toFixed(2)
+                        ) : '0.00'}%
+                      </p>
+                    </div>
+                    <div className="bg-yellow-50 p-4 rounded">
+                      <h3 className="font-medium text-yellow-800">Monthly Debt Service</h3>
+                      <p className="text-xl font-bold text-yellow-600">
+                        {formatCurrency(kpis.monthlyDebtService)}
+                      </p>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded">
+                      <h3 className="font-medium text-purple-800">DSCR</h3>
+                      <p className={`text-xl font-bold ${
+                        (kpis.dscr || 0) >= 1.25 ? "text-green-600" : 
+                        (kpis.dscr || 0) >= 1.15 ? "text-yellow-600" : "text-red-600"
+                      }`}>
+                        {(kpis.dscr || 0).toFixed(2)}x
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
