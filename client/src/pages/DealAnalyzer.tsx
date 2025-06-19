@@ -15,8 +15,6 @@ export default function DealAnalyzer() {
   const [assumptions, setAssumptions] = useState({
     unitCount: 8,
     purchasePrice: 1500000,
-    closingCosts: 45000,
-    holdingCosts: 30000,
     loanPercentage: 0.80,
     interestRate: 0.0875,
     loanTermYears: 2,
@@ -25,7 +23,42 @@ export default function DealAnalyzer() {
     marketCapRate: 0.055,
     refinanceLTV: 0.75,
     refinanceInterestRate: 0.065,
+    refinanceClosingCostPercent: 0.02,
     dscrThreshold: 1.25
+  });
+
+  // Closing costs breakdown
+  const [closingCosts, setClosingCosts] = useState<{ [key: string]: number }>({
+    titleInsurance: 4500,
+    appraisalFee: 800,
+    legalFees: 2500,
+    transferTax: 8000,
+    miscellaneous: 2200
+  });
+
+  const [closingCostNames, setClosingCostNames] = useState<{ [key: string]: string }>({
+    titleInsurance: 'Title Insurance',
+    appraisalFee: 'Appraisal Fee',
+    legalFees: 'Legal Fees',
+    transferTax: 'Transfer Tax',
+    miscellaneous: 'Miscellaneous'
+  });
+
+  // Holding costs breakdown
+  const [holdingCosts, setHoldingCosts] = useState<{ [key: string]: number }>({
+    electric: 2400,
+    water: 1800,
+    gas: 1200,
+    interest: 9600,
+    title: 3000
+  });
+
+  const [holdingCostNames, setHoldingCostNames] = useState<{ [key: string]: string }>({
+    electric: 'Electric',
+    water: 'Water',
+    gas: 'Gas',
+    interest: 'Interest',
+    title: 'Title'
   });
 
   // Unit types with market rents
@@ -101,10 +134,12 @@ export default function DealAnalyzer() {
   // Calculation functions
   const calculateMetrics = () => {
     const totalRehab = rehabBudget.reduce((sum, item) => sum + item.totalCost, 0);
+    const totalClosingCosts = Object.values(closingCosts).reduce((sum, cost) => sum + cost, 0);
+    const totalHoldingCosts = Object.values(holdingCosts).reduce((sum, cost) => sum + cost, 0);
     const initialLoan = assumptions.purchasePrice * assumptions.loanPercentage;
     const downPayment = assumptions.purchasePrice - initialLoan;
-    const totalCashInvested = downPayment + assumptions.closingCosts + assumptions.holdingCosts + totalRehab;
-    const allInCost = assumptions.purchasePrice + totalRehab + assumptions.closingCosts + assumptions.holdingCosts;
+    const totalCashInvested = downPayment + totalClosingCosts + totalHoldingCosts + totalRehab;
+    const allInCost = assumptions.purchasePrice + totalRehab + totalClosingCosts + totalHoldingCosts;
     
     // Revenue calculations
     const grossRent = rentRoll.reduce((sum, unit) => {
@@ -238,6 +273,14 @@ export default function DealAnalyzer() {
     const newName = `Custom Expense ${Object.keys(expenses).length}`;
     setExpenses(prev => ({ ...prev, [newKey]: 0 }));
     setExpenseNames(prev => ({ ...prev, [newKey]: newName }));
+  };
+
+  const updateClosingCost = (key: string, value: number) => {
+    setClosingCosts(prev => ({ ...prev, [key]: value }));
+  };
+
+  const updateHoldingCost = (key: string, value: number) => {
+    setHoldingCosts(prev => ({ ...prev, [key]: value }));
   };
 
   if (loading) {
@@ -376,24 +419,7 @@ export default function DealAnalyzer() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Closing Costs</label>
-                  <input
-                    type="number"
-                    value={assumptions.closingCosts}
-                    onChange={(e) => updateAssumption('closingCosts', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Holding Costs</label>
-                  <input
-                    type="number"
-                    value={assumptions.holdingCosts}
-                    onChange={(e) => updateAssumption('holdingCosts', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  />
-                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Loan % (LTC)</label>
                   <input
@@ -422,6 +448,68 @@ export default function DealAnalyzer() {
                     onChange={(e) => updateAssumption('loanTermYears', Number(e.target.value))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                   />
+                </div>
+              </div>
+            </div>
+
+            {/* Closing & Holding Costs */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Calculator className="h-5 w-5 mr-2 text-green-600" />
+                Closing & Holding Costs (Purchase)
+              </h3>
+              
+              {/* Closing Costs */}
+              <div className="mb-6">
+                <h4 className="text-md font-medium text-gray-800 mb-3">Closing Costs</h4>
+                <div className="space-y-3">
+                  {Object.entries(closingCosts).map(([key, value]) => {
+                    const label = closingCostNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                    return (
+                      <div key={key} className="flex justify-between items-center">
+                        <label className="text-sm font-medium text-gray-700 flex-1">{label}</label>
+                        <input
+                          type="number"
+                          value={value}
+                          onChange={(e) => updateClosingCost(key, Number(e.target.value))}
+                          className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                        />
+                      </div>
+                    );
+                  })}
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="font-medium text-gray-900">Total Closing Costs (Purchase)</span>
+                    <span className="font-bold text-green-600">
+                      {formatCurrency(Object.values(closingCosts).reduce((sum, cost) => sum + cost, 0))}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Holding Costs */}
+              <div>
+                <h4 className="text-md font-medium text-gray-800 mb-3">Holding Costs</h4>
+                <div className="space-y-3">
+                  {Object.entries(holdingCosts).map(([key, value]) => {
+                    const label = holdingCostNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                    return (
+                      <div key={key} className="flex justify-between items-center">
+                        <label className="text-sm font-medium text-gray-700 flex-1">{label}</label>
+                        <input
+                          type="number"
+                          value={value}
+                          onChange={(e) => updateHoldingCost(key, Number(e.target.value))}
+                          className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                        />
+                      </div>
+                    );
+                  })}
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="font-medium text-gray-900">Total Holding Costs (Purchase)</span>
+                    <span className="font-bold text-green-600">
+                      {formatCurrency(Object.values(holdingCosts).reduce((sum, cost) => sum + cost, 0))}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -470,6 +558,16 @@ export default function DealAnalyzer() {
                     step="0.001"
                     value={assumptions.refinanceInterestRate * 100}
                     onChange={(e) => updateAssumption('refinanceInterestRate', Number(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Refinance Closing Costs (%)</label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    value={assumptions.refinanceClosingCostPercent * 100}
+                    onChange={(e) => updateAssumption('refinanceClosingCostPercent', Number(e.target.value) / 100)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                   />
                 </div>
