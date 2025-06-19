@@ -906,38 +906,7 @@ export default function DealAnalyzer() {
             </div>
           </div>
 
-          {/* RIGHT PANEL - Loan & Refinance Analysis */}
-          <div className="col-span-3 space-y-6">
-            {/* Loan Analysis */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Calculator className="h-5 w-5 mr-2 text-blue-600" />
-                Loan Analysis
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Initial Loan (LTC)</span>
-                  <span className="font-medium">{formatCurrency(metrics.initialLoan)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Max Loan Amount (65% ARV)</span>
-                  <span className="font-medium">{formatCurrency(metrics.arv * 0.65)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Monthly Debt Service</span>
-                  <span className="font-medium">{formatCurrency(metrics.initialLoan * assumptions.interestRate / 12)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Interest Rate</span>
-                  <span className="font-medium">{formatPercent(assumptions.interestRate)}</span>
-                </div>
-              </div>
-            </div>
 
-
-
-
-          </div>
 
           {/* RIGHT PANEL - Analysis Results */}
           <div className="col-span-3 space-y-6">
