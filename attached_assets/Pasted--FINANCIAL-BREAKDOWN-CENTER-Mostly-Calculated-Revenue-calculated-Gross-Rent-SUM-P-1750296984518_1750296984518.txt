@@ -1,0 +1,87 @@
+
+⸻
+
+💵 FINANCIAL BREAKDOWN (CENTER) – Mostly Calculated
+
+Revenue (calculated):
+	•	Gross Rent = SUM(Pro Forma Rents × Occupancy)
+	•	Vacancy Loss = Gross Rent × Vacancy %
+	•	Net Revenue = Gross Rent – Vacancy
+
+Expenses (editable or imported from line-item tab):
+	•	Property Tax
+	•	Insurance
+	•	Maintenance
+	•	Management Fee
+	•	Water/Sewer/Trash
+	•	Capital Reserves
+	•	Utilities
+	•	Other (catch-all)
+	•	Total Expenses = SUM(all above)
+
+NOI = Net Revenue – Expenses
+Net Cash Flow (Post-Refi) = NOI – Refi Debt Service
+
+⸻
+
+🧮 BOTTOM BOX – REFINANCE / LENDER ANALYSIS (Post-Rehab Only)
+
+Lender Calculations (Calculated):
+	•	LTC Loan Amount = Purchase × Loan %
+	•	Refinance Loan = ARV × Refinance LTV
+	•	Monthly Debt Service = PMT(interest, term, loan amount)
+	•	DSCR = Pro Forma NOI ÷ Monthly Debt × 12
+	•	Break-Even Occupancy = Monthly Debt Service ÷ Monthly Rent
+
+Note: DSCR and Cash Flow are only shown post-refi and use pro forma rents and stabilized expenses.
+
+⸻
+
+📋 RENT ROLL TAB – Editable Table (Separate Page)
+
+Allow user to enter:
+	•	Unit #
+	•	Bed/Bath
+	•	Current Rent
+	•	Pro Forma Rent
+
+Calculated Fields:
+
+	•	Monthly Income (SUM of Pro Forma Rents)
+	•	Total Units = count of rent rows
+
+🔄 Total monthly rent auto-sent to Overview for NOI calc.
+
+⸻
+
+🔧 REHAB BUDGET TAB – Editable Table (Separate Page)
+
+Editable line items:
+	•	Category: e.g., Kitchen, Windows, HVAC, Plumbing, Flooring, etc.
+	•	Per-Unit Cost (optional)
+	•	Total Cost (editable or calculated as Per-Unit × Qty)
+
+Calculated Fields:
+
+	•	Total Rehab = SUM(all line items)
+	•	Sent to Overview for All-In Cost & Loan/LTC calcs
+
+⸻
+
+✅ SUGGESTED ADDITIONS (to make it bulletproof)
+
+Add to Overview:
+	•	⚠️ Warnings: If DSCR < 1.25, Equity Multiple < 1.5, or if Refi cash out < initial equity → flag with red warning
+	•	📉 Exit Scenario (optional):
+	•	Exit Price (editable)
+	•	Sale Costs % (editable)
+	•	Net Proceeds (calculated)
+	•	ROI on Sale = (Net Proceeds + CF – Initial Cash) ÷ Initial Cash
+
+Add to Financial Breakdown:
+	•	📊 Sensitivity Analysis Toggle:
+Table view of Cap Rate vs ARV, Interest Rate vs DSCR, Rent vs NOI
+
+Add to Tabs:
+	•	📆 12-Month Pro Forma Tab (Optional Advanced)
+Auto-fill based on rent roll and expense inputs

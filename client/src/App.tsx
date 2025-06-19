@@ -14,7 +14,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import DealAnalysis from './pages/DealAnalysis';
 import DealAnalysisSimple from './pages/DealAnalysisSimple';
-import DealDemo from './pages/DealDemo';
+import DealAnalyzer from './pages/DealAnalyzer';
 import DealsList from './pages/DealsList';
 
 // Create a client
@@ -48,9 +48,9 @@ function App() {
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
               <Route path="/deals" element={<DealsList />} />
               <Route path="/deal-analysis/:id" element={<DealAnalysis />} />
-              <Route path="/deal-demo" element={<DealDemo />} />
-              <Route path="/demo-deal" element={<DealDemo />} />
-              <Route path="/demodeal" element={<DealDemo />} />
+              <Route path="/deal-demo" element={<DealAnalyzer />} />
+              <Route path="/demo-deal" element={<DealAnalyzer />} />
+              <Route path="/demodeal" element={<DealAnalyzer />} />
             </Routes>
           </main>
           <Footer />

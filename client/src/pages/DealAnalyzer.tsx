@@ -1,0 +1,728 @@
+import React, { useState, useEffect } from 'react';
+import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target } from 'lucide-react';
+
+export default function DealAnalyzer() {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [dealData, setDealData] = useState<any>(null);
+  
+  // Editable assumptions state
+  const [assumptions, setAssumptions] = useState({
+    purchasePrice: 1500000,
+    closingCosts: 45000,
+    holdingCosts: 30000,
+    loanPercentage: 0.80,
+    interestRate: 0.0875,
+    loanTermYears: 2,
+    vacancyRate: 0.05,
+    expenseRatio: 0.45,
+    marketCapRate: 0.055,
+    refinanceLTV: 0.75,
+    dscrThreshold: 1.25
+  });
+
+  // Rent roll data
+  const [rentRoll, setRentRoll] = useState([
+    { id: 1, unit: '1A', bedBath: '2/1', currentRent: 1200, proFormaRent: 1450 },
+    { id: 2, unit: '1B', bedBath: '2/1', currentRent: 1150, proFormaRent: 1450 },
+    { id: 3, unit: '2A', bedBath: '3/1', currentRent: 1350, proFormaRent: 1650 },
+    { id: 4, unit: '2B', bedBath: '3/1', currentRent: 1300, proFormaRent: 1650 },
+    { id: 5, unit: '3A', bedBath: '2/1', currentRent: 1100, proFormaRent: 1450 },
+    { id: 6, unit: '3B', bedBath: '2/1', currentRent: 1250, proFormaRent: 1450 },
+    { id: 7, unit: '4A', bedBath: '3/1', currentRent: 1400, proFormaRent: 1650 },
+    { id: 8, unit: '4B', bedBath: '3/1', currentRent: 1325, proFormaRent: 1650 },
+  ]);
+
+  // Rehab budget data
+  const [rehabBudget, setRehabBudget] = useState([
+    { id: 1, category: 'Kitchens', perUnitCost: 8000, quantity: 8, totalCost: 64000 },
+    { id: 2, category: 'Bathrooms', perUnitCost: 4500, quantity: 8, totalCost: 36000 },
+    { id: 3, category: 'Flooring', perUnitCost: 3000, quantity: 8, totalCost: 24000 },
+    { id: 4, category: 'Windows', perUnitCost: 1200, quantity: 24, totalCost: 28800 },
+    { id: 5, category: 'HVAC', perUnitCost: 2500, quantity: 8, totalCost: 20000 },
+    { id: 6, category: 'Paint/Misc', perUnitCost: 1500, quantity: 8, totalCost: 12000 },
+    { id: 7, category: 'Common Areas', perUnitCost: 0, quantity: 1, totalCost: 15000 },
+    { id: 8, category: 'Contingency (10%)', perUnitCost: 0, quantity: 1, totalCost: 19980 },
+  ]);
+
+  // Expense breakdown
+  const [expenses, setExpenses] = useState({
+    propertyTax: 18000,
+    insurance: 8500,
+    maintenance: 12000,
+    managementFee: 0, // Will be calculated as percentage
+    waterSewerTrash: 6000,
+    capitalReserves: 4800,
+    utilities: 3600,
+    other: 2400
+  });
+
+  useEffect(() => {
+    // Simulate loading
+    setTimeout(() => {
+      setDealData({ loaded: true });
+      setLoading(false);
+    }, 1000);
+  }, []);
+
+  // Calculation functions
+  const calculateMetrics = () => {
+    const totalRehab = rehabBudget.reduce((sum, item) => sum + item.totalCost, 0);
+    const initialLoan = assumptions.purchasePrice * assumptions.loanPercentage;
+    const downPayment = assumptions.purchasePrice - initialLoan;
+    const totalCashInvested = downPayment + assumptions.closingCosts + assumptions.holdingCosts + totalRehab;
+    const allInCost = assumptions.purchasePrice + totalRehab + assumptions.closingCosts + assumptions.holdingCosts;
+    
+    // Revenue calculations
+    const grossRent = rentRoll.reduce((sum, unit) => sum + unit.proFormaRent, 0) * 12;
+    const vacancyLoss = grossRent * assumptions.vacancyRate;
+    const netRevenue = grossRent - vacancyLoss;
+    
+    // Expense calculations
+    const managementFee = netRevenue * 0.08; // 8% management fee
+    const totalExpenses = Object.values(expenses).reduce((sum, exp) => sum + exp, 0) + managementFee;
+    const noi = netRevenue - totalExpenses;
+    
+    // ARV and refinance calculations
+    const arv = noi / assumptions.marketCapRate;
+    const refinanceLoan = arv * assumptions.refinanceLTV;
+    const cashOut = Math.max(0, refinanceLoan - initialLoan);
+    
+    // Post-refi debt service (assuming 30-year amortization at 6.5%)
+    const refiRate = 0.065 / 12;
+    const refiPayments = 30 * 12;
+    const monthlyDebtService = refinanceLoan * (refiRate * Math.pow(1 + refiRate, refiPayments)) / (Math.pow(1 + refiRate, refiPayments) - 1);
+    const annualDebtService = monthlyDebtService * 12;
+    const netCashFlow = noi - annualDebtService;
+    
+    // Return calculations
+    const dscr = noi / annualDebtService;
+    const cashOnCashReturn = totalCashInvested > 0 ? netCashFlow / totalCashInvested : 0;
+    const equityMultiple = totalCashInvested > 0 ? (cashOut + netCashFlow) / totalCashInvested : 0;
+    const breakEvenOccupancy = annualDebtService / grossRent;
+    
+    return {
+      totalRehab,
+      initialLoan,
+      downPayment,
+      totalCashInvested,
+      allInCost,
+      grossRent,
+      vacancyLoss,
+      netRevenue,
+      managementFee,
+      totalExpenses,
+      noi,
+      arv,
+      refinanceLoan,
+      cashOut,
+      monthlyDebtService,
+      annualDebtService,
+      netCashFlow,
+      dscr,
+      cashOnCashReturn,
+      equityMultiple,
+      breakEvenOccupancy
+    };
+  };
+
+  const metrics = calculateMetrics();
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value || 0);
+  };
+
+  const formatPercent = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'percent',
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 2,
+    }).format(value || 0);
+  };
+
+  const updateAssumption = (key: string, value: number) => {
+    setAssumptions(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: Building },
+    { id: 'rentroll', label: 'Rent Roll', icon: Users },
+    { id: 'rehab', label: 'Rehab Budget', icon: Wrench },
+    { id: 'proforma', label: '12 Month Pro Forma', icon: Calendar }
+  ];
+
+  return (
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Header */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Maple Street Apartments</h1>
+            <p className="text-lg text-gray-600">123 Maple Street, Hartford, CT 06106</p>
+            <p className="text-sm text-gray-500">8 Units • Multifamily • Value-Add Strategy</p>
+          </div>
+          <div className="text-right">
+            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+              Under Analysis
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <div className="grid grid-cols-12 gap-6">
+          {/* LEFT PANEL - Editable Inputs */}
+          <div className="col-span-3 space-y-6">
+            {/* Purchase & Loan */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Home className="h-5 w-5 mr-2 text-blue-600" />
+                Purchase & Loan
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price</label>
+                  <input
+                    type="number"
+                    value={assumptions.purchasePrice}
+                    onChange={(e) => updateAssumption('purchasePrice', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Closing Costs</label>
+                  <input
+                    type="number"
+                    value={assumptions.closingCosts}
+                    onChange={(e) => updateAssumption('closingCosts', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Holding Costs</label>
+                  <input
+                    type="number"
+                    value={assumptions.holdingCosts}
+                    onChange={(e) => updateAssumption('holdingCosts', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Loan % (LTC)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={assumptions.loanPercentage * 100}
+                    onChange={(e) => updateAssumption('loanPercentage', Number(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Interest Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    value={assumptions.interestRate * 100}
+                    onChange={(e) => updateAssumption('interestRate', Number(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Loan Term (Years)</label>
+                  <input
+                    type="number"
+                    value={assumptions.loanTermYears}
+                    onChange={(e) => updateAssumption('loanTermYears', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Market Assumptions */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Target className="h-5 w-5 mr-2 text-green-600" />
+                Market Assumptions
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vacancy Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={assumptions.vacancyRate * 100}
+                    onChange={(e) => updateAssumption('vacancyRate', Number(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Market Cap Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    value={assumptions.marketCapRate * 100}
+                    onChange={(e) => updateAssumption('marketCapRate', Number(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Refinance LTV (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={assumptions.refinanceLTV * 100}
+                    onChange={(e) => updateAssumption('refinanceLTV', Number(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">DSCR Threshold</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={assumptions.dscrThreshold}
+                    onChange={(e) => updateAssumption('dscrThreshold', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CENTER PANEL - Financial Breakdown */}
+          <div className="col-span-6 space-y-6">
+            {/* Top KPI Bar */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
+              <div className="grid grid-cols-5 gap-4">
+                <div className="text-center">
+                  <p className="text-sm opacity-90">All-In Cost</p>
+                  <p className="text-xl font-bold">{formatCurrency(metrics.allInCost)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm opacity-90">ARV</p>
+                  <p className="text-xl font-bold">{formatCurrency(metrics.arv)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm opacity-90">Cash-Out Refi</p>
+                  <p className="text-xl font-bold">{formatCurrency(metrics.cashOut)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm opacity-90">Equity Multiple</p>
+                  <p className="text-xl font-bold">{metrics.equityMultiple.toFixed(2)}x</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm opacity-90">Cash-on-Cash</p>
+                  <p className="text-xl font-bold">{formatPercent(metrics.cashOnCashReturn)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Financial Breakdown */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <DollarSign className="h-5 w-5 mr-2 text-green-600" />
+                Financial Breakdown
+              </h3>
+              
+              {/* Revenue Section */}
+              <div className="mb-6">
+                <h4 className="font-medium text-gray-900 mb-3">Revenue</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Gross Rent (Annual)</span>
+                    <span className="font-medium">{formatCurrency(metrics.grossRent)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Vacancy Loss ({formatPercent(assumptions.vacancyRate)})</span>
+                    <span className="font-medium text-red-600">-{formatCurrency(metrics.vacancyLoss)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2">
+                    <span className="font-medium">Net Revenue</span>
+                    <span className="font-bold text-green-600">{formatCurrency(metrics.netRevenue)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Expenses Section */}
+              <div className="mb-6">
+                <h4 className="font-medium text-gray-900 mb-3">Expenses</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Property Tax</span>
+                    <span className="font-medium">{formatCurrency(expenses.propertyTax)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Insurance</span>
+                    <span className="font-medium">{formatCurrency(expenses.insurance)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Maintenance</span>
+                    <span className="font-medium">{formatCurrency(expenses.maintenance)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Management Fee (8%)</span>
+                    <span className="font-medium">{formatCurrency(metrics.managementFee)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Water/Sewer/Trash</span>
+                    <span className="font-medium">{formatCurrency(expenses.waterSewerTrash)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Capital Reserves</span>
+                    <span className="font-medium">{formatCurrency(expenses.capitalReserves)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Utilities</span>
+                    <span className="font-medium">{formatCurrency(expenses.utilities)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Other</span>
+                    <span className="font-medium">{formatCurrency(expenses.other)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2">
+                    <span className="font-medium">Total Expenses</span>
+                    <span className="font-bold text-red-600">{formatCurrency(metrics.totalExpenses)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* NOI and Cash Flow */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-gray-900">Net Operating Income (NOI)</span>
+                    <span className="font-bold text-blue-600 text-lg">{formatCurrency(metrics.noi)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Monthly Debt Service (Post-Refi)</span>
+                    <span className="font-medium text-red-600">-{formatCurrency(metrics.monthlyDebtService)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-3">
+                    <span className="font-semibold text-gray-900">Net Cash Flow (Monthly)</span>
+                    <span className="font-bold text-green-600 text-lg">{formatCurrency(metrics.netCashFlow / 12)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT PANEL - Refinance Analysis */}
+          <div className="col-span-3 space-y-6">
+            {/* Post-Refi Analysis */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Calculator className="h-5 w-5 mr-2 text-purple-600" />
+                Refinance Analysis
+              </h3>
+              <div className="space-y-4">
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <div className="text-center">
+                    <p className="text-sm text-blue-600 font-medium">DSCR</p>
+                    <p className={`text-2xl font-bold ${metrics.dscr >= assumptions.dscrThreshold ? 'text-green-600' : 'text-red-600'}`}>
+                      {metrics.dscr.toFixed(2)}
+                    </p>
+                    {metrics.dscr < assumptions.dscrThreshold && (
+                      <p className="text-xs text-red-600 mt-1">Below {assumptions.dscrThreshold} threshold</p>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Initial Loan (LTC)</span>
+                    <span className="font-medium">{formatCurrency(metrics.initialLoan)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Refinance Loan</span>
+                    <span className="font-medium">{formatCurrency(metrics.refinanceLoan)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Monthly Debt Service</span>
+                    <span className="font-medium">{formatCurrency(metrics.monthlyDebtService)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Break-Even Occupancy</span>
+                    <span className="font-medium">{formatPercent(metrics.breakEvenOccupancy)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Investment Summary */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <TrendingUp className="h-5 w-5 mr-2 text-orange-600" />
+                Investment Summary
+              </h3>
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Total Cash Invested</span>
+                    <span className="font-medium">{formatCurrency(metrics.totalCashInvested)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Annual Cash Flow</span>
+                    <span className="font-medium text-green-600">{formatCurrency(metrics.netCashFlow)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Cash-Out at Refi</span>
+                    <span className="font-medium text-blue-600">{formatCurrency(metrics.cashOut)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-3">
+                    <span className="font-medium">Total Return</span>
+                    <span className="font-bold text-green-600">{formatCurrency(metrics.cashOut + metrics.netCashFlow)}</span>
+                  </div>
+                </div>
+
+                {/* Warning Indicators */}
+                {(metrics.dscr < 1.25 || metrics.equityMultiple < 1.5) && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div className="flex items-start">
+                      <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 mr-2" />
+                      <div className="text-sm">
+                        <p className="font-medium text-red-800">Risk Warnings:</p>
+                        <ul className="text-red-700 mt-1 space-y-1">
+                          {metrics.dscr < 1.25 && <li>• DSCR below 1.25</li>}
+                          {metrics.equityMultiple < 1.5 && <li>• Equity multiple below 1.5x</li>}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'rentroll' && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold">Rent Roll</h2>
+            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              Add Unit
+            </button>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-4">Unit #</th>
+                  <th className="text-left py-3 px-4">Bed/Bath</th>
+                  <th className="text-right py-3 px-4">Current Rent</th>
+                  <th className="text-right py-3 px-4">Pro Forma Rent</th>
+                  <th className="text-right py-3 px-4">Monthly Increase</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rentRoll.map((unit) => (
+                  <tr key={unit.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <input
+                        type="text"
+                        value={unit.unit}
+                        onChange={(e) => {
+                          const updated = rentRoll.map(u => u.id === unit.id ? {...u, unit: e.target.value} : u);
+                          setRentRoll(updated);
+                        }}
+                        className="w-20 px-2 py-1 border rounded text-sm"
+                      />
+                    </td>
+                    <td className="py-3 px-4">
+                      <input
+                        type="text"
+                        value={unit.bedBath}
+                        onChange={(e) => {
+                          const updated = rentRoll.map(u => u.id === unit.id ? {...u, bedBath: e.target.value} : u);
+                          setRentRoll(updated);
+                        }}
+                        className="w-16 px-2 py-1 border rounded text-sm"
+                      />
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <input
+                        type="number"
+                        value={unit.currentRent}
+                        onChange={(e) => {
+                          const updated = rentRoll.map(u => u.id === unit.id ? {...u, currentRent: Number(e.target.value)} : u);
+                          setRentRoll(updated);
+                        }}
+                        className="w-24 px-2 py-1 border rounded text-sm text-right"
+                      />
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <input
+                        type="number"
+                        value={unit.proFormaRent}
+                        onChange={(e) => {
+                          const updated = rentRoll.map(u => u.id === unit.id ? {...u, proFormaRent: Number(e.target.value)} : u);
+                          setRentRoll(updated);
+                        }}
+                        className="w-24 px-2 py-1 border rounded text-sm text-right"
+                      />
+                    </td>
+                    <td className="py-3 px-4 text-right font-medium text-green-600">
+                      {formatCurrency(unit.proFormaRent - unit.currentRent)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 bg-gray-50">
+                  <td className="py-3 px-4 font-bold">Total ({rentRoll.length} units)</td>
+                  <td className="py-3 px-4"></td>
+                  <td className="py-3 px-4 text-right font-bold">
+                    {formatCurrency(rentRoll.reduce((sum, unit) => sum + unit.currentRent, 0))}
+                  </td>
+                  <td className="py-3 px-4 text-right font-bold">
+                    {formatCurrency(rentRoll.reduce((sum, unit) => sum + unit.proFormaRent, 0))}
+                  </td>
+                  <td className="py-3 px-4 text-right font-bold text-green-600">
+                    {formatCurrency(rentRoll.reduce((sum, unit) => sum + (unit.proFormaRent - unit.currentRent), 0))}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'rehab' && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold">Rehab Budget</h2>
+            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              Add Item
+            </button>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-4">Category</th>
+                  <th className="text-right py-3 px-4">Per Unit Cost</th>
+                  <th className="text-right py-3 px-4">Quantity</th>
+                  <th className="text-right py-3 px-4">Total Cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rehabBudget.map((item) => (
+                  <tr key={item.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <input
+                        type="text"
+                        value={item.category}
+                        onChange={(e) => {
+                          const updated = rehabBudget.map(i => i.id === item.id ? {...i, category: e.target.value} : i);
+                          setRehabBudget(updated);
+                        }}
+                        className="w-full px-2 py-1 border rounded text-sm"
+                      />
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <input
+                        type="number"
+                        value={item.perUnitCost}
+                        onChange={(e) => {
+                          const perUnitCost = Number(e.target.value);
+                          const totalCost = perUnitCost * item.quantity;
+                          const updated = rehabBudget.map(i => i.id === item.id ? {...i, perUnitCost, totalCost} : i);
+                          setRehabBudget(updated);
+                        }}
+                        className="w-24 px-2 py-1 border rounded text-sm text-right"
+                      />
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => {
+                          const quantity = Number(e.target.value);
+                          const totalCost = item.perUnitCost * quantity;
+                          const updated = rehabBudget.map(i => i.id === item.id ? {...i, quantity, totalCost} : i);
+                          setRehabBudget(updated);
+                        }}
+                        className="w-20 px-2 py-1 border rounded text-sm text-right"
+                      />
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <input
+                        type="number"
+                        value={item.totalCost}
+                        onChange={(e) => {
+                          const updated = rehabBudget.map(i => i.id === item.id ? {...i, totalCost: Number(e.target.value)} : i);
+                          setRehabBudget(updated);
+                        }}
+                        className="w-28 px-2 py-1 border rounded text-sm text-right font-medium"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 bg-gray-50">
+                  <td className="py-3 px-4 font-bold">Total Rehab Budget</td>
+                  <td className="py-3 px-4"></td>
+                  <td className="py-3 px-4"></td>
+                  <td className="py-3 px-4 text-right font-bold text-lg">
+                    {formatCurrency(rehabBudget.reduce((sum, item) => sum + item.totalCost, 0))}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'proforma' && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h2 className="text-xl font-bold mb-6">12-Month Pro Forma</h2>
+          <p className="text-gray-600">Pro forma analysis coming soon...</p>
+        </div>
+      )}
+    </div>
+  );
+}
