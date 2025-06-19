@@ -645,6 +645,14 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'properties' && (
+          <div className="space-y-8">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <PropertiesManager />
+            </div>
+          </div>
+        )}
+
         {activeTab === 'deal-analyzer' && (
           <div className="space-y-8">
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
