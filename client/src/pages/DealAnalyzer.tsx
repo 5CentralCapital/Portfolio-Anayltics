@@ -1061,7 +1061,7 @@ export default function DealAnalyzer() {
                   <span className="font-medium">{formatCurrency(assumptions.purchasePrice)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Down Payment ({(assumptions.downPaymentPercent * 100).toFixed(0)}%)</span>
+                  <span>Down Payment ({((1 - assumptions.loanPercentage) * 100).toFixed(0)}%)</span>
                   <span className="font-medium">{formatCurrency(metrics.downPayment)}</span>
                 </div>
                 <div className="flex justify-between">
@@ -1195,6 +1195,196 @@ export default function DealAnalyzer() {
             </div>
           </div>
         </div>
+        </div>
+      )}
+
+      {activeTab === 'exit' && (
+        <div className="space-y-6">
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-6 flex items-center">
+              <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+              Exit Analysis - Hold vs Sell Comparison
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-8">
+              {/* Hold Strategy */}
+              <div className="border border-gray-200 rounded-lg p-6">
+                <h4 className="text-lg font-semibold mb-4 text-blue-600">Hold Strategy</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span>Hold Period (Years)</span>
+                    <input
+                      type="number"
+                      value={exitAnalysis.holdPeriodYears}
+                      onChange={(e) => setExitAnalysis({...exitAnalysis, holdPeriodYears: parseFloat(e.target.value) || 1})}
+                      className="w-20 px-2 py-1 border rounded text-right"
+                      step="0.5"
+                      min="0.5"
+                    />
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Annual Cash Flow</span>
+                    <span className="font-medium">{formatCurrency(metrics.netCashFlow)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Cash Flow</span>
+                    <span className="font-bold text-green-600">{formatCurrency(metrics.netCashFlow * exitAnalysis.holdPeriodYears)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Property Appreciation</span>
+                    <span className="font-medium">{formatCurrency(metrics.arv - assumptions.purchasePrice)}</span>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between">
+                    <span className="font-semibold">Total Hold Return</span>
+                    <span className="font-bold text-blue-600">{formatCurrency((metrics.netCashFlow * exitAnalysis.holdPeriodYears) + (metrics.arv - assumptions.purchasePrice))}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sell Strategy */}
+              <div className="border border-gray-200 rounded-lg p-6">
+                <h4 className="text-lg font-semibold mb-4 text-green-600">Sell Strategy</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span>Sale Price Factor</span>
+                    <input
+                      type="number"
+                      value={exitAnalysis.saleFactor}
+                      onChange={(e) => setExitAnalysis({...exitAnalysis, saleFactor: parseFloat(e.target.value) || 1})}
+                      className="w-20 px-2 py-1 border rounded text-right"
+                      step="0.01"
+                      min="0.5"
+                      max="1.5"
+                    />
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Sale Price</span>
+                    <span className="font-medium">{formatCurrency(metrics.salePrice)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Sale Costs ({(exitAnalysis.saleCostsPercent * 100).toFixed(1)}%)</span>
+                    <span className="font-medium text-red-600">-{formatCurrency(metrics.saleCosts)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Debt Payoff</span>
+                    <span className="font-medium text-red-600">-{formatCurrency(metrics.refinanceLoan)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Cash Flow During Hold</span>
+                    <span className="font-medium">{formatCurrency(metrics.netCashFlow * exitAnalysis.holdPeriodYears)}</span>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between">
+                    <span className="font-semibold">Net Proceeds</span>
+                    <span className="font-bold text-green-600">{formatCurrency(metrics.netProceeds + (metrics.netCashFlow * exitAnalysis.holdPeriodYears))}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ROI Comparison */}
+            <div className="mt-8 bg-gray-50 rounded-lg p-6">
+              <h4 className="text-lg font-semibold mb-4">ROI Comparison</h4>
+              <div className="grid grid-cols-3 gap-6 text-center">
+                <div>
+                  <span className="text-gray-600">Capital Required</span>
+                  <div className="text-2xl font-bold text-orange-600">{formatCurrency(metrics.capitalRequired)}</div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Hold ROI</span>
+                  <div className="text-2xl font-bold text-blue-600">{((((metrics.netCashFlow * exitAnalysis.holdPeriodYears) + (metrics.arv - assumptions.purchasePrice)) / metrics.capitalRequired) * 100).toFixed(1)}%</div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Sell ROI</span>
+                  <div className="text-2xl font-bold text-green-600">{(metrics.roiOnSale * 100).toFixed(1)}%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'sensitivity' && (
+        <div className="space-y-6">
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-6 flex items-center">
+              <TrendingUp className="h-5 w-5 mr-2 text-purple-600" />
+              Sensitivity Analysis
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-8">
+              {/* Rent Sensitivity */}
+              <div className="border border-gray-200 rounded-lg p-6">
+                <h4 className="text-lg font-semibold mb-4 text-blue-600">Rent Sensitivity</h4>
+                <div className="space-y-3">
+                  {[-10, -5, 0, 5, 10].map(percent => {
+                    const adjustedRent = metrics.grossRent * (1 + percent / 100);
+                    const adjustedNOI = adjustedRent * (1 - assumptions.vacancyRate - 0.05) - metrics.totalExpenses; // 5% management fee
+                    const adjustedCashFlow = adjustedNOI - metrics.annualDebtService;
+                    return (
+                      <div key={percent} className="flex justify-between items-center">
+                        <span className={percent === 0 ? 'font-bold' : ''}>{percent > 0 ? '+' : ''}{percent}%</span>
+                        <span className={`${adjustedCashFlow >= 0 ? 'text-green-600' : 'text-red-600'} ${percent === 0 ? 'font-bold' : ''}`}>
+                          {formatCurrency(adjustedCashFlow)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Cap Rate Sensitivity */}
+              <div className="border border-gray-200 rounded-lg p-6">
+                <h4 className="text-lg font-semibold mb-4 text-green-600">Cap Rate Sensitivity</h4>
+                <div className="space-y-3">
+                  {[4.0, 4.5, 5.0, 5.5, 6.0].map(capRate => {
+                    const impliedValue = metrics.noi / (capRate / 100);
+                    const profitAtCap = impliedValue - metrics.allInCost;
+                    return (
+                      <div key={capRate} className="flex justify-between items-center">
+                        <span className={capRate === 5.0 ? 'font-bold' : ''}>{capRate.toFixed(1)}%</span>
+                        <div className="text-right">
+                          <div className={`${profitAtCap >= 0 ? 'text-green-600' : 'text-red-600'} ${capRate === 5.0 ? 'font-bold' : ''}`}>
+                            {formatCurrency(impliedValue)}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {formatCurrency(profitAtCap)} profit
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Interest Rate Impact */}
+            <div className="mt-6 border border-gray-200 rounded-lg p-6">
+              <h4 className="text-lg font-semibold mb-4 text-purple-600">Interest Rate Impact</h4>
+              <div className="grid grid-cols-5 gap-4">
+                {[3.5, 4.0, 4.5, 5.0, 5.5].map(rate => {
+                  const monthlyRate = rate / 100 / 12;
+                  const payments = assumptions.loanTermYears * 12;
+                  const monthlyPayment = (metrics.initialLoan * monthlyRate * Math.pow(1 + monthlyRate, payments)) / (Math.pow(1 + monthlyRate, payments) - 1);
+                  const annualPayment = monthlyPayment * 12;
+                  const adjustedCashFlow = metrics.noi - annualPayment;
+                  
+                  return (
+                    <div key={rate} className="text-center">
+                      <div className={`font-semibold ${rate === assumptions.interestRate * 100 ? 'text-blue-600' : ''}`}>
+                        {rate.toFixed(1)}%
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {formatCurrency(monthlyPayment)}/mo
+                      </div>
+                      <div className={`text-sm font-medium ${adjustedCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(adjustedCashFlow)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
