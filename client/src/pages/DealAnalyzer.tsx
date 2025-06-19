@@ -486,8 +486,8 @@ export default function DealAnalyzer() {
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <div>
               {editingProperty ? (
                 <input
@@ -526,12 +526,12 @@ export default function DealAnalyzer() {
                       setEditingAddress(false);
                     }
                   }}
-                  className="text-base text-gray-600 border-b border-blue-300 bg-transparent outline-none"
+                  className="text-lg text-gray-600 border-b border-blue-300 bg-transparent outline-none"
                   autoFocus
                 />
               ) : (
                 <p 
-                  className="text-base text-gray-600 cursor-pointer hover:text-blue-600" 
+                  className="text-lg text-gray-600 cursor-pointer hover:text-blue-600" 
                   title="Double-click to edit"
                   onDoubleClick={() => setEditingAddress(true)}
                 >
@@ -539,9 +539,10 @@ export default function DealAnalyzer() {
                 </p>
               )}
             </div>
-          </div>
-          <div className="text-sm text-gray-500">
-            {assumptions.unitCount} Units • Multifamily • Value-Add Strategy
+            <div className="text-lg text-gray-600">•</div>
+            <div className="text-lg text-gray-500">
+              {assumptions.unitCount} Units • Multifamily • Value-Add Strategy
+            </div>
           </div>
         </div>
       </div>

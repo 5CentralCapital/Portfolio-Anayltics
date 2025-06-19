@@ -246,27 +246,7 @@ const AdminLogin: React.FC = () => {
             </div>
           )}
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Demo Credentials</span>
-              </div>
-            </div>
 
-            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-4">
-              <div className="text-sm text-blue-800">
-                <p className="font-medium mb-2">For demonstration purposes:</p>
-                <p><strong>Email:</strong> michael@5central.capital</p>
-                <p><strong>Password:</strong> admin123</p>
-                <p className="text-xs text-blue-600 mt-2">
-                  Note: In production, this would use enterprise-grade authentication with MFA.
-                </p>
-              </div>
-            </div>
-          </div>
 
           {/* Security Features */}
           <div className="mt-6 border-t pt-6">
