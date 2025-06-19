@@ -1056,7 +1056,6 @@ export default function DealAnalyzer() {
             </div>
           </div>
         </div>
-        </div>
       )}
 
       {activeTab === 'exit' && (
@@ -1498,38 +1497,175 @@ export default function DealAnalyzer() {
       )}
 
       {activeTab === 'proforma' && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-6">12-Month Pro Forma</h2>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="text-left py-3 px-4 font-medium">Item</th>
-                  {Array.from({length: 12}, (_, i) => (
-                    <th key={i} className="text-right py-3 px-2 font-medium">
-                      {new Date(2024, i).toLocaleDateString('en-US', { month: 'short' })}
-                    </th>
-                  ))}
-                  <th className="text-right py-3 px-4 font-bold">Annual</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* Revenue Section */}
-                <tr className="bg-green-50">
-                  <td className="py-2 px-4 font-semibold text-green-800">REVENUE</td>
-                  {Array.from({length: 13}).map((_, i) => (
-                    <td key={i} className="py-2 px-2"></td>
-                  ))}
-                </tr>
-                <tr className="border-b">
-                  <td className="py-2 px-4 text-gray-700">Gross Rental Income</td>
-                  {Array.from({length: 12}, (_, i) => (
-                    <td key={i} className="py-2 px-2 text-right">
-                      {formatCurrency(metrics.grossRent / 12)}
+        <div className="space-y-6">
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <h2 className="text-xl font-bold mb-6">12-Month Pro Forma</h2>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-gray-50">
+                    <th className="text-left py-3 px-4 font-medium">Item</th>
+                    {Array.from({length: 12}, (_, i) => (
+                      <th key={i} className="text-right py-3 px-2 font-medium">
+                        {new Date(2024, i).toLocaleDateString('en-US', { month: 'short' })}
+                      </th>
+                    ))}
+                    <th className="text-right py-3 px-4 font-bold">Annual</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Revenue Section */}
+                  <tr className="bg-green-50">
+                    <td className="py-2 px-4 font-semibold text-green-800">REVENUE</td>
+                    {Array.from({length: 13}).map((_, i) => (
+                      <td key={i} className="py-2 px-2"></td>
+                    ))}
+                  </tr>
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Gross Rent</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-right">
+                        {formatCurrency(metrics.grossRent / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold text-green-600">
+                      {formatCurrency(metrics.grossRent)}
                     </td>
-                  ))}
-                  <td className="py-2 px-4 text-right font-bold">
+                  </tr>
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Vacancy Loss</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-right text-red-600">
+                        -{formatCurrency(metrics.vacancyLoss / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold text-red-600">
+                      -{formatCurrency(metrics.vacancyLoss)}
+                    </td>
+                  </tr>
+                  <tr className="border-b bg-green-100">
+                    <td className="py-2 px-4 font-semibold">Net Revenue</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-right font-semibold">
+                        {formatCurrency(metrics.netRevenue / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold text-green-600">
+                      {formatCurrency(metrics.netRevenue)}
+                    </td>
+                  </tr>
+
+                  {/* Expenses Section */}
+                  <tr className="bg-red-50">
+                    <td className="py-2 px-4 font-semibold text-red-800">EXPENSES</td>
+                    {Array.from({length: 13}).map((_, i) => (
+                      <td key={i} className="py-2 px-2"></td>
+                    ))}
+                  </tr>
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Property Tax</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-right">
+                        {formatCurrency(expenses.propertyTax / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(expenses.propertyTax)}
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Insurance</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-right">
+                        {formatCurrency(expenses.insurance / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(expenses.insurance)}
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Repairs & Maintenance</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-right">
+                        {formatCurrency(expenses.repairsMaintenance / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(expenses.repairsMaintenance)}
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Management Fee</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-right">
+                        {formatCurrency(metrics.managementFee / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(metrics.managementFee)}
+                    </td>
+                  </tr>
+                  <tr className="border-b bg-red-100">
+                    <td className="py-2 px-4 font-semibold">Total Expenses</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-right font-semibold">
+                        {formatCurrency(metrics.totalExpenses / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold text-red-600">
+                      {formatCurrency(metrics.totalExpenses)}
+                    </td>
+                  </tr>
+
+                  {/* NOI Section */}
+                  <tr className="border-b bg-blue-100">
+                    <td className="py-3 px-4 font-bold text-blue-800">NET OPERATING INCOME</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-3 px-2 text-right font-bold text-blue-800">
+                        {formatCurrency(metrics.noi / 12)}
+                      </td>
+                    ))}
+                    <td className="py-3 px-4 text-right font-bold text-blue-600 text-lg">
+                      {formatCurrency(metrics.noi)}
+                    </td>
+                  </tr>
+
+                  {/* Debt Service */}
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Debt Service (Post-Refi)</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-right text-red-600">
+                        -{formatCurrency(metrics.monthlyDebtService)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold text-red-600">
+                      -{formatCurrency(metrics.annualDebtService)}
+                    </td>
+                  </tr>
+
+                  {/* Cash Flow */}
+                  <tr className="border-t-2 bg-green-200">
+                    <td className="py-3 px-4 font-bold text-green-800">NET CASH FLOW</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-3 px-2 text-right font-bold text-green-800">
+                        {formatCurrency(metrics.netCashFlow / 12)}
+                      </td>
+                    ))}
+                    <td className="py-3 px-4 text-right font-bold text-green-600 text-lg">
+                      {formatCurrency(metrics.netCashFlow)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
                     {formatCurrency(metrics.grossRent)}
                   </td>
                 </tr>
