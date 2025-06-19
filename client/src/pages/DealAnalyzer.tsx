@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target, BarChart3 } from 'lucide-react';
+import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target, BarChart3, Save, Download, Upload, FileDown } from 'lucide-react';
 
 export default function DealAnalyzer() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -9,6 +9,9 @@ export default function DealAnalyzer() {
   const [editingAddress, setEditingAddress] = useState(false);
   const [propertyName, setPropertyName] = useState('Maple Street Apartments');
   const [propertyAddress, setPropertyAddress] = useState('123 Maple Street, Hartford, CT 06106');
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [savedDeals, setSavedDeals] = useState<any[]>([]);
   const [editingExpenses, setEditingExpenses] = useState(false);
   const [editingClosingCosts, setEditingClosingCosts] = useState(false);
   const [editingHoldingCosts, setEditingHoldingCosts] = useState(false);
@@ -465,6 +468,146 @@ export default function DealAnalyzer() {
     setHoldingCosts(prev => ({ ...prev, [key]: value }));
   };
 
+  // Load saved deals from localStorage on component mount
+  useEffect(() => {
+    const saved = localStorage.getItem('dealAnalyzerDeals');
+    if (saved) {
+      setSavedDeals(JSON.parse(saved));
+    }
+  }, []);
+
+  // Save current deal data
+  const saveDeal = async () => {
+    setIsSaving(true);
+    try {
+      const dealToSave = {
+        id: Date.now(),
+        name: propertyName,
+        address: propertyAddress,
+        savedAt: new Date().toISOString(),
+        data: {
+          propertyName,
+          propertyAddress,
+          assumptions,
+          closingCosts,
+          holdingCosts,
+          expenses,
+          rehabBudgetSections,
+          rentRoll,
+          unitTypes,
+          exitAnalysis
+        }
+      };
+
+      const existing = localStorage.getItem('dealAnalyzerDeals');
+      const deals = existing ? JSON.parse(existing) : [];
+      deals.push(dealToSave);
+      
+      localStorage.setItem('dealAnalyzerDeals', JSON.stringify(deals));
+      setSavedDeals(deals);
+      setLastSaved(new Date());
+      
+      // Show success message
+      setTimeout(() => setIsSaving(false), 1000);
+    } catch (error) {
+      console.error('Error saving deal:', error);
+      setIsSaving(false);
+    }
+  };
+
+  // Export deal to JSON
+  const exportDealJSON = () => {
+    const dealData = {
+      name: propertyName,
+      address: propertyAddress,
+      exportedAt: new Date().toISOString(),
+      data: {
+        propertyName,
+        propertyAddress,
+        assumptions,
+        closingCosts,
+        holdingCosts,
+        expenses,
+        rehabBudgetSections,
+        rentRoll,
+        unitTypes,
+        exitAnalysis,
+        metrics
+      }
+    };
+
+    const blob = new Blob([JSON.stringify(dealData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${propertyName.replace(/\s+/g, '_')}_deal_analysis.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Export deal to CSV
+  const exportDealCSV = () => {
+    const csvData = [
+      ['Property Information'],
+      ['Name', propertyName],
+      ['Address', propertyAddress],
+      [''],
+      ['Financial Assumptions'],
+      ['Purchase Price', assumptions.purchasePrice],
+      ['Units', assumptions.unitCount],
+      ['Loan Percentage', (assumptions.loanPercentage * 100) + '%'],
+      ['Interest Rate', (assumptions.interestRate * 100) + '%'],
+      ['Vacancy Rate', (assumptions.vacancyRate * 100) + '%'],
+      [''],
+      ['Key Metrics'],
+      ['All-In Cost', metrics.allInCost],
+      ['ARV', metrics.arv],
+      ['Total Profit', metrics.totalProfit],
+      ['Cash Flow', metrics.netCashFlow],
+      ['Cap Rate', (metrics.arv > 0 ? (metrics.noi * 12 / metrics.arv * 100).toFixed(2) + '%' : '0%')],
+      ['Cash-on-Cash Return', (metrics.cashOnCashReturn * 100).toFixed(2) + '%'],
+      ['DSCR', metrics.dscr.toFixed(2)],
+      [''],
+      ['Rehab Budget'],
+      ...Object.entries(rehabBudgetSections).flatMap(([section, items]: [string, any[]]) => [
+        [section.charAt(0).toUpperCase() + section.slice(1)],
+        ...items.map(item => [item.category, item.perUnitCost, item.quantity, item.totalCost])
+      ]),
+      [''],
+      ['Rent Roll'],
+      ['Unit Type', 'Market Rent', 'Count'],
+      ...unitTypes.map(type => [type.name, type.marketRent, rentRoll.filter(unit => unit.unitTypeId === type.id).length])
+    ];
+
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${propertyName.replace(/\s+/g, '_')}_deal_analysis.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Load a saved deal
+  const loadDeal = (deal: any) => {
+    const data = deal.data;
+    setPropertyName(data.propertyName);
+    setPropertyAddress(data.propertyAddress);
+    setAssumptions(data.assumptions);
+    setClosingCosts(data.closingCosts);
+    setHoldingCosts(data.holdingCosts);
+    setExpenses(data.expenses);
+    setRehabBudgetSections(data.rehabBudgetSections);
+    setRentRoll(data.rentRoll);
+    setUnitTypes(data.unitTypes);
+    setExitAnalysis(data.exitAnalysis);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -542,6 +685,45 @@ export default function DealAnalyzer() {
             <div className="text-lg text-gray-600">•</div>
             <div className="text-lg text-gray-500">
               {assumptions.unitCount} Units • Multifamily • Value-Add Strategy
+            </div>
+          </div>
+          
+          {/* Save and Export Controls */}
+          <div className="flex items-center space-x-3">
+            {lastSaved && (
+              <span className="text-sm text-gray-500">
+                Last saved: {lastSaved.toLocaleTimeString()}
+              </span>
+            )}
+            
+            <button
+              onClick={saveDeal}
+              disabled={isSaving}
+              className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isSaving ? 'Saving...' : 'Save Deal'}
+            </button>
+            
+            <div className="relative group">
+              <button className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </button>
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                <button
+                  onClick={exportDealJSON}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Export as JSON
+                </button>
+                <button
+                  onClick={exportDealCSV}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Export as CSV
+                </button>
+              </div>
             </div>
           </div>
         </div>
