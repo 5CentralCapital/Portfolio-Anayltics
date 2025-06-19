@@ -1492,6 +1492,18 @@ export default function DealAnalyzer() {
                     </tr>
                   </thead>
                   <tbody>
+                    {/* Exterior Section Header */}
+                    <tr className="bg-blue-50">
+                      <td className="py-2 px-3 font-semibold text-blue-700" colSpan={3}>Exterior</td>
+                      <td className="py-2 px-3 text-right">
+                        <button 
+                          onClick={() => addRehabItem('exterior')}
+                          className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                        >
+                          + Add
+                        </button>
+                      </td>
+                    </tr>
                     {/* Exterior Section */}
                     {rehabBudgetSections.exterior.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
@@ -1534,7 +1546,15 @@ export default function DealAnalyzer() {
 
                     {/* Kitchens Section Header */}
                     <tr className="bg-orange-50">
-                      <td className="py-2 px-3 font-semibold text-orange-700 text-center" colSpan={4}>Kitchens</td>
+                      <td className="py-2 px-3 font-semibold text-orange-700" colSpan={3}>Kitchens</td>
+                      <td className="py-2 px-3 text-right">
+                        <button 
+                          onClick={() => addRehabItem('kitchens')}
+                          className="px-2 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700"
+                        >
+                          + Add
+                        </button>
+                      </td>
                     </tr>
                     {rehabBudgetSections.kitchens.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
@@ -1579,7 +1599,15 @@ export default function DealAnalyzer() {
 
                     {/* Bathrooms Section Header */}
                     <tr className="bg-purple-50">
-                      <td className="py-2 px-3 font-semibold text-purple-700 text-center" colSpan={4}>Bathrooms</td>
+                      <td className="py-2 px-3 font-semibold text-purple-700" colSpan={3}>Bathrooms</td>
+                      <td className="py-2 px-3 text-right">
+                        <button 
+                          onClick={() => addRehabItem('bathrooms')}
+                          className="px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700"
+                        >
+                          + Add
+                        </button>
+                      </td>
                     </tr>
                     {rehabBudgetSections.bathrooms.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
@@ -1641,7 +1669,15 @@ export default function DealAnalyzer() {
                   <tbody>
                     {/* General Interior Section Header */}
                     <tr className="bg-green-50">
-                      <td className="py-2 px-3 font-semibold text-green-700 text-center" colSpan={4}>General Interior Rough</td>
+                      <td className="py-2 px-3 font-semibold text-green-700" colSpan={3}>General Interior Rough</td>
+                      <td className="py-2 px-3 text-right">
+                        <button 
+                          onClick={() => addRehabItem('generalInterior')}
+                          className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                        >
+                          + Add
+                        </button>
+                      </td>
                     </tr>
                     {rehabBudgetSections.generalInterior.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
@@ -1676,17 +1712,25 @@ export default function DealAnalyzer() {
                     <tr className="bg-green-100 border-b-2">
                       <td className="py-1 px-3 font-medium text-sm border-r"></td>
                       <td className="py-1 px-3 text-right font-bold text-sm border-r">
-                        $ {rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                        $ {rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                       </td>
                       <td className="py-1 px-3 text-right text-sm border-r"></td>
                       <td className="py-1 px-3 text-right font-bold text-sm">
-                        $ {rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                        $ {rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                       </td>
                     </tr>
 
                     {/* Finishings Section Header */}
                     <tr className="bg-yellow-50">
-                      <td className="py-2 px-3 font-semibold text-yellow-700 text-center" colSpan={4}>Finishings</td>
+                      <td className="py-2 px-3 font-semibold text-yellow-700" colSpan={3}>Finishings</td>
+                      <td className="py-2 px-3 text-right">
+                        <button 
+                          onClick={() => addRehabItem('finishings')}
+                          className="px-2 py-1 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700"
+                        >
+                          + Add
+                        </button>
+                      </td>
                     </tr>
                     {rehabBudgetSections.finishings.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
@@ -1721,11 +1765,11 @@ export default function DealAnalyzer() {
                     <tr className="bg-yellow-100 border-b-2">
                       <td className="py-1 px-3 font-medium text-sm border-r"></td>
                       <td className="py-1 px-3 text-right font-bold text-sm border-r">
-                        $ {rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                        $ {rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                       </td>
                       <td className="py-1 px-3 text-right text-sm border-r"></td>
                       <td className="py-1 px-3 text-right font-bold text-sm">
-                        $ {rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                        $ {rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                       </td>
                     </tr>
                   </tbody>
@@ -1743,42 +1787,42 @@ export default function DealAnalyzer() {
                   <tr className="border-b">
                     <td className="py-1 font-medium border-r">Exterior</td>
                     <td className="py-1 text-right font-bold">
-                      $ {rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                      $ {rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                     </td>
                   </tr>
                   <tr className="border-b">
                     <td className="py-1 font-medium border-r">General Interior</td>
                     <td className="py-1 text-right">
-                      $ {rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                      $ {rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                     </td>
                   </tr>
                   <tr className="border-b">
                     <td className="py-1 font-medium border-r">Kitchens</td>
                     <td className="py-1 text-right">
-                      $ {rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                      $ {rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                     </td>
                   </tr>
                   <tr className="border-b">
                     <td className="py-1 font-medium border-r">Bathrooms</td>
                     <td className="py-1 text-right">
-                      $ {rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                      $ {rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                     </td>
                   </tr>
                   <tr className="border-b">
                     <td className="py-1 font-medium border-r">Finishings</td>
                     <td className="py-1 text-right">
-                      $ {rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                      $ {rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                     </td>
                   </tr>
                   <tr className="border-t-2 border-black">
                     <td className="py-2 font-bold border-r">Total</td>
                     <td className="py-2 text-right font-bold">
                       $ {(
-                        rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0) +
-                        rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0) +
-                        rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0) +
-                        rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0) +
-                        rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0)
+                        rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                        rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                        rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                        rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                        rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0)
                       ).toFixed(2)}
                     </td>
                   </tr>
@@ -1786,11 +1830,11 @@ export default function DealAnalyzer() {
                     <td className="py-1 border-r">10% Buffer</td>
                     <td className="py-1 text-right">
                       $ {(
-                        (rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0) +
-                        rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0) +
-                        rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0) +
-                        rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0) +
-                        rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0)) * 0.10
+                        (rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                        rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                        rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                        rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                        rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0)) * 0.10
                       ).toFixed(2)}
                     </td>
                   </tr>
@@ -1798,11 +1842,11 @@ export default function DealAnalyzer() {
                     <td className="py-2 font-bold border-r"></td>
                     <td className="py-2 text-right font-bold">
                       $ {(
-                        (rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0) +
-                        rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0) +
-                        rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0) +
-                        rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0) +
-                        rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0)) * 1.10
+                        (rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                        rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                        rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                        rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                        rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0)) * 1.10
                       ).toFixed(2)}
                     </td>
                   </tr>
