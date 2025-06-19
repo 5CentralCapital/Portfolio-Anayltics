@@ -321,33 +321,3 @@ export type DealOtherIncome = typeof dealOtherIncome.$inferSelect;
 export type InsertDealOtherIncome = z.infer<typeof insertDealOtherIncomeSchema>;
 export type DealComps = typeof dealComps.$inferSelect;
 export type InsertDealComps = z.infer<typeof insertDealCompsSchema>;
-
-// Saved deals snapshots for preserving analysis states
-export const savedDeals = pgTable("saved_deals", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  originalDealId: integer("original_deal_id").references(() => deals.id),
-  // Snapshot of assumptions at save time
-  assumptions: text("assumptions").notNull(), // JSON string of assumptions
-  // Snapshot of all related data
-  rentRollData: text("rent_roll_data"), // JSON string
-  incomeData: text("income_data"), // JSON string
-  expenseData: text("expense_data"), // JSON string
-  rehabData: text("rehab_data"), // JSON string
-  loanData: text("loan_data"), // JSON string
-  // Calculated KPIs at save time
-  calculatedKpis: text("calculated_kpis"), // JSON string
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Insert schema for saved deals
-export const insertSavedDealSchema = createInsertSchema(savedDeals).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type SavedDeal = typeof savedDeals.$inferSelect;
-export type InsertSavedDeal = z.infer<typeof insertSavedDealSchema>;
