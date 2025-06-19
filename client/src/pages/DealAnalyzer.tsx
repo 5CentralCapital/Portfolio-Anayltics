@@ -6,6 +6,7 @@ export default function DealAnalyzer() {
   const [loading, setLoading] = useState(true);
   const [dealData, setDealData] = useState<any>(null);
   const [editingProperty, setEditingProperty] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(false);
   const [propertyName, setPropertyName] = useState('Maple Street Apartments');
   const [propertyAddress, setPropertyAddress] = useState('123 Maple Street, Hartford, CT 06106');
   const [editingExpenses, setEditingExpenses] = useState(false);
@@ -39,14 +40,12 @@ export default function DealAnalyzer() {
   const generateRentRoll = (count: number) => {
     const units = [];
     for (let i = 1; i <= count; i++) {
-      const floor = Math.ceil(i / 2);
-      const side = i % 2 === 1 ? 'A' : 'B';
       const unitTypeId = i % 2 === 1 ? 1 : 2; // Alternate between unit types
       const unitType = unitTypes.find(ut => ut.id === unitTypeId);
       
       units.push({
         id: i,
-        unit: `${floor}${side}`,
+        unit: i.toString(), // Fixed unit numbers: 1, 2, 3, etc.
         unitTypeId: unitTypeId,
         currentRent: unitType ? unitType.marketRent - 200 : 1200,
         proFormaRent: unitType ? unitType.marketRent : 1450
@@ -69,8 +68,8 @@ export default function DealAnalyzer() {
     { id: 8, category: 'Contingency (10%)', perUnitCost: 0, quantity: 1, totalCost: 19980 },
   ]);
 
-  // Expense breakdown
-  const [expenses, setExpenses] = useState({
+  // Expense breakdown with names
+  const [expenses, setExpenses] = useState<{ [key: string]: number }>({
     propertyTax: 18000,
     insurance: 8500,
     maintenance: 12000,
@@ -79,6 +78,16 @@ export default function DealAnalyzer() {
     capitalReserves: 4800,
     utilities: 3600,
     other: 2400
+  });
+
+  const [expenseNames, setExpenseNames] = useState<{ [key: string]: string }>({
+    propertyTax: 'Property Tax',
+    insurance: 'Insurance',
+    maintenance: 'Maintenance',
+    waterSewerTrash: 'Water/Sewer/Trash',
+    capitalReserves: 'Capital Reserves',
+    utilities: 'Utilities',
+    other: 'Other'
   });
 
   useEffect(() => {
@@ -253,44 +262,58 @@ export default function DealAnalyzer() {
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center justify-between">
           <div>
-            {editingProperty ? (
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  value={propertyName}
-                  onChange={(e) => setPropertyName(e.target.value)}
-                  onBlur={() => setEditingProperty(false)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === 'Escape') {
-                      setEditingProperty(false);
-                    }
-                  }}
-                  className="text-3xl font-bold text-gray-900 border-b-2 border-blue-500 bg-transparent outline-none"
-                  autoFocus
-                />
-                <input
-                  type="text"
-                  value={propertyAddress}
-                  onChange={(e) => setPropertyAddress(e.target.value)}
-                  onBlur={() => setEditingProperty(false)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === 'Escape') {
-                      setEditingProperty(false);
-                    }
-                  }}
-                  className="text-lg text-gray-600 border-b border-blue-300 bg-transparent outline-none w-full"
-                />
+            <div>
+              <div className="mb-2">
+                {editingProperty ? (
+                  <input
+                    type="text"
+                    value={propertyName}
+                    onChange={(e) => setPropertyName(e.target.value)}
+                    onBlur={() => setEditingProperty(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === 'Escape') {
+                        setEditingProperty(false);
+                      }
+                    }}
+                    className="text-3xl font-bold text-gray-900 border-b-2 border-blue-500 bg-transparent outline-none"
+                    autoFocus
+                  />
+                ) : (
+                  <h1 
+                    className="text-3xl font-bold text-gray-900 cursor-pointer hover:text-blue-600" 
+                    title="Double-click to edit"
+                    onDoubleClick={() => setEditingProperty(true)}
+                  >
+                    {propertyName}
+                  </h1>
+                )}
               </div>
-            ) : (
-              <div onDoubleClick={() => setEditingProperty(true)}>
-                <h1 className="text-3xl font-bold text-gray-900 cursor-pointer hover:text-blue-600" title="Double-click to edit">
-                  {propertyName}
-                </h1>
-                <p className="text-lg text-gray-600 cursor-pointer hover:text-blue-600" title="Double-click to edit">
-                  {propertyAddress}
-                </p>
+              <div>
+                {editingAddress ? (
+                  <input
+                    type="text"
+                    value={propertyAddress}
+                    onChange={(e) => setPropertyAddress(e.target.value)}
+                    onBlur={() => setEditingAddress(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === 'Escape') {
+                        setEditingAddress(false);
+                      }
+                    }}
+                    className="text-lg text-gray-600 border-b border-blue-300 bg-transparent outline-none w-full"
+                    autoFocus
+                  />
+                ) : (
+                  <p 
+                    className="text-lg text-gray-600 cursor-pointer hover:text-blue-600" 
+                    title="Double-click to edit"
+                    onDoubleClick={() => setEditingAddress(true)}
+                  >
+                    {propertyAddress}
+                  </p>
+                )}
               </div>
-            )}
+            </div>
             <p className="text-sm text-gray-500">{assumptions.unitCount} Units • Multifamily • Value-Add Strategy</p>
           </div>
           <div className="text-right">
@@ -554,21 +577,21 @@ export default function DealAnalyzer() {
                   {editingExpenses ? (
                     <>
                       {Object.entries(expenses).map(([key, value]) => {
-                        const expenseLabels: { [key: string]: string } = {
-                          propertyTax: 'Property Tax',
-                          insurance: 'Insurance',
-                          maintenance: 'Maintenance',
-                          waterSewerTrash: 'Water/Sewer/Trash',
-                          capitalReserves: 'Capital Reserves',
-                          utilities: 'Utilities',
-                          other: 'Other'
-                        };
-                        
-                        const label = expenseLabels[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                        const label = expenseNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
                         
                         return (
-                          <div key={key} className="flex justify-between items-center">
-                            <span className="text-gray-600 flex-1">{label}</span>
+                          <div key={key} className="flex justify-between items-center gap-2">
+                            <input
+                              type="text"
+                              value={label}
+                              onChange={(e) => {
+                                setExpenseNames(prev => ({
+                                  ...prev,
+                                  [key]: e.target.value
+                                }));
+                              }}
+                              className="flex-1 px-2 py-1 border rounded text-sm text-gray-600"
+                            />
                             <input
                               type="number"
                               value={value}
@@ -585,50 +608,19 @@ export default function DealAnalyzer() {
                     </>
                   ) : (
                     <>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Property Tax</span>
-                        <span className="font-medium">{formatCurrency(expenses.propertyTax)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Insurance</span>
-                        <span className="font-medium">{formatCurrency(expenses.insurance)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Maintenance</span>
-                        <span className="font-medium">{formatCurrency(expenses.maintenance)}</span>
-                      </div>
+                      {Object.entries(expenses).map(([key, value]) => {
+                        const label = expenseNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                        return (
+                          <div key={key} className="flex justify-between">
+                            <span className="text-gray-600">{label}</span>
+                            <span className="font-medium">{formatCurrency(value)}</span>
+                          </div>
+                        );
+                      })}
                       <div className="flex justify-between">
                         <span className="text-gray-600">Management Fee (8%)</span>
                         <span className="font-medium">{formatCurrency(metrics.managementFee)}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Water/Sewer/Trash</span>
-                        <span className="font-medium">{formatCurrency(expenses.waterSewerTrash)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Capital Reserves</span>
-                        <span className="font-medium">{formatCurrency(expenses.capitalReserves)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Utilities</span>
-                        <span className="font-medium">{formatCurrency(expenses.utilities)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Other</span>
-                        <span className="font-medium">{formatCurrency(expenses.other)}</span>
-                      </div>
-                      {Object.entries(expenses).map(([key, value]) => {
-                        if (!['propertyTax', 'insurance', 'maintenance', 'waterSewerTrash', 'capitalReserves', 'utilities', 'other'].includes(key)) {
-                          const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                          return (
-                            <div key={key} className="flex justify-between">
-                              <span className="text-gray-600">{label}</span>
-                              <span className="font-medium">{formatCurrency(value)}</span>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })}
                     </>
                   )}
                   <div className="flex justify-between border-t pt-2">
