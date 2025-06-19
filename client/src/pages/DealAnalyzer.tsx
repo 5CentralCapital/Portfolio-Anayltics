@@ -100,23 +100,47 @@ export default function DealAnalyzer() {
 
   const [rentRoll, setRentRoll] = useState(generateRentRoll(assumptions.unitCount));
 
-  // Rehab budget data - split into exterior and interior
-  const [exteriorRehabBudget, setExteriorRehabBudget] = useState([
-    { id: 1, category: 'Roof Repairs', perUnitCost: 0, quantity: 1, totalCost: 25000 },
-    { id: 2, category: 'Siding/Exterior Paint', perUnitCost: 0, quantity: 1, totalCost: 18000 },
-    { id: 3, category: 'Windows', perUnitCost: 1200, quantity: 24, totalCost: 28800 },
-    { id: 4, category: 'Landscaping', perUnitCost: 0, quantity: 1, totalCost: 8000 },
-    { id: 5, category: 'Parking/Walkways', perUnitCost: 0, quantity: 1, totalCost: 12000 },
-  ]);
-
-  const [interiorRehabBudget, setInteriorRehabBudget] = useState([
-    { id: 1, category: 'Kitchens', perUnitCost: 8000, quantity: 8, totalCost: 64000 },
-    { id: 2, category: 'Bathrooms', perUnitCost: 4500, quantity: 8, totalCost: 36000 },
-    { id: 3, category: 'Flooring', perUnitCost: 3000, quantity: 8, totalCost: 24000 },
-    { id: 4, category: 'HVAC', perUnitCost: 2500, quantity: 8, totalCost: 20000 },
-    { id: 5, category: 'Paint/Misc', perUnitCost: 1500, quantity: 8, totalCost: 12000 },
-    { id: 6, category: 'Common Areas', perUnitCost: 0, quantity: 1, totalCost: 15000 },
-  ]);
+  // Structured rehab budget matching the provided format
+  const [rehabBudgetSections, setRehabBudgetSections] = useState({
+    exterior: [
+      { id: 1, category: 'Demolition', perUnitCost: 1500, quantity: 1, totalCost: 15000 },
+      { id: 2, category: 'Permits', perUnitCost: 500, quantity: 1, totalCost: 5000 },
+      { id: 3, category: 'Windows', perUnitCost: 3750, quantity: 8, totalCost: 30000 },
+      { id: 4, category: 'Landscaping', perUnitCost: 500, quantity: 1, totalCost: 5000 },
+    ],
+    generalInterior: [
+      { id: 1, category: 'Exterior Doors', perUnitCost: 1250, quantity: 1, totalCost: 12500 },
+      { id: 2, category: 'Framing', perUnitCost: 500, quantity: 1, totalCost: 5000 },
+      { id: 3, category: 'Drywall', perUnitCost: 3500, quantity: 1, totalCost: 35000 },
+      { id: 4, category: 'Insulation', perUnitCost: 1250, quantity: 1, totalCost: 12500 },
+      { id: 5, category: 'Hot Water Heater', perUnitCost: 800, quantity: 1, totalCost: 8000 },
+      { id: 6, category: 'Plumbing', perUnitCost: 1500, quantity: 1, totalCost: 15000 },
+      { id: 7, category: 'Electric panels', perUnitCost: 2000, quantity: 1, totalCost: 8000 },
+      { id: 8, category: 'Electrical wiring', perUnitCost: 1000, quantity: 1, totalCost: 10000 },
+      { id: 9, category: 'Mini split', perUnitCost: 2000, quantity: 1, totalCost: 20000 },
+      { id: 10, category: 'Paint', perUnitCost: 1000, quantity: 1, totalCost: 10000 },
+      { id: 11, category: 'Interior door', perUnitCost: 500, quantity: 1, totalCost: 5000 },
+      { id: 12, category: 'Flooring', perUnitCost: 2612.50, quantity: 1, totalCost: 26125 },
+    ],
+    kitchens: [
+      { id: 1, category: 'Cabinets', perUnitCost: 2250, quantity: 1, totalCost: 22500 },
+      { id: 2, category: 'Counter', perUnitCost: 750, quantity: 1, totalCost: 7500 },
+      { id: 3, category: 'Sink + faucet', perUnitCost: 500, quantity: 1, totalCost: 5000 },
+      { id: 4, category: 'Appliances', perUnitCost: 1000, quantity: 1, totalCost: 10000 },
+    ],
+    bathrooms: [
+      { id: 1, category: 'Toilet', perUnitCost: 350, quantity: 1, totalCost: 3500 },
+      { id: 2, category: 'Vanity/Mirror', perUnitCost: 650, quantity: 1, totalCost: 6500 },
+      { id: 3, category: 'Shower', perUnitCost: 1000, quantity: 1, totalCost: 10000 },
+      { id: 4, category: 'Tile', perUnitCost: 1250, quantity: 1, totalCost: 12500 },
+      { id: 5, category: 'Lighting', perUnitCost: 100, quantity: 1, totalCost: 1000 },
+    ],
+    finishings: [
+      { id: 1, category: 'Fixtures', perUnitCost: 200, quantity: 1, totalCost: 2000 },
+      { id: 2, category: 'Lights', perUnitCost: 500, quantity: 1, totalCost: 5000 },
+      { id: 3, category: 'Blinds, Doorknobs', perUnitCost: 650, quantity: 1, totalCost: 6500 },
+    ]
+  });
 
   // Expense breakdown with names
   const [expenses, setExpenses] = useState<{ [key: string]: number }>({
@@ -150,10 +174,14 @@ export default function DealAnalyzer() {
 
   // Calculation functions
   const calculateMetrics = () => {
-    const exteriorRehabTotal = exteriorRehabBudget.reduce((sum, item) => sum + item.totalCost, 0);
-    const interiorRehabTotal = interiorRehabBudget.reduce((sum, item) => sum + item.totalCost, 0);
-    const rehabSubtotal = exteriorRehabTotal + interiorRehabTotal;
-    const contingency = rehabSubtotal * 0.15; // Fixed 15% contingency
+    const exteriorTotal = rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0);
+    const generalInteriorTotal = rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0);
+    const kitchensTotal = rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0);
+    const bathroomsTotal = rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0);
+    const finishingsTotal = rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0);
+    
+    const rehabSubtotal = exteriorTotal + generalInteriorTotal + kitchensTotal + bathroomsTotal + finishingsTotal;
+    const contingency = rehabSubtotal * 0.10; // 10% buffer as shown in image
     const totalRehab = rehabSubtotal + contingency;
     const totalClosingCosts = Object.values(closingCosts).reduce((sum, cost) => sum + cost, 0);
     const totalHoldingCosts = Object.values(holdingCosts).reduce((sum, cost) => sum + cost, 0);
@@ -329,26 +357,32 @@ export default function DealAnalyzer() {
     updateAssumption('unitCount', rentRoll.length + 1);
   };
 
-  const addExteriorRehabItem = () => {
+  const addRehabItem = (section: string) => {
+    const currentSection = rehabBudgetSections[section as keyof typeof rehabBudgetSections];
+    const maxId = currentSection.length > 0 ? Math.max(...currentSection.map(i => i.id)) : 0;
     const newItem = {
-      id: Math.max(...exteriorRehabBudget.map(i => i.id)) + 1,
-      category: 'New Exterior Item',
+      id: maxId + 1,
+      category: 'New Item',
       perUnitCost: 0,
       quantity: 1,
       totalCost: 0
     };
-    setExteriorRehabBudget([...exteriorRehabBudget, newItem]);
+    
+    setRehabBudgetSections(prev => ({
+      ...prev,
+      [section]: [...prev[section as keyof typeof prev], newItem]
+    }));
   };
 
-  const addInteriorRehabItem = () => {
-    const newItem = {
-      id: Math.max(...interiorRehabBudget.map(i => i.id)) + 1,
-      category: 'New Interior Item',
-      perUnitCost: 0,
-      quantity: 1,
-      totalCost: 0
-    };
-    setInteriorRehabBudget([...interiorRehabBudget, newItem]);
+  const updateRehabItem = (section: string, itemId: number, field: string, value: number | string) => {
+    setRehabBudgetSections(prev => ({
+      ...prev,
+      [section]: prev[section as keyof typeof prev].map(item => 
+        item.id === itemId 
+          ? { ...item, [field]: value, totalCost: field === 'totalCost' ? Number(value) : item.perUnitCost * item.quantity }
+          : item
+      )
+    }));
   };
 
   const updateExpense = (key: string, value: number) => {
@@ -1438,162 +1472,330 @@ export default function DealAnalyzer() {
         <div className="space-y-6">
           <h2 className="text-xl font-bold mb-6">Rehab Budget</h2>
           
-          <div className="grid grid-cols-2 gap-6">
-            {/* Exterior Repairs */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-blue-600">Exterior Repairs</h3>
-                <button 
-                  onClick={addExteriorRehabItem}
-                  className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-                >
-                  Add Item
-                </button>
-              </div>
-              
-              <div className="space-y-3">
-                {exteriorRehabBudget.map((item) => (
-                  <div key={item.id} className="grid grid-cols-3 gap-2 items-center">
-                    <input
-                      type="text"
-                      value={item.category}
-                      onChange={(e) => {
-                        const updated = exteriorRehabBudget.map(i => i.id === item.id ? {...i, category: e.target.value} : i);
-                        setExteriorRehabBudget(updated);
-                      }}
-                      className="px-2 py-1 border rounded text-sm"
-                    />
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => {
-                        const quantity = Number(e.target.value);
-                        const totalCost = item.perUnitCost * quantity;
-                        const updated = exteriorRehabBudget.map(i => i.id === item.id ? {...i, quantity, totalCost} : i);
-                        setExteriorRehabBudget(updated);
-                      }}
-                      className="px-2 py-1 border rounded text-sm text-right"
-                      placeholder="Qty"
-                    />
-                    <input
-                      type="number"
-                      value={item.totalCost}
-                      onChange={(e) => {
-                        const totalCost = Number(e.target.value);
-                        const updated = exteriorRehabBudget.map(i => i.id === item.id ? {...i, totalCost} : i);
-                        setExteriorRehabBudget(updated);
-                      }}
-                      className="px-2 py-1 border rounded text-sm text-right font-medium"
-                      placeholder="Total"
-                    />
-                  </div>
-                ))}
-              </div>
-              
-              <div className="border-t pt-3 mt-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Exterior Subtotal</span>
-                  <span className="font-bold text-blue-600">
-                    {formatCurrency(exteriorRehabBudget.reduce((sum, item) => sum + item.totalCost, 0))}
-                  </span>
-                </div>
-              </div>
+          <div className="bg-white border border-gray-200 rounded-lg">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-gray-50">
+                    <th className="text-left py-3 px-4 font-medium">Category</th>
+                    <th className="text-right py-3 px-4 font-medium">Per Unit</th>
+                    <th className="text-right py-3 px-4 font-medium">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Exterior Section */}
+                  <tr className="bg-blue-50">
+                    <td className="py-2 px-4 font-semibold text-blue-700" colSpan={3}>Exterior</td>
+                  </tr>
+                  {rehabBudgetSections.exterior.map((item) => (
+                    <tr key={item.id} className="border-b hover:bg-gray-50">
+                      <td className="py-2 px-4">
+                        <input
+                          type="text"
+                          value={item.category}
+                          onChange={(e) => updateRehabItem('exterior', item.id, 'category', e.target.value)}
+                          className="w-full px-2 py-1 border rounded text-sm"
+                        />
+                      </td>
+                      <td className="py-2 px-4 text-right">
+                        <input
+                          type="number"
+                          value={item.perUnitCost}
+                          onChange={(e) => updateRehabItem('exterior', item.id, 'perUnitCost', Number(e.target.value))}
+                          className="w-24 px-2 py-1 border rounded text-sm text-right"
+                        />
+                      </td>
+                      <td className="py-2 px-4 text-right">
+                        <input
+                          type="number"
+                          value={item.totalCost}
+                          onChange={(e) => updateRehabItem('exterior', item.id, 'totalCost', Number(e.target.value))}
+                          className="w-32 px-2 py-1 border rounded text-sm text-right font-medium"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-blue-100">
+                    <td className="py-2 px-4 font-medium">Total</td>
+                    <td></td>
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0))}
+                    </td>
+                  </tr>
+
+                  {/* General Interior Section */}
+                  <tr className="bg-green-50">
+                    <td className="py-2 px-4 font-semibold text-green-700" colSpan={3}>General Interior Rough</td>
+                  </tr>
+                  {rehabBudgetSections.generalInterior.map((item) => (
+                    <tr key={item.id} className="border-b hover:bg-gray-50">
+                      <td className="py-2 px-4">
+                        <input
+                          type="text"
+                          value={item.category}
+                          onChange={(e) => updateRehabItem('generalInterior', item.id, 'category', e.target.value)}
+                          className="w-full px-2 py-1 border rounded text-sm"
+                        />
+                      </td>
+                      <td className="py-2 px-4 text-right">
+                        <input
+                          type="number"
+                          value={item.perUnitCost}
+                          onChange={(e) => updateRehabItem('generalInterior', item.id, 'perUnitCost', Number(e.target.value))}
+                          className="w-24 px-2 py-1 border rounded text-sm text-right"
+                        />
+                      </td>
+                      <td className="py-2 px-4 text-right">
+                        <input
+                          type="number"
+                          value={item.totalCost}
+                          onChange={(e) => updateRehabItem('generalInterior', item.id, 'totalCost', Number(e.target.value))}
+                          className="w-32 px-2 py-1 border rounded text-sm text-right font-medium"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-green-100">
+                    <td className="py-2 px-4 font-medium">
+                      <span className="font-bold">
+                        {formatCurrency(rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0))}
+                      </span>
+                    </td>
+                    <td></td>
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0))}
+                    </td>
+                  </tr>
+
+                  {/* Kitchens Section */}
+                  <tr className="bg-orange-50">
+                    <td className="py-2 px-4 font-semibold text-orange-700" colSpan={3}>Kitchens</td>
+                  </tr>
+                  {rehabBudgetSections.kitchens.map((item) => (
+                    <tr key={item.id} className="border-b hover:bg-gray-50">
+                      <td className="py-2 px-4">
+                        <input
+                          type="text"
+                          value={item.category}
+                          onChange={(e) => updateRehabItem('kitchens', item.id, 'category', e.target.value)}
+                          className="w-full px-2 py-1 border rounded text-sm"
+                        />
+                      </td>
+                      <td className="py-2 px-4 text-right">
+                        <input
+                          type="number"
+                          value={item.perUnitCost}
+                          onChange={(e) => updateRehabItem('kitchens', item.id, 'perUnitCost', Number(e.target.value))}
+                          className="w-24 px-2 py-1 border rounded text-sm text-right"
+                        />
+                      </td>
+                      <td className="py-2 px-4 text-right">
+                        <input
+                          type="number"
+                          value={item.totalCost}
+                          onChange={(e) => updateRehabItem('kitchens', item.id, 'totalCost', Number(e.target.value))}
+                          className="w-32 px-2 py-1 border rounded text-sm text-right font-medium"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-orange-100">
+                    <td className="py-2 px-4 font-medium">
+                      <span className="font-bold">
+                        {formatCurrency(rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0))}
+                      </span>
+                    </td>
+                    <td></td>
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0))}
+                    </td>
+                  </tr>
+
+                  {/* Bathrooms Section */}
+                  <tr className="bg-purple-50">
+                    <td className="py-2 px-4 font-semibold text-purple-700" colSpan={3}>Bathrooms</td>
+                  </tr>
+                  {rehabBudgetSections.bathrooms.map((item) => (
+                    <tr key={item.id} className="border-b hover:bg-gray-50">
+                      <td className="py-2 px-4">
+                        <input
+                          type="text"
+                          value={item.category}
+                          onChange={(e) => updateRehabItem('bathrooms', item.id, 'category', e.target.value)}
+                          className="w-full px-2 py-1 border rounded text-sm"
+                        />
+                      </td>
+                      <td className="py-2 px-4 text-right">
+                        <input
+                          type="number"
+                          value={item.perUnitCost}
+                          onChange={(e) => updateRehabItem('bathrooms', item.id, 'perUnitCost', Number(e.target.value))}
+                          className="w-24 px-2 py-1 border rounded text-sm text-right"
+                        />
+                      </td>
+                      <td className="py-2 px-4 text-right">
+                        <input
+                          type="number"
+                          value={item.totalCost}
+                          onChange={(e) => updateRehabItem('bathrooms', item.id, 'totalCost', Number(e.target.value))}
+                          className="w-32 px-2 py-1 border rounded text-sm text-right font-medium"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-purple-100">
+                    <td className="py-2 px-4 font-medium">
+                      <span className="font-bold">
+                        {formatCurrency(rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0))}
+                      </span>
+                    </td>
+                    <td></td>
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0))}
+                    </td>
+                  </tr>
+
+                  {/* Finishings Section */}
+                  <tr className="bg-yellow-50">
+                    <td className="py-2 px-4 font-semibold text-yellow-700" colSpan={3}>Finishings</td>
+                  </tr>
+                  {rehabBudgetSections.finishings.map((item) => (
+                    <tr key={item.id} className="border-b hover:bg-gray-50">
+                      <td className="py-2 px-4">
+                        <input
+                          type="text"
+                          value={item.category}
+                          onChange={(e) => updateRehabItem('finishings', item.id, 'category', e.target.value)}
+                          className="w-full px-2 py-1 border rounded text-sm"
+                        />
+                      </td>
+                      <td className="py-2 px-4 text-right">
+                        <input
+                          type="number"
+                          value={item.perUnitCost}
+                          onChange={(e) => updateRehabItem('finishings', item.id, 'perUnitCost', Number(e.target.value))}
+                          className="w-24 px-2 py-1 border rounded text-sm text-right"
+                        />
+                      </td>
+                      <td className="py-2 px-4 text-right">
+                        <input
+                          type="number"
+                          value={item.totalCost}
+                          onChange={(e) => updateRehabItem('finishings', item.id, 'totalCost', Number(e.target.value))}
+                          className="w-32 px-2 py-1 border rounded text-sm text-right font-medium"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-yellow-100">
+                    <td className="py-2 px-4 font-medium">
+                      <span className="font-bold">
+                        {formatCurrency(rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0))}
+                      </span>
+                    </td>
+                    <td></td>
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0))}
+                    </td>
+                  </tr>
+
+                  {/* Grand Total */}
+                  <tr className="border-t-2 bg-gray-100">
+                    <td className="py-3 px-4 font-bold text-lg">Total</td>
+                    <td></td>
+                    <td className="py-3 px-4 text-right font-bold text-lg">
+                      {formatCurrency(
+                        rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0) +
+                        rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0) +
+                        rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0) +
+                        rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0) +
+                        rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0)
+                      )}
+                    </td>
+                  </tr>
+
+                  {/* 10% Buffer */}
+                  <tr>
+                    <td className="py-2 px-4">10% Buffer</td>
+                    <td></td>
+                    <td className="py-2 px-4 text-right font-medium">
+                      {formatCurrency(
+                        (rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0) +
+                        rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0) +
+                        rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0) +
+                        rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0) +
+                        rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0)) * 0.10
+                      )}
+                    </td>
+                  </tr>
+
+                  {/* Final Total with Buffer */}
+                  <tr className="border-t-2 bg-gray-200">
+                    <td className="py-3 px-4 font-bold text-lg"></td>
+                    <td></td>
+                    <td className="py-3 px-4 text-right font-bold text-lg text-purple-600">
+                      {formatCurrency(
+                        (rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0) +
+                        rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0) +
+                        rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0) +
+                        rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0) +
+                        rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0)) * 1.10
+                      )}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            {/* Interior Repairs */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-green-600">Interior Repairs</h3>
-                <button 
-                  onClick={addInteriorRehabItem}
-                  className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                >
-                  Add Item
-                </button>
-              </div>
-              
-              <div className="space-y-3">
-                {interiorRehabBudget.map((item) => (
-                  <div key={item.id} className="grid grid-cols-3 gap-2 items-center">
-                    <input
-                      type="text"
-                      value={item.category}
-                      onChange={(e) => {
-                        const updated = interiorRehabBudget.map(i => i.id === item.id ? {...i, category: e.target.value} : i);
-                        setInteriorRehabBudget(updated);
-                      }}
-                      className="px-2 py-1 border rounded text-sm"
-                    />
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => {
-                        const quantity = Number(e.target.value);
-                        const totalCost = item.perUnitCost * quantity;
-                        const updated = interiorRehabBudget.map(i => i.id === item.id ? {...i, quantity, totalCost} : i);
-                        setInteriorRehabBudget(updated);
-                      }}
-                      className="px-2 py-1 border rounded text-sm text-right"
-                      placeholder="Qty"
-                    />
-                    <input
-                      type="number"
-                      value={item.totalCost}
-                      onChange={(e) => {
-                        const totalCost = Number(e.target.value);
-                        const updated = interiorRehabBudget.map(i => i.id === item.id ? {...i, totalCost} : i);
-                        setInteriorRehabBudget(updated);
-                      }}
-                      className="px-2 py-1 border rounded text-sm text-right font-medium"
-                      placeholder="Total"
-                    />
+            {/* Breakdown Summary */}
+            <div className="border-t bg-gray-50 p-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Breakdown</h4>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>Total</span>
+                      <span className="font-medium">
+                        {formatCurrency(
+                          rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0) +
+                          rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0) +
+                          rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0) +
+                          rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0) +
+                          rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0)
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Per Unit</span>
+                      <span className="font-medium">
+                        {formatCurrency(
+                          (rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0) +
+                          rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0) +
+                          rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0) +
+                          rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0) +
+                          rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0)) / assumptions.unitCount
+                        )}
+                      </span>
+                    </div>
                   </div>
-                ))}
-              </div>
-              
-              <div className="border-t pt-3 mt-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Interior Subtotal</span>
-                  <span className="font-bold text-green-600">
-                    {formatCurrency(interiorRehabBudget.reduce((sum, item) => sum + item.totalCost, 0))}
-                  </span>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Total Summary with 15% Contingency */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span>Exterior Repairs</span>
-                <span className="font-medium">
-                  {formatCurrency(exteriorRehabBudget.reduce((sum, item) => sum + item.totalCost, 0))}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Interior Repairs</span>
-                <span className="font-medium">
-                  {formatCurrency(interiorRehabBudget.reduce((sum, item) => sum + item.totalCost, 0))}
-                </span>
-              </div>
-              <div className="flex justify-between border-t pt-2">
-                <span>Subtotal</span>
-                <span className="font-medium">
-                  {formatCurrency(exteriorRehabBudget.reduce((sum, item) => sum + item.totalCost, 0) + interiorRehabBudget.reduce((sum, item) => sum + item.totalCost, 0))}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Contingency (15%)</span>
-                <span className="font-medium text-orange-600">
-                  {formatCurrency((exteriorRehabBudget.reduce((sum, item) => sum + item.totalCost, 0) + interiorRehabBudget.reduce((sum, item) => sum + item.totalCost, 0)) * 0.15)}
-                </span>
-              </div>
-              <div className="flex justify-between border-t-2 pt-3">
-                <span className="text-lg font-bold">Total Rehab Cost</span>
-                <span className="text-lg font-bold text-purple-600">
-                  {formatCurrency((exteriorRehabBudget.reduce((sum, item) => sum + item.totalCost, 0) + interiorRehabBudget.reduce((sum, item) => sum + item.totalCost, 0)) * 1.15)}
-                </span>
+                <div>
+                  <h4 className="font-medium mb-2">Cost Breakdown</h4>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>Labor</span>
+                      <span className="font-medium">$241,712.75</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Materials</span>
+                      <span className="font-medium">$80,406.25</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Buffer</span>
+                      <span className="font-medium">$32,162.50</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
