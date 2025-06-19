@@ -120,6 +120,7 @@ Changelog:
 - June 19, 2025. Removed demo credentials from admin login page for enhanced security
 - June 19, 2025. Built comprehensive financial dashboard with rent roll management, rehab budgeting, lender analysis, and exit scenario modeling based on Excel specification
 - June 19, 2025. Moved admin login button to header navigation positioned right of Invest button with standard header text styling
+- June 19, 2025. Added comprehensive save/export functionality to deal analyzer with localStorage persistence, JSON/CSV export options, and saved deals management panel
 
 ## User Preferences
 

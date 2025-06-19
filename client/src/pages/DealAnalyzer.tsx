@@ -729,6 +729,34 @@ export default function DealAnalyzer() {
         </div>
       </div>
 
+      {/* Saved Deals Panel */}
+      {savedDeals.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Saved Deals</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {savedDeals.slice(-6).map((deal) => (
+              <div key={deal.id} className="border border-gray-200 rounded-lg p-3 hover:border-blue-300 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-gray-900">{deal.name}</h4>
+                    <p className="text-sm text-gray-600">{deal.address}</p>
+                    <p className="text-xs text-gray-500">
+                      Saved: {new Date(deal.savedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => loadDeal(deal)}
+                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Load
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
