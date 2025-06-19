@@ -381,7 +381,7 @@ export default function DealAnalyzer() {
     }));
   };
 
-  // Helper function to validate and format number input
+  // Helper function to validate and format number input - 1 decimal for rehab
   const validateNumberInput = (value: string): string => {
     // Remove any non-numeric characters except decimal point
     let cleaned = value.replace(/[^0-9.]/g, '');
@@ -395,6 +395,25 @@ export default function DealAnalyzer() {
     // Limit to one decimal place
     if (parts.length === 2 && parts[1].length > 1) {
       cleaned = parts[0] + '.' + parts[1].substring(0, 1);
+    }
+    
+    return cleaned;
+  };
+
+  // Helper function for overview fields - 2 decimal places
+  const validateOverviewNumberInput = (value: string): string => {
+    // Remove any non-numeric characters except decimal point
+    let cleaned = value.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    // Limit to two decimal places
+    if (parts.length === 2 && parts[1].length > 2) {
+      cleaned = parts[0] + '.' + parts[1].substring(0, 2);
     }
     
     return cleaned;
@@ -899,10 +918,13 @@ export default function DealAnalyzer() {
                               className="flex-1 px-2 py-1 border rounded text-sm text-gray-600"
                             />
                             <input
-                              type="number"
+                              type="text"
                               value={value}
-                              onChange={(e) => updateExpense(key, Number(e.target.value))}
-                              className="w-24 px-2 py-1 border rounded text-sm text-right font-medium"
+                              onChange={(e) => {
+                                const validated = validateOverviewNumberInput(e.target.value);
+                                updateExpense(key, Number(validated) || 0);
+                              }}
+                              className="w-24 px-2 py-1 border rounded text-sm text-right font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
                           </div>
                         );
