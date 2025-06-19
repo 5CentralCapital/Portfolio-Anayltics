@@ -118,6 +118,7 @@ Changelog:
 - June 19, 2025. Restructured rehab budget to match detailed spreadsheet format with two-column layout, proper categorization (Exterior, Kitchens, Bathrooms, General Interior Rough, Finishings), 10% buffer calculation, and comprehensive breakdown summary
 - June 19, 2025. Integrated deal analyzer as new tab in admin dashboard between Financial and Properties tabs
 - June 19, 2025. Removed demo credentials from admin login page for enhanced security
+- June 19, 2025. Built comprehensive financial dashboard with rent roll management, rehab budgeting, lender analysis, and exit scenario modeling based on Excel specification
 
 ## User Preferences
 

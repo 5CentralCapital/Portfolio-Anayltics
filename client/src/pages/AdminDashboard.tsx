@@ -32,6 +32,7 @@ import apiService from '../services/api';
 import RevenueChart from '../components/charts/RevenueChart';
 import PropertyPerformanceChart from '../components/charts/PropertyPerformanceChart';
 import DealAnalyzer from './DealAnalyzer';
+import FinancialDashboard from './FinancialDashboard';
 
 interface DashboardData {
   financial: {
@@ -277,6 +278,7 @@ const AdminDashboard: React.FC = () => {
             {[
               { id: 'overview', label: 'Overview', icon: BarChart3 },
               { id: 'financial', label: 'Financial', icon: DollarSign },
+              { id: 'financial-dashboard', label: 'Financial Dashboard', icon: Activity },
               { id: 'deal-analyzer', label: 'Deal Analyzer', icon: Calculator },
               { id: 'properties', label: 'Properties', icon: Building },
               { id: 'leads', label: 'Investor Leads', icon: Users },
@@ -630,6 +632,14 @@ const AdminDashboard: React.FC = () => {
                   Generate Report
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'financial-dashboard' && (
+          <div className="space-y-8">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <FinancialDashboard />
             </div>
           </div>
         )}
