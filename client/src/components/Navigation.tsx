@@ -69,6 +69,12 @@ const Navigation = () => {
             >
               Invest
             </Link>
+            <Link
+              to="/admin-login"
+              className="text-gray-700 hover:text-primary text-sm font-medium transition-all duration-200"
+            >
+              Log in
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -108,6 +114,13 @@ const Navigation = () => {
               className="bg-primary text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 text-center mt-2"
             >
               Invest
+            </Link>
+            <Link
+              to="/admin-login"
+              onClick={() => setIsOpen(false)}
+              className="text-gray-700 hover:text-primary py-3 px-4 text-sm font-medium transition-all duration-200"
+            >
+              Log in
             </Link>
           </div>
         </div>

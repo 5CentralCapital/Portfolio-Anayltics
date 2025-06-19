@@ -33,6 +33,7 @@ import RevenueChart from '../components/charts/RevenueChart';
 import PropertyPerformanceChart from '../components/charts/PropertyPerformanceChart';
 import DealAnalyzer from './DealAnalyzer';
 import FinancialDashboard from './FinancialDashboard';
+import PropertiesManager from './PropertiesManager';
 
 interface DashboardData {
   financial: {

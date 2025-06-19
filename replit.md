@@ -119,6 +119,7 @@ Changelog:
 - June 19, 2025. Integrated deal analyzer as new tab in admin dashboard between Financial and Properties tabs
 - June 19, 2025. Removed demo credentials from admin login page for enhanced security
 - June 19, 2025. Built comprehensive financial dashboard with rent roll management, rehab budgeting, lender analysis, and exit scenario modeling based on Excel specification
+- June 19, 2025. Moved admin login button to header navigation positioned right of Invest button with standard header text styling
 
 ## User Preferences
 
