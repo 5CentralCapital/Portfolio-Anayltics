@@ -697,75 +697,7 @@ export default function DealAnalyzer() {
               </div>
             </div>
 
-            {/* Market Assumptions */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Target className="h-5 w-5 mr-2 text-green-600" />
-                Market Assumptions
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vacancy Rate (%)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={assumptions.vacancyRate * 100}
-                    onChange={(e) => updateAssumption('vacancyRate', Number(e.target.value) / 100)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Market Cap Rate (%)</label>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={assumptions.marketCapRate * 100}
-                    onChange={(e) => updateAssumption('marketCapRate', Number(e.target.value) / 100)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Refinance LTV (%)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={assumptions.refinanceLTV * 100}
-                    onChange={(e) => updateAssumption('refinanceLTV', Number(e.target.value) / 100)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Refinance Interest Rate (%)</label>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={assumptions.refinanceInterestRate * 100}
-                    onChange={(e) => updateAssumption('refinanceInterestRate', Number(e.target.value) / 100)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Refinance Closing Costs (%)</label>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={assumptions.refinanceClosingCostPercent * 100}
-                    onChange={(e) => updateAssumption('refinanceClosingCostPercent', Number(e.target.value) / 100)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">DSCR Threshold</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={assumptions.dscrThreshold}
-                    onChange={(e) => updateAssumption('dscrThreshold', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  />
-                </div>
-              </div>
-            </div>
+
           </div>
 
           {/* CENTER PANEL - Financial Breakdown */}
@@ -901,6 +833,76 @@ export default function DealAnalyzer() {
                     <span className="font-semibold text-gray-900">Net Cash Flow (Monthly)</span>
                     <span className="font-bold text-green-600 text-lg">{formatCurrency(metrics.netCashFlow / 12)}</span>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Market Assumptions */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Target className="h-5 w-5 mr-2 text-green-600" />
+                Market Assumptions
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vacancy Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={assumptions.vacancyRate * 100}
+                    onChange={(e) => updateAssumption('vacancyRate', Number(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Market Cap Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    value={assumptions.marketCapRate * 100}
+                    onChange={(e) => updateAssumption('marketCapRate', Number(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Refinance LTV (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={assumptions.refinanceLTV * 100}
+                    onChange={(e) => updateAssumption('refinanceLTV', Number(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Refinance Interest Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    value={assumptions.refinanceInterestRate * 100}
+                    onChange={(e) => updateAssumption('refinanceInterestRate', Number(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Refinance Closing Costs (%)</label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    value={assumptions.refinanceClosingCostPercent * 100}
+                    onChange={(e) => updateAssumption('refinanceClosingCostPercent', Number(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">DSCR Threshold</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={assumptions.dscrThreshold}
+                    onChange={(e) => updateAssumption('dscrThreshold', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
                 </div>
               </div>
             </div>
