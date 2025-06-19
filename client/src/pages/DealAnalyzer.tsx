@@ -1009,21 +1009,25 @@ export default function DealAnalyzer() {
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Vacancy Rate (%)</label>
                     <input
-                      type="number"
-                      step="0.1"
-                      value={assumptions.vacancyRate * 100}
-                      onChange={(e) => updateAssumption('vacancyRate', Number(e.target.value) / 100)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      type="text"
+                      value={(assumptions.vacancyRate * 100).toFixed(2)}
+                      onChange={(e) => {
+                        const validated = validateOverviewNumberInput(e.target.value);
+                        updateAssumption('vacancyRate', Number(validated) / 100 || 0);
+                      }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Market Cap Rate (%)</label>
                     <input
-                      type="number"
-                      step="0.1"
-                      value={assumptions.marketCapRate * 100}
-                      onChange={(e) => updateAssumption('marketCapRate', Number(e.target.value) / 100)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      type="text"
+                      value={(assumptions.marketCapRate * 100).toFixed(2)}
+                      onChange={(e) => {
+                        const validated = validateOverviewNumberInput(e.target.value);
+                        updateAssumption('marketCapRate', Number(validated) / 100 || 0);
+                      }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                 </div>
@@ -1034,21 +1038,25 @@ export default function DealAnalyzer() {
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Refinance LTV (%)</label>
                     <input
-                      type="number"
-                      step="1"
-                      value={assumptions.refinanceLTV * 100}
-                      onChange={(e) => updateAssumption('refinanceLTV', Number(e.target.value) / 100)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      type="text"
+                      value={(assumptions.refinanceLTV * 100).toFixed(2)}
+                      onChange={(e) => {
+                        const validated = validateOverviewNumberInput(e.target.value);
+                        updateAssumption('refinanceLTV', Number(validated) / 100 || 0);
+                      }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Refinance Rate (%)</label>
                     <input
-                      type="number"
-                      step="0.1"
-                      value={assumptions.refinanceInterestRate * 100}
-                      onChange={(e) => updateAssumption('refinanceInterestRate', Number(e.target.value) / 100)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      type="text"
+                      value={(assumptions.refinanceInterestRate * 100).toFixed(2)}
+                      onChange={(e) => {
+                        const validated = validateOverviewNumberInput(e.target.value);
+                        updateAssumption('refinanceInterestRate', Number(validated) / 100 || 0);
+                      }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                 </div>
@@ -1059,21 +1067,25 @@ export default function DealAnalyzer() {
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Refi Closing Costs (%)</label>
                     <input
-                      type="number"
-                      step="0.1"
-                      value={assumptions.refinanceClosingCostPercent * 100}
-                      onChange={(e) => updateAssumption('refinanceClosingCostPercent', Number(e.target.value) / 100)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      type="text"
+                      value={(assumptions.refinanceClosingCostPercent * 100).toFixed(2)}
+                      onChange={(e) => {
+                        const validated = validateOverviewNumberInput(e.target.value);
+                        updateAssumption('refinanceClosingCostPercent', Number(validated) / 100 || 0);
+                      }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">DSCR Threshold</label>
                     <input
-                      type="number"
-                      step="0.01"
-                      value={assumptions.dscrThreshold}
-                      onChange={(e) => updateAssumption('dscrThreshold', Number(e.target.value))}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      type="text"
+                      value={assumptions.dscrThreshold.toFixed(2)}
+                      onChange={(e) => {
+                        const validated = validateOverviewNumberInput(e.target.value);
+                        updateAssumption('dscrThreshold', Number(validated) || 0);
+                      }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                 </div>
