@@ -1871,18 +1871,66 @@ export default function DealAnalyzer() {
                   <tbody>
                     <tr className="border-b">
                       <td className="py-1 px-3 border-r">Labor</td>
-                      <td className="py-1 px-3 text-right border-r">$ 241,712.75</td>
-                      <td className="py-1 px-3 text-right">$ 24,121.88</td>
+                      <td className="py-1 px-3 text-right border-r">
+                        $ {(
+                          (rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0)) * 0.75
+                        ).toFixed(2)}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        $ {(
+                          (rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0)) * 0.75 / assumptions.unitCount
+                        ).toFixed(2)}
+                      </td>
                     </tr>
                     <tr className="border-b">
                       <td className="py-1 px-3 border-r">Materials</td>
-                      <td className="py-1 px-3 text-right border-r">$ 80,406.25</td>
-                      <td className="py-1 px-3 text-right">$ 8,040.63</td>
+                      <td className="py-1 px-3 text-right border-r">
+                        $ {(
+                          (rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0)) * 0.25
+                        ).toFixed(2)}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        $ {(
+                          (rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0)) * 0.25 / assumptions.unitCount
+                        ).toFixed(2)}
+                      </td>
                     </tr>
                     <tr>
                       <td className="py-1 px-3 border-r">Buffer</td>
-                      <td className="py-1 px-3 text-right border-r">$ 32,162.50</td>
-                      <td className="py-1 px-3 text-right">$ 3,216.25</td>
+                      <td className="py-1 px-3 text-right border-r">
+                        $ {(
+                          (rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0)) * 0.10
+                        ).toFixed(2)}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        $ {(
+                          (rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0) +
+                          rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0)) * 0.10 / assumptions.unitCount
+                        ).toFixed(2)}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
