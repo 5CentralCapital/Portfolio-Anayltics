@@ -172,6 +172,7 @@ export default function DealAnalyzer() {
     const cashOnCashReturn = totalCashInvested > 0 ? netCashFlow / totalCashInvested : 0;
     const equityMultiple = totalCashInvested > 0 ? (cashOut + netCashFlow) / totalCashInvested : 0;
     const breakEvenOccupancy = annualDebtService / grossRent;
+    const totalProfit = arv - allInCost - totalHoldingCosts;
     
     return {
       totalRehab,
@@ -197,7 +198,8 @@ export default function DealAnalyzer() {
       dscr,
       cashOnCashReturn,
       equityMultiple,
-      breakEvenOccupancy
+      breakEvenOccupancy,
+      totalProfit
     };
   };
 
@@ -305,11 +307,11 @@ export default function DealAnalyzer() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between">
-          <div>
-            <div>
-              <div className="mb-2">
+          <div className="flex-1">
+            <div className="flex items-baseline gap-4 mb-1">
+              <div>
                 {editingProperty ? (
                   <input
                     type="text"
@@ -321,12 +323,12 @@ export default function DealAnalyzer() {
                         setEditingProperty(false);
                       }
                     }}
-                    className="text-3xl font-bold text-gray-900 border-b-2 border-blue-500 bg-transparent outline-none"
+                    className="text-2xl font-bold text-gray-900 border-b-2 border-blue-500 bg-transparent outline-none"
                     autoFocus
                   />
                 ) : (
                   <h1 
-                    className="text-3xl font-bold text-gray-900 cursor-pointer hover:text-blue-600" 
+                    className="text-2xl font-bold text-gray-900 cursor-pointer hover:text-blue-600" 
                     title="Double-click to edit"
                     onDoubleClick={() => setEditingProperty(true)}
                   >
@@ -334,38 +336,39 @@ export default function DealAnalyzer() {
                   </h1>
                 )}
               </div>
-              <div>
-                {editingAddress ? (
-                  <input
-                    type="text"
-                    value={propertyAddress}
-                    onChange={(e) => setPropertyAddress(e.target.value)}
-                    onBlur={() => setEditingAddress(false)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === 'Escape') {
-                        setEditingAddress(false);
-                      }
-                    }}
-                    className="text-lg text-gray-600 border-b border-blue-300 bg-transparent outline-none w-full"
-                    autoFocus
-                  />
-                ) : (
-                  <p 
-                    className="text-lg text-gray-600 cursor-pointer hover:text-blue-600" 
-                    title="Double-click to edit"
-                    onDoubleClick={() => setEditingAddress(true)}
-                  >
-                    {propertyAddress}
-                  </p>
-                )}
+              <div className="text-sm text-gray-500">
+                {assumptions.unitCount} Units • Multifamily • Value-Add
               </div>
             </div>
-            <p className="text-sm text-gray-500">{assumptions.unitCount} Units • Multifamily • Value-Add Strategy</p>
+            <div>
+              {editingAddress ? (
+                <input
+                  type="text"
+                  value={propertyAddress}
+                  onChange={(e) => setPropertyAddress(e.target.value)}
+                  onBlur={() => setEditingAddress(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === 'Escape') {
+                      setEditingAddress(false);
+                    }
+                  }}
+                  className="text-base text-gray-600 border-b border-blue-300 bg-transparent outline-none w-full"
+                  autoFocus
+                />
+              ) : (
+                <p 
+                  className="text-base text-gray-600 cursor-pointer hover:text-blue-600" 
+                  title="Double-click to edit"
+                  onDoubleClick={() => setEditingAddress(true)}
+                >
+                  {propertyAddress}
+                </p>
+              )}
+            </div>
           </div>
           <div className="text-right">
-            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-              Under Analysis
-            </span>
+            <p className="text-sm text-gray-500">Purchase Price</p>
+            <p className="text-xl font-bold text-blue-600">{formatCurrency(assumptions.purchasePrice)}</p>
           </div>
         </div>
       </div>
@@ -592,31 +595,27 @@ export default function DealAnalyzer() {
           {/* CENTER PANEL - Financial Breakdown */}
           <div className="col-span-6 space-y-6">
             {/* Top KPI Bar */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
-              <div className="grid grid-cols-6 gap-4">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
+              <div className="grid grid-cols-5 gap-6">
                 <div className="text-center">
-                  <p className="text-sm opacity-90">All-In Cost</p>
-                  <p className="text-xl font-bold">{formatCurrency(metrics.allInCost)}</p>
+                  <p className="text-sm opacity-90 mb-2">All-In Cost</p>
+                  <p className="text-2xl font-bold">{formatCurrency(metrics.allInCost)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm opacity-90">ARV</p>
-                  <p className="text-xl font-bold">{formatCurrency(metrics.arv)}</p>
+                  <p className="text-sm opacity-90 mb-2">ARV</p>
+                  <p className="text-2xl font-bold">{formatCurrency(metrics.arv)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm opacity-90">Price Per Unit</p>
-                  <p className="text-xl font-bold">{formatCurrency(assumptions.purchasePrice / assumptions.unitCount)}</p>
+                  <p className="text-sm opacity-90 mb-2">Total Profit</p>
+                  <p className="text-2xl font-bold text-green-300">{formatCurrency(metrics.totalProfit)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm opacity-90">Cash-Out Refi</p>
-                  <p className="text-xl font-bold">{formatCurrency(metrics.cashOut)}</p>
+                  <p className="text-sm opacity-90 mb-2">Cash-Out Refi</p>
+                  <p className="text-2xl font-bold">{formatCurrency(metrics.cashOut)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm opacity-90">Equity Multiple</p>
-                  <p className="text-xl font-bold">{metrics.equityMultiple.toFixed(2)}x</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm opacity-90">Cash-on-Cash</p>
-                  <p className="text-xl font-bold">{formatPercent(metrics.cashOnCashReturn)}</p>
+                  <p className="text-sm opacity-90 mb-2">Equity Multiple</p>
+                  <p className="text-2xl font-bold">{metrics.equityMultiple.toFixed(2)}x</p>
                 </div>
               </div>
             </div>
