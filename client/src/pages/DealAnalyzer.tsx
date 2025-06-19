@@ -11,6 +11,7 @@ export default function DealAnalyzer() {
   
   // Editable assumptions state
   const [assumptions, setAssumptions] = useState({
+    unitCount: 8,
     purchasePrice: 1500000,
     closingCosts: 45000,
     holdingCosts: 30000,
@@ -24,17 +25,35 @@ export default function DealAnalyzer() {
     dscrThreshold: 1.25
   });
 
-  // Rent roll data
-  const [rentRoll, setRentRoll] = useState([
-    { id: 1, unit: '1A', bedBath: '2/1', currentRent: 1200, proFormaRent: 1450 },
-    { id: 2, unit: '1B', bedBath: '2/1', currentRent: 1150, proFormaRent: 1450 },
-    { id: 3, unit: '2A', bedBath: '3/1', currentRent: 1350, proFormaRent: 1650 },
-    { id: 4, unit: '2B', bedBath: '3/1', currentRent: 1300, proFormaRent: 1650 },
-    { id: 5, unit: '3A', bedBath: '2/1', currentRent: 1100, proFormaRent: 1450 },
-    { id: 6, unit: '3B', bedBath: '2/1', currentRent: 1250, proFormaRent: 1450 },
-    { id: 7, unit: '4A', bedBath: '3/1', currentRent: 1400, proFormaRent: 1650 },
-    { id: 8, unit: '4B', bedBath: '3/1', currentRent: 1325, proFormaRent: 1650 },
+  // Unit types with market rents
+  const [unitTypes, setUnitTypes] = useState([
+    { id: 1, name: '2BR/1BA', marketRent: 1450 },
+    { id: 2, name: '3BR/1BA', marketRent: 1650 },
+    { id: 3, name: '1BR/1BA', marketRent: 1200 },
+    { id: 4, name: '2BR/2BA', marketRent: 1550 }
   ]);
+
+  // Generate rent roll based on unit count
+  const generateRentRoll = (count: number) => {
+    const units = [];
+    for (let i = 1; i <= count; i++) {
+      const floor = Math.ceil(i / 2);
+      const side = i % 2 === 1 ? 'A' : 'B';
+      const unitTypeId = i % 2 === 1 ? 1 : 2; // Alternate between unit types
+      const unitType = unitTypes.find(ut => ut.id === unitTypeId);
+      
+      units.push({
+        id: i,
+        unit: `${floor}${side}`,
+        unitTypeId: unitTypeId,
+        currentRent: unitType ? unitType.marketRent - 200 : 1200,
+        proFormaRent: unitType ? unitType.marketRent : 1450
+      });
+    }
+    return units;
+  };
+
+  const [rentRoll, setRentRoll] = useState(generateRentRoll(assumptions.unitCount));
 
   // Rehab budget data
   const [rehabBudget, setRehabBudget] = useState([
@@ -77,7 +96,10 @@ export default function DealAnalyzer() {
     const allInCost = assumptions.purchasePrice + totalRehab + assumptions.closingCosts + assumptions.holdingCosts;
     
     // Revenue calculations
-    const grossRent = rentRoll.reduce((sum, unit) => sum + unit.proFormaRent, 0) * 12;
+    const grossRent = rentRoll.reduce((sum, unit) => {
+      const unitType = unitTypes.find(ut => ut.id === unit.unitTypeId);
+      return sum + (unitType ? unitType.marketRent : unit.proFormaRent);
+    }, 0) * 12;
     const vacancyLoss = grossRent * assumptions.vacancyRate;
     const netRevenue = grossRent - vacancyLoss;
     
@@ -149,21 +171,37 @@ export default function DealAnalyzer() {
   };
 
   const updateAssumption = (key: string, value: number) => {
-    setAssumptions(prev => ({
-      ...prev,
-      [key]: value
-    }));
+    setAssumptions(prev => {
+      const newAssumptions = {
+        ...prev,
+        [key]: value
+      };
+      
+      // Regenerate rent roll if unit count changes
+      if (key === 'unitCount') {
+        setRentRoll(generateRentRoll(value));
+      }
+      
+      return newAssumptions;
+    });
   };
 
   const addUnit = () => {
+    const maxId = Math.max(...rentRoll.map(u => u.id), 0);
+    const floor = Math.ceil((maxId + 1) / 2);
+    const side = (maxId + 1) % 2 === 1 ? 'A' : 'B';
+    const defaultUnitType = unitTypes[0];
+    
     const newUnit = {
-      id: Math.max(...rentRoll.map(u => u.id)) + 1,
-      unit: `${Math.floor(Math.max(...rentRoll.map(u => u.id)) / 2) + 1}A`,
-      bedBath: '2/1',
-      currentRent: 1200,
-      proFormaRent: 1450
+      id: maxId + 1,
+      unit: `${floor}${side}`,
+      unitTypeId: defaultUnitType.id,
+      currentRent: defaultUnitType.marketRent - 200,
+      proFormaRent: defaultUnitType.marketRent
     };
+    
     setRentRoll([...rentRoll, newUnit]);
+    updateAssumption('unitCount', rentRoll.length + 1);
   };
 
   const addRehabItem = () => {
@@ -236,7 +274,7 @@ export default function DealAnalyzer() {
                 </p>
               </div>
             )}
-            <p className="text-sm text-gray-500">{rentRoll.length} Units • Multifamily • Value-Add Strategy</p>
+            <p className="text-sm text-gray-500">{assumptions.unitCount} Units • Multifamily • Value-Add Strategy</p>
           </div>
           <div className="text-right">
             <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
@@ -281,6 +319,15 @@ export default function DealAnalyzer() {
                 Purchase & Loan
               </h3>
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit Count</label>
+                  <input
+                    type="number"
+                    value={assumptions.unitCount}
+                    onChange={(e) => updateAssumption('unitCount', Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price</label>
                   <input
@@ -395,7 +442,7 @@ export default function DealAnalyzer() {
           <div className="col-span-6 space-y-6">
             {/* Top KPI Bar */}
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
-              <div className="grid grid-cols-5 gap-4">
+              <div className="grid grid-cols-6 gap-4">
                 <div className="text-center">
                   <p className="text-sm opacity-90">All-In Cost</p>
                   <p className="text-xl font-bold">{formatCurrency(metrics.allInCost)}</p>
@@ -403,6 +450,10 @@ export default function DealAnalyzer() {
                 <div className="text-center">
                   <p className="text-sm opacity-90">ARV</p>
                   <p className="text-xl font-bold">{formatCurrency(metrics.arv)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm opacity-90">Price Per Unit</p>
+                  <p className="text-xl font-bold">{formatCurrency(assumptions.purchasePrice / assumptions.unitCount)}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm opacity-90">Cash-Out Refi</p>
@@ -598,97 +649,158 @@ export default function DealAnalyzer() {
       )}
 
       {activeTab === 'rentroll' && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold">Rent Roll</h2>
-            <button 
-              onClick={addUnit}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Add Unit
-            </button>
+        <div className="space-y-6">
+          {/* Unit Types Legend */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Unit Types & Market Rents</h3>
+              <button className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">
+                Add Unit Type
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {unitTypes.map((unitType) => (
+                <div key={unitType.id} className="bg-gray-50 rounded-lg p-4">
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={unitType.name}
+                      onChange={(e) => {
+                        const updated = unitTypes.map(ut => ut.id === unitType.id ? {...ut, name: e.target.value} : ut);
+                        setUnitTypes(updated);
+                      }}
+                      className="w-full px-2 py-1 border rounded text-sm font-medium"
+                    />
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-600">Market Rent:</span>
+                      <input
+                        type="number"
+                        value={unitType.marketRent}
+                        onChange={(e) => {
+                          const newRent = Number(e.target.value);
+                          const updatedTypes = unitTypes.map(ut => ut.id === unitType.id ? {...ut, marketRent: newRent} : ut);
+                          setUnitTypes(updatedTypes);
+                          
+                          // Update rent roll for units of this type
+                          const updatedRentRoll = rentRoll.map(unit => 
+                            unit.unitTypeId === unitType.id ? {...unit, proFormaRent: newRent} : unit
+                          );
+                          setRentRoll(updatedRentRoll);
+                        }}
+                        className="flex-1 px-2 py-1 border rounded text-sm text-right"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4">Unit #</th>
-                  <th className="text-left py-3 px-4">Bed/Bath</th>
-                  <th className="text-right py-3 px-4">Current Rent</th>
-                  <th className="text-right py-3 px-4">Pro Forma Rent</th>
-                  <th className="text-right py-3 px-4">Monthly Increase</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rentRoll.map((unit) => (
-                  <tr key={unit.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <input
-                        type="text"
-                        value={unit.unit}
-                        onChange={(e) => {
-                          const updated = rentRoll.map(u => u.id === unit.id ? {...u, unit: e.target.value} : u);
-                          setRentRoll(updated);
-                        }}
-                        className="w-20 px-2 py-1 border rounded text-sm"
-                      />
+
+          {/* Rent Roll Table */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">Rent Roll</h2>
+              <button 
+                onClick={addUnit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Add Unit
+              </button>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4">Unit #</th>
+                    <th className="text-left py-3 px-4">Unit Type</th>
+                    <th className="text-right py-3 px-4">Current Rent</th>
+                    <th className="text-right py-3 px-4">Pro Forma Rent</th>
+                    <th className="text-right py-3 px-4">Monthly Increase</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rentRoll.map((unit) => {
+                    const selectedUnitType = unitTypes.find(ut => ut.id === unit.unitTypeId) || unitTypes[0];
+                    return (
+                      <tr key={unit.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <input
+                            type="text"
+                            value={unit.unit}
+                            onChange={(e) => {
+                              const updated = rentRoll.map(u => u.id === unit.id ? {...u, unit: e.target.value} : u);
+                              setRentRoll(updated);
+                            }}
+                            className="w-20 px-2 py-1 border rounded text-sm"
+                          />
+                        </td>
+                        <td className="py-3 px-4">
+                          <select
+                            value={unit.unitTypeId}
+                            onChange={(e) => {
+                              const newUnitTypeId = Number(e.target.value);
+                              const newUnitType = unitTypes.find(ut => ut.id === newUnitTypeId);
+                              const updated = rentRoll.map(u => u.id === unit.id ? {
+                                ...u, 
+                                unitTypeId: newUnitTypeId,
+                                proFormaRent: newUnitType ? newUnitType.marketRent : u.proFormaRent
+                              } : u);
+                              setRentRoll(updated);
+                            }}
+                            className="w-32 px-2 py-1 border rounded text-sm"
+                          >
+                            {unitTypes.map(ut => (
+                              <option key={ut.id} value={ut.id}>{ut.name}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <input
+                            type="number"
+                            value={unit.currentRent}
+                            onChange={(e) => {
+                              const updated = rentRoll.map(u => u.id === unit.id ? {...u, currentRent: Number(e.target.value)} : u);
+                              setRentRoll(updated);
+                            }}
+                            className="w-24 px-2 py-1 border rounded text-sm text-right"
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <span className="text-gray-600 text-sm">
+                            {formatCurrency(selectedUnitType.marketRent)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right font-medium text-green-600">
+                          {formatCurrency(selectedUnitType.marketRent - unit.currentRent)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 bg-gray-50">
+                    <td className="py-3 px-4 font-bold">Total ({rentRoll.length} units)</td>
+                    <td className="py-3 px-4"></td>
+                    <td className="py-3 px-4 text-right font-bold">
+                      {formatCurrency(rentRoll.reduce((sum, unit) => sum + unit.currentRent, 0))}
                     </td>
-                    <td className="py-3 px-4">
-                      <input
-                        type="text"
-                        value={unit.bedBath}
-                        onChange={(e) => {
-                          const updated = rentRoll.map(u => u.id === unit.id ? {...u, bedBath: e.target.value} : u);
-                          setRentRoll(updated);
-                        }}
-                        className="w-16 px-2 py-1 border rounded text-sm"
-                      />
+                    <td className="py-3 px-4 text-right font-bold">
+                      {formatCurrency(rentRoll.reduce((sum, unit) => {
+                        const unitType = unitTypes.find(ut => ut.id === unit.unitTypeId);
+                        return sum + (unitType ? unitType.marketRent : unit.proFormaRent);
+                      }, 0))}
                     </td>
-                    <td className="py-3 px-4 text-right">
-                      <input
-                        type="number"
-                        value={unit.currentRent}
-                        onChange={(e) => {
-                          const updated = rentRoll.map(u => u.id === unit.id ? {...u, currentRent: Number(e.target.value)} : u);
-                          setRentRoll(updated);
-                        }}
-                        className="w-24 px-2 py-1 border rounded text-sm text-right"
-                      />
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <input
-                        type="number"
-                        value={unit.proFormaRent}
-                        onChange={(e) => {
-                          const updated = rentRoll.map(u => u.id === unit.id ? {...u, proFormaRent: Number(e.target.value)} : u);
-                          setRentRoll(updated);
-                        }}
-                        className="w-24 px-2 py-1 border rounded text-sm text-right"
-                      />
-                    </td>
-                    <td className="py-3 px-4 text-right font-medium text-green-600">
-                      {formatCurrency(unit.proFormaRent - unit.currentRent)}
+                    <td className="py-3 px-4 text-right font-bold text-green-600">
+                      {formatCurrency(rentRoll.reduce((sum, unit) => {
+                        const unitType = unitTypes.find(ut => ut.id === unit.unitTypeId);
+                        return sum + ((unitType ? unitType.marketRent : unit.proFormaRent) - unit.currentRent);
+                      }, 0))}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 bg-gray-50">
-                  <td className="py-3 px-4 font-bold">Total ({rentRoll.length} units)</td>
-                  <td className="py-3 px-4"></td>
-                  <td className="py-3 px-4 text-right font-bold">
-                    {formatCurrency(rentRoll.reduce((sum, unit) => sum + unit.currentRent, 0))}
-                  </td>
-                  <td className="py-3 px-4 text-right font-bold">
-                    {formatCurrency(rentRoll.reduce((sum, unit) => sum + unit.proFormaRent, 0))}
-                  </td>
-                  <td className="py-3 px-4 text-right font-bold text-green-600">
-                    {formatCurrency(rentRoll.reduce((sum, unit) => sum + (unit.proFormaRent - unit.currentRent), 0))}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
+                </tfoot>
+              </table>
+            </div>
           </div>
         </div>
       )}
