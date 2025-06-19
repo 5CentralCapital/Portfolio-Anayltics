@@ -650,17 +650,29 @@ export default function DealAnalyzer() {
                 <div className="flex items-center justify-between mb-3">
                   <h4 
                     className="text-md font-medium text-gray-800 cursor-pointer hover:text-blue-600"
-                    onDoubleClick={() => setEditingClosingCosts(true)}
-                    title="Double-click to edit closing costs"
+                    onClick={() => setEditingClosingCosts(!editingClosingCosts)}
+                    title="Click to edit closing costs"
                   >
-                    Closing Costs
+                    Closing Costs {editingClosingCosts ? '(Editing)' : ''}
                   </h4>
                   {editingClosingCosts && (
                     <button
-                      onClick={() => setEditingClosingCosts(false)}
-                      className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                      onClick={() => {
+                        const keys = Object.keys(closingCosts);
+                        const maxKey = keys.length > 0 ? Math.max(...keys.map(k => parseInt(k) || 0)) : 0;
+                        const newKey = `item${maxKey + 1}`;
+                        setClosingCosts(prev => ({
+                          ...prev,
+                          [newKey]: 0
+                        }));
+                        setClosingCostNames(prev => ({
+                          ...prev,
+                          [newKey]: 'New Item'
+                        }));
+                      }}
+                      className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
                     >
-                      Done
+                      + Add Item
                     </button>
                   )}
                 </div>
@@ -683,9 +695,12 @@ export default function DealAnalyzer() {
                               className="flex-1 px-2 py-1 border rounded text-sm text-gray-700"
                             />
                             <input
-                              type="number"
+                              type="text"
                               value={value}
-                              onChange={(e) => updateClosingCost(key, Number(e.target.value))}
+                              onChange={(e) => {
+                                const validated = validateNumberInput(e.target.value);
+                                updateClosingCost(key, Number(validated) || 0);
+                              }}
                               className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right"
                             />
                           </div>
@@ -719,17 +734,29 @@ export default function DealAnalyzer() {
                 <div className="flex items-center justify-between mb-3">
                   <h4 
                     className="text-md font-medium text-gray-800 cursor-pointer hover:text-blue-600"
-                    onDoubleClick={() => setEditingHoldingCosts(true)}
-                    title="Double-click to edit holding costs"
+                    onClick={() => setEditingHoldingCosts(!editingHoldingCosts)}
+                    title="Click to edit holding costs"
                   >
-                    Holding Costs
+                    Holding Costs {editingHoldingCosts ? '(Editing)' : ''}
                   </h4>
                   {editingHoldingCosts && (
                     <button
-                      onClick={() => setEditingHoldingCosts(false)}
-                      className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                      onClick={() => {
+                        const keys = Object.keys(holdingCosts);
+                        const maxKey = keys.length > 0 ? Math.max(...keys.map(k => parseInt(k) || 0)) : 0;
+                        const newKey = `item${maxKey + 1}`;
+                        setHoldingCosts(prev => ({
+                          ...prev,
+                          [newKey]: 0
+                        }));
+                        setHoldingCostNames(prev => ({
+                          ...prev,
+                          [newKey]: 'New Item'
+                        }));
+                      }}
+                      className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
                     >
-                      Done
+                      + Add Item
                     </button>
                   )}
                 </div>
