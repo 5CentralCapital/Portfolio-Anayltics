@@ -10,6 +10,8 @@ export default function DealAnalyzer() {
   const [propertyName, setPropertyName] = useState('Maple Street Apartments');
   const [propertyAddress, setPropertyAddress] = useState('123 Maple Street, Hartford, CT 06106');
   const [editingExpenses, setEditingExpenses] = useState(false);
+  const [editingClosingCosts, setEditingClosingCosts] = useState(false);
+  const [editingHoldingCosts, setEditingHoldingCosts] = useState(false);
   
   // Editable assumptions state
   const [assumptions, setAssumptions] = useState({
@@ -366,10 +368,7 @@ export default function DealAnalyzer() {
               )}
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-500">Purchase Price</p>
-            <p className="text-xl font-bold text-blue-600">{formatCurrency(assumptions.purchasePrice)}</p>
-          </div>
+          
         </div>
       </div>
 
@@ -468,22 +467,64 @@ export default function DealAnalyzer() {
               
               {/* Closing Costs */}
               <div className="mb-6">
-                <h4 className="text-md font-medium text-gray-800 mb-3">Closing Costs</h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 
+                    className="text-md font-medium text-gray-800 cursor-pointer hover:text-blue-600"
+                    onDoubleClick={() => setEditingClosingCosts(true)}
+                    title="Double-click to edit closing costs"
+                  >
+                    Closing Costs
+                  </h4>
+                  {editingClosingCosts && (
+                    <button
+                      onClick={() => setEditingClosingCosts(false)}
+                      className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                    >
+                      Done
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-3">
-                  {Object.entries(closingCosts).map(([key, value]) => {
-                    const label = closingCostNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                    return (
-                      <div key={key} className="flex justify-between items-center">
-                        <label className="text-sm font-medium text-gray-700 flex-1">{label}</label>
-                        <input
-                          type="number"
-                          value={value}
-                          onChange={(e) => updateClosingCost(key, Number(e.target.value))}
-                          className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right"
-                        />
-                      </div>
-                    );
-                  })}
+                  {editingClosingCosts ? (
+                    <>
+                      {Object.entries(closingCosts).map(([key, value]) => {
+                        const label = closingCostNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                        return (
+                          <div key={key} className="flex justify-between items-center gap-2">
+                            <input
+                              type="text"
+                              value={label}
+                              onChange={(e) => {
+                                setClosingCostNames(prev => ({
+                                  ...prev,
+                                  [key]: e.target.value
+                                }));
+                              }}
+                              className="flex-1 px-2 py-1 border rounded text-sm text-gray-700"
+                            />
+                            <input
+                              type="number"
+                              value={value}
+                              onChange={(e) => updateClosingCost(key, Number(e.target.value))}
+                              className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                            />
+                          </div>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <>
+                      {Object.entries(closingCosts).map(([key, value]) => {
+                        const label = closingCostNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                        return (
+                          <div key={key} className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-700 flex-1">{label}</span>
+                            <span className="text-sm font-medium">{formatCurrency(value)}</span>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
                   <div className="flex justify-between items-center pt-2 border-t">
                     <span className="font-medium text-gray-900">Total Closing Costs (Purchase)</span>
                     <span className="font-bold text-green-600">
@@ -495,22 +536,64 @@ export default function DealAnalyzer() {
 
               {/* Holding Costs */}
               <div>
-                <h4 className="text-md font-medium text-gray-800 mb-3">Holding Costs</h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 
+                    className="text-md font-medium text-gray-800 cursor-pointer hover:text-blue-600"
+                    onDoubleClick={() => setEditingHoldingCosts(true)}
+                    title="Double-click to edit holding costs"
+                  >
+                    Holding Costs
+                  </h4>
+                  {editingHoldingCosts && (
+                    <button
+                      onClick={() => setEditingHoldingCosts(false)}
+                      className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                    >
+                      Done
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-3">
-                  {Object.entries(holdingCosts).map(([key, value]) => {
-                    const label = holdingCostNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                    return (
-                      <div key={key} className="flex justify-between items-center">
-                        <label className="text-sm font-medium text-gray-700 flex-1">{label}</label>
-                        <input
-                          type="number"
-                          value={value}
-                          onChange={(e) => updateHoldingCost(key, Number(e.target.value))}
-                          className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right"
-                        />
-                      </div>
-                    );
-                  })}
+                  {editingHoldingCosts ? (
+                    <>
+                      {Object.entries(holdingCosts).map(([key, value]) => {
+                        const label = holdingCostNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                        return (
+                          <div key={key} className="flex justify-between items-center gap-2">
+                            <input
+                              type="text"
+                              value={label}
+                              onChange={(e) => {
+                                setHoldingCostNames(prev => ({
+                                  ...prev,
+                                  [key]: e.target.value
+                                }));
+                              }}
+                              className="flex-1 px-2 py-1 border rounded text-sm text-gray-700"
+                            />
+                            <input
+                              type="number"
+                              value={value}
+                              onChange={(e) => updateHoldingCost(key, Number(e.target.value))}
+                              className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                            />
+                          </div>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <>
+                      {Object.entries(holdingCosts).map(([key, value]) => {
+                        const label = holdingCostNames[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                        return (
+                          <div key={key} className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-700 flex-1">{label}</span>
+                            <span className="text-sm font-medium">{formatCurrency(value)}</span>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
                   <div className="flex justify-between items-center pt-2 border-t">
                     <span className="font-medium text-gray-900">Total Holding Costs (Purchase)</span>
                     <span className="font-bold text-green-600">
