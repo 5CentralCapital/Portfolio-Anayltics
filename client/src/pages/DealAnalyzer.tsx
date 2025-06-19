@@ -373,38 +373,34 @@ export default function DealAnalyzer() {
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-baseline gap-4 mb-1">
-              <div>
-                {editingProperty ? (
-                  <input
-                    type="text"
-                    value={propertyName}
-                    onChange={(e) => setPropertyName(e.target.value)}
-                    onBlur={() => setEditingProperty(false)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === 'Escape') {
-                        setEditingProperty(false);
-                      }
-                    }}
-                    className="text-2xl font-bold text-gray-900 border-b-2 border-blue-500 bg-transparent outline-none"
-                    autoFocus
-                  />
-                ) : (
-                  <h1 
-                    className="text-2xl font-bold text-gray-900 cursor-pointer hover:text-blue-600" 
-                    title="Double-click to edit"
-                    onDoubleClick={() => setEditingProperty(true)}
-                  >
-                    {propertyName}
-                  </h1>
-                )}
-              </div>
-              <div className="text-sm text-gray-500">
-                {assumptions.unitCount} Units • Multifamily • Value-Add
-              </div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-6">
+            <div>
+              {editingProperty ? (
+                <input
+                  type="text"
+                  value={propertyName}
+                  onChange={(e) => setPropertyName(e.target.value)}
+                  onBlur={() => setEditingProperty(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === 'Escape') {
+                      setEditingProperty(false);
+                    }
+                  }}
+                  className="text-2xl font-bold text-gray-900 border-b-2 border-blue-500 bg-transparent outline-none"
+                  autoFocus
+                />
+              ) : (
+                <h1 
+                  className="text-2xl font-bold text-gray-900 cursor-pointer hover:text-blue-600" 
+                  title="Double-click to edit"
+                  onDoubleClick={() => setEditingProperty(true)}
+                >
+                  {propertyName}
+                </h1>
+              )}
             </div>
+            <div className="text-lg text-gray-600">•</div>
             <div>
               {editingAddress ? (
                 <input
@@ -417,7 +413,7 @@ export default function DealAnalyzer() {
                       setEditingAddress(false);
                     }
                   }}
-                  className="text-base text-gray-600 border-b border-blue-300 bg-transparent outline-none w-full"
+                  className="text-base text-gray-600 border-b border-blue-300 bg-transparent outline-none"
                   autoFocus
                 />
               ) : (
@@ -431,7 +427,9 @@ export default function DealAnalyzer() {
               )}
             </div>
           </div>
-          
+          <div className="text-sm text-gray-500">
+            {assumptions.unitCount} Units • Multifamily • Value-Add Strategy
+          </div>
         </div>
       </div>
 
@@ -460,10 +458,42 @@ export default function DealAnalyzer() {
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-12 gap-6">
-          {/* LEFT PANEL - Editable Inputs */}
-          <div className="col-span-3 space-y-6">
-            {/* Purchase & Loan */}
+        <div className="space-y-6">
+          {/* Top KPI Bar - Full Width */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
+            <div className="grid grid-cols-6 gap-4">
+              <div className="text-center">
+                <p className="text-sm opacity-90 mb-2">All-In Cost</p>
+                <p className="text-xl font-bold">{formatCurrency(metrics.allInCost)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm opacity-90 mb-2">ARV</p>
+                <p className="text-xl font-bold">{formatCurrency(metrics.arv)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm opacity-90 mb-2">Total Profit</p>
+                <p className="text-xl font-bold text-green-300">{formatCurrency(metrics.totalProfit)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm opacity-90 mb-2">Capital Required</p>
+                <p className="text-xl font-bold text-orange-300">{formatCurrency(metrics.capitalRequired)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm opacity-90 mb-2">Cash-Out Refi</p>
+                <p className="text-xl font-bold">{formatCurrency(metrics.cashOut)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm opacity-90 mb-2">Equity Multiple</p>
+                <p className="text-xl font-bold">{metrics.equityMultiple.toFixed(2)}x</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-12 gap-6">
+            {/* LEFT PANEL - Editable Inputs */}
+            <div className="col-span-3 space-y-6">
+              {/* Purchase & Loan */}
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <Home className="h-5 w-5 mr-2 text-blue-600" />
@@ -740,36 +770,6 @@ export default function DealAnalyzer() {
 
           {/* CENTER PANEL - Financial Breakdown */}
           <div className="col-span-6 space-y-6">
-            {/* Top KPI Bar */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
-              <div className="grid grid-cols-6 gap-4">
-                <div className="text-center">
-                  <p className="text-sm opacity-90 mb-2">All-In Cost</p>
-                  <p className="text-xl font-bold">{formatCurrency(metrics.allInCost)}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm opacity-90 mb-2">ARV</p>
-                  <p className="text-xl font-bold">{formatCurrency(metrics.arv)}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm opacity-90 mb-2">Total Profit</p>
-                  <p className="text-xl font-bold text-green-300">{formatCurrency(metrics.totalProfit)}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm opacity-90 mb-2">Capital Required</p>
-                  <p className="text-xl font-bold text-orange-300">{formatCurrency(metrics.capitalRequired)}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm opacity-90 mb-2">Cash-Out Refi</p>
-                  <p className="text-xl font-bold">{formatCurrency(metrics.cashOut)}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm opacity-90 mb-2">Equity Multiple</p>
-                  <p className="text-xl font-bold">{metrics.equityMultiple.toFixed(2)}x</p>
-                </div>
-              </div>
-            </div>
-
             {/* Financial Breakdown */}
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
@@ -1046,6 +1046,155 @@ export default function DealAnalyzer() {
               </div>
             </div>
           </div>
+
+          {/* RIGHT PANEL - Analysis Results */}
+          <div className="col-span-3 space-y-6">
+            {/* Loan Analysis */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Calculator className="h-5 w-5 mr-2 text-blue-600" />
+                Loan Analysis
+              </h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span>Purchase Price</span>
+                  <span className="font-medium">{formatCurrency(assumptions.purchasePrice)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Down Payment ({(assumptions.downPaymentPercent * 100).toFixed(0)}%)</span>
+                  <span className="font-medium">{formatCurrency(metrics.downPayment)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Initial Loan Amount</span>
+                  <span className="font-medium">{formatCurrency(metrics.initialLoan)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Interest Rate</span>
+                  <span className="font-medium">{(assumptions.interestRate * 100).toFixed(2)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Monthly Payment</span>
+                  <span className="font-medium">{formatCurrency(metrics.monthlyDebtService)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Annual Debt Service</span>
+                  <span className="font-bold text-red-600">{formatCurrency(metrics.annualDebtService)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Refinance Analysis */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Target className="h-5 w-5 mr-2 text-green-600" />
+                Refinance Analysis
+              </h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span>ARV</span>
+                  <span className="font-medium">{formatCurrency(metrics.arv)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>LTV ({(assumptions.refinanceLTV * 100).toFixed(0)}%)</span>
+                  <span className="font-medium">{formatCurrency(metrics.refinanceLoan)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Refinance Closing Costs</span>
+                  <span className="font-medium">{formatCurrency(metrics.refinanceClosingCosts)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total Investment</span>
+                  <span className="font-medium">{formatCurrency(metrics.totalCashInvested)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Cash-Out</span>
+                  <span className="font-bold text-green-600">{formatCurrency(metrics.cashOut)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Investment Summary */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <Home className="h-5 w-5 mr-2 text-purple-600" />
+                Investment Summary
+              </h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">NOI</span>
+                    <div className="font-bold text-lg">{formatCurrency(metrics.noi)}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Cash Flow</span>
+                    <div className="font-bold text-lg">{formatCurrency(metrics.netCashFlow)}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">DSCR</span>
+                    <div className={`font-bold text-lg ${metrics.dscr >= 1.25 ? 'text-green-600' : 'text-red-600'}`}>
+                      {metrics.dscr.toFixed(2)}x
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Break-Even</span>
+                    <div className="font-bold text-lg">{(metrics.breakEvenOccupancy * 100).toFixed(0)}%</div>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Total Return</span>
+                    <span className="font-bold text-green-600">{formatCurrency(metrics.cashOut + metrics.netCashFlow)}</span>
+                  </div>
+                </div>
+
+                {/* Risk Scoring Badge */}
+                <div className={`border rounded-lg p-3 ${
+                  metrics.riskAssessment.color === 'red' ? 'bg-red-50 border-red-200' :
+                  metrics.riskAssessment.color === 'yellow' ? 'bg-yellow-50 border-yellow-200' :
+                  'bg-green-50 border-green-200'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className={`w-3 h-3 rounded-full mr-2 ${
+                        metrics.riskAssessment.color === 'red' ? 'bg-red-500' :
+                        metrics.riskAssessment.color === 'yellow' ? 'bg-yellow-500' :
+                        'bg-green-500'
+                      }`}></div>
+                      <span className={`font-medium text-sm ${
+                        metrics.riskAssessment.color === 'red' ? 'text-red-800' :
+                        metrics.riskAssessment.color === 'yellow' ? 'text-yellow-800' :
+                        'text-green-800'
+                      }`}>
+                        {metrics.riskAssessment.level} Risk
+                      </span>
+                    </div>
+                    <span className={`text-xs ${
+                      metrics.riskAssessment.color === 'red' ? 'text-red-600' :
+                      metrics.riskAssessment.color === 'yellow' ? 'text-yellow-600' :
+                      'text-green-600'
+                    }`}>
+                      Score: {metrics.riskAssessment.score}
+                    </span>
+                  </div>
+                  {metrics.riskAssessment.warnings.length > 0 && (
+                    <div className="mt-2">
+                      <ul className={`text-xs space-y-1 ${
+                        metrics.riskAssessment.color === 'red' ? 'text-red-700' :
+                        metrics.riskAssessment.color === 'yellow' ? 'text-yellow-700' :
+                        'text-green-700'
+                      }`}>
+                        {metrics.riskAssessment.warnings.map((warning, index) => (
+                          <li key={index}>• {warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         </div>
       )}
 
