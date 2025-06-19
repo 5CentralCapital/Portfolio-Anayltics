@@ -226,19 +226,18 @@ export default function DealAnalyzer() {
     setRehabBudget([...rehabBudget, newItem]);
   };
 
-  const addExpenseItem = () => {
-    const newExpenseKey = `customExpense${Date.now()}`;
-    setExpenses(prev => ({
-      ...prev,
-      [newExpenseKey]: 0
-    }));
-  };
-
   const updateExpense = (key: string, value: number) => {
     setExpenses(prev => ({
       ...prev,
       [key]: value
     }));
+  };
+
+  const addExpenseItem = () => {
+    const newKey = `custom_${Date.now()}`;
+    const newName = `Custom Expense ${Object.keys(expenses).length}`;
+    setExpenses(prev => ({ ...prev, [newKey]: 0 }));
+    setExpenseNames(prev => ({ ...prev, [newKey]: newName }));
   };
 
   if (loading) {
@@ -605,6 +604,12 @@ export default function DealAnalyzer() {
                         <span className="text-gray-600">Management Fee (8%)</span>
                         <span className="font-medium text-gray-500">{formatCurrency(metrics.managementFee)}</span>
                       </div>
+                      <button
+                        onClick={addExpenseItem}
+                        className="w-full mt-2 px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded border border-dashed border-gray-300"
+                      >
+                        + Add Line Item
+                      </button>
                     </>
                   ) : (
                     <>
