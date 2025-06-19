@@ -35,7 +35,8 @@ export default function DealAnalyzer() {
     appraisalFee: 800,
     legalFees: 2500,
     transferTax: 8000,
-    miscellaneous: 2200
+    miscellaneous: 2200,
+    sellerCredit: -5000
   });
 
   const [closingCostNames, setClosingCostNames] = useState<{ [key: string]: string }>({
@@ -43,7 +44,8 @@ export default function DealAnalyzer() {
     appraisalFee: 'Appraisal Fee',
     legalFees: 'Legal Fees',
     transferTax: 'Transfer Tax',
-    miscellaneous: 'Miscellaneous'
+    miscellaneous: 'Miscellaneous',
+    sellerCredit: 'Seller Credit'
   });
 
   // Holding costs breakdown
@@ -175,6 +177,7 @@ export default function DealAnalyzer() {
     const equityMultiple = totalCashInvested > 0 ? (cashOut + netCashFlow) / totalCashInvested : 0;
     const breakEvenOccupancy = annualDebtService / grossRent;
     const totalProfit = arv - allInCost - totalHoldingCosts;
+    const capitalRequired = downPayment + totalClosingCosts;
     
     return {
       totalRehab,
@@ -201,7 +204,8 @@ export default function DealAnalyzer() {
       cashOnCashReturn,
       equityMultiple,
       breakEvenOccupancy,
-      totalProfit
+      totalProfit,
+      capitalRequired
     };
   };
 
@@ -679,26 +683,30 @@ export default function DealAnalyzer() {
           <div className="col-span-6 space-y-6">
             {/* Top KPI Bar */}
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
-              <div className="grid grid-cols-5 gap-6">
+              <div className="grid grid-cols-6 gap-4">
                 <div className="text-center">
                   <p className="text-sm opacity-90 mb-2">All-In Cost</p>
-                  <p className="text-2xl font-bold">{formatCurrency(metrics.allInCost)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(metrics.allInCost)}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm opacity-90 mb-2">ARV</p>
-                  <p className="text-2xl font-bold">{formatCurrency(metrics.arv)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(metrics.arv)}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm opacity-90 mb-2">Total Profit</p>
-                  <p className="text-2xl font-bold text-green-300">{formatCurrency(metrics.totalProfit)}</p>
+                  <p className="text-xl font-bold text-green-300">{formatCurrency(metrics.totalProfit)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm opacity-90 mb-2">Capital Required</p>
+                  <p className="text-xl font-bold text-orange-300">{formatCurrency(metrics.capitalRequired)}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm opacity-90 mb-2">Cash-Out Refi</p>
-                  <p className="text-2xl font-bold">{formatCurrency(metrics.cashOut)}</p>
+                  <p className="text-xl font-bold">{formatCurrency(metrics.cashOut)}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm opacity-90 mb-2">Equity Multiple</p>
-                  <p className="text-2xl font-bold">{metrics.equityMultiple.toFixed(2)}x</p>
+                  <p className="text-xl font-bold">{metrics.equityMultiple.toFixed(2)}x</p>
                 </div>
               </div>
             </div>
