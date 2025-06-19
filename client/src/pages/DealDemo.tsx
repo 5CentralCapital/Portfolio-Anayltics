@@ -272,8 +272,8 @@ export default function DealDemo() {
     const totalOperatingExpenses = (expenseData.length > 0 ? expenseData : expenses).reduce((sum: number, expense: any) => {
       const proformaRent = proformaGrossRentalIncome;
       return sum + (expense.isPercentOfRent 
-        ? proformaRent * (parseFloat(expense.percentage) || 0)
-        : (Number(expense.annualAmount) || 0)
+        ? proformaRent * (Number(expense.percentage) || 0)
+        : (Number(expense.monthlyAmount) * 12 || 0)
       );
     }, 0);
     
@@ -747,10 +747,10 @@ export default function DealDemo() {
                           <span className="text-sm font-medium">{unit.unitNumber}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-sm">{unit.unitType}</span>
+                          <span className="text-sm">{unit.bedrooms}BR/{unit.bathrooms}BA</span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-sm">{unit.squareFeet}</span>
+                          <span className="text-sm">{unit.sqft}</span>
                         </td>
                         <td className="px-4 py-3">
                           {editingRentRoll ? (
@@ -839,24 +839,22 @@ export default function DealDemo() {
                       {(incomeData.length > 0 ? incomeData : otherIncome).map((income: any, index: number) => (
                         <tr key={index}>
                           <td className="px-4 py-3">
-                            <span className="text-sm font-medium">{income.incomeName}</span>
+                            <span className="text-sm font-medium">{income.category || income.incomeName}</span>
                           </td>
                           <td className="px-4 py-3">
                             {editingIncome ? (
                               <input
                                 type="number"
-                                value={incomeData.find((i: any) => i.incomeName === income.incomeName)?.monthlyAmount || (income.annualAmount / 12)}
+                                value={incomeData.find((i: any) => i.category === income.category)?.monthlyAmount || Number(income.monthlyAmount)}
                                 onChange={(e) => {
                                   const newData = [...incomeData];
-                                  const incomeIndex = newData.findIndex((i: any) => i.incomeName === income.incomeName);
+                                  const incomeIndex = newData.findIndex((i: any) => i.category === income.category);
                                   if (incomeIndex >= 0) {
                                     newData[incomeIndex].monthlyAmount = Number(e.target.value);
-                                    newData[incomeIndex].annualAmount = Number(e.target.value) * 12;
                                   } else {
                                     newData.push({
                                       ...income,
-                                      monthlyAmount: Number(e.target.value),
-                                      annualAmount: Number(e.target.value) * 12
+                                      monthlyAmount: Number(e.target.value)
                                     });
                                   }
                                   setIncomeData(newData);
@@ -864,12 +862,12 @@ export default function DealDemo() {
                                 className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
                               />
                             ) : (
-                              <span className="text-sm font-bold">{formatCurrency((income.annualAmount || 0) / 12)}</span>
+                              <span className="text-sm font-bold">{formatCurrency(Number(income.monthlyAmount))}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
                             <span className="text-sm font-bold text-green-600">
-                              {formatCurrency(incomeData.find((i: any) => i.incomeName === income.incomeName)?.annualAmount || income.annualAmount)}
+                              {formatCurrency((incomeData.find((i: any) => i.category === income.category)?.monthlyAmount || Number(income.monthlyAmount)) * 12)}
                             </span>
                           </td>
                         </tr>
@@ -909,7 +907,7 @@ export default function DealDemo() {
                       {(expenseData.length > 0 ? expenseData : expenses).map((expense: any, index: number) => (
                         <tr key={index}>
                           <td className="px-4 py-3">
-                            <span className="text-sm font-medium">{expense.expenseName}</span>
+                            <span className="text-sm font-medium">{expense.category}</span>
                           </td>
                           <td className="px-4 py-3">
                             <span className="text-sm">{expense.isPercentOfRent ? 'Percentage' : 'Fixed'}</span>
@@ -920,10 +918,10 @@ export default function DealDemo() {
                                 <input
                                   type="number"
                                   step="0.001"
-                                  value={((expenseData.find((e: any) => e.expenseName === expense.expenseName)?.percentage || expense.percentage) * 100).toFixed(3)}
+                                  value={((expenseData.find((e: any) => e.category === expense.category)?.percentage || Number(expense.percentage)) * 100).toFixed(1)}
                                   onChange={(e) => {
                                     const newData = [...expenseData];
-                                    const expenseIndex = newData.findIndex((ex: any) => ex.expenseName === expense.expenseName);
+                                    const expenseIndex = newData.findIndex((ex: any) => ex.category === expense.category);
                                     if (expenseIndex >= 0) {
                                       newData[expenseIndex].percentage = Number(e.target.value) / 100;
                                     } else {
@@ -936,14 +934,14 @@ export default function DealDemo() {
                               ) : (
                                 <input
                                   type="number"
-                                  value={expenseData.find((e: any) => e.expenseName === expense.expenseName)?.annualAmount || expense.annualAmount}
+                                  value={expenseData.find((e: any) => e.category === expense.category)?.monthlyAmount || Number(expense.monthlyAmount)}
                                   onChange={(e) => {
                                     const newData = [...expenseData];
-                                    const expenseIndex = newData.findIndex((ex: any) => ex.expenseName === expense.expenseName);
+                                    const expenseIndex = newData.findIndex((ex: any) => ex.category === expense.category);
                                     if (expenseIndex >= 0) {
-                                      newData[expenseIndex].annualAmount = Number(e.target.value);
+                                      newData[expenseIndex].monthlyAmount = Number(e.target.value);
                                     } else {
-                                      newData.push({ ...expense, annualAmount: Number(e.target.value) });
+                                      newData.push({ ...expense, monthlyAmount: Number(e.target.value) });
                                     }
                                     setExpenseData(newData);
                                   }}
@@ -953,8 +951,8 @@ export default function DealDemo() {
                             ) : (
                               <span className="text-sm">
                                 {expense.isPercentOfRent 
-                                  ? `${((expense.percentage || 0) * 100).toFixed(3)}%`
-                                  : formatCurrency(expense.annualAmount)
+                                  ? `${(Number(expense.percentage) * 100).toFixed(1)}%`
+                                  : formatCurrency(Number(expense.monthlyAmount))
                                 }
                               </span>
                             )}
@@ -962,16 +960,16 @@ export default function DealDemo() {
                           <td className="px-4 py-3">
                             <span className="text-sm font-bold">
                               {expense.isPercentOfRent
-                                ? formatCurrency((realTimeKPIs.proformaGrossRentalIncome * (expense.percentage || 0)) / 12)
-                                : formatCurrency((expense.annualAmount || 0) / 12)
+                                ? formatCurrency((realTimeKPIs.proformaGrossRentalIncome * Number(expense.percentage)) / 12)
+                                : formatCurrency(Number(expense.monthlyAmount))
                               }
                             </span>
                           </td>
                           <td className="px-4 py-3">
                             <span className="text-sm font-bold text-red-600">
                               {expense.isPercentOfRent
-                                ? formatCurrency(realTimeKPIs.proformaGrossRentalIncome * (expense.percentage || 0))
-                                : formatCurrency(expense.annualAmount || 0)
+                                ? formatCurrency(realTimeKPIs.proformaGrossRentalIncome * Number(expense.percentage))
+                                : formatCurrency(Number(expense.monthlyAmount) * 12)
                               }
                             </span>
                           </td>
@@ -984,8 +982,264 @@ export default function DealDemo() {
             </div>
           )}
 
-          {/* Placeholder for remaining tabs */}
-          {!['saved', 'overview', 'rentroll', 'income'].includes(activeTab) && (
+          {/* 12 Month Proforma Tab */}
+          {activeTab === 'proforma' && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-4">12 Month Proforma</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gross Rent</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Other Income</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Effective Income</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Operating Expenses</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">NOI</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Debt Service</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cash Flow</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {Array.from({ length: 12 }, (_, month) => {
+                      const monthlyGrossRent = realTimeKPIs.proformaGrossRentalIncome / 12;
+                      const monthlyOtherIncome = realTimeKPIs.currentOtherIncome / 12;
+                      const monthlyEffectiveIncome = monthlyGrossRent + monthlyOtherIncome;
+                      const monthlyOperatingExpenses = realTimeKPIs.totalOperatingExpenses / 12;
+                      const monthlyNOI = monthlyEffectiveIncome - monthlyOperatingExpenses;
+                      const monthlyDebtService = realTimeKPIs.monthlyDebtService;
+                      const monthlyCashFlow = monthlyNOI - monthlyDebtService;
+                      
+                      return (
+                        <tr key={month}>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-medium">Month {month + 1}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm">{formatCurrency(monthlyGrossRent)}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm">{formatCurrency(monthlyOtherIncome)}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold">{formatCurrency(monthlyEffectiveIncome)}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm text-red-600">{formatCurrency(monthlyOperatingExpenses)}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold text-blue-600">{formatCurrency(monthlyNOI)}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm text-red-600">{formatCurrency(monthlyDebtService)}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`text-sm font-bold ${monthlyCashFlow > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(monthlyCashFlow)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Rehab Budget Tab */}
+          {activeTab === 'rehab' && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Rehab Budget</h2>
+                <button
+                  onClick={() => setEditingRehab(!editingRehab)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    editingRehab 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {editingRehab ? 'Save Changes' : 'Edit Budget'}
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Cost</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bid Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {(rehabData.length > 0 ? rehabData : rehabItems).map((item: any, index: number) => (
+                      <tr key={index}>
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-medium">{item.category}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm">{item.description}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {editingRehab ? (
+                            <input
+                              type="number"
+                              value={rehabData.find((r: any) => r.category === item.category)?.totalCost || Number(item.totalCost)}
+                              onChange={(e) => {
+                                const newData = [...rehabData];
+                                const itemIndex = newData.findIndex((r: any) => r.category === item.category);
+                                if (itemIndex >= 0) {
+                                  newData[itemIndex].totalCost = Number(e.target.value);
+                                } else {
+                                  newData.push({ ...item, totalCost: Number(e.target.value) });
+                                }
+                                setRehabData(newData);
+                              }}
+                              className="w-24 px-3 py-2 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm font-bold">{formatCurrency(Number(item.totalCost))}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            item.bidStatus === 'contracted' ? 'bg-green-100 text-green-800' :
+                            item.bidStatus === 'bid_received' ? 'bg-blue-100 text-blue-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {item.bidStatus?.replace('_', ' ') || 'estimated'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold">Total Rehab Budget:</span>
+                  <span className="text-xl font-bold text-blue-600">
+                    {formatCurrency((rehabData.length > 0 ? rehabData : rehabItems).reduce((sum: number, item: any) => 
+                      sum + Number(item.totalCost), 0
+                    ))}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Loans Tab */}
+          {activeTab === 'loans' && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Loan Details</h2>
+                <button
+                  onClick={() => setEditingLoans(!editingLoans)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    editingLoans 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {editingLoans ? 'Save Changes' : 'Edit Loans'}
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loan Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loan Amount</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Interest Rate</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Term (Years)</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monthly Payment</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Points</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {(loanData.length > 0 ? loanData : loans).map((loan: any, index: number) => {
+                      const principal = Number(loan.loanAmount);
+                      const rate = Number(loan.interestRate);
+                      const term = Number(loan.amortizationYears);
+                      
+                      let monthlyPayment = 0;
+                      if (principal > 0 && rate > 0 && term > 0) {
+                        const monthlyRate = rate / 12;
+                        const numPayments = term * 12;
+                        monthlyPayment = (principal * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                                        (Math.pow(1 + monthlyRate, numPayments) - 1);
+                      }
+                      
+                      return (
+                        <tr key={index}>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-medium capitalize">{loan.loanType}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingLoans ? (
+                              <input
+                                type="number"
+                                value={loanData.find((l: any) => l.loanType === loan.loanType)?.loanAmount || Number(loan.loanAmount)}
+                                onChange={(e) => {
+                                  const newData = [...loanData];
+                                  const loanIndex = newData.findIndex((l: any) => l.loanType === loan.loanType);
+                                  if (loanIndex >= 0) {
+                                    newData[loanIndex].loanAmount = Number(e.target.value);
+                                  } else {
+                                    newData.push({ ...loan, loanAmount: Number(e.target.value) });
+                                  }
+                                  setLoanData(newData);
+                                }}
+                                className="w-32 px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm font-bold">{formatCurrency(principal)}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {editingLoans ? (
+                              <input
+                                type="number"
+                                step="0.001"
+                                value={(loanData.find((l: any) => l.loanType === loan.loanType)?.interestRate || rate) * 100}
+                                onChange={(e) => {
+                                  const newData = [...loanData];
+                                  const loanIndex = newData.findIndex((l: any) => l.loanType === loan.loanType);
+                                  if (loanIndex >= 0) {
+                                    newData[loanIndex].interestRate = Number(e.target.value) / 100;
+                                  } else {
+                                    newData.push({ ...loan, interestRate: Number(e.target.value) / 100 });
+                                  }
+                                  setLoanData(newData);
+                                }}
+                                className="w-20 px-3 py-2 border border-gray-300 rounded text-sm"
+                              />
+                            ) : (
+                              <span className="text-sm">{(rate * 100).toFixed(3)}%</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm">{term}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold">{formatCurrency(monthlyPayment)}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm">{(Number(loan.points) * 100).toFixed(1)}%</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Placeholder for any remaining tabs */}
+          {!['saved', 'overview', 'rentroll', 'income', 'proforma', 'rehab', 'loans'].includes(activeTab) && (
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-lg font-semibold mb-4">{tabs.find(t => t.id === activeTab)?.label}</h2>
               <p className="text-gray-600">Tab content for {activeTab} coming soon...</p>
