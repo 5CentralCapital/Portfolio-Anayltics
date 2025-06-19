@@ -374,15 +374,41 @@ export default function DealAnalyzer() {
     }));
   };
 
+  // Helper function to validate and format number input
+  const validateNumberInput = (value: string): string => {
+    // Remove any non-numeric characters except decimal point
+    let cleaned = value.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    // Limit to one decimal place
+    if (parts.length === 2 && parts[1].length > 1) {
+      cleaned = parts[0] + '.' + parts[1].substring(0, 1);
+    }
+    
+    return cleaned;
+  };
+
   const updateRehabItem = (section: string, itemId: number, field: string, value: number | string) => {
+    let processedValue = value;
+    
+    // Validate numeric fields
+    if (field === 'perUnitCost' || field === 'quantity') {
+      processedValue = field === 'perUnitCost' ? validateNumberInput(String(value)) : String(value).replace(/[^0-9]/g, '');
+    }
+    
     setRehabBudgetSections(prev => ({
       ...prev,
       [section]: prev[section as keyof typeof prev].map(item => {
         if (item.id === itemId) {
-          const updatedItem = { ...item, [field]: value };
+          const updatedItem = { ...item, [field]: processedValue };
           // Automatically calculate totalCost when perUnitCost or quantity changes
           if (field === 'perUnitCost' || field === 'quantity') {
-            updatedItem.totalCost = updatedItem.perUnitCost * updatedItem.quantity;
+            updatedItem.totalCost = (Number(updatedItem.perUnitCost) || 0) * (Number(updatedItem.quantity) || 0);
           }
           return updatedItem;
         }
@@ -1518,17 +1544,17 @@ export default function DealAnalyzer() {
                         <td className="py-1 px-3 text-right text-sm border-r">
                           $
                           <input
-                            type="number"
+                            type="text"
                             value={item.perUnitCost}
-                            onChange={(e) => updateRehabItem('exterior', item.id, 'perUnitCost', Number(e.target.value))}
+                            onChange={(e) => updateRehabItem('exterior', item.id, 'perUnitCost', e.target.value)}
                             className="w-16 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded ml-1"
                           />
                         </td>
                         <td className="py-1 px-3 text-right text-sm border-r">
                           <input
-                            type="number"
+                            type="text"
                             value={item.quantity}
-                            onChange={(e) => updateRehabItem('exterior', item.id, 'quantity', Number(e.target.value))}
+                            onChange={(e) => updateRehabItem('exterior', item.id, 'quantity', e.target.value)}
                             className="w-12 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
                           />
                         </td>
@@ -1569,17 +1595,17 @@ export default function DealAnalyzer() {
                         <td className="py-1 px-3 text-right text-sm border-r">
                           $
                           <input
-                            type="number"
+                            type="text"
                             value={item.perUnitCost}
-                            onChange={(e) => updateRehabItem('kitchens', item.id, 'perUnitCost', Number(e.target.value))}
+                            onChange={(e) => updateRehabItem('kitchens', item.id, 'perUnitCost', e.target.value)}
                             className="w-16 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded ml-1"
                           />
                         </td>
                         <td className="py-1 px-3 text-right text-sm border-r">
                           <input
-                            type="number"
+                            type="text"
                             value={item.quantity}
-                            onChange={(e) => updateRehabItem('kitchens', item.id, 'quantity', Number(e.target.value))}
+                            onChange={(e) => updateRehabItem('kitchens', item.id, 'quantity', e.target.value)}
                             className="w-12 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
                           />
                         </td>
@@ -1622,17 +1648,17 @@ export default function DealAnalyzer() {
                         <td className="py-1 px-3 text-right text-sm border-r">
                           $
                           <input
-                            type="number"
+                            type="text"
                             value={item.perUnitCost}
-                            onChange={(e) => updateRehabItem('bathrooms', item.id, 'perUnitCost', Number(e.target.value))}
+                            onChange={(e) => updateRehabItem('bathrooms', item.id, 'perUnitCost', e.target.value)}
                             className="w-16 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded ml-1"
                           />
                         </td>
                         <td className="py-1 px-3 text-right text-sm border-r">
                           <input
-                            type="number"
+                            type="text"
                             value={item.quantity}
-                            onChange={(e) => updateRehabItem('bathrooms', item.id, 'quantity', Number(e.target.value))}
+                            onChange={(e) => updateRehabItem('bathrooms', item.id, 'quantity', e.target.value)}
                             className="w-12 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
                           />
                         </td>
@@ -1692,17 +1718,17 @@ export default function DealAnalyzer() {
                         <td className="py-1 px-3 text-right text-sm border-r">
                           $
                           <input
-                            type="number"
+                            type="text"
                             value={item.perUnitCost}
-                            onChange={(e) => updateRehabItem('generalInterior', item.id, 'perUnitCost', Number(e.target.value))}
+                            onChange={(e) => updateRehabItem('generalInterior', item.id, 'perUnitCost', e.target.value)}
                             className="w-16 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded ml-1"
                           />
                         </td>
                         <td className="py-1 px-3 text-right text-sm border-r">
                           <input
-                            type="number"
+                            type="text"
                             value={item.quantity}
-                            onChange={(e) => updateRehabItem('generalInterior', item.id, 'quantity', Number(e.target.value))}
+                            onChange={(e) => updateRehabItem('generalInterior', item.id, 'quantity', e.target.value)}
                             className="w-12 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
                           />
                         </td>
@@ -1745,17 +1771,17 @@ export default function DealAnalyzer() {
                         <td className="py-1 px-3 text-right text-sm border-r">
                           $
                           <input
-                            type="number"
+                            type="text"
                             value={item.perUnitCost}
-                            onChange={(e) => updateRehabItem('finishings', item.id, 'perUnitCost', Number(e.target.value))}
+                            onChange={(e) => updateRehabItem('finishings', item.id, 'perUnitCost', e.target.value)}
                             className="w-16 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded ml-1"
                           />
                         </td>
                         <td className="py-1 px-3 text-right text-sm border-r">
                           <input
-                            type="number"
+                            type="text"
                             value={item.quantity}
-                            onChange={(e) => updateRehabItem('finishings', item.id, 'quantity', Number(e.target.value))}
+                            onChange={(e) => updateRehabItem('finishings', item.id, 'quantity', e.target.value)}
                             className="w-12 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
                           />
                         </td>
