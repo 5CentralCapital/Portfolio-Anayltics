@@ -1577,7 +1577,7 @@ export default function DealAnalyzer() {
                       </td>
                     </tr>
                     {/* Exterior Section */}
-                    {rehabBudgetSections.exterior.map((item) => (
+                    {editingRehabSections.exterior && rehabBudgetSections.exterior.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
                         <td className="py-1 px-3 text-sm border-r">
                           <input
@@ -1637,7 +1637,7 @@ export default function DealAnalyzer() {
                         )}
                       </td>
                     </tr>
-                    {rehabBudgetSections.kitchens.map((item) => (
+                    {editingRehabSections.kitchens && rehabBudgetSections.kitchens.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
                         <td className="py-1 px-3 text-sm border-r">
                           <input
@@ -1699,7 +1699,7 @@ export default function DealAnalyzer() {
                         )}
                       </td>
                     </tr>
-                    {rehabBudgetSections.bathrooms.map((item) => (
+                    {editingRehabSections.bathrooms && rehabBudgetSections.bathrooms.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
                         <td className="py-1 px-3 text-sm border-r">
                           <input
@@ -1778,7 +1778,7 @@ export default function DealAnalyzer() {
                         )}
                       </td>
                     </tr>
-                    {rehabBudgetSections.generalInterior.map((item) => (
+                    {editingRehabSections.generalInterior && rehabBudgetSections.generalInterior.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
                         <td className="py-1 px-3 text-sm border-r">
                           <input
@@ -1840,7 +1840,7 @@ export default function DealAnalyzer() {
                         )}
                       </td>
                     </tr>
-                    {rehabBudgetSections.finishings.map((item) => (
+                    {editingRehabSections.finishings && rehabBudgetSections.finishings.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
                         <td className="py-1 px-3 text-sm border-r">
                           <input
