@@ -377,11 +377,17 @@ export default function DealAnalyzer() {
   const updateRehabItem = (section: string, itemId: number, field: string, value: number | string) => {
     setRehabBudgetSections(prev => ({
       ...prev,
-      [section]: prev[section as keyof typeof prev].map(item => 
-        item.id === itemId 
-          ? { ...item, [field]: value, totalCost: field === 'totalCost' ? Number(value) : item.perUnitCost * item.quantity }
-          : item
-      )
+      [section]: prev[section as keyof typeof prev].map(item => {
+        if (item.id === itemId) {
+          const updatedItem = { ...item, [field]: value };
+          // Automatically calculate totalCost when perUnitCost or quantity changes
+          if (field === 'perUnitCost' || field === 'quantity') {
+            updatedItem.totalCost = updatedItem.perUnitCost * updatedItem.quantity;
+          }
+          return updatedItem;
+        }
+        return item;
+      })
     }));
   };
 
@@ -1489,18 +1495,40 @@ export default function DealAnalyzer() {
                     {/* Exterior Section */}
                     {rehabBudgetSections.exterior.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
-                        <td className="py-1 px-3 text-sm border-r">{item.category}</td>
-                        <td className="py-1 px-3 text-right text-sm border-r">$ {item.perUnitCost.toFixed(2)}</td>
-                        <td className="py-1 px-3 text-right text-sm border-r">{assumptions.unitCount}</td>
-                        <td className="py-1 px-3 text-right text-sm">$ {item.totalCost.toFixed(2)}</td>
+                        <td className="py-1 px-3 text-sm border-r">
+                          <input
+                            type="text"
+                            value={item.category}
+                            onChange={(e) => updateRehabItem('exterior', item.id, 'category', e.target.value)}
+                            className="w-full px-1 py-0.5 border-0 bg-transparent text-sm focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm border-r">
+                          $
+                          <input
+                            type="number"
+                            value={item.perUnitCost}
+                            onChange={(e) => updateRehabItem('exterior', item.id, 'perUnitCost', Number(e.target.value))}
+                            className="w-16 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded ml-1"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm border-r">
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateRehabItem('exterior', item.id, 'quantity', Number(e.target.value))}
+                            className="w-12 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm">$ {(item.perUnitCost * item.quantity).toFixed(2)}</td>
                       </tr>
                     ))}
                     <tr className="bg-blue-100 border-b-2">
                       <td className="py-1 px-3 font-medium text-sm border-r">Total</td>
-                      <td className="py-1 px-3 text-right text-sm border-r">$ {rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}</td>
+                      <td className="py-1 px-3 text-right text-sm border-r">$ {rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}</td>
                       <td className="py-1 px-3 text-right text-sm border-r"></td>
                       <td className="py-1 px-3 text-right font-bold text-sm">
-                        {formatCurrency(rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0))}
+                        $ {rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                       </td>
                     </tr>
 
@@ -1510,20 +1538,42 @@ export default function DealAnalyzer() {
                     </tr>
                     {rehabBudgetSections.kitchens.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
-                        <td className="py-1 px-3 text-sm border-r">{item.category}</td>
-                        <td className="py-1 px-3 text-right text-sm border-r">$ {item.perUnitCost.toFixed(2)}</td>
-                        <td className="py-1 px-3 text-right text-sm border-r"></td>
-                        <td className="py-1 px-3 text-right text-sm">$ {item.totalCost.toFixed(2)}</td>
+                        <td className="py-1 px-3 text-sm border-r">
+                          <input
+                            type="text"
+                            value={item.category}
+                            onChange={(e) => updateRehabItem('kitchens', item.id, 'category', e.target.value)}
+                            className="w-full px-1 py-0.5 border-0 bg-transparent text-sm focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm border-r">
+                          $
+                          <input
+                            type="number"
+                            value={item.perUnitCost}
+                            onChange={(e) => updateRehabItem('kitchens', item.id, 'perUnitCost', Number(e.target.value))}
+                            className="w-16 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded ml-1"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm border-r">
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateRehabItem('kitchens', item.id, 'quantity', Number(e.target.value))}
+                            className="w-12 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm">$ {(item.perUnitCost * item.quantity).toFixed(2)}</td>
                       </tr>
                     ))}
                     <tr className="bg-orange-100 border-b-2">
                       <td className="py-1 px-3 font-medium text-sm border-r"></td>
                       <td className="py-1 px-3 text-right font-bold text-sm border-r">
-                        $ {rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                        $ {rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                       </td>
                       <td className="py-1 px-3 text-right text-sm border-r"></td>
                       <td className="py-1 px-3 text-right font-bold text-sm">
-                        $ {rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                        $ {rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                       </td>
                     </tr>
 
@@ -1533,20 +1583,42 @@ export default function DealAnalyzer() {
                     </tr>
                     {rehabBudgetSections.bathrooms.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
-                        <td className="py-1 px-3 text-sm border-r">{item.category}</td>
-                        <td className="py-1 px-3 text-right text-sm border-r">$ {item.perUnitCost.toFixed(2)}</td>
-                        <td className="py-1 px-3 text-right text-sm border-r"></td>
-                        <td className="py-1 px-3 text-right text-sm">$ {item.totalCost.toFixed(2)}</td>
+                        <td className="py-1 px-3 text-sm border-r">
+                          <input
+                            type="text"
+                            value={item.category}
+                            onChange={(e) => updateRehabItem('bathrooms', item.id, 'category', e.target.value)}
+                            className="w-full px-1 py-0.5 border-0 bg-transparent text-sm focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm border-r">
+                          $
+                          <input
+                            type="number"
+                            value={item.perUnitCost}
+                            onChange={(e) => updateRehabItem('bathrooms', item.id, 'perUnitCost', Number(e.target.value))}
+                            className="w-16 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded ml-1"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm border-r">
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateRehabItem('bathrooms', item.id, 'quantity', Number(e.target.value))}
+                            className="w-12 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm">$ {(item.perUnitCost * item.quantity).toFixed(2)}</td>
                       </tr>
                     ))}
                     <tr className="bg-purple-100 border-b-2">
                       <td className="py-1 px-3 font-medium text-sm border-r"></td>
                       <td className="py-1 px-3 text-right font-bold text-sm border-r">
-                        $ {rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                        $ {rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                       </td>
                       <td className="py-1 px-3 text-right text-sm border-r"></td>
                       <td className="py-1 px-3 text-right font-bold text-sm">
-                        $ {rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                        $ {rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0).toFixed(2)}
                       </td>
                     </tr>
                   </tbody>
@@ -1573,10 +1645,32 @@ export default function DealAnalyzer() {
                     </tr>
                     {rehabBudgetSections.generalInterior.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
-                        <td className="py-1 px-3 text-sm border-r">{item.category}</td>
-                        <td className="py-1 px-3 text-right text-sm border-r">$ {item.perUnitCost.toFixed(2)}</td>
-                        <td className="py-1 px-3 text-right text-sm border-r">{assumptions.unitCount}</td>
-                        <td className="py-1 px-3 text-right text-sm">$ {item.totalCost.toFixed(2)}</td>
+                        <td className="py-1 px-3 text-sm border-r">
+                          <input
+                            type="text"
+                            value={item.category}
+                            onChange={(e) => updateRehabItem('generalInterior', item.id, 'category', e.target.value)}
+                            className="w-full px-1 py-0.5 border-0 bg-transparent text-sm focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm border-r">
+                          $
+                          <input
+                            type="number"
+                            value={item.perUnitCost}
+                            onChange={(e) => updateRehabItem('generalInterior', item.id, 'perUnitCost', Number(e.target.value))}
+                            className="w-16 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded ml-1"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm border-r">
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateRehabItem('generalInterior', item.id, 'quantity', Number(e.target.value))}
+                            className="w-12 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm">$ {(item.perUnitCost * item.quantity).toFixed(2)}</td>
                       </tr>
                     ))}
                     <tr className="bg-green-100 border-b-2">
@@ -1596,10 +1690,32 @@ export default function DealAnalyzer() {
                     </tr>
                     {rehabBudgetSections.finishings.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
-                        <td className="py-1 px-3 text-sm border-r">{item.category}</td>
-                        <td className="py-1 px-3 text-right text-sm border-r">$ {item.perUnitCost.toFixed(2)}</td>
-                        <td className="py-1 px-3 text-right text-sm border-r"></td>
-                        <td className="py-1 px-3 text-right text-sm">$ {item.totalCost.toFixed(2)}</td>
+                        <td className="py-1 px-3 text-sm border-r">
+                          <input
+                            type="text"
+                            value={item.category}
+                            onChange={(e) => updateRehabItem('finishings', item.id, 'category', e.target.value)}
+                            className="w-full px-1 py-0.5 border-0 bg-transparent text-sm focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm border-r">
+                          $
+                          <input
+                            type="number"
+                            value={item.perUnitCost}
+                            onChange={(e) => updateRehabItem('finishings', item.id, 'perUnitCost', Number(e.target.value))}
+                            className="w-16 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded ml-1"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm border-r">
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateRehabItem('finishings', item.id, 'quantity', Number(e.target.value))}
+                            className="w-12 px-1 py-0.5 border-0 bg-transparent text-sm text-right focus:outline-none focus:bg-white focus:border focus:border-blue-300 rounded"
+                          />
+                        </td>
+                        <td className="py-1 px-3 text-right text-sm">$ {(item.perUnitCost * item.quantity).toFixed(2)}</td>
                       </tr>
                     ))}
                     <tr className="bg-yellow-100 border-b-2">
