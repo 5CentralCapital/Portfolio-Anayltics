@@ -8,6 +8,7 @@ export default function DealAnalyzer() {
   const [editingProperty, setEditingProperty] = useState(false);
   const [propertyName, setPropertyName] = useState('Maple Street Apartments');
   const [propertyAddress, setPropertyAddress] = useState('123 Maple Street, Hartford, CT 06106');
+  const [editingExpenses, setEditingExpenses] = useState(false);
   
   // Editable assumptions state
   const [assumptions, setAssumptions] = useState({
@@ -22,6 +23,7 @@ export default function DealAnalyzer() {
     expenseRatio: 0.45,
     marketCapRate: 0.055,
     refinanceLTV: 0.75,
+    refinanceInterestRate: 0.065,
     dscrThreshold: 1.25
   });
 
@@ -113,8 +115,8 @@ export default function DealAnalyzer() {
     const refinanceLoan = arv * assumptions.refinanceLTV;
     const cashOut = Math.max(0, refinanceLoan - initialLoan);
     
-    // Post-refi debt service (assuming 30-year amortization at 6.5%)
-    const refiRate = 0.065 / 12;
+    // Post-refi debt service (using refinance interest rate assumption)
+    const refiRate = assumptions.refinanceInterestRate / 12;
     const refiPayments = 30 * 12;
     const monthlyDebtService = refinanceLoan * (refiRate * Math.pow(1 + refiRate, refiPayments)) / (Math.pow(1 + refiRate, refiPayments) - 1);
     const annualDebtService = monthlyDebtService * 12;
@@ -213,6 +215,21 @@ export default function DealAnalyzer() {
       totalCost: 0
     };
     setRehabBudget([...rehabBudget, newItem]);
+  };
+
+  const addExpenseItem = () => {
+    const newExpenseKey = `customExpense${Date.now()}`;
+    setExpenses(prev => ({
+      ...prev,
+      [newExpenseKey]: 0
+    }));
+  };
+
+  const updateExpense = (key: string, value: number) => {
+    setExpenses(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
 
   if (loading) {
@@ -425,6 +442,16 @@ export default function DealAnalyzer() {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Refinance Interest Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    value={assumptions.refinanceInterestRate * 100}
+                    onChange={(e) => updateAssumption('refinanceInterestRate', Number(e.target.value) / 100)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">DSCR Threshold</label>
                   <input
                     type="number"
@@ -498,40 +525,112 @@ export default function DealAnalyzer() {
 
               {/* Expenses Section */}
               <div className="mb-6">
-                <h4 className="font-medium text-gray-900 mb-3">Expenses</h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 
+                    className="font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                    onDoubleClick={() => setEditingExpenses(true)}
+                    title="Double-click to edit expenses"
+                  >
+                    Expenses
+                  </h4>
+                  {editingExpenses && (
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={addExpenseItem}
+                        className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                      >
+                        Add Line Item
+                      </button>
+                      <button
+                        onClick={() => setEditingExpenses(false)}
+                        className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Property Tax</span>
-                    <span className="font-medium">{formatCurrency(expenses.propertyTax)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Insurance</span>
-                    <span className="font-medium">{formatCurrency(expenses.insurance)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Maintenance</span>
-                    <span className="font-medium">{formatCurrency(expenses.maintenance)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Management Fee (8%)</span>
-                    <span className="font-medium">{formatCurrency(metrics.managementFee)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Water/Sewer/Trash</span>
-                    <span className="font-medium">{formatCurrency(expenses.waterSewerTrash)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Capital Reserves</span>
-                    <span className="font-medium">{formatCurrency(expenses.capitalReserves)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Utilities</span>
-                    <span className="font-medium">{formatCurrency(expenses.utilities)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Other</span>
-                    <span className="font-medium">{formatCurrency(expenses.other)}</span>
-                  </div>
+                  {editingExpenses ? (
+                    <>
+                      {Object.entries(expenses).map(([key, value]) => {
+                        const expenseLabels: { [key: string]: string } = {
+                          propertyTax: 'Property Tax',
+                          insurance: 'Insurance',
+                          maintenance: 'Maintenance',
+                          waterSewerTrash: 'Water/Sewer/Trash',
+                          capitalReserves: 'Capital Reserves',
+                          utilities: 'Utilities',
+                          other: 'Other'
+                        };
+                        
+                        const label = expenseLabels[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                        
+                        return (
+                          <div key={key} className="flex justify-between items-center">
+                            <span className="text-gray-600 flex-1">{label}</span>
+                            <input
+                              type="number"
+                              value={value}
+                              onChange={(e) => updateExpense(key, Number(e.target.value))}
+                              className="w-24 px-2 py-1 border rounded text-sm text-right font-medium"
+                            />
+                          </div>
+                        );
+                      })}
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Management Fee (8%)</span>
+                        <span className="font-medium text-gray-500">{formatCurrency(metrics.managementFee)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Property Tax</span>
+                        <span className="font-medium">{formatCurrency(expenses.propertyTax)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Insurance</span>
+                        <span className="font-medium">{formatCurrency(expenses.insurance)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Maintenance</span>
+                        <span className="font-medium">{formatCurrency(expenses.maintenance)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Management Fee (8%)</span>
+                        <span className="font-medium">{formatCurrency(metrics.managementFee)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Water/Sewer/Trash</span>
+                        <span className="font-medium">{formatCurrency(expenses.waterSewerTrash)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Capital Reserves</span>
+                        <span className="font-medium">{formatCurrency(expenses.capitalReserves)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Utilities</span>
+                        <span className="font-medium">{formatCurrency(expenses.utilities)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Other</span>
+                        <span className="font-medium">{formatCurrency(expenses.other)}</span>
+                      </div>
+                      {Object.entries(expenses).map(([key, value]) => {
+                        if (!['propertyTax', 'insurance', 'maintenance', 'waterSewerTrash', 'capitalReserves', 'utilities', 'other'].includes(key)) {
+                          const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                          return (
+                            <div key={key} className="flex justify-between">
+                              <span className="text-gray-600">{label}</span>
+                              <span className="font-medium">{formatCurrency(value)}</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
+                    </>
+                  )}
                   <div className="flex justify-between border-t pt-2">
                     <span className="font-medium">Total Expenses</span>
                     <span className="font-bold text-red-600">{formatCurrency(metrics.totalExpenses)}</span>
