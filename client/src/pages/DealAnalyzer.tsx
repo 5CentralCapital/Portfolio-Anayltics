@@ -157,7 +157,8 @@ export default function DealAnalyzer() {
     // ARV and refinance calculations
     const arv = noi / assumptions.marketCapRate;
     const refinanceLoan = arv * assumptions.refinanceLTV;
-    const cashOut = Math.max(0, refinanceLoan - initialLoan);
+    const refinanceClosingCosts = refinanceLoan * assumptions.refinanceClosingCostPercent;
+    const cashOut = Math.max(0, refinanceLoan - initialLoan - refinanceClosingCosts);
     
     // Post-refi debt service (using refinance interest rate assumption)
     const refiRate = assumptions.refinanceInterestRate / 12;
@@ -174,6 +175,8 @@ export default function DealAnalyzer() {
     
     return {
       totalRehab,
+      totalClosingCosts,
+      totalHoldingCosts,
       initialLoan,
       downPayment,
       totalCashInvested,
@@ -186,6 +189,7 @@ export default function DealAnalyzer() {
       noi,
       arv,
       refinanceLoan,
+      refinanceClosingCosts,
       cashOut,
       monthlyDebtService,
       annualDebtService,
@@ -804,6 +808,10 @@ export default function DealAnalyzer() {
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Refinance Loan</span>
                     <span className="font-medium">{formatCurrency(metrics.refinanceLoan)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Refinance Closing Costs ({formatPercent(assumptions.refinanceClosingCostPercent)})</span>
+                    <span className="font-medium text-red-600">-{formatCurrency(metrics.refinanceClosingCosts)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Monthly Debt Service (Post-Refi)</span>
