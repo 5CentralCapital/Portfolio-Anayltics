@@ -1577,7 +1577,7 @@ export default function DealAnalyzer() {
                       </td>
                     </tr>
                     {/* Exterior Section */}
-                    {editingRehabSections.exterior && rehabBudgetSections.exterior.map((item) => (
+                    {rehabBudgetSections.exterior.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
                         <td className="py-1 px-3 text-sm border-r">
                           <input
@@ -1637,7 +1637,7 @@ export default function DealAnalyzer() {
                         )}
                       </td>
                     </tr>
-                    {editingRehabSections.kitchens && rehabBudgetSections.kitchens.map((item) => (
+                    {rehabBudgetSections.kitchens.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
                         <td className="py-1 px-3 text-sm border-r">
                           <input
@@ -1699,7 +1699,7 @@ export default function DealAnalyzer() {
                         )}
                       </td>
                     </tr>
-                    {editingRehabSections.bathrooms && rehabBudgetSections.bathrooms.map((item) => (
+                    {rehabBudgetSections.bathrooms.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
                         <td className="py-1 px-3 text-sm border-r">
                           <input
@@ -1759,26 +1759,17 @@ export default function DealAnalyzer() {
                   <tbody>
                     {/* General Interior Section Header */}
                     <tr className="bg-green-50">
-                      <td 
-                        className="py-2 px-3 font-semibold text-green-700 cursor-pointer hover:text-green-800" 
-                        colSpan={3}
-                        onClick={() => setEditingRehabSections(prev => ({...prev, generalInterior: !prev.generalInterior}))}
-                        title="Click to edit general interior section"
-                      >
-                        General Interior Rough {editingRehabSections.generalInterior ? '(Editing)' : ''}
-                      </td>
+                      <td className="py-2 px-3 font-semibold text-green-700" colSpan={3}>General Interior Rough</td>
                       <td className="py-2 px-3 text-right">
-                        {editingRehabSections.generalInterior && (
-                          <button 
-                            onClick={() => addRehabItem('generalInterior')}
-                            className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
-                          >
-                            + Add
-                          </button>
-                        )}
+                        <button 
+                          onClick={() => addRehabItem('generalInterior')}
+                          className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                        >
+                          + Add
+                        </button>
                       </td>
                     </tr>
-                    {editingRehabSections.generalInterior && rehabBudgetSections.generalInterior.map((item) => (
+                    {rehabBudgetSections.generalInterior.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
                         <td className="py-1 px-3 text-sm border-r">
                           <input
@@ -1821,26 +1812,17 @@ export default function DealAnalyzer() {
 
                     {/* Finishings Section Header */}
                     <tr className="bg-yellow-50">
-                      <td 
-                        className="py-2 px-3 font-semibold text-yellow-700 cursor-pointer hover:text-yellow-800" 
-                        colSpan={3}
-                        onClick={() => setEditingRehabSections(prev => ({...prev, finishings: !prev.finishings}))}
-                        title="Click to edit finishings section"
-                      >
-                        Finishings {editingRehabSections.finishings ? '(Editing)' : ''}
-                      </td>
+                      <td className="py-2 px-3 font-semibold text-yellow-700" colSpan={3}>Finishings</td>
                       <td className="py-2 px-3 text-right">
-                        {editingRehabSections.finishings && (
-                          <button 
-                            onClick={() => addRehabItem('finishings')}
-                            className="px-2 py-1 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700"
-                          >
-                            + Add
-                          </button>
-                        )}
+                        <button 
+                          onClick={() => addRehabItem('finishings')}
+                          className="px-2 py-1 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700"
+                        >
+                          + Add
+                        </button>
                       </td>
                     </tr>
-                    {editingRehabSections.finishings && rehabBudgetSections.finishings.map((item) => (
+                    {rehabBudgetSections.finishings.map((item) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
                         <td className="py-1 px-3 text-sm border-r">
                           <input
