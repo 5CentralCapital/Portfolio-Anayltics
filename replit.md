@@ -115,6 +115,7 @@ Changelog:
 - June 17, 2025. Initial setup
 - June 17, 2025. Fixed property card data display - now pulling accurate values directly from database
 - June 18, 2025. Built comprehensive deal analysis system with real-time KPI calculations, WebSocket support, and sample data
+- June 19, 2025. Restructured deal analyzer layout with KPI bar spanning full width, consolidated header, moved analysis boxes to right panel, and added Exit Analysis and Sensitivity Analysis tabs
 
 ## User Preferences
 
