@@ -12,6 +12,13 @@ export default function DealAnalyzer() {
   const [editingExpenses, setEditingExpenses] = useState(false);
   const [editingClosingCosts, setEditingClosingCosts] = useState(false);
   const [editingHoldingCosts, setEditingHoldingCosts] = useState(false);
+  const [editingRehabSections, setEditingRehabSections] = useState({
+    exterior: false,
+    kitchens: false,
+    bathrooms: false,
+    generalInterior: false,
+    finishings: false
+  });
   
   // Exit analysis state
   const [exitAnalysis, setExitAnalysis] = useState({
@@ -779,9 +786,12 @@ export default function DealAnalyzer() {
                               className="flex-1 px-2 py-1 border rounded text-sm text-gray-700"
                             />
                             <input
-                              type="number"
+                              type="text"
                               value={value}
-                              onChange={(e) => updateHoldingCost(key, Number(e.target.value))}
+                              onChange={(e) => {
+                                const validated = validateNumberInput(e.target.value);
+                                updateHoldingCost(key, Number(validated) || 0);
+                              }}
                               className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right"
                             />
                           </div>
@@ -1547,14 +1557,23 @@ export default function DealAnalyzer() {
                   <tbody>
                     {/* Exterior Section Header */}
                     <tr className="bg-blue-50">
-                      <td className="py-2 px-3 font-semibold text-blue-700" colSpan={3}>Exterior</td>
+                      <td 
+                        className="py-2 px-3 font-semibold text-blue-700 cursor-pointer hover:text-blue-800" 
+                        colSpan={3}
+                        onClick={() => setEditingRehabSections(prev => ({...prev, exterior: !prev.exterior}))}
+                        title="Click to edit exterior section"
+                      >
+                        Exterior {editingRehabSections.exterior ? '(Editing)' : ''}
+                      </td>
                       <td className="py-2 px-3 text-right">
-                        <button 
-                          onClick={() => addRehabItem('exterior')}
-                          className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-                        >
-                          + Add
-                        </button>
+                        {editingRehabSections.exterior && (
+                          <button 
+                            onClick={() => addRehabItem('exterior')}
+                            className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                          >
+                            + Add
+                          </button>
+                        )}
                       </td>
                     </tr>
                     {/* Exterior Section */}
@@ -1599,14 +1618,23 @@ export default function DealAnalyzer() {
 
                     {/* Kitchens Section Header */}
                     <tr className="bg-orange-50">
-                      <td className="py-2 px-3 font-semibold text-orange-700" colSpan={3}>Kitchens</td>
+                      <td 
+                        className="py-2 px-3 font-semibold text-orange-700 cursor-pointer hover:text-orange-800" 
+                        colSpan={3}
+                        onClick={() => setEditingRehabSections(prev => ({...prev, kitchens: !prev.kitchens}))}
+                        title="Click to edit kitchens section"
+                      >
+                        Kitchens {editingRehabSections.kitchens ? '(Editing)' : ''}
+                      </td>
                       <td className="py-2 px-3 text-right">
-                        <button 
-                          onClick={() => addRehabItem('kitchens')}
-                          className="px-2 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700"
-                        >
-                          + Add
-                        </button>
+                        {editingRehabSections.kitchens && (
+                          <button 
+                            onClick={() => addRehabItem('kitchens')}
+                            className="px-2 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700"
+                          >
+                            + Add
+                          </button>
+                        )}
                       </td>
                     </tr>
                     {rehabBudgetSections.kitchens.map((item) => (
@@ -1652,14 +1680,23 @@ export default function DealAnalyzer() {
 
                     {/* Bathrooms Section Header */}
                     <tr className="bg-purple-50">
-                      <td className="py-2 px-3 font-semibold text-purple-700" colSpan={3}>Bathrooms</td>
+                      <td 
+                        className="py-2 px-3 font-semibold text-purple-700 cursor-pointer hover:text-purple-800" 
+                        colSpan={3}
+                        onClick={() => setEditingRehabSections(prev => ({...prev, bathrooms: !prev.bathrooms}))}
+                        title="Click to edit bathrooms section"
+                      >
+                        Bathrooms {editingRehabSections.bathrooms ? '(Editing)' : ''}
+                      </td>
                       <td className="py-2 px-3 text-right">
-                        <button 
-                          onClick={() => addRehabItem('bathrooms')}
-                          className="px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700"
-                        >
-                          + Add
-                        </button>
+                        {editingRehabSections.bathrooms && (
+                          <button 
+                            onClick={() => addRehabItem('bathrooms')}
+                            className="px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700"
+                          >
+                            + Add
+                          </button>
+                        )}
                       </td>
                     </tr>
                     {rehabBudgetSections.bathrooms.map((item) => (
