@@ -115,6 +115,7 @@ Changelog:
 - June 17, 2025. Initial setup
 - June 17, 2025. Fixed property card data display - now pulling accurate values directly from database
 - June 18, 2025. Built comprehensive deal analysis system with real-time KPI calculations, WebSocket support, and sample data
+- June 19, 2025. Restructured rehab budget to match detailed spreadsheet format with two-column layout, proper categorization (Exterior, Kitchens, Bathrooms, General Interior Rough, Finishings), 10% buffer calculation, and comprehensive breakdown summary
 
 ## User Preferences
 

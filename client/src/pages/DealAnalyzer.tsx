@@ -1472,330 +1472,260 @@ export default function DealAnalyzer() {
         <div className="space-y-6">
           <h2 className="text-xl font-bold mb-6">Rehab Budget</h2>
           
-          <div className="bg-white border border-gray-200 rounded-lg">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b bg-gray-50">
-                    <th className="text-left py-3 px-4 font-medium">Category</th>
-                    <th className="text-right py-3 px-4 font-medium">Per Unit</th>
-                    <th className="text-right py-3 px-4 font-medium">Total</th>
-                  </tr>
-                </thead>
+          <div className="grid grid-cols-2 gap-6">
+            {/* Left Column */}
+            <div className="bg-white border border-gray-200 rounded-lg">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b bg-gray-50">
+                      <th className="text-left py-2 px-3 font-medium text-sm border-r">Category</th>
+                      <th className="text-right py-2 px-3 font-medium text-sm border-r">Per unit</th>
+                      <th className="text-right py-2 px-3 font-medium text-sm border-r">Number of units</th>
+                      <th className="text-right py-2 px-3 font-medium text-sm">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* Exterior Section */}
+                    {rehabBudgetSections.exterior.map((item) => (
+                      <tr key={item.id} className="border-b hover:bg-gray-50">
+                        <td className="py-1 px-3 text-sm border-r">{item.category}</td>
+                        <td className="py-1 px-3 text-right text-sm border-r">$ {item.perUnitCost.toFixed(2)}</td>
+                        <td className="py-1 px-3 text-right text-sm border-r">{assumptions.unitCount}</td>
+                        <td className="py-1 px-3 text-right text-sm">$ {item.totalCost.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-blue-100 border-b-2">
+                      <td className="py-1 px-3 font-medium text-sm border-r">Total</td>
+                      <td className="py-1 px-3 text-right text-sm border-r">$ {rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}</td>
+                      <td className="py-1 px-3 text-right text-sm border-r"></td>
+                      <td className="py-1 px-3 text-right font-bold text-sm">
+                        {formatCurrency(rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0))}
+                      </td>
+                    </tr>
+
+                    {/* Kitchens Section Header */}
+                    <tr className="bg-orange-50">
+                      <td className="py-2 px-3 font-semibold text-orange-700 text-center" colSpan={4}>Kitchens</td>
+                    </tr>
+                    {rehabBudgetSections.kitchens.map((item) => (
+                      <tr key={item.id} className="border-b hover:bg-gray-50">
+                        <td className="py-1 px-3 text-sm border-r">{item.category}</td>
+                        <td className="py-1 px-3 text-right text-sm border-r">$ {item.perUnitCost.toFixed(2)}</td>
+                        <td className="py-1 px-3 text-right text-sm border-r"></td>
+                        <td className="py-1 px-3 text-right text-sm">$ {item.totalCost.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-orange-100 border-b-2">
+                      <td className="py-1 px-3 font-medium text-sm border-r"></td>
+                      <td className="py-1 px-3 text-right font-bold text-sm border-r">
+                        $ {rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                      </td>
+                      <td className="py-1 px-3 text-right text-sm border-r"></td>
+                      <td className="py-1 px-3 text-right font-bold text-sm">
+                        $ {rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                      </td>
+                    </tr>
+
+                    {/* Bathrooms Section Header */}
+                    <tr className="bg-purple-50">
+                      <td className="py-2 px-3 font-semibold text-purple-700 text-center" colSpan={4}>Bathrooms</td>
+                    </tr>
+                    {rehabBudgetSections.bathrooms.map((item) => (
+                      <tr key={item.id} className="border-b hover:bg-gray-50">
+                        <td className="py-1 px-3 text-sm border-r">{item.category}</td>
+                        <td className="py-1 px-3 text-right text-sm border-r">$ {item.perUnitCost.toFixed(2)}</td>
+                        <td className="py-1 px-3 text-right text-sm border-r"></td>
+                        <td className="py-1 px-3 text-right text-sm">$ {item.totalCost.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-purple-100 border-b-2">
+                      <td className="py-1 px-3 font-medium text-sm border-r"></td>
+                      <td className="py-1 px-3 text-right font-bold text-sm border-r">
+                        $ {rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                      </td>
+                      <td className="py-1 px-3 text-right text-sm border-r"></td>
+                      <td className="py-1 px-3 text-right font-bold text-sm">
+                        $ {rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="bg-white border border-gray-200 rounded-lg">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b bg-gray-50">
+                      <th className="text-left py-2 px-3 font-medium text-sm border-r">Category</th>
+                      <th className="text-right py-2 px-3 font-medium text-sm border-r">Per unit</th>
+                      <th className="text-right py-2 px-3 font-medium text-sm border-r">Number of units</th>
+                      <th className="text-right py-2 px-3 font-medium text-sm">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* General Interior Section Header */}
+                    <tr className="bg-green-50">
+                      <td className="py-2 px-3 font-semibold text-green-700 text-center" colSpan={4}>General Interior Rough</td>
+                    </tr>
+                    {rehabBudgetSections.generalInterior.map((item) => (
+                      <tr key={item.id} className="border-b hover:bg-gray-50">
+                        <td className="py-1 px-3 text-sm border-r">{item.category}</td>
+                        <td className="py-1 px-3 text-right text-sm border-r">$ {item.perUnitCost.toFixed(2)}</td>
+                        <td className="py-1 px-3 text-right text-sm border-r">{assumptions.unitCount}</td>
+                        <td className="py-1 px-3 text-right text-sm">$ {item.totalCost.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-green-100 border-b-2">
+                      <td className="py-1 px-3 font-medium text-sm border-r"></td>
+                      <td className="py-1 px-3 text-right font-bold text-sm border-r">
+                        $ {rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                      </td>
+                      <td className="py-1 px-3 text-right text-sm border-r"></td>
+                      <td className="py-1 px-3 text-right font-bold text-sm">
+                        $ {rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                      </td>
+                    </tr>
+
+                    {/* Finishings Section Header */}
+                    <tr className="bg-yellow-50">
+                      <td className="py-2 px-3 font-semibold text-yellow-700 text-center" colSpan={4}>Finishings</td>
+                    </tr>
+                    {rehabBudgetSections.finishings.map((item) => (
+                      <tr key={item.id} className="border-b hover:bg-gray-50">
+                        <td className="py-1 px-3 text-sm border-r">{item.category}</td>
+                        <td className="py-1 px-3 text-right text-sm border-r">$ {item.perUnitCost.toFixed(2)}</td>
+                        <td className="py-1 px-3 text-right text-sm border-r"></td>
+                        <td className="py-1 px-3 text-right text-sm">$ {item.totalCost.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-yellow-100 border-b-2">
+                      <td className="py-1 px-3 font-medium text-sm border-r"></td>
+                      <td className="py-1 px-3 text-right font-bold text-sm border-r">
+                        $ {rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                      </td>
+                      <td className="py-1 px-3 text-right text-sm border-r"></td>
+                      <td className="py-1 px-3 text-right font-bold text-sm">
+                        $ {rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Summary Section */}
+          <div className="grid grid-cols-2 gap-6">
+            {/* Left Summary */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <table className="w-full text-sm border-collapse">
                 <tbody>
-                  {/* Exterior Section */}
-                  <tr className="bg-blue-50">
-                    <td className="py-2 px-4 font-semibold text-blue-700" colSpan={3}>Exterior</td>
-                  </tr>
-                  {rehabBudgetSections.exterior.map((item) => (
-                    <tr key={item.id} className="border-b hover:bg-gray-50">
-                      <td className="py-2 px-4">
-                        <input
-                          type="text"
-                          value={item.category}
-                          onChange={(e) => updateRehabItem('exterior', item.id, 'category', e.target.value)}
-                          className="w-full px-2 py-1 border rounded text-sm"
-                        />
-                      </td>
-                      <td className="py-2 px-4 text-right">
-                        <input
-                          type="number"
-                          value={item.perUnitCost}
-                          onChange={(e) => updateRehabItem('exterior', item.id, 'perUnitCost', Number(e.target.value))}
-                          className="w-24 px-2 py-1 border rounded text-sm text-right"
-                        />
-                      </td>
-                      <td className="py-2 px-4 text-right">
-                        <input
-                          type="number"
-                          value={item.totalCost}
-                          onChange={(e) => updateRehabItem('exterior', item.id, 'totalCost', Number(e.target.value))}
-                          className="w-32 px-2 py-1 border rounded text-sm text-right font-medium"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="bg-blue-100">
-                    <td className="py-2 px-4 font-medium">Total</td>
-                    <td></td>
-                    <td className="py-2 px-4 text-right font-bold">
-                      {formatCurrency(rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0))}
+                  <tr className="border-b">
+                    <td className="py-1 font-medium border-r">Exterior</td>
+                    <td className="py-1 text-right font-bold">
+                      $ {rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
                     </td>
                   </tr>
-
-                  {/* General Interior Section */}
-                  <tr className="bg-green-50">
-                    <td className="py-2 px-4 font-semibold text-green-700" colSpan={3}>General Interior Rough</td>
-                  </tr>
-                  {rehabBudgetSections.generalInterior.map((item) => (
-                    <tr key={item.id} className="border-b hover:bg-gray-50">
-                      <td className="py-2 px-4">
-                        <input
-                          type="text"
-                          value={item.category}
-                          onChange={(e) => updateRehabItem('generalInterior', item.id, 'category', e.target.value)}
-                          className="w-full px-2 py-1 border rounded text-sm"
-                        />
-                      </td>
-                      <td className="py-2 px-4 text-right">
-                        <input
-                          type="number"
-                          value={item.perUnitCost}
-                          onChange={(e) => updateRehabItem('generalInterior', item.id, 'perUnitCost', Number(e.target.value))}
-                          className="w-24 px-2 py-1 border rounded text-sm text-right"
-                        />
-                      </td>
-                      <td className="py-2 px-4 text-right">
-                        <input
-                          type="number"
-                          value={item.totalCost}
-                          onChange={(e) => updateRehabItem('generalInterior', item.id, 'totalCost', Number(e.target.value))}
-                          className="w-32 px-2 py-1 border rounded text-sm text-right font-medium"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="bg-green-100">
-                    <td className="py-2 px-4 font-medium">
-                      <span className="font-bold">
-                        {formatCurrency(rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0))}
-                      </span>
-                    </td>
-                    <td></td>
-                    <td className="py-2 px-4 text-right font-bold">
-                      {formatCurrency(rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0))}
+                  <tr className="border-b">
+                    <td className="py-1 font-medium border-r">General Interior</td>
+                    <td className="py-1 text-right">
+                      $ {rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
                     </td>
                   </tr>
-
-                  {/* Kitchens Section */}
-                  <tr className="bg-orange-50">
-                    <td className="py-2 px-4 font-semibold text-orange-700" colSpan={3}>Kitchens</td>
-                  </tr>
-                  {rehabBudgetSections.kitchens.map((item) => (
-                    <tr key={item.id} className="border-b hover:bg-gray-50">
-                      <td className="py-2 px-4">
-                        <input
-                          type="text"
-                          value={item.category}
-                          onChange={(e) => updateRehabItem('kitchens', item.id, 'category', e.target.value)}
-                          className="w-full px-2 py-1 border rounded text-sm"
-                        />
-                      </td>
-                      <td className="py-2 px-4 text-right">
-                        <input
-                          type="number"
-                          value={item.perUnitCost}
-                          onChange={(e) => updateRehabItem('kitchens', item.id, 'perUnitCost', Number(e.target.value))}
-                          className="w-24 px-2 py-1 border rounded text-sm text-right"
-                        />
-                      </td>
-                      <td className="py-2 px-4 text-right">
-                        <input
-                          type="number"
-                          value={item.totalCost}
-                          onChange={(e) => updateRehabItem('kitchens', item.id, 'totalCost', Number(e.target.value))}
-                          className="w-32 px-2 py-1 border rounded text-sm text-right font-medium"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="bg-orange-100">
-                    <td className="py-2 px-4 font-medium">
-                      <span className="font-bold">
-                        {formatCurrency(rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0))}
-                      </span>
-                    </td>
-                    <td></td>
-                    <td className="py-2 px-4 text-right font-bold">
-                      {formatCurrency(rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0))}
+                  <tr className="border-b">
+                    <td className="py-1 font-medium border-r">Kitchens</td>
+                    <td className="py-1 text-right">
+                      $ {rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
                     </td>
                   </tr>
-
-                  {/* Bathrooms Section */}
-                  <tr className="bg-purple-50">
-                    <td className="py-2 px-4 font-semibold text-purple-700" colSpan={3}>Bathrooms</td>
-                  </tr>
-                  {rehabBudgetSections.bathrooms.map((item) => (
-                    <tr key={item.id} className="border-b hover:bg-gray-50">
-                      <td className="py-2 px-4">
-                        <input
-                          type="text"
-                          value={item.category}
-                          onChange={(e) => updateRehabItem('bathrooms', item.id, 'category', e.target.value)}
-                          className="w-full px-2 py-1 border rounded text-sm"
-                        />
-                      </td>
-                      <td className="py-2 px-4 text-right">
-                        <input
-                          type="number"
-                          value={item.perUnitCost}
-                          onChange={(e) => updateRehabItem('bathrooms', item.id, 'perUnitCost', Number(e.target.value))}
-                          className="w-24 px-2 py-1 border rounded text-sm text-right"
-                        />
-                      </td>
-                      <td className="py-2 px-4 text-right">
-                        <input
-                          type="number"
-                          value={item.totalCost}
-                          onChange={(e) => updateRehabItem('bathrooms', item.id, 'totalCost', Number(e.target.value))}
-                          className="w-32 px-2 py-1 border rounded text-sm text-right font-medium"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="bg-purple-100">
-                    <td className="py-2 px-4 font-medium">
-                      <span className="font-bold">
-                        {formatCurrency(rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0))}
-                      </span>
-                    </td>
-                    <td></td>
-                    <td className="py-2 px-4 text-right font-bold">
-                      {formatCurrency(rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0))}
+                  <tr className="border-b">
+                    <td className="py-1 font-medium border-r">Bathrooms</td>
+                    <td className="py-1 text-right">
+                      $ {rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
                     </td>
                   </tr>
-
-                  {/* Finishings Section */}
-                  <tr className="bg-yellow-50">
-                    <td className="py-2 px-4 font-semibold text-yellow-700" colSpan={3}>Finishings</td>
-                  </tr>
-                  {rehabBudgetSections.finishings.map((item) => (
-                    <tr key={item.id} className="border-b hover:bg-gray-50">
-                      <td className="py-2 px-4">
-                        <input
-                          type="text"
-                          value={item.category}
-                          onChange={(e) => updateRehabItem('finishings', item.id, 'category', e.target.value)}
-                          className="w-full px-2 py-1 border rounded text-sm"
-                        />
-                      </td>
-                      <td className="py-2 px-4 text-right">
-                        <input
-                          type="number"
-                          value={item.perUnitCost}
-                          onChange={(e) => updateRehabItem('finishings', item.id, 'perUnitCost', Number(e.target.value))}
-                          className="w-24 px-2 py-1 border rounded text-sm text-right"
-                        />
-                      </td>
-                      <td className="py-2 px-4 text-right">
-                        <input
-                          type="number"
-                          value={item.totalCost}
-                          onChange={(e) => updateRehabItem('finishings', item.id, 'totalCost', Number(e.target.value))}
-                          className="w-32 px-2 py-1 border rounded text-sm text-right font-medium"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="bg-yellow-100">
-                    <td className="py-2 px-4 font-medium">
-                      <span className="font-bold">
-                        {formatCurrency(rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0))}
-                      </span>
-                    </td>
-                    <td></td>
-                    <td className="py-2 px-4 text-right font-bold">
-                      {formatCurrency(rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0))}
+                  <tr className="border-b">
+                    <td className="py-1 font-medium border-r">Finishings</td>
+                    <td className="py-1 text-right">
+                      $ {rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}
                     </td>
                   </tr>
-
-                  {/* Grand Total */}
-                  <tr className="border-t-2 bg-gray-100">
-                    <td className="py-3 px-4 font-bold text-lg">Total</td>
-                    <td></td>
-                    <td className="py-3 px-4 text-right font-bold text-lg">
-                      {formatCurrency(
+                  <tr className="border-t-2 border-black">
+                    <td className="py-2 font-bold border-r">Total</td>
+                    <td className="py-2 text-right font-bold">
+                      $ {(
                         rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0) +
                         rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0) +
                         rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0) +
                         rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0) +
                         rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0)
-                      )}
+                      ).toFixed(2)}
                     </td>
                   </tr>
-
-                  {/* 10% Buffer */}
                   <tr>
-                    <td className="py-2 px-4">10% Buffer</td>
-                    <td></td>
-                    <td className="py-2 px-4 text-right font-medium">
-                      {formatCurrency(
+                    <td className="py-1 border-r">10% Buffer</td>
+                    <td className="py-1 text-right">
+                      $ {(
                         (rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0) +
                         rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0) +
                         rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0) +
                         rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0) +
                         rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0)) * 0.10
-                      )}
+                      ).toFixed(2)}
                     </td>
                   </tr>
-
-                  {/* Final Total with Buffer */}
-                  <tr className="border-t-2 bg-gray-200">
-                    <td className="py-3 px-4 font-bold text-lg"></td>
-                    <td></td>
-                    <td className="py-3 px-4 text-right font-bold text-lg text-purple-600">
-                      {formatCurrency(
+                  <tr className="border-t">
+                    <td className="py-2 font-bold border-r"></td>
+                    <td className="py-2 text-right font-bold">
+                      $ {(
                         (rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0) +
                         rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0) +
                         rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0) +
                         rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0) +
                         rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0)) * 1.10
-                      )}
+                      ).toFixed(2)}
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            {/* Breakdown Summary */}
-            <div className="border-t bg-gray-50 p-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium mb-2">Breakdown</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span>Total</span>
-                      <span className="font-medium">
-                        {formatCurrency(
-                          rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0) +
-                          rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0) +
-                          rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0) +
-                          rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0) +
-                          rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0)
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Per Unit</span>
-                      <span className="font-medium">
-                        {formatCurrency(
-                          (rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0) +
-                          rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0) +
-                          rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0) +
-                          rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0) +
-                          rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0)) / assumptions.unitCount
-                        )}
-                      </span>
-                    </div>
-                  </div>
+            {/* Right Summary - Breakdown */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="border border-black">
+                <div className="bg-gray-100 px-3 py-2 border-b">
+                  <h4 className="font-bold text-center">Breakdown</h4>
                 </div>
-                <div>
-                  <h4 className="font-medium mb-2">Cost Breakdown</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span>Labor</span>
-                      <span className="font-medium">$241,712.75</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Materials</span>
-                      <span className="font-medium">$80,406.25</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Buffer</span>
-                      <span className="font-medium">$32,162.50</span>
-                    </div>
-                  </div>
-                </div>
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-1 px-3 border-r"></th>
+                      <th className="text-right py-1 px-3 font-medium border-r">Total</th>
+                      <th className="text-right py-1 px-3 font-medium">Per Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="py-1 px-3 border-r">Labor</td>
+                      <td className="py-1 px-3 text-right border-r">$ 241,712.75</td>
+                      <td className="py-1 px-3 text-right">$ 24,121.88</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-1 px-3 border-r">Materials</td>
+                      <td className="py-1 px-3 text-right border-r">$ 80,406.25</td>
+                      <td className="py-1 px-3 text-right">$ 8,040.63</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1 px-3 border-r">Buffer</td>
+                      <td className="py-1 px-3 text-right border-r">$ 32,162.50</td>
+                      <td className="py-1 px-3 text-right">$ 3,216.25</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
