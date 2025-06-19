@@ -174,14 +174,14 @@ export default function DealAnalyzer() {
 
   // Calculation functions
   const calculateMetrics = () => {
-    const exteriorTotal = rehabBudgetSections.exterior.reduce((sum, item) => sum + item.totalCost, 0);
-    const generalInteriorTotal = rehabBudgetSections.generalInterior.reduce((sum, item) => sum + item.totalCost, 0);
-    const kitchensTotal = rehabBudgetSections.kitchens.reduce((sum, item) => sum + item.totalCost, 0);
-    const bathroomsTotal = rehabBudgetSections.bathrooms.reduce((sum, item) => sum + item.totalCost, 0);
-    const finishingsTotal = rehabBudgetSections.finishings.reduce((sum, item) => sum + item.totalCost, 0);
+    const exteriorTotal = rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+    const generalInteriorTotal = rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+    const kitchensTotal = rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+    const bathroomsTotal = rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+    const finishingsTotal = rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
     
     const rehabSubtotal = exteriorTotal + generalInteriorTotal + kitchensTotal + bathroomsTotal + finishingsTotal;
-    const contingency = rehabSubtotal * 0.10; // 10% buffer as shown in image
+    const contingency = rehabSubtotal * 0.10; // 10% buffer
     const totalRehab = rehabSubtotal + contingency;
     const totalClosingCosts = Object.values(closingCosts).reduce((sum, cost) => sum + cost, 0);
     const totalHoldingCosts = Object.values(holdingCosts).reduce((sum, cost) => sum + cost, 0);
