@@ -5,6 +5,9 @@ export default function DealAnalyzer() {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [dealData, setDealData] = useState<any>(null);
+  const [editingProperty, setEditingProperty] = useState(false);
+  const [propertyName, setPropertyName] = useState('Maple Street Apartments');
+  const [propertyAddress, setPropertyAddress] = useState('123 Maple Street, Hartford, CT 06106');
   
   // Editable assumptions state
   const [assumptions, setAssumptions] = useState({
@@ -152,6 +155,28 @@ export default function DealAnalyzer() {
     }));
   };
 
+  const addUnit = () => {
+    const newUnit = {
+      id: Math.max(...rentRoll.map(u => u.id)) + 1,
+      unit: `${Math.floor(Math.max(...rentRoll.map(u => u.id)) / 2) + 1}A`,
+      bedBath: '2/1',
+      currentRent: 1200,
+      proFormaRent: 1450
+    };
+    setRentRoll([...rentRoll, newUnit]);
+  };
+
+  const addRehabItem = () => {
+    const newItem = {
+      id: Math.max(...rehabBudget.map(i => i.id)) + 1,
+      category: 'New Item',
+      perUnitCost: 0,
+      quantity: 1,
+      totalCost: 0
+    };
+    setRehabBudget([...rehabBudget, newItem]);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -173,9 +198,45 @@ export default function DealAnalyzer() {
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Maple Street Apartments</h1>
-            <p className="text-lg text-gray-600">123 Maple Street, Hartford, CT 06106</p>
-            <p className="text-sm text-gray-500">8 Units • Multifamily • Value-Add Strategy</p>
+            {editingProperty ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={propertyName}
+                  onChange={(e) => setPropertyName(e.target.value)}
+                  onBlur={() => setEditingProperty(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === 'Escape') {
+                      setEditingProperty(false);
+                    }
+                  }}
+                  className="text-3xl font-bold text-gray-900 border-b-2 border-blue-500 bg-transparent outline-none"
+                  autoFocus
+                />
+                <input
+                  type="text"
+                  value={propertyAddress}
+                  onChange={(e) => setPropertyAddress(e.target.value)}
+                  onBlur={() => setEditingProperty(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === 'Escape') {
+                      setEditingProperty(false);
+                    }
+                  }}
+                  className="text-lg text-gray-600 border-b border-blue-300 bg-transparent outline-none w-full"
+                />
+              </div>
+            ) : (
+              <div onDoubleClick={() => setEditingProperty(true)}>
+                <h1 className="text-3xl font-bold text-gray-900 cursor-pointer hover:text-blue-600" title="Double-click to edit">
+                  {propertyName}
+                </h1>
+                <p className="text-lg text-gray-600 cursor-pointer hover:text-blue-600" title="Double-click to edit">
+                  {propertyAddress}
+                </p>
+              </div>
+            )}
+            <p className="text-sm text-gray-500">{rentRoll.length} Units • Multifamily • Value-Add Strategy</p>
           </div>
           <div className="text-right">
             <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
@@ -540,7 +601,10 @@ export default function DealAnalyzer() {
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold">Rent Roll</h2>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <button 
+              onClick={addUnit}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
               Add Unit
             </button>
           </div>
@@ -633,7 +697,10 @@ export default function DealAnalyzer() {
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold">Rehab Budget</h2>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <button 
+              onClick={addRehabItem}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
               Add Item
             </button>
           </div>
@@ -720,7 +787,210 @@ export default function DealAnalyzer() {
       {activeTab === 'proforma' && (
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h2 className="text-xl font-bold mb-6">12-Month Pro Forma</h2>
-          <p className="text-gray-600">Pro forma analysis coming soon...</p>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-gray-50">
+                  <th className="text-left py-3 px-4 font-medium">Item</th>
+                  {Array.from({length: 12}, (_, i) => (
+                    <th key={i} className="text-right py-3 px-2 font-medium">
+                      {new Date(2024, i).toLocaleDateString('en-US', { month: 'short' })}
+                    </th>
+                  ))}
+                  <th className="text-right py-3 px-4 font-bold">Annual</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Revenue Section */}
+                <tr className="bg-green-50">
+                  <td className="py-2 px-4 font-semibold text-green-800">REVENUE</td>
+                  {Array.from({length: 13}).map((_, i) => (
+                    <td key={i} className="py-2 px-2"></td>
+                  ))}
+                </tr>
+                <tr className="border-b">
+                  <td className="py-2 px-4 text-gray-700">Gross Rental Income</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-2 px-2 text-right">
+                      {formatCurrency(metrics.grossRent / 12)}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right font-bold">
+                    {formatCurrency(metrics.grossRent)}
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-2 px-4 text-gray-700">Vacancy Loss</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-2 px-2 text-right text-red-600">
+                      -{formatCurrency(metrics.vacancyLoss / 12)}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right font-bold text-red-600">
+                    -{formatCurrency(metrics.vacancyLoss)}
+                  </td>
+                </tr>
+                <tr className="border-b bg-green-100">
+                  <td className="py-2 px-4 font-semibold">Net Rental Income</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-2 px-2 text-right font-semibold">
+                      {formatCurrency(metrics.netRevenue / 12)}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right font-bold text-green-600">
+                    {formatCurrency(metrics.netRevenue)}
+                  </td>
+                </tr>
+
+                {/* Expenses Section */}
+                <tr className="bg-red-50">
+                  <td className="py-2 px-4 font-semibold text-red-800">EXPENSES</td>
+                  {Array.from({length: 13}).map((_, i) => (
+                    <td key={i} className="py-2 px-2"></td>
+                  ))}
+                </tr>
+                <tr className="border-b">
+                  <td className="py-2 px-4 text-gray-700">Property Tax</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-2 px-2 text-right">
+                      {formatCurrency(expenses.propertyTax / 12)}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right font-bold">
+                    {formatCurrency(expenses.propertyTax)}
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-2 px-4 text-gray-700">Insurance</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-2 px-2 text-right">
+                      {formatCurrency(expenses.insurance / 12)}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right font-bold">
+                    {formatCurrency(expenses.insurance)}
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-2 px-4 text-gray-700">Maintenance</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-2 px-2 text-right">
+                      {formatCurrency(expenses.maintenance / 12)}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right font-bold">
+                    {formatCurrency(expenses.maintenance)}
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-2 px-4 text-gray-700">Management Fee</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-2 px-2 text-right">
+                      {formatCurrency(metrics.managementFee / 12)}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right font-bold">
+                    {formatCurrency(metrics.managementFee)}
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-2 px-4 text-gray-700">Water/Sewer/Trash</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-2 px-2 text-right">
+                      {formatCurrency(expenses.waterSewerTrash / 12)}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right font-bold">
+                    {formatCurrency(expenses.waterSewerTrash)}
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-2 px-4 text-gray-700">Capital Reserves</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-2 px-2 text-right">
+                      {formatCurrency(expenses.capitalReserves / 12)}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right font-bold">
+                    {formatCurrency(expenses.capitalReserves)}
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-2 px-4 text-gray-700">Utilities</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-2 px-2 text-right">
+                      {formatCurrency(expenses.utilities / 12)}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right font-bold">
+                    {formatCurrency(expenses.utilities)}
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-2 px-4 text-gray-700">Other</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-2 px-2 text-right">
+                      {formatCurrency(expenses.other / 12)}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right font-bold">
+                    {formatCurrency(expenses.other)}
+                  </td>
+                </tr>
+                <tr className="border-b bg-red-100">
+                  <td className="py-2 px-4 font-semibold">Total Expenses</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-2 px-2 text-right font-semibold">
+                      {formatCurrency(metrics.totalExpenses / 12)}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right font-bold text-red-600">
+                    {formatCurrency(metrics.totalExpenses)}
+                  </td>
+                </tr>
+
+                {/* NOI Section */}
+                <tr className="border-b bg-blue-100">
+                  <td className="py-3 px-4 font-bold text-blue-800">NET OPERATING INCOME</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-3 px-2 text-right font-bold text-blue-800">
+                      {formatCurrency(metrics.noi / 12)}
+                    </td>
+                  ))}
+                  <td className="py-3 px-4 text-right font-bold text-blue-600 text-lg">
+                    {formatCurrency(metrics.noi)}
+                  </td>
+                </tr>
+
+                {/* Debt Service */}
+                <tr className="border-b">
+                  <td className="py-2 px-4 text-gray-700">Debt Service (Post-Refi)</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-2 px-2 text-right text-red-600">
+                      -{formatCurrency(metrics.monthlyDebtService)}
+                    </td>
+                  ))}
+                  <td className="py-2 px-4 text-right font-bold text-red-600">
+                    -{formatCurrency(metrics.annualDebtService)}
+                  </td>
+                </tr>
+
+                {/* Cash Flow */}
+                <tr className="border-t-2 bg-green-200">
+                  <td className="py-3 px-4 font-bold text-green-800">NET CASH FLOW</td>
+                  {Array.from({length: 12}, (_, i) => (
+                    <td key={i} className="py-3 px-2 text-right font-bold text-green-800">
+                      {formatCurrency(metrics.netCashFlow / 12)}
+                    </td>
+                  ))}
+                  <td className="py-3 px-4 text-right font-bold text-green-600 text-lg">
+                    {formatCurrency(metrics.netCashFlow)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
