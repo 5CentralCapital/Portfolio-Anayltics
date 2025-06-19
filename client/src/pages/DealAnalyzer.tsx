@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target } from 'lucide-react';
+import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target, BarChart3 } from 'lucide-react';
 
 export default function DealAnalyzer() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -12,6 +12,13 @@ export default function DealAnalyzer() {
   const [editingExpenses, setEditingExpenses] = useState(false);
   const [editingClosingCosts, setEditingClosingCosts] = useState(false);
   const [editingHoldingCosts, setEditingHoldingCosts] = useState(false);
+  
+  // Exit analysis state
+  const [exitAnalysis, setExitAnalysis] = useState({
+    saleFactor: 1.0, // Multiplier for ARV to get sale price
+    saleCostsPercent: 0.06, // 6% for broker, legal, closing fees
+    holdPeriodYears: 2
+  });
   
   // Editable assumptions state
   const [assumptions, setAssumptions] = useState({
@@ -179,6 +186,51 @@ export default function DealAnalyzer() {
     const totalProfit = arv - allInCost - totalHoldingCosts;
     const capitalRequired = downPayment + totalClosingCosts;
     
+    // Exit analysis calculations
+    const salePrice = arv * exitAnalysis.saleFactor;
+    const saleCosts = salePrice * exitAnalysis.saleCostsPercent;
+    const debtPayoff = refinanceLoan; // Simplified - assumes no amortization
+    const netProceeds = salePrice - saleCosts - debtPayoff;
+    const totalCashFlowOverHold = netCashFlow * exitAnalysis.holdPeriodYears;
+    const roiOnSale = capitalRequired > 0 ? ((netProceeds + totalCashFlowOverHold - capitalRequired) / capitalRequired) : 0;
+    
+    // Risk scoring
+    const getRiskScore = () => {
+      let score = 0;
+      let warnings = [];
+      
+      if (equityMultiple < 2.0) {
+        score += 2;
+        warnings.push('Low equity multiple');
+      }
+      if (dscr < assumptions.dscrThreshold) {
+        score += 2;
+        warnings.push('DSCR below threshold');
+      }
+      if (cashOut < capitalRequired) {
+        score += 1;
+        warnings.push('Cash-out less than capital invested');
+      }
+      if (breakEvenOccupancy > 0.90) {
+        score += 1;
+        warnings.push('High break-even occupancy');
+      }
+      
+      let level = 'Low';
+      let color = 'green';
+      if (score >= 3) {
+        level = 'High';
+        color = 'red';
+      } else if (score >= 1) {
+        level = 'Moderate';
+        color = 'yellow';
+      }
+      
+      return { score, level, color, warnings };
+    };
+    
+    const riskAssessment = getRiskScore();
+    
     return {
       totalRehab,
       totalClosingCosts,
@@ -205,7 +257,12 @@ export default function DealAnalyzer() {
       equityMultiple,
       breakEvenOccupancy,
       totalProfit,
-      capitalRequired
+      capitalRequired,
+      salePrice,
+      saleCosts,
+      netProceeds,
+      roiOnSale,
+      riskAssessment
     };
   };
 
@@ -307,6 +364,8 @@ export default function DealAnalyzer() {
     { id: 'overview', label: 'Overview', icon: Building },
     { id: 'rentroll', label: 'Rent Roll', icon: Users },
     { id: 'rehab', label: 'Rehab Budget', icon: Wrench },
+    { id: 'exit', label: 'Exit Analysis', icon: TrendingUp },
+    { id: 'sensitivity', label: 'Sensitivity Analysis', icon: TrendingUp },
     { id: 'proforma', label: '12 Month Pro Forma', icon: Calendar }
   ];
 
@@ -941,21 +1000,49 @@ export default function DealAnalyzer() {
                   </div>
                 </div>
 
-                {/* Warning Indicators */}
-                {(metrics.dscr < 1.25 || metrics.equityMultiple < 1.5) && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <div className="flex items-start">
-                      <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 mr-2" />
-                      <div className="text-sm">
-                        <p className="font-medium text-red-800">Risk Warnings:</p>
-                        <ul className="text-red-700 mt-1 space-y-1">
-                          {metrics.dscr < 1.25 && <li>• DSCR below 1.25</li>}
-                          {metrics.equityMultiple < 1.5 && <li>• Equity multiple below 1.5x</li>}
-                        </ul>
-                      </div>
+                {/* Risk Scoring Badge */}
+                <div className={`border rounded-lg p-3 ${
+                  metrics.riskAssessment.color === 'red' ? 'bg-red-50 border-red-200' :
+                  metrics.riskAssessment.color === 'yellow' ? 'bg-yellow-50 border-yellow-200' :
+                  'bg-green-50 border-green-200'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className={`w-3 h-3 rounded-full mr-2 ${
+                        metrics.riskAssessment.color === 'red' ? 'bg-red-500' :
+                        metrics.riskAssessment.color === 'yellow' ? 'bg-yellow-500' :
+                        'bg-green-500'
+                      }`}></div>
+                      <span className={`font-medium text-sm ${
+                        metrics.riskAssessment.color === 'red' ? 'text-red-800' :
+                        metrics.riskAssessment.color === 'yellow' ? 'text-yellow-800' :
+                        'text-green-800'
+                      }`}>
+                        {metrics.riskAssessment.level} Risk
+                      </span>
                     </div>
+                    <span className={`text-xs ${
+                      metrics.riskAssessment.color === 'red' ? 'text-red-600' :
+                      metrics.riskAssessment.color === 'yellow' ? 'text-yellow-600' :
+                      'text-green-600'
+                    }`}>
+                      Score: {metrics.riskAssessment.score}
+                    </span>
                   </div>
-                )}
+                  {metrics.riskAssessment.warnings.length > 0 && (
+                    <div className="mt-2">
+                      <ul className={`text-xs space-y-1 ${
+                        metrics.riskAssessment.color === 'red' ? 'text-red-700' :
+                        metrics.riskAssessment.color === 'yellow' ? 'text-yellow-700' :
+                        'text-green-700'
+                      }`}>
+                        {metrics.riskAssessment.warnings.map((warning, index) => (
+                          <li key={index}>• {warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
