@@ -616,49 +616,62 @@ export default function DealAnalyzer() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Unit Count</label>
                   <input
-                    type="number"
+                    type="text"
                     value={assumptions.unitCount}
-                    onChange={(e) => updateAssumption('unitCount', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    onChange={(e) => {
+                      const validated = e.target.value.replace(/[^0-9]/g, ''); // Only allow whole numbers for unit count
+                      updateAssumption('unitCount', Number(validated) || 0);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price</label>
                   <input
-                    type="number"
+                    type="text"
                     value={assumptions.purchasePrice}
-                    onChange={(e) => updateAssumption('purchasePrice', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    onChange={(e) => {
+                      const validated = validateOverviewNumberInput(e.target.value);
+                      updateAssumption('purchasePrice', Number(validated) || 0);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Loan % (LTC)</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    value={assumptions.loanPercentage * 100}
-                    onChange={(e) => updateAssumption('loanPercentage', Number(e.target.value) / 100)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    type="text"
+                    value={(assumptions.loanPercentage * 100).toFixed(2)}
+                    onChange={(e) => {
+                      const validated = validateOverviewNumberInput(e.target.value);
+                      updateAssumption('loanPercentage', Number(validated) / 100 || 0);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Interest Rate (%)</label>
                   <input
-                    type="number"
-                    step="0.001"
-                    value={assumptions.interestRate * 100}
-                    onChange={(e) => updateAssumption('interestRate', Number(e.target.value) / 100)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    type="text"
+                    value={(assumptions.interestRate * 100).toFixed(2)}
+                    onChange={(e) => {
+                      const validated = validateOverviewNumberInput(e.target.value);
+                      updateAssumption('interestRate', Number(validated) / 100 || 0);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Loan Term (Years)</label>
                   <input
-                    type="number"
+                    type="text"
                     value={assumptions.loanTermYears}
-                    onChange={(e) => updateAssumption('loanTermYears', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    onChange={(e) => {
+                      const validated = e.target.value.replace(/[^0-9]/g, ''); // Only allow whole numbers for years
+                      updateAssumption('loanTermYears', Number(validated) || 0);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
               </div>
@@ -676,8 +689,8 @@ export default function DealAnalyzer() {
                 <div className="flex items-center justify-between mb-3">
                   <h4 
                     className="text-md font-medium text-gray-800 cursor-pointer hover:text-blue-600"
-                    onClick={() => setEditingClosingCosts(!editingClosingCosts)}
-                    title="Click to edit closing costs"
+                    onDoubleClick={() => setEditingClosingCosts(!editingClosingCosts)}
+                    title="Double-click to edit closing costs"
                   >
                     Closing Costs {editingClosingCosts ? '(Editing)' : ''}
                   </h4>
@@ -760,8 +773,8 @@ export default function DealAnalyzer() {
                 <div className="flex items-center justify-between mb-3">
                   <h4 
                     className="text-md font-medium text-gray-800 cursor-pointer hover:text-blue-600"
-                    onClick={() => setEditingHoldingCosts(!editingHoldingCosts)}
-                    title="Click to edit holding costs"
+                    onDoubleClick={() => setEditingHoldingCosts(!editingHoldingCosts)}
+                    title="Double-click to edit holding costs"
                   >
                     Holding Costs {editingHoldingCosts ? '(Editing)' : ''}
                   </h4>
