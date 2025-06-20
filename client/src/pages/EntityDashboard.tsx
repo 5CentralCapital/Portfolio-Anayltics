@@ -336,30 +336,30 @@ export default function EntityDashboard() {
           Portfolio Key Metrics
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-400">Total AUM</label>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{formatCurrency(collectiveMetrics.totalAUM)}</p>
+          <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
+            <label className="text-sm text-blue-900 dark:text-blue-100 font-medium">Total AUM</label>
+            <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">{formatCurrency(collectiveMetrics.totalAUM)}</p>
           </div>
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-400">Price/Unit</label>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{formatCurrency(pricePerUnit)}</p>
+          <div className="bg-green-50 dark:bg-green-900 p-4 rounded-lg">
+            <label className="text-sm text-green-900 dark:text-green-100 font-medium">Price/Unit</label>
+            <p className="text-lg font-semibold text-green-900 dark:text-green-100">{formatCurrency(pricePerUnit)}</p>
           </div>
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-400">Total Units</label>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{collectiveMetrics.totalUnits}</p>
+          <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg">
+            <label className="text-sm text-purple-900 dark:text-purple-100 font-medium">Total Units</label>
+            <p className="text-lg font-semibold text-purple-900 dark:text-purple-100">{collectiveMetrics.totalUnits}</p>
           </div>
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-400">Properties</label>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{collectiveMetrics.totalProperties}</p>
+          <div className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg">
+            <label className="text-sm text-orange-900 dark:text-orange-100 font-medium">Properties</label>
+            <p className="text-lg font-semibold text-orange-900 dark:text-orange-100">{collectiveMetrics.totalProperties}</p>
           </div>
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-400">Equity Multiple</label>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{equityMultiple.toFixed(2)}x</p>
+          <div className="bg-indigo-50 dark:bg-indigo-900 p-4 rounded-lg">
+            <label className="text-sm text-indigo-900 dark:text-indigo-100 font-medium">Equity Multiple</label>
+            <p className="text-lg font-semibold text-indigo-900 dark:text-indigo-100">{equityMultiple.toFixed(2)}x</p>
           </div>
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-400">Monthly Cash Flow</label>
+          <div className="bg-emerald-50 dark:bg-emerald-900 p-4 rounded-lg">
+            <label className="text-sm text-emerald-900 dark:text-emerald-100 font-medium">Monthly Cash Flow</label>
             <p className={`text-lg font-semibold ${
-              collectiveMetrics.totalCashFlow > 0 ? "text-green-600" : "text-red-600"
+              collectiveMetrics.totalCashFlow > 0 ? "text-emerald-900 dark:text-emerald-100" : "text-red-600"
             }`}>{formatCurrency(collectiveMetrics.totalCashFlow)}</p>
           </div>
         </div>
@@ -525,22 +525,26 @@ export default function EntityDashboard() {
                   Entity Metrics
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="text-sm text-gray-600 dark:text-gray-400">AUM</label>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-white">{formatCurrency(entityMetrics.totalAUM)}</p>
+                  <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
+                    <label className="text-sm text-blue-900 dark:text-blue-100 font-medium">AUM</label>
+                    <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">{formatCurrency(entityMetrics.totalAUM)}</p>
                   </div>
-                  <div>
-                    <label className="text-sm text-gray-600 dark:text-gray-400">Properties</label>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-white">{entityMetrics.totalProperties}</p>
+                  <div className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg">
+                    <label className="text-sm text-orange-900 dark:text-orange-100 font-medium">Properties</label>
+                    <p className="text-lg font-semibold text-orange-900 dark:text-orange-100">{entityMetrics.totalProperties}</p>
                   </div>
-                  <div>
-                    <label className="text-sm text-gray-600 dark:text-gray-400">Units</label>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-white">{entityMetrics.totalUnits}</p>
+                  <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg">
+                    <label className="text-sm text-purple-900 dark:text-purple-100 font-medium">Units</label>
+                    <p className="text-lg font-semibold text-purple-900 dark:text-purple-100">{entityMetrics.totalUnits}</p>
                   </div>
-                  <div>
-                    <label className="text-sm text-gray-600 dark:text-gray-400">Total Profits</label>
+                  <div className={`p-4 rounded-lg ${
+                    entityMetrics.totalProfits > 0 ? "bg-green-50 dark:bg-green-900" : "bg-red-50 dark:bg-red-900"
+                  }`}>
+                    <label className={`text-sm font-medium ${
+                      entityMetrics.totalProfits > 0 ? "text-green-900 dark:text-green-100" : "text-red-900 dark:text-red-100"
+                    }`}>Total Profits</label>
                     <p className={`text-lg font-semibold ${
-                      entityMetrics.totalProfits > 0 ? "text-green-600" : "text-red-600"
+                      entityMetrics.totalProfits > 0 ? "text-green-900 dark:text-green-100" : "text-red-900 dark:text-red-100"
                     }`}>{formatCurrency(entityMetrics.totalProfits)}</p>
                   </div>
                 </div>

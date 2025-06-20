@@ -150,33 +150,41 @@ const AssetManagement: React.FC = () => {
           Portfolio Key Metrics
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-400">Properties</label>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{metrics.totalProperties}</p>
+          <div className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg">
+            <label className="text-sm text-orange-900 dark:text-orange-100 font-medium">Properties</label>
+            <p className="text-lg font-semibold text-orange-900 dark:text-orange-100">{metrics.totalProperties}</p>
           </div>
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-400">Units</label>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{metrics.totalUnits}</p>
+          <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg">
+            <label className="text-sm text-purple-900 dark:text-purple-100 font-medium">Units</label>
+            <p className="text-lg font-semibold text-purple-900 dark:text-purple-100">{metrics.totalUnits}</p>
           </div>
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-400">AUM</label>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{formatCurrency(metrics.totalAUM)}</p>
+          <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
+            <label className="text-sm text-blue-900 dark:text-blue-100 font-medium">AUM</label>
+            <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">{formatCurrency(metrics.totalAUM)}</p>
           </div>
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-400">Total Profits</label>
+          <div className={`p-4 rounded-lg ${
+            metrics.totalEquity > 0 ? "bg-green-50 dark:bg-green-900" : "bg-red-50 dark:bg-red-900"
+          }`}>
+            <label className={`text-sm font-medium ${
+              metrics.totalEquity > 0 ? "text-green-900 dark:text-green-100" : "text-red-900 dark:text-red-100"
+            }`}>Total Profits</label>
             <p className={`text-lg font-semibold ${
-              metrics.totalEquity > 0 ? "text-green-600" : "text-red-600"
+              metrics.totalEquity > 0 ? "text-green-900 dark:text-green-100" : "text-red-900 dark:text-red-100"
             }`}>{formatCurrency(metrics.totalEquity)}</p>
           </div>
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-400">Monthly Cash Flow</label>
+          <div className={`p-4 rounded-lg ${
+            metrics.totalMonthlyRent > 0 ? "bg-emerald-50 dark:bg-emerald-900" : "bg-red-50 dark:bg-red-900"
+          }`}>
+            <label className={`text-sm font-medium ${
+              metrics.totalMonthlyRent > 0 ? "text-emerald-900 dark:text-emerald-100" : "text-red-900 dark:text-red-100"
+            }`}>Monthly Cash Flow</label>
             <p className={`text-lg font-semibold ${
-              metrics.totalMonthlyRent > 0 ? "text-green-600" : "text-red-600"
+              metrics.totalMonthlyRent > 0 ? "text-emerald-900 dark:text-emerald-100" : "text-red-900 dark:text-red-100"
             }`}>{formatCurrency(metrics.totalMonthlyRent)}</p>
           </div>
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-400">Avg CoC Return</label>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">{formatPercentage(metrics.avgCapRate)}</p>
+          <div className="bg-indigo-50 dark:bg-indigo-900 p-4 rounded-lg">
+            <label className="text-sm text-indigo-900 dark:text-indigo-100 font-medium">Avg CoC Return</label>
+            <p className="text-lg font-semibold text-indigo-900 dark:text-indigo-100">{formatPercentage(metrics.avgCapRate)}</p>
           </div>
         </div>
       </div>
