@@ -11,6 +11,28 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
+// Simple session storage (in production, use Redis or database)
+const activeSessions = new Map<string, { userId: number; email: string; createdAt: Date }>();
+
+// Middleware to authenticate users
+function authenticateUser(req: any, res: any, next: any) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const token = authHeader.substring(7);
+  const session = activeSessions.get(token);
+  
+  if (!session) {
+    return res.status(401).json({ error: 'Invalid or expired session' });
+  }
+
+  // Add user info to request
+  req.user = { id: session.userId, email: session.email };
+  next();
+}
+
 // WebSocket connections for real-time KPI updates
 const dealConnections = new Map<number, Set<WebSocket>>();
 
@@ -59,7 +81,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.updateUserLastLogin(user.id);
 
-      // In a real app, you'd create a JWT token or session here
+      // Create session token
+      const sessionToken = `session_${user.id}_${Date.now()}_${Math.random().toString(36)}`;
+      activeSessions.set(sessionToken, {
+        userId: user.id,
+        email: user.email,
+        createdAt: new Date()
+      });
+
       const userWithoutPassword = {
         id: user.id,
         email: user.email,
@@ -70,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ 
         user: userWithoutPassword,
-        token: `mock_token_${user.id}` // Mock token for demo
+        token: sessionToken
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -79,7 +108,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/auth/logout", async (req, res) => {
-    // In a real app, you'd invalidate the session/token here
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      activeSessions.delete(token);
+    }
     res.json({ message: "Logged out successfully" });
   });
 

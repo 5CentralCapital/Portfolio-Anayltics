@@ -34,7 +34,7 @@ import type {
   DealComps,
   InsertDealComps
 } from "@shared/schema";
-import { eq, desc, and, gte, lte, inArray } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -165,11 +165,9 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
     
-    // Get properties that belong to user's entities
-    return await db.select()
-      .from(properties)
-      .where(sql`${properties.entity} IN (${userEntityNames.map(() => '?').join(',')})`)
-      .orderBy(desc(properties.createdAt));
+    // Get all properties and filter by user's entities
+    const allProperties = await db.select().from(properties).orderBy(desc(properties.createdAt));
+    return allProperties.filter(property => userEntityNames.includes(property.entity || ''));
   }
 
   async getProperty(id: number): Promise<Property | undefined> {
