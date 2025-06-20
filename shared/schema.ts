@@ -53,6 +53,7 @@ export const properties = pgTable("properties", {
   city: text("city").notNull(),
   state: text("state").notNull(),
   zipCode: text("zip_code"),
+  entity: text("entity").default("5Central Capital LLC"), // Entity assignment
   acquisitionDate: date("acquisition_date"),
   acquisitionPrice: decimal("acquisition_price", { precision: 15, scale: 2 }).notNull(),
   rehabCosts: decimal("rehab_costs", { precision: 15, scale: 2 }).default("0"),
