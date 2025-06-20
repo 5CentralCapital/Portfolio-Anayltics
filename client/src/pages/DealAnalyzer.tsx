@@ -680,16 +680,27 @@ export default function DealAnalyzer() {
         yearsHeld: '0'
       };
 
+      console.log('Importing property data:', propertyData);
+
+      // Get authentication token
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken) {
+        throw new Error('Authentication required. Please log in first.');
+      }
+
       const response = await fetch('/api/properties', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(propertyData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to import property');
+        const errorText = await response.text();
+        console.error('Import failed:', response.status, errorText);
+        throw new Error(`Failed to import property: ${response.status} ${errorText}`);
       }
 
       setShowImportModal(false);
@@ -706,7 +717,8 @@ export default function DealAnalyzer() {
       
     } catch (error) {
       console.error('Error importing to properties:', error);
-      alert('Failed to import deal to Properties. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to import deal to Properties: ${errorMessage}`);
     } finally {
       setImportingToProperties(false);
     }

@@ -347,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/properties", async (req, res) => {
+  app.post("/api/properties", authenticateUser, async (req: any, res) => {
     try {
       const propertyData = insertPropertySchema.parse(req.body);
       const property = await storage.createProperty(propertyData);
