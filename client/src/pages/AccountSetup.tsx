@@ -6,6 +6,7 @@ interface EntityOwnership {
   entityName: string;
   isNewEntity: boolean;
   ownershipPercentage: string;
+  inviteUsers: { email: string; percentage: string }[];
 }
 
 const AccountSetup: React.FC = () => {
@@ -25,7 +26,8 @@ const AccountSetup: React.FC = () => {
     {
       entityName: "",
       isNewEntity: false,
-      ownershipPercentage: ""
+      ownershipPercentage: "",
+      inviteUsers: []
     }
   ]);
 
@@ -40,7 +42,8 @@ const AccountSetup: React.FC = () => {
     setEntities([...entities, {
       entityName: "",
       isNewEntity: false,
-      ownershipPercentage: ""
+      ownershipPercentage: "",
+      inviteUsers: []
     }]);
   };
 
@@ -50,9 +53,27 @@ const AccountSetup: React.FC = () => {
     }
   };
 
-  const updateEntity = (index: number, field: keyof EntityOwnership, value: string | boolean) => {
+  const updateEntity = (index: number, field: keyof EntityOwnership, value: string | boolean | { email: string; percentage: string }[]) => {
     const updated = [...entities];
     updated[index] = { ...updated[index], [field]: value };
+    setEntities(updated);
+  };
+
+  const addInviteUser = (entityIndex: number) => {
+    const updated = [...entities];
+    updated[entityIndex].inviteUsers.push({ email: "", percentage: "" });
+    setEntities(updated);
+  };
+
+  const removeInviteUser = (entityIndex: number, userIndex: number) => {
+    const updated = [...entities];
+    updated[entityIndex].inviteUsers.splice(userIndex, 1);
+    setEntities(updated);
+  };
+
+  const updateInviteUser = (entityIndex: number, userIndex: number, field: 'email' | 'percentage', value: string) => {
+    const updated = [...entities];
+    updated[entityIndex].inviteUsers[userIndex][field] = value;
     setEntities(updated);
   };
 
@@ -336,6 +357,71 @@ const AccountSetup: React.FC = () => {
                       />
                     </div>
                   </div>
+
+                  {/* Invite Users Section - Only show for new entities with less than 100% ownership */}
+                  {entity.isNewEntity && entity.ownershipPercentage && parseFloat(entity.ownershipPercentage) < 100 && (
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-medium text-blue-900">Invite Other Members</h5>
+                        <button
+                          type="button"
+                          onClick={() => addInviteUser(index)}
+                          className="flex items-center gap-1 px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Add Member
+                        </button>
+                      </div>
+                      <p className="text-sm text-blue-700 mb-3">
+                        Since you own {entity.ownershipPercentage}% of this entity, you can invite other members to own the remaining {(100 - parseFloat(entity.ownershipPercentage)).toFixed(2)}%.
+                      </p>
+                      
+                      {entity.inviteUsers.length === 0 ? (
+                        <p className="text-sm text-gray-600 italic">No members invited yet. Click "Add Member" to invite someone.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {entity.inviteUsers.map((user, userIndex) => (
+                            <div key={userIndex} className="flex gap-3 items-end">
+                              <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Email Address
+                                </label>
+                                <input
+                                  type="email"
+                                  value={user.email}
+                                  onChange={(e) => updateInviteUser(index, userIndex, 'email', e.target.value)}
+                                  placeholder="member@example.com"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                              </div>
+                              <div className="w-32">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Ownership %
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max={100 - parseFloat(entity.ownershipPercentage || "0")}
+                                  step="0.01"
+                                  value={user.percentage}
+                                  onChange={(e) => updateInviteUser(index, userIndex, 'percentage', e.target.value)}
+                                  placeholder="0.00"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeInviteUser(index, userIndex)}
+                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
 
