@@ -184,19 +184,7 @@ export default function AssetManagement() {
 
   const updatePropertyMutation = useMutation({
     mutationFn: async (data: { id: number; property: Partial<Property> }) => {
-      const response = await fetch(`/api/properties/${data.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data.property),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update property');
-      }
-      
-      return response.json();
+      return await apiService.updateProperty(data.id, data.property);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/properties'] });

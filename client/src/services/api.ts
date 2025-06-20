@@ -126,6 +126,20 @@ class ApiService {
     return this.request<any[]>('/properties');
   }
 
+  async updateProperty(id: number, property: any) {
+    return this.request(`/properties/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(property),
+    });
+  }
+
+  async createProperty(property: any) {
+    return this.request('/properties', {
+      method: 'POST',
+      body: JSON.stringify(property),
+    });
+  }
+
   async getUserEntities(userId: number) {
     return this.request<any[]>(`/user/${userId}/entities`);
   }
