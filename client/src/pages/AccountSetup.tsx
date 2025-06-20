@@ -5,7 +5,6 @@ import { Plus, Trash2, User, Building } from "lucide-react";
 interface EntityOwnership {
   entityName: string;
   isNewEntity: boolean;
-  assetType: 'real_estate' | 'cash' | 'stocks' | 'bonds' | 'business' | 'other';
   ownershipPercentage: string;
 }
 
@@ -26,7 +25,6 @@ const AccountSetup: React.FC = () => {
     {
       entityName: "",
       isNewEntity: false,
-      assetType: "real_estate",
       ownershipPercentage: ""
     }
   ]);
@@ -42,7 +40,6 @@ const AccountSetup: React.FC = () => {
     setEntities([...entities, {
       entityName: "",
       isNewEntity: false,
-      assetType: "real_estate",
       ownershipPercentage: ""
     }]);
   };
@@ -121,7 +118,7 @@ const AccountSetup: React.FC = () => {
           lastName,
           entities: entities.filter(e => e.entityName && e.ownershipPercentage).map(entity => ({
             entityName: entity.entityName,
-            assetType: entity.assetType,
+            assetType: "real_estate",
             ownershipPercentage: parseFloat(entity.ownershipPercentage),
             currentValue: 0,
             description: ""
@@ -148,14 +145,7 @@ const AccountSetup: React.FC = () => {
     }
   };
 
-  const assetTypeOptions = [
-    { value: "real_estate", label: "Real Estate" },
-    { value: "cash", label: "Cash" },
-    { value: "stocks", label: "Stocks" },
-    { value: "bonds", label: "Bonds" },
-    { value: "business", label: "Business" },
-    { value: "other", label: "Other" }
-  ];
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -332,23 +322,7 @@ const AccountSetup: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <div>
-                      <label htmlFor={`assetType-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
-                        Asset Type *
-                      </label>
-                      <select
-                        id={`assetType-${index}`}
-                        value={entity.assetType}
-                        onChange={(e) => updateEntity(index, "assetType", e.target.value as EntityOwnership['assetType'])}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        {assetTypeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
