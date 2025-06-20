@@ -395,6 +395,7 @@ export default function EntityDashboard() {
   
   const [showAddEntity, setShowAddEntity] = useState(false);
   const [editingEntity, setEditingEntity] = useState<string | null>(null);
+  const [entityActiveTabs, setEntityActiveTabs] = useState<Record<string, string>>({});
   const [newEntity, setNewEntity] = useState({
     name: '',
     formationDate: '',
@@ -404,6 +405,19 @@ export default function EntityDashboard() {
     ein: '',
     cashBalance: 0
   });
+
+  // Set active tab for a specific entity
+  const setEntityActiveTab = (entityId: string, tab: string) => {
+    setEntityActiveTabs(prev => ({
+      ...prev,
+      [entityId]: tab
+    }));
+  };
+
+  // Get active tab for a specific entity (default to 'overview')
+  const getEntityActiveTab = (entityId: string) => {
+    return entityActiveTabs[entityId] || 'overview';
+  };
 
   // Entity CRUD functions
   const addEntity = () => {
@@ -1170,28 +1184,90 @@ export default function EntityDashboard() {
             <div key={entity.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
               <div className="border-b border-gray-200 dark:border-gray-700">
                 <div className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="text-center flex-1">
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{entity.name}</h3>
-                      <p className="text-gray-600 dark:text-gray-400">{entity.structure} • Formed: {entity.formationDate}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => setEditingEntity(entity.id)}
-                        className="text-gray-400 hover:text-blue-600"
-                      >
-                        <Edit3 className="h-5 w-5" />
-                      </button>
-                      {entities.length > 1 && (
-                        <button
-                          onClick={() => deleteEntity(entity.id)}
-                          className="text-gray-400 hover:text-red-600"
+                  {editingEntity === entity.id ? (
+                    // Edit Entity Form
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Edit Entity</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                          type="text"
+                          value={entity.name}
+                          onChange={(e) => updateEntity(entity.id, { name: e.target.value })}
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                          placeholder="Entity Name"
+                        />
+                        <input
+                          type="date"
+                          value={entity.formationDate}
+                          onChange={(e) => updateEntity(entity.id, { formationDate: e.target.value })}
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                        />
+                        <select
+                          value={entity.structure}
+                          onChange={(e) => updateEntity(entity.id, { structure: e.target.value })}
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
                         >
-                          <X className="h-5 w-5" />
+                          <option value="Limited Liability Company">Limited Liability Company</option>
+                          <option value="Corporation">Corporation</option>
+                          <option value="Partnership">Partnership</option>
+                          <option value="Sole Proprietorship">Sole Proprietorship</option>
+                        </select>
+                        <input
+                          type="text"
+                          value={entity.state}
+                          onChange={(e) => updateEntity(entity.id, { state: e.target.value })}
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                          placeholder="Formation State"
+                        />
+                        <input
+                          type="text"
+                          value={entity.ein}
+                          onChange={(e) => updateEntity(entity.id, { ein: e.target.value })}
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                          placeholder="EIN (XX-XXXXXXX)"
+                        />
+                        <input
+                          type="number"
+                          value={entity.cashBalance}
+                          onChange={(e) => updateEntity(entity.id, { cashBalance: Number(e.target.value) })}
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                          placeholder="Cash Balance"
+                        />
+                      </div>
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => setEditingEntity(null)}
+                          className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+                        >
+                          Done
                         </button>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    // Display Entity Header
+                    <div>
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="text-center flex-1">
+                          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{entity.name}</h3>
+                          <p className="text-gray-600 dark:text-gray-400">{entity.structure} • Formed: {entity.formationDate}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => setEditingEntity(entity.id)}
+                            className="text-gray-400 hover:text-blue-600"
+                          >
+                            <Edit3 className="h-5 w-5" />
+                          </button>
+                          {entities.length > 1 && (
+                            <button
+                              onClick={() => deleteEntity(entity.id)}
+                              className="text-gray-400 hover:text-red-600"
+                            >
+                              <X className="h-5 w-5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                   
                   {/* Entity KPIs */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -1232,315 +1308,205 @@ export default function EntityDashboard() {
                     </div>
                   </div>
 
-                  {/* Entity Properties Summary */}
-                  {entityProperties.length > 0 && (
-                    <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Properties ({entityProperties.length})</h4>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        {entityProperties.map(prop => prop.address).join(', ')}
-                      </div>
+                      {/* Entity Properties Summary */}
+                      {entityProperties.length > 0 && (
+                        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Properties ({entityProperties.length})</h4>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            {entityProperties.map(prop => prop.address).join(', ')}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
+                
+                {/* Entity Tabs */}
+                <nav className="flex space-x-8 px-6">
+                  {[
+                    { id: 'overview', label: 'Overview', icon: Building },
+                    { id: 'financials', label: 'Financials', icon: DollarSign },
+                    { id: 'properties', label: 'Properties', icon: Home },
+                    { id: 'compliance', label: 'Compliance', icon: CheckSquare }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setEntityActiveTab(entity.id, tab.id)}
+                      className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${
+                        getEntityActiveTab(entity.id) === tab.id
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <tab.icon className="h-4 w-4" />
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </nav>
+              </div>
+
+              {/* Entity Tab Content */}
+              <div className="p-6">
+                {getEntityActiveTab(entity.id) === 'overview' && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Entity Details</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Formation Date</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{entity.formationDate}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Structure</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{entity.structure}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">State</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{entity.state}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">EIN</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{entity.ein}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Performance Summary</h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Total Properties</span>
+                          <span className="font-semibold">{entityMetrics.totalProperties}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Total Units</span>
+                          <span className="font-semibold">{entityMetrics.totalUnits}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Monthly Cash Flow</span>
+                          <span className="font-semibold text-green-600">{formatCurrency(entityMetrics.monthlyCashFlow)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Cash Balance</span>
+                          <span className="font-semibold text-blue-600">{formatCurrency(entityMetrics.cashBalance)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {getEntityActiveTab(entity.id) === 'financials' && (
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Financial Overview</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600 dark:text-gray-400">Total AUM</span>
+                          <span className="font-semibold text-blue-600">{formatCurrency(entityMetrics.totalAUM)}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600 dark:text-gray-400">Total Equity</span>
+                          <span className="font-semibold text-green-600">{formatCurrency(entityMetrics.totalEquity)}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600 dark:text-gray-400">Monthly Cash Flow</span>
+                          <span className="font-semibold text-purple-600">{formatCurrency(entityMetrics.monthlyCashFlow)}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600 dark:text-gray-400">Annual Cash Flow</span>
+                          <span className="font-semibold">{formatCurrency(entityMetrics.monthlyCashFlow * 12)}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600 dark:text-gray-400">Cash Balance</span>
+                          <span className="font-semibold">{formatCurrency(entityMetrics.cashBalance)}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600 dark:text-gray-400">Total Units</span>
+                          <span className="font-semibold">{entityMetrics.totalUnits}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {getEntityActiveTab(entity.id) === 'properties' && (
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Entity Properties</h4>
+                    {entityProperties.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {entityProperties.map((property) => (
+                          <div key={property.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <h5 className="font-semibold text-gray-900 dark:text-white mb-2">{property.address}</h5>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{property.city}, {property.state}</p>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600 dark:text-gray-400">Units:</span>
+                                <span className="font-semibold">{property.units}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600 dark:text-gray-400">Current Value:</span>
+                                <span className="font-semibold text-blue-600">{formatCurrency(property.currentValue)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600 dark:text-gray-400">Monthly Cash Flow:</span>
+                                <span className="font-semibold text-green-600">{formatCurrency(property.cashFlow)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 dark:text-gray-400">No properties assigned to this entity.</p>
+                    )}
+                  </div>
+                )}
+
+                {getEntityActiveTab(entity.id) === 'compliance' && (
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Compliance Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h5 className="font-semibold text-gray-900 dark:text-white mb-3">Entity Registration</h5>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Formation State</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">{entity.state}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">EIN</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">{entity.ein}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Tax Status</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">{entity.taxStatus}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <h5 className="font-semibold text-gray-900 dark:text-white mb-3">Status</h5>
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <CheckSquare className="h-4 w-4 text-green-600" />
+                            <span className="text-sm">Formation Documents Filed</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <CheckSquare className="h-4 w-4 text-green-600" />
+                            <span className="text-sm">EIN Obtained</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <CheckSquare className="h-4 w-4 text-green-600" />
+                            <span className="text-sm">Operating Agreement Executed</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );
         })}
-      </div>
-
-      {/* Original Entity KPIs Section for backward compatibility */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <div className="p-6">
-            <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Legacy Entity View</h2>
-              <p className="text-gray-600 dark:text-gray-400">Detailed Entity Management (Legacy)</p>
-            </div>
-          </div>
-          <nav className="flex space-x-8 px-6">
-            {[
-              { id: 'overview', label: 'Overview', icon: Building },
-              { id: 'owner', label: 'Owner', icon: Users },
-              { id: 'financials', label: 'Financials', icon: DollarSign },
-              { id: 'members', label: 'Members', icon: Users },
-              { id: 'compliance', label: 'Compliance', icon: CheckCircle },
-              { id: 'properties', label: 'Properties', icon: Home }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <tab.icon className="h-4 w-4" />
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        <div className="p-6">
-          {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Entity Details</h4>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Entity Name</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.name || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Formation Date</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.formationDate || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Structure</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.structure || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Tax Status</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.taxStatus || 'N/A'}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Portfolio Value</h4>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Value</p>
-                    <EditableField
-                      value={metrics.totalAUM}
-                      onSave={(value) => {}}
-                      className="text-lg font-bold text-blue-600"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Debt</p>
-                    <EditableField
-                      value={metrics.totalDebt}
-                      onSave={(value) => {}}
-                      className="text-lg font-bold text-red-600"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Equity</p>
-                    <EditableField
-                      value={metrics.totalEquity}
-                      onSave={(value) => {}}
-                      className="text-lg font-bold text-green-600"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Key Metrics</h4>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Properties</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">{metrics.totalProperties}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Units</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">{metrics.totalUnits}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Equity Multiple</p>
-                    <p className="text-lg font-bold text-purple-600">{metrics.avgEquityMultiple.toFixed(2)}x</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'financials' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revenue & Expenses</h4>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
-                    <span className="text-gray-600 dark:text-gray-400">Total Revenue</span>
-                    <EditableField
-                      value={metrics.totalRevenue}
-                      onSave={(value) => {}}
-                      className="font-semibold text-green-600"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
-                    <span className="text-gray-600 dark:text-gray-400">Total Expenses</span>
-                    <EditableField
-                      value={metrics.totalExpenses}
-                      onSave={(value) => {}}
-                      className="font-semibold text-red-600"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
-                    <span className="text-gray-600 dark:text-gray-400">Net Operating Income</span>
-                    <EditableField
-                      value={metrics.noi}
-                      onSave={(value) => {}}
-                      className="font-bold text-blue-600"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Performance Ratios</h4>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
-                    <span className="text-gray-600 dark:text-gray-400">DSCR</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{metrics.dscr.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
-                    <span className="text-gray-600 dark:text-gray-400">ROI</span>
-                    <span className="font-semibold text-green-600">{formatPercent(metrics.roi)}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
-                    <span className="text-gray-600 dark:text-gray-400">Monthly Cash Flow</span>
-                    <span className="font-bold text-blue-600">{formatCurrency(metrics.monthlyCashFlow)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'members' && (
-            <div>
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Entity Members</h4>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200 dark:border-gray-700">
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Name</th>
-                      <th className="text-right py-3 px-4 font-semibold text-gray-900 dark:text-white">Ownership %</th>
-                      <th className="text-center py-3 px-4 font-semibold text-gray-900 dark:text-white">Access Level</th>
-                      <th className="text-center py-3 px-4 font-semibold text-gray-900 dark:text-white">Join Date</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Contact</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entityMembers.map((member) => (
-                      <tr key={member.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="py-3 px-4">
-                          <div className="font-medium text-gray-900 dark:text-white">{member.name}</div>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <span className="font-semibold text-blue-600">{formatPercent(member.ownershipPercent)}</span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            member.accessLevel === 'Admin' ? 'text-red-600 bg-red-100 dark:bg-red-900/20' :
-                            member.accessLevel === 'Manager' ? 'text-blue-600 bg-blue-100 dark:bg-blue-900/20' :
-                            'text-gray-600 bg-gray-100 dark:bg-gray-900/20'
-                          }`}>
-                            {member.accessLevel}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center text-gray-600 dark:text-gray-400">
-                          {member.joinDate}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                          {member.contactInfo}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'properties' && (
-            <div>
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Property Portfolio</h4>
-              <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                Showing properties assigned to 5Central Capital LLC
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {properties.filter(property => property.entityId === '5central').map((property) => (
-                  <div key={property.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h5 className="font-semibold text-gray-900 dark:text-white">{property.address}</h5>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(property.status)}`}>
-                        {property.status}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{property.city}, {property.state}</p>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Units:</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">{property.units}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Current Value:</span>
-                        <span className="font-semibold text-blue-600">{formatCurrency(property.currentValue)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Monthly Rent:</span>
-                        <span className="font-semibold text-green-600">{formatCurrency(property.grossRent)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Cash Flow:</span>
-                        <span className="font-semibold text-purple-600">{formatCurrency(property.cashFlow)}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'compliance' && (
-            <div>
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Compliance & Deadlines</h4>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <h5 className="font-semibold text-gray-900 dark:text-white mb-3">Upcoming Deadlines</h5>
-                  <div className="space-y-3">
-                    {milestones.map((milestone) => (
-                      <div key={milestone.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{milestone.title}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{milestone.assignee} • {milestone.dueDate}</p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(milestone.priority)}`}>
-                            {milestone.priority}
-                          </span>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(milestone.status)}`}>
-                            {milestone.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 dark:text-white mb-3">Entity Information</h5>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">State of Formation</p>
-                      <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.state || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">EIN</p>
-                      <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.ein || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Tax Status</p>
-                      <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.taxStatus || 'N/A'}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
