@@ -295,7 +295,7 @@ export default function EntityDashboard() {
     }
   ]);
 
-  const [milestones] = useState<Milestone[]>([
+  const [milestones, setMilestones] = useState<Milestone[]>([
     {
       id: 1,
       title: 'Q4 Tax Filing',
@@ -322,7 +322,7 @@ export default function EntityDashboard() {
     }
   ]);
 
-  const [todoTasks] = useState<ToDoTask[]>([
+  const [todoTasks, setTodoTasks] = useState<ToDoTask[]>([
     {
       id: 1,
       title: 'Update rent roll for Q4',
@@ -361,6 +361,77 @@ export default function EntityDashboard() {
     state: 'Massachusetts',
     ein: '12-3456789'
   });
+
+  // Editing states
+  const [editingMilestone, setEditingMilestone] = useState<number | null>(null);
+  const [editingTask, setEditingTask] = useState<number | null>(null);
+  const [showAddMilestone, setShowAddMilestone] = useState(false);
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [newMilestone, setNewMilestone] = useState<Partial<Milestone>>({});
+  const [newTask, setNewTask] = useState<Partial<ToDoTask>>({});
+
+  // CRUD functions for milestones
+  const addMilestone = () => {
+    if (newMilestone.title && newMilestone.dueDate) {
+      const id = Math.max(...milestones.map(m => m.id), 0) + 1;
+      const milestone: Milestone = {
+        id,
+        title: newMilestone.title,
+        dueDate: newMilestone.dueDate,
+        status: newMilestone.status || 'Pending',
+        assignee: newMilestone.assignee || 'Marcus Johnson',
+        priority: newMilestone.priority || 'Medium'
+      };
+      setMilestones([...milestones, milestone]);
+      setNewMilestone({});
+      setShowAddMilestone(false);
+    }
+  };
+
+  const updateMilestone = (id: number, updates: Partial<Milestone>) => {
+    setMilestones(milestones.map(m => m.id === id ? { ...m, ...updates } : m));
+    setEditingMilestone(null);
+  };
+
+  const deleteMilestone = (id: number) => {
+    setMilestones(milestones.filter(m => m.id !== id));
+  };
+
+  // CRUD functions for tasks
+  const addTask = () => {
+    if (newTask.title && newTask.dueDate) {
+      const id = Math.max(...todoTasks.map(t => t.id), 0) + 1;
+      const task: ToDoTask = {
+        id,
+        title: newTask.title,
+        description: newTask.description || '',
+        dueDate: newTask.dueDate,
+        status: newTask.status || 'Pending',
+        assignee: newTask.assignee || 'Marcus Johnson',
+        category: newTask.category || 'Financial'
+      };
+      setTodoTasks([...todoTasks, task]);
+      setNewTask({});
+      setShowAddTask(false);
+    }
+  };
+
+  const updateTask = (id: number, updates: Partial<ToDoTask>) => {
+    setTodoTasks(todoTasks.map(t => t.id === id ? { ...t, ...updates } : t));
+    setEditingTask(null);
+  };
+
+  const deleteTask = (id: number) => {
+    setTodoTasks(todoTasks.filter(t => t.id !== id));
+  };
+
+  const toggleTaskStatus = (id: number) => {
+    const task = todoTasks.find(t => t.id === id);
+    if (task) {
+      const newStatus = task.status === 'Completed' ? 'Pending' : 'Completed';
+      updateTask(id, { status: newStatus });
+    }
+  };
 
   // Calculate portfolio metrics from properties
   const calculateMetrics = () => {
@@ -531,25 +602,159 @@ export default function EntityDashboard() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Milestones</h3>
-              <Calendar className="h-6 w-6 text-blue-600" />
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-6 w-6 text-blue-600" />
+                <button
+                  onClick={() => setShowAddMilestone(true)}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  <Plus className="h-5 w-5" />
+                </button>
+              </div>
             </div>
-            <div className="space-y-3">
-              {milestones.slice(0, 3).map((milestone) => (
-                <div key={milestone.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900 dark:text-white">{milestone.title}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{milestone.dueDate}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(milestone.priority)}`}>
-                      {milestone.priority}
-                    </span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(milestone.status)}`}>
-                      {milestone.status}
-                    </span>
-                  </div>
+            <div className="space-y-3 max-h-72 overflow-y-auto">
+              {milestones.map((milestone) => (
+                <div key={milestone.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  {editingMilestone === milestone.id ? (
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={milestone.title}
+                        onChange={(e) => updateMilestone(milestone.id, { title: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                        placeholder="Milestone title"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="date"
+                          value={milestone.dueDate}
+                          onChange={(e) => updateMilestone(milestone.id, { dueDate: e.target.value })}
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                        />
+                        <select
+                          value={milestone.status}
+                          onChange={(e) => updateMilestone(milestone.id, { status: e.target.value as any })}
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="In Progress">In Progress</option>
+                          <option value="Completed">Completed</option>
+                          <option value="Overdue">Overdue</option>
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <select
+                          value={milestone.priority}
+                          onChange={(e) => updateMilestone(milestone.id, { priority: e.target.value as any })}
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                        >
+                          <option value="Low">Low</option>
+                          <option value="Medium">Medium</option>
+                          <option value="High">High</option>
+                        </select>
+                        <input
+                          type="text"
+                          value={milestone.assignee}
+                          onChange={(e) => updateMilestone(milestone.id, { assignee: e.target.value })}
+                          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                          placeholder="Assignee"
+                        />
+                      </div>
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => setEditingMilestone(null)}
+                          className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+                        >
+                          Done
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900 dark:text-white">{milestone.title}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{milestone.assignee} • {milestone.dueDate}</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(milestone.priority)}`}>
+                          {milestone.priority}
+                        </span>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(milestone.status)}`}>
+                          {milestone.status}
+                        </span>
+                        <button
+                          onClick={() => setEditingMilestone(milestone.id)}
+                          className="text-gray-400 hover:text-blue-600"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteMilestone(milestone.id)}
+                          className="text-gray-400 hover:text-red-600"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
+              
+              {/* Add New Milestone Form */}
+              {showAddMilestone && (
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={newMilestone.title || ''}
+                      onChange={(e) => setNewMilestone({ ...newMilestone, title: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                      placeholder="Milestone title"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="date"
+                        value={newMilestone.dueDate || ''}
+                        onChange={(e) => setNewMilestone({ ...newMilestone, dueDate: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                      />
+                      <select
+                        value={newMilestone.priority || 'Medium'}
+                        onChange={(e) => setNewMilestone({ ...newMilestone, priority: e.target.value as any })}
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                      </select>
+                    </div>
+                    <input
+                      type="text"
+                      value={newMilestone.assignee || ''}
+                      onChange={(e) => setNewMilestone({ ...newMilestone, assignee: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                      placeholder="Assignee"
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        onClick={() => {
+                          setShowAddMilestone(false);
+                          setNewMilestone({});
+                        }}
+                        className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={addMilestone}
+                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -560,35 +765,190 @@ export default function EntityDashboard() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">To-Do List</h3>
             <div className="flex items-center space-x-2">
               <CheckSquare className="h-6 w-6 text-orange-600" />
-              <button className="text-blue-600 hover:text-blue-700">
+              <button
+                onClick={() => setShowAddTask(true)}
+                className="text-blue-600 hover:text-blue-700"
+              >
                 <Plus className="h-5 w-5" />
               </button>
             </div>
           </div>
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {todoTasks.map((task) => (
-              <div key={task.id} className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex-shrink-0 mt-1">
-                  {task.status === 'Completed' ? (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <Clock className="h-5 w-5 text-gray-400" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 dark:text-white">{task.title}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{task.description}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(task.status)}`}>
-                      {task.status}
-                    </span>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      <span>{task.category}</span> • <span>{task.dueDate}</span>
+              <div key={task.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                {editingTask === task.id ? (
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={task.title}
+                      onChange={(e) => updateTask(task.id, { title: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                      placeholder="Task title"
+                    />
+                    <textarea
+                      value={task.description}
+                      onChange={(e) => updateTask(task.id, { description: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                      placeholder="Task description"
+                      rows={2}
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="date"
+                        value={task.dueDate}
+                        onChange={(e) => updateTask(task.id, { dueDate: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                      />
+                      <select
+                        value={task.status}
+                        onChange={(e) => updateTask(task.id, { status: e.target.value as any })}
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                      </select>
                     </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={task.category}
+                        onChange={(e) => updateTask(task.id, { category: e.target.value as any })}
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                      >
+                        <option value="Compliance">Compliance</option>
+                        <option value="Financial">Financial</option>
+                        <option value="Member">Member</option>
+                        <option value="Property">Property</option>
+                      </select>
+                      <input
+                        type="text"
+                        value={task.assignee}
+                        onChange={(e) => updateTask(task.id, { assignee: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                        placeholder="Assignee"
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        onClick={() => setEditingTask(null)}
+                        className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 mt-1">
+                      <button
+                        onClick={() => toggleTaskStatus(task.id)}
+                        className="hover:scale-110 transition-transform"
+                      >
+                        {task.status === 'Completed' ? (
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <Clock className="h-5 w-5 text-gray-400 hover:text-green-500" />
+                        )}
+                      </button>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-medium ${task.status === 'Completed' ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'}`}>
+                        {task.title}
+                      </p>
+                      <p className={`text-sm ${task.status === 'Completed' ? 'line-through text-gray-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                        {task.description}
+                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(task.status)}`}>
+                          {task.status}
+                        </span>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          <span>{task.category}</span> • <span>{task.dueDate}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 flex items-center space-x-1">
+                      <button
+                        onClick={() => setEditingTask(task.id)}
+                        className="text-gray-400 hover:text-blue-600"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => deleteTask(task.id)}
+                        className="text-gray-400 hover:text-red-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            {/* Add New Task Form */}
+            {showAddTask && (
+              <div className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={newTask.title || ''}
+                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                    placeholder="Task title"
+                  />
+                  <textarea
+                    value={newTask.description || ''}
+                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                    placeholder="Task description"
+                    rows={2}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="date"
+                      value={newTask.dueDate || ''}
+                      onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                    />
+                    <select
+                      value={newTask.category || 'Financial'}
+                      onChange={(e) => setNewTask({ ...newTask, category: e.target.value as any })}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                    >
+                      <option value="Compliance">Compliance</option>
+                      <option value="Financial">Financial</option>
+                      <option value="Member">Member</option>
+                      <option value="Property">Property</option>
+                    </select>
+                  </div>
+                  <input
+                    type="text"
+                    value={newTask.assignee || ''}
+                    onChange={(e) => setNewTask({ ...newTask, assignee: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+                    placeholder="Assignee"
+                  />
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      onClick={() => {
+                        setShowAddTask(false);
+                        setNewTask({});
+                      }}
+                      className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={addTask}
+                      className="px-3 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700"
+                    >
+                      Add
+                    </button>
                   </div>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
