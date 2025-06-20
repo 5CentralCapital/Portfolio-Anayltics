@@ -165,7 +165,8 @@ export default function EntityDashboard() {
       equityCreated: 135000,
       status: 'Active',
       propertyType: 'Multifamily',
-      strategy: 'BRRRR'
+      strategy: 'BRRRR',
+      entityId: '5central'
     },
     {
       id: 2,
@@ -190,7 +191,8 @@ export default function EntityDashboard() {
       equityCreated: 105000,
       status: 'Active',
       propertyType: 'Multifamily',
-      strategy: 'Buy & Hold'
+      strategy: 'Buy & Hold',
+      entityId: '5central'
     },
     {
       id: 3,
@@ -215,7 +217,8 @@ export default function EntityDashboard() {
       equityCreated: 140000,
       status: 'Active',
       propertyType: 'Multifamily',
-      strategy: 'BRRRR'
+      strategy: 'BRRRR',
+      entityId: 'harmony'
     },
     {
       id: 4,
@@ -240,7 +243,8 @@ export default function EntityDashboard() {
       equityCreated: 185000,
       status: 'Active',
       propertyType: 'Multifamily',
-      strategy: 'Value-Add'
+      strategy: 'Value-Add',
+      entityId: '5central'
     },
     {
       id: 5,
@@ -1203,8 +1207,11 @@ export default function EntityDashboard() {
           {activeTab === 'properties' && (
             <div>
               <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Property Portfolio</h4>
+              <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                Showing properties assigned to 5Central Capital LLC
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {properties.map((property) => (
+                {properties.filter(property => property.entityId === '5central').map((property) => (
                   <div key={property.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
                       <h5 className="font-semibold text-gray-900 dark:text-white">{property.address}</h5>

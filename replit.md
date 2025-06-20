@@ -130,6 +130,7 @@ Changelog:
 - June 20, 2025. Reordered admin dashboard tabs to: Dashboard, Asset Management, Deal Analyzer, Roadmap (Coming Soon), Net Worth, Reports - with Entity Dashboard as default landing page
 - June 20, 2025. Enhanced Entity Dashboard with fully editable to-do list and milestone management featuring inline editing, add/delete functionality, status toggling, and comprehensive CRUD operations - all data persisted in component state
 - June 20, 2025. Updated Entity KPIs section header to prominently display "5Central Capital" with redesigned KPI cards showing entity-level metrics derived from property and financial data in modern color-coded layout
+- June 20, 2025. Implemented property-to-entity assignment functionality in Asset Management with dropdown selection for entities (5Central Capital LLC, Harmony Holdings LLC, Crystal Properties LLC) and filtered property display in Entity Dashboard properties tab showing only assets assigned to specific entities
 
 ## User Preferences
 
