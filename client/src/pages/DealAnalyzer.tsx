@@ -617,6 +617,94 @@ export default function DealAnalyzer() {
     setExitAnalysis(data.exitAnalysis);
   };
 
+  // Import deal to Properties database
+  const importToProperties = async () => {
+    setImportingToProperties(true);
+    try {
+      // Extract city and state from address
+      const addressParts = propertyAddress.split(',');
+      const city = addressParts.length > 1 ? addressParts[addressParts.length - 2].trim() : '';
+      const stateZip = addressParts.length > 2 ? addressParts[addressParts.length - 1].trim() : '';
+      const state = stateZip.split(' ')[0] || '';
+      const zipCode = stateZip.split(' ')[1] || '';
+
+      // Calculate total rehab costs
+      const totalRehabCosts = Object.values(rehabBudgetSections).reduce((total, section: any) => {
+        return total + Object.values(section.items).reduce((sum: number, cost: any) => sum + cost, 0);
+      }, 0);
+
+      // Calculate total initial capital
+      const totalClosingCosts = Object.values(closingCosts).reduce((sum, cost) => sum + cost, 0);
+      const totalHoldingCosts = Object.values(holdingCosts).reduce((sum, cost) => sum + cost, 0);
+      const downPayment = assumptions.purchasePrice * (1 - assumptions.loanPercentage);
+      const initialCapital = downPayment + totalRehabCosts + totalClosingCosts + totalHoldingCosts;
+
+      // Calculate cash flow (annual)
+      const totalAnnualRent = Object.values(rentRoll).reduce((sum: number, unit: any) => sum + (unit.rent * 12), 0);
+      const totalAnnualExpenses = Object.values(expenses).reduce((sum, expense) => sum + expense, 0) * 12;
+      const loanAmount = assumptions.purchasePrice * assumptions.loanPercentage;
+      const monthlyPayment = loanAmount * (assumptions.interestRate / 12) * Math.pow(1 + assumptions.interestRate / 12, assumptions.loanTermYears * 12) / (Math.pow(1 + assumptions.interestRate / 12, assumptions.loanTermYears * 12) - 1);
+      const annualDebtService = monthlyPayment * 12;
+      const annualCashFlow = totalAnnualRent - totalAnnualExpenses - annualDebtService;
+
+      // Calculate cash-on-cash return
+      const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) : 0;
+
+      // Calculate ARV
+      const arv = totalAnnualRent / assumptions.marketCapRate;
+
+      const propertyData = {
+        status: 'Under Contract',
+        apartments: assumptions.unitCount,
+        address: propertyAddress.split(',')[0].trim(),
+        city: city,
+        state: state,
+        zipCode: zipCode,
+        entity: importFormData.entity,
+        acquisitionDate: importFormData.acquisitionDate || new Date().toISOString().split('T')[0],
+        acquisitionPrice: assumptions.purchasePrice.toString(),
+        rehabCosts: totalRehabCosts.toString(),
+        arvAtTimePurchased: arv.toString(),
+        initialCapitalRequired: initialCapital.toString(),
+        cashFlow: annualCashFlow.toString(),
+        totalProfits: '0', // Will be calculated after sale
+        cashOnCashReturn: (cashOnCashReturn * 100).toString(),
+        annualizedReturn: (cashOnCashReturn * 100).toString(), // Same as CoC for annual calculation
+        yearsHeld: '0'
+      };
+
+      const response = await fetch('/api/properties', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(propertyData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to import property');
+      }
+
+      setShowImportModal(false);
+      setImportFormData({
+        entity: '5Central Capital',
+        acquisitionDate: '',
+        broker: '',
+        legalNotes: '',
+        closingTimeline: ''
+      });
+      
+      // Show success message
+      alert('Deal successfully imported to Properties!');
+      
+    } catch (error) {
+      console.error('Error importing to properties:', error);
+      alert('Failed to import deal to Properties. Please try again.');
+    } finally {
+      setImportingToProperties(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -712,6 +800,15 @@ export default function DealAnalyzer() {
             >
               <Save className="h-3 w-3 mr-1" />
               {isSaving ? 'Saving...' : 'Save'}
+            </button>
+            
+            <button
+              onClick={() => setShowImportModal(true)}
+              disabled={importingToProperties}
+              className="flex items-center px-2 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 transition-colors"
+            >
+              <Database className="h-3 w-3 mr-1" />
+              {importingToProperties ? 'Importing...' : 'Import to Properties'}
             </button>
             
             <div className="relative group">
@@ -2503,6 +2600,107 @@ export default function DealAnalyzer() {
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Import to Properties Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Import to Properties</h3>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Legal Entity
+                </label>
+                <select
+                  value={importFormData.entity}
+                  onChange={(e) => setImportFormData(prev => ({ ...prev, entity: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="5Central Capital">5Central Capital</option>
+                  <option value="The House Doctors">The House Doctors</option>
+                  <option value="Arcadia Vision Group">Arcadia Vision Group</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Expected Acquisition Date
+                </label>
+                <input
+                  type="date"
+                  value={importFormData.acquisitionDate}
+                  onChange={(e) => setImportFormData(prev => ({ ...prev, acquisitionDate: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Broker/Agent (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={importFormData.broker}
+                  onChange={(e) => setImportFormData(prev => ({ ...prev, broker: e.target.value }))}
+                  placeholder="Enter broker name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Closing Timeline (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={importFormData.closingTimeline}
+                  onChange={(e) => setImportFormData(prev => ({ ...prev, closingTimeline: e.target.value }))}
+                  placeholder="e.g., 30-45 days"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Legal Notes (Optional)
+                </label>
+                <textarea
+                  value={importFormData.legalNotes}
+                  onChange={(e) => setImportFormData(prev => ({ ...prev, legalNotes: e.target.value }))}
+                  placeholder="Any special legal considerations or notes"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={importToProperties}
+                disabled={importingToProperties}
+                className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+              >
+                {importingToProperties ? 'Importing...' : 'Import Property'}
+              </button>
+            </div>
           </div>
         </div>
       )}
