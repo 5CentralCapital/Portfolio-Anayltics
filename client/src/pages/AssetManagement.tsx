@@ -698,14 +698,14 @@ export default function AssetManagement() {
         </div>
 
         {/* Sold Properties */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 fade-in card-hover">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-6">
-            <CheckCircle className="h-5 w-5 mr-2 text-purple-500" />
+            <CheckCircle className="h-5 w-5 mr-2 text-purple-500 icon-bounce" />
             Sold ({properties.filter((p: Property) => p.status === 'Sold').length})
           </h2>
           
           {properties.filter((p: Property) => p.status === 'Sold').length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
               {properties.filter((p: Property) => p.status === 'Sold').map((property: Property) => (
                 <SoldPropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} />
               ))}
