@@ -1036,7 +1036,7 @@ export default function EntityDashboard() {
                 {/* Expenses Section */}
                 <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
                   <h3 className="text-lg font-semibold text-red-900 dark:text-red-300 mb-4 flex items-center">
-                    <TrendingDown className="h-5 w-5 mr-2" />
+                    <DollarSign className="h-5 w-5 mr-2" />
                     Expenses
                   </h3>
                   <div className="space-y-3">
@@ -1143,7 +1143,7 @@ export default function EntityDashboard() {
                 {/* Investment Summary */}
                 <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
                   <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-300 mb-4 flex items-center">
-                    <BarChart3 className="h-5 w-5 mr-2" />
+                    <PieChart className="h-5 w-5 mr-2" />
                     Investment Summary
                   </h3>
                   <div className="space-y-3">
