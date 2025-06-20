@@ -492,9 +492,9 @@ export default function AssetManagement() {
       {/* Property Portfolio Sections */}
       <div className="space-y-6">
         {/* Under Contract - Compact Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 fade-in card-hover">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-4">
-            <FileText className="h-5 w-5 mr-2 text-orange-500" />
+            <FileText className="h-5 w-5 mr-2 text-orange-500 icon-bounce" />
             Under Contract ({properties.filter((p: Property) => p.status === 'Under Contract').length})
           </h2>
           

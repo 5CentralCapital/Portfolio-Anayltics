@@ -523,7 +523,7 @@ export default function EntityDashboard() {
       </div>
 
       {/* Entity Sections */}
-      <div className="space-y-8" data-tour="entities">
+      <div className="space-y-8 stagger-children" data-tour="entities">
         
         {userEntities.map((entityName) => {
           const entityProperties = propertiesByEntity[entityName];
@@ -532,7 +532,7 @@ export default function EntityDashboard() {
           const entityEquityMultiple = entityMetrics.totalAUM > 0 ? (entityMetrics.totalAUM + entityMetrics.totalProfits) / entityMetrics.totalAUM : 0;
 
           return (
-            <div key={entityName} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div key={entityName} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg fade-in card-hover transition-all-smooth">
               {/* Standardized Entity Header */}
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
@@ -559,20 +559,20 @@ export default function EntityDashboard() {
                   <Calculator className="h-5 w-5 mr-2" />
                   Entity Metrics
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
+                  <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg hover-scale transition-all-smooth cursor-pointer">
                     <label className="text-sm text-blue-900 dark:text-blue-100 font-medium">AUM</label>
                     <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">{formatCurrency(entityMetrics.totalAUM)}</p>
                   </div>
-                  <div className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg">
+                  <div className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg hover-scale transition-all-smooth cursor-pointer">
                     <label className="text-sm text-orange-900 dark:text-orange-100 font-medium">Properties</label>
                     <p className="text-lg font-semibold text-orange-900 dark:text-orange-100">{entityMetrics.totalProperties}</p>
                   </div>
-                  <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg">
+                  <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg hover-scale transition-all-smooth cursor-pointer">
                     <label className="text-sm text-purple-900 dark:text-purple-100 font-medium">Units</label>
                     <p className="text-lg font-semibold text-purple-900 dark:text-purple-100">{entityMetrics.totalUnits}</p>
                   </div>
-                  <div className={`p-4 rounded-lg ${
+                  <div className={`p-4 rounded-lg hover-scale transition-all-smooth cursor-pointer ${
                     entityMetrics.totalProfits > 0 ? "bg-green-50 dark:bg-green-900" : "bg-red-50 dark:bg-red-900"
                   }`}>
                     <label className={`text-sm font-medium ${
@@ -838,7 +838,7 @@ export default function EntityDashboard() {
                               <tr 
                                 key={property.id}
                                 onDoubleClick={() => setSelectedPropertyModal(property)}
-                                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-all-smooth hover-scale"
                               >
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                   {property.address}

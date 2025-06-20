@@ -840,36 +840,36 @@ export default function DealAnalyzer() {
             <button
               onClick={saveDeal}
               disabled={isSaving}
-              className="flex items-center px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
+              className="flex items-center px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-all-smooth hover-scale btn-bounce"
             >
-              <Save className="h-3 w-3 mr-1" />
+              <Save className="h-3 w-3 mr-1 icon-bounce" />
               {isSaving ? 'Saving...' : 'Save'}
             </button>
             
             <button
               onClick={() => setShowImportModal(true)}
               disabled={importingToProperties}
-              className="flex items-center px-2 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              className="flex items-center px-2 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 transition-all-smooth hover-scale btn-bounce"
             >
-              <Database className="h-3 w-3 mr-1" />
+              <Database className="h-3 w-3 mr-1 icon-pulse" />
               {importingToProperties ? 'Importing...' : 'Import to Properties'}
             </button>
             
             <div className="relative group">
-              <button className="flex items-center px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-                <Download className="h-3 w-3 mr-1" />
+              <button className="flex items-center px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-all-smooth hover-scale btn-bounce">
+                <Download className="h-3 w-3 mr-1 icon-bounce" />
                 Export
               </button>
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 slide-in-up">
                 <button
                   onClick={exportDealJSON}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors-smooth hover-scale"
                 >
                   Export as JSON
                 </button>
                 <button
                   onClick={exportDealCSV}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors-smooth hover-scale"
                 >
                   Export as CSV
                 </button>
@@ -881,11 +881,14 @@ export default function DealAnalyzer() {
 
       {/* Saved Deals Panel */}
       {savedDeals.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Saved Deals</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 fade-in card-hover">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+            <Database className="h-5 w-5 mr-2 icon-bounce" />
+            Saved Deals
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
             {savedDeals.slice(-6).map((deal) => (
-              <div key={deal.id} className="border border-gray-200 rounded-lg p-3 hover:border-blue-300 transition-colors">
+              <div key={deal.id} className="border border-gray-200 rounded-lg p-3 hover:border-blue-300 transition-all-smooth card-hover hover-scale">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <h4 className="font-medium text-gray-900">{deal.name}</h4>
@@ -897,13 +900,13 @@ export default function DealAnalyzer() {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => loadDeal(deal)}
-                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-all-smooth hover-scale btn-bounce"
                     >
                       Load
                     </button>
                     <button
                       onClick={() => deleteDeal(deal.id)}
-                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                      className="p-1 text-gray-400 hover:text-red-600 transition-all-smooth hover-scale btn-bounce"
                       title="Delete deal"
                     >
                       <Trash2 className="h-4 w-4" />
