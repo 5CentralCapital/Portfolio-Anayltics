@@ -627,6 +627,7 @@ export default function DealAnalyzer() {
   // Import deal to Properties database
   const importToProperties = async () => {
     setImportingToProperties(true);
+    
     try {
       // Extract city and state from address
       const addressParts = propertyAddress.split(',');
@@ -635,48 +636,61 @@ export default function DealAnalyzer() {
       const state = stateZip.split(' ')[0] || '';
       const zipCode = stateZip.split(' ')[1] || '';
 
-      // Calculate total rehab costs
-      const totalRehabCosts = Object.values(rehabBudgetSections).reduce((total, section: any) => {
-        return total + Object.values(section.items).reduce((sum: number, cost: any) => sum + cost, 0);
+      // Calculate total rehab costs with safe defaults
+      const totalRehabCosts = Object.values(rehabBudgetSections || {}).reduce((total, section: any) => {
+        if (!section || !section.items) return total;
+        return total + Object.values(section.items).reduce((sum: number, cost: any) => sum + (Number(cost) || 0), 0);
       }, 0);
 
-      // Calculate total initial capital
-      const totalClosingCosts = Object.values(closingCosts).reduce((sum, cost) => sum + cost, 0);
-      const totalHoldingCosts = Object.values(holdingCosts).reduce((sum, cost) => sum + cost, 0);
-      const downPayment = assumptions.purchasePrice * (1 - assumptions.loanPercentage);
+      // Calculate total initial capital with safe defaults
+      const totalClosingCosts = Object.values(closingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
+      const totalHoldingCosts = Object.values(holdingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
+      const downPayment = (assumptions.purchasePrice || 0) * (1 - (assumptions.loanPercentage || 0.8));
       const initialCapital = downPayment + totalRehabCosts + totalClosingCosts + totalHoldingCosts;
 
-      // Calculate cash flow (annual)
-      const totalAnnualRent = Object.values(rentRoll).reduce((sum: number, unit: any) => sum + (unit.rent * 12), 0);
-      const totalAnnualExpenses = Object.values(expenses).reduce((sum, expense) => sum + expense, 0) * 12;
-      const loanAmount = assumptions.purchasePrice * assumptions.loanPercentage;
-      const monthlyPayment = loanAmount * (assumptions.interestRate / 12) * Math.pow(1 + assumptions.interestRate / 12, assumptions.loanTermYears * 12) / (Math.pow(1 + assumptions.interestRate / 12, assumptions.loanTermYears * 12) - 1);
+      // Calculate cash flow (annual) with safe defaults
+      const totalAnnualRent = Object.values(rentRoll || {}).reduce((sum: number, unit: any) => {
+        return sum + ((Number(unit?.rent) || 0) * 12);
+      }, 0);
+      const totalAnnualExpenses = Object.values(expenses || {}).reduce((sum, expense) => sum + (Number(expense) || 0), 0) * 12;
+      const loanAmount = (assumptions.purchasePrice || 0) * (assumptions.loanPercentage || 0.8);
+      const interestRate = assumptions.interestRate || 0.0875;
+      const loanTermYears = assumptions.loanTermYears || 2;
+      
+      let monthlyPayment = 0;
+      if (loanAmount > 0 && interestRate > 0) {
+        const monthlyRate = interestRate / 12;
+        const numPayments = loanTermYears * 12;
+        monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+      }
+      
       const annualDebtService = monthlyPayment * 12;
       const annualCashFlow = totalAnnualRent - totalAnnualExpenses - annualDebtService;
 
-      // Calculate cash-on-cash return
+      // Calculate cash-on-cash return with safe defaults
       const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) : 0;
 
-      // Calculate ARV
-      const arv = totalAnnualRent / assumptions.marketCapRate;
+      // Calculate ARV with safe defaults
+      const marketCapRate = assumptions.marketCapRate || 0.055;
+      const arv = totalAnnualRent > 0 && marketCapRate > 0 ? totalAnnualRent / marketCapRate : assumptions.purchasePrice || 0;
 
       const propertyData = {
-        status: 'Under Contract',
-        apartments: assumptions.unitCount,
-        address: propertyAddress.split(',')[0].trim(),
-        city: city,
-        state: state,
-        zipCode: zipCode,
-        entity: importFormData.entity,
+        status: 'Under Contract' as const,
+        apartments: Number(assumptions.unitCount) || 1,
+        address: propertyAddress.split(',')[0]?.trim() || propertyName,
+        city: city || 'Unknown',
+        state: state || 'CT',
+        zipCode: zipCode || null,
+        entity: importFormData.entity || '5Central Capital',
         acquisitionDate: importFormData.acquisitionDate || new Date().toISOString().split('T')[0],
-        acquisitionPrice: assumptions.purchasePrice.toString(),
-        rehabCosts: totalRehabCosts.toString(),
-        arvAtTimePurchased: arv.toString(),
-        initialCapitalRequired: initialCapital.toString(),
-        cashFlow: annualCashFlow.toString(),
-        totalProfits: '0', // Will be calculated after sale
-        cashOnCashReturn: (cashOnCashReturn * 100).toString(),
-        annualizedReturn: (cashOnCashReturn * 100).toString(), // Same as CoC for annual calculation
+        acquisitionPrice: Math.round(Number(assumptions.purchasePrice) || 0).toString(),
+        rehabCosts: Math.round(totalRehabCosts).toString(),
+        arvAtTimePurchased: Math.round(arv).toString(),
+        initialCapitalRequired: Math.round(initialCapital).toString(),
+        cashFlow: Math.round(annualCashFlow).toString(),
+        totalProfits: '0',
+        cashOnCashReturn: Number((cashOnCashReturn * 100).toFixed(2)).toString(),
+        annualizedReturn: Number((cashOnCashReturn * 100).toFixed(2)).toString(),
         yearsHeld: '0'
       };
 
@@ -703,6 +717,10 @@ export default function DealAnalyzer() {
         throw new Error(`Failed to import property: ${response.status} ${errorText}`);
       }
 
+      const result = await response.json();
+      console.log('Import successful:', result);
+
+      // Close modal and reset form
       setShowImportModal(false);
       setImportFormData({
         entity: '5Central Capital',
@@ -713,12 +731,19 @@ export default function DealAnalyzer() {
       });
       
       // Show success message
-      alert('Deal successfully imported to Properties!');
+      alert(`Deal successfully imported to Properties! Property ID: ${result.id}`);
       
     } catch (error) {
       console.error('Error importing to properties:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`Failed to import deal to Properties: ${errorMessage}`);
+      
+      // Check if property was actually created despite the error
+      if (error instanceof Error && error.message.includes('Failed to import property')) {
+        const errorMessage = error.message;
+        alert(`Import failed: ${errorMessage}`);
+      } else {
+        // Generic error - might be a network issue or unexpected error
+        alert('Import failed due to an unexpected error. Please check the console for details.');
+      }
     } finally {
       setImportingToProperties(false);
     }
