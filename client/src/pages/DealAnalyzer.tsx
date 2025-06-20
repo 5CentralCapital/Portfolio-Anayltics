@@ -699,15 +699,15 @@ export default function DealAnalyzer() {
             <button
               onClick={saveDeal}
               disabled={isSaving}
-              className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
+              className="flex items-center px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
             >
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save Deal'}
+              <Save className="h-3 w-3 mr-1" />
+              {isSaving ? 'Saving...' : 'Save'}
             </button>
             
             <div className="relative group">
-              <button className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                <Download className="h-4 w-4 mr-2" />
+              <button className="flex items-center px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                <Download className="h-3 w-3 mr-1" />
                 Export
               </button>
               <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
