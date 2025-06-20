@@ -168,18 +168,15 @@ export default function EntityDashboard() {
 
   // Set user entities when data loads
   useEffect(() => {
-    if (userEntityData?.data) {
+    if (userEntityData?.data && Array.isArray(userEntityData.data)) {
       const entityNames = userEntityData.data.map((entity: any) => entity.entityName);
-      setUserEntities(entityNames);
-    } else if (userEntityData && !userEntityData.error) {
-      // Handle case where data is directly in userEntityData
-      const entityNames = userEntityData.map((entity: any) => entity.entityName);
       setUserEntities(entityNames);
     }
   }, [userEntityData]);
   
   // All properties for collective KPIs (only user's properties)
-  const properties: Property[] = Array.isArray(allProperties) ? allProperties : [];
+  const properties: Property[] = Array.isArray(allProperties?.data) ? allProperties.data : 
+    Array.isArray(allProperties) ? allProperties : [];
   
   // Properties grouped by user's entities only
   const propertiesByEntity = userEntities.reduce((acc, entity) => {
