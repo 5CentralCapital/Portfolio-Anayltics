@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target, BarChart3, Save, Download, Upload, FileDown, Database, X } from 'lucide-react';
+import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target, BarChart3, Save, Download, Upload, FileDown, Database, X, Trash2 } from 'lucide-react';
 
 export default function DealAnalyzer() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -617,6 +617,13 @@ export default function DealAnalyzer() {
     setExitAnalysis(data.exitAnalysis);
   };
 
+  // Delete a saved deal
+  const deleteDeal = (dealId: number) => {
+    const updatedDeals = savedDeals.filter(deal => deal.id !== dealId);
+    localStorage.setItem('dealAnalyzerDeals', JSON.stringify(updatedDeals));
+    setSavedDeals(updatedDeals);
+  };
+
   // Import deal to Properties database
   const importToProperties = async () => {
     setImportingToProperties(true);
@@ -843,19 +850,28 @@ export default function DealAnalyzer() {
             {savedDeals.slice(-6).map((deal) => (
               <div key={deal.id} className="border border-gray-200 rounded-lg p-3 hover:border-blue-300 transition-colors">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <h4 className="font-medium text-gray-900">{deal.name}</h4>
                     <p className="text-sm text-gray-600">{deal.address}</p>
                     <p className="text-xs text-gray-500">
                       Saved: {new Date(deal.savedAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <button
-                    onClick={() => loadDeal(deal)}
-                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                  >
-                    Load
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => loadDeal(deal)}
+                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                    >
+                      Load
+                    </button>
+                    <button
+                      onClick={() => deleteDeal(deal.id)}
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                      title="Delete deal"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
