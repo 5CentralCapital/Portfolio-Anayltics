@@ -327,131 +327,115 @@ export default function EntityDashboard() {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Entity Dashboard</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Collective performance and entity management</p>
-      </div>
+      
 
-      {/* Collective KPIs - Top Metrics Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total AUM</span>
+      {/* Collective KPIs - Deal Analyzer Style */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-900 dark:text-white">
+          <Calculator className="h-5 w-5 mr-2" />
+          Portfolio Key Metrics
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Total AUM</label>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{formatCurrency(collectiveMetrics.totalAUM)}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(collectiveMetrics.totalAUM)}</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center gap-2 mb-2">
-            <Calculator className="w-5 h-5 text-green-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Price/Unit</span>
+          <div>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Price/Unit</label>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{formatCurrency(pricePerUnit)}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(pricePerUnit)}</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center gap-2 mb-2">
-            <Home className="w-5 h-5 text-purple-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Units</span>
+          <div>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Total Units</label>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{collectiveMetrics.totalUnits}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{collectiveMetrics.totalUnits}</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center gap-2 mb-2">
-            <Building className="w-5 h-5 text-orange-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Properties</span>
+          <div>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Properties</label>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{collectiveMetrics.totalProperties}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{collectiveMetrics.totalProperties}</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-5 h-5 text-red-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Equity Multiple</span>
+          <div>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Equity Multiple</label>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{equityMultiple.toFixed(2)}x</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{equityMultiple.toFixed(2)}x</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-5 h-5 text-indigo-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Monthly Cash Flow</span>
+          <div>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Monthly Cash Flow</label>
+            <p className={`text-lg font-semibold ${
+              collectiveMetrics.totalCashFlow > 0 ? "text-green-600" : "text-red-600"
+            }`}>{formatCurrency(collectiveMetrics.totalCashFlow)}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(collectiveMetrics.totalCashFlow)}</p>
         </div>
       </div>
 
-      {/* Middle Section - Shared Components */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cash Balance */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Cash Balance</h3>
-            <Banknote className="w-5 h-5 text-green-600" />
+      {/* Middle Section - Two Side-by-Side Sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column - Cash Balance and Milestones */}
+        <div className="space-y-6">
+          {/* Cash Balance */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Cash Balance</h3>
+              <Banknote className="w-5 h-5 text-green-600" />
+            </div>
+            <div className="text-center">
+              <EditableValue 
+                value={cashBalance} 
+                onSave={setCashBalance}
+                format="currency"
+                className="text-3xl font-bold text-green-600"
+              />
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Available Operating Capital</p>
+            </div>
           </div>
-          <div className="text-center">
-            <EditableValue 
-              value={cashBalance} 
-              onSave={setCashBalance}
-              format="currency"
-              className="text-3xl font-bold text-green-600"
-            />
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Available Operating Capital</p>
-          </div>
-        </div>
 
-        {/* Upcoming Milestones */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Milestones</h3>
-            <button 
-              onClick={addMilestone}
-              className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {milestones.map((milestone) => (
-              <div key={milestone.id} className="flex items-start gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded">
-                <button
-                  onClick={() => updateMilestone(milestone.id, { completed: !milestone.completed })}
-                  className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                    milestone.completed 
-                      ? 'bg-green-500 border-green-500 text-white' 
-                      : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                >
-                  {milestone.completed && <CheckCircle className="w-3 h-3" />}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <input
-                    value={milestone.title}
-                    onChange={(e) => updateMilestone(milestone.id, { title: e.target.value })}
-                    className="font-medium text-gray-900 dark:text-white bg-transparent border-none p-0 w-full"
-                  />
-                  <input
-                    type="date"
-                    value={milestone.targetDate}
-                    onChange={(e) => updateMilestone(milestone.id, { targetDate: e.target.value })}
-                    className="text-sm text-gray-500 dark:text-gray-400 bg-transparent border-none p-0"
-                  />
+          {/* Upcoming Milestones */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Milestones</h3>
+              <button 
+                onClick={addMilestone}
+                className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {milestones.map((milestone) => (
+                <div key={milestone.id} className="flex items-start gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded">
+                  <button
+                    onClick={() => updateMilestone(milestone.id, { completed: !milestone.completed })}
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                      milestone.completed 
+                        ? 'bg-green-500 border-green-500 text-white' 
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                  >
+                    {milestone.completed && <CheckCircle className="w-3 h-3" />}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <input
+                      value={milestone.title}
+                      onChange={(e) => updateMilestone(milestone.id, { title: e.target.value })}
+                      className="font-medium text-gray-900 dark:text-white bg-transparent border-none p-0 w-full"
+                    />
+                    <input
+                      type="date"
+                      value={milestone.targetDate}
+                      onChange={(e) => updateMilestone(milestone.id, { targetDate: e.target.value })}
+                      className="text-sm text-gray-500 dark:text-gray-400 bg-transparent border-none p-0"
+                    />
+                  </div>
+                  <button
+                    onClick={() => deleteMilestone(milestone.id)}
+                    className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => deleteMilestone(milestone.id)}
-                  className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* To-Do List */}
+        {/* Right Column - To-Do List */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">To-Do List</h3>
@@ -462,7 +446,7 @@ export default function EntityDashboard() {
               <Plus className="w-4 h-4" />
             </button>
           </div>
-          <div className="space-y-2 max-h-64 overflow-y-auto">
+          <div className="space-y-2 max-h-96 overflow-y-auto">
             {todos.map((todo) => (
               <div key={todo.id} className="flex items-center gap-3 p-2 border border-gray-200 dark:border-gray-700 rounded">
                 <button
@@ -505,7 +489,6 @@ export default function EntityDashboard() {
 
       {/* Entity Sections */}
       <div className="space-y-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Individual Entities</h2>
         
         {entitiesList.map((entityName) => {
           const entityProperties = propertiesByEntity[entityName];
@@ -514,30 +497,51 @@ export default function EntityDashboard() {
           const entityEquityMultiple = entityMetrics.totalAUM > 0 ? (entityMetrics.totalAUM + entityMetrics.totalProfits) / entityMetrics.totalAUM : 0;
 
           return (
-            <div key={entityName} className="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div key={entityName} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+              {/* Standardized Entity Header */}
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{entityName}</h3>
-                <p className="text-gray-600 dark:text-gray-400">Entity-specific performance metrics</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{entityName}</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mt-1">
+                      {entityMetrics.totalProperties} properties • {entityMetrics.totalUnits} units • {formatCurrency(entityMetrics.totalAUM)} AUM
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Entity Performance</p>
+                    <p className={`text-lg font-semibold ${
+                      entityMetrics.totalProfits > 0 ? "text-green-600" : "text-red-600"
+                    }`}>
+                      {formatCurrency(entityMetrics.totalProfits)}
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              {/* Entity KPIs */}
+              {/* Entity KPIs - Deal Analyzer Style */}
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h4 className="text-lg font-semibold mb-4 flex items-center text-gray-900 dark:text-white">
+                  <Calculator className="h-5 w-5 mr-2" />
+                  Entity Metrics
+                </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
-                    <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">AUM</h4>
-                    <p className="text-xl font-bold text-blue-900 dark:text-blue-100">{formatCurrency(entityMetrics.totalAUM)}</p>
+                  <div>
+                    <label className="text-sm text-gray-600 dark:text-gray-400">AUM</label>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">{formatCurrency(entityMetrics.totalAUM)}</p>
                   </div>
-                  <div className="bg-green-50 dark:bg-green-900 p-4 rounded-lg">
-                    <h4 className="text-sm font-semibold text-green-900 dark:text-green-100">Properties</h4>
-                    <p className="text-xl font-bold text-green-900 dark:text-green-100">{entityMetrics.totalProperties}</p>
+                  <div>
+                    <label className="text-sm text-gray-600 dark:text-gray-400">Properties</label>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">{entityMetrics.totalProperties}</p>
                   </div>
-                  <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg">
-                    <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-100">Units</h4>
-                    <p className="text-xl font-bold text-purple-900 dark:text-purple-100">{entityMetrics.totalUnits}</p>
+                  <div>
+                    <label className="text-sm text-gray-600 dark:text-gray-400">Units</label>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">{entityMetrics.totalUnits}</p>
                   </div>
-                  <div className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg">
-                    <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-100">Total Profits</h4>
-                    <p className="text-xl font-bold text-orange-900 dark:text-orange-100">{formatCurrency(entityMetrics.totalProfits)}</p>
+                  <div>
+                    <label className="text-sm text-gray-600 dark:text-gray-400">Total Profits</label>
+                    <p className={`text-lg font-semibold ${
+                      entityMetrics.totalProfits > 0 ? "text-green-600" : "text-red-600"
+                    }`}>{formatCurrency(entityMetrics.totalProfits)}</p>
                   </div>
                 </div>
               </div>
