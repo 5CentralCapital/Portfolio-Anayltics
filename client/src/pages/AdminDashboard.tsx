@@ -37,6 +37,7 @@ import EntityDashboard from './EntityDashboard';
 import FinancialDashboard from './FinancialDashboard';
 import AssetManagement from './AssetManagement';
 import NetWorthTracker from './NetWorthTracker';
+import OnboardingTour from '../components/OnboardingTour';
 
 interface DashboardData {
   financial: {
@@ -78,6 +79,7 @@ const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [refreshing, setRefreshing] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (!apiService.isAuthenticated()) {
@@ -86,6 +88,15 @@ const AdminDashboard: React.FC = () => {
     }
     
     loadDashboardData();
+    
+    // Check if user has completed onboarding
+    const hasCompletedOnboarding = localStorage.getItem('onboarding_completed') === 'true';
+    if (!hasCompletedOnboarding) {
+      // Delay showing onboarding to let the dashboard load
+      setTimeout(() => {
+        setShowOnboarding(true);
+      }, 1000);
+    }
   }, [navigate]);
 
   const loadDashboardData = async () => {
@@ -276,7 +287,7 @@ const AdminDashboard: React.FC = () => {
       </header>
 
       {/* Navigation Tabs */}
-      <div className="bg-white border-b">
+      <div className="bg-white border-b" data-tour="navigation">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
             {[
@@ -290,6 +301,7 @@ const AdminDashboard: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                data-tour={tab.id === 'properties' ? 'asset-management-tab' : tab.id === 'deal-analyzer' ? 'deal-analyzer-tab' : undefined}
                 className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
                     ? 'border-primary text-primary'
@@ -307,7 +319,9 @@ const AdminDashboard: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'dashboard' && (
-          <EntityDashboard />
+          <div data-tour="dashboard">
+            <EntityDashboard />
+          </div>
         )}
 
         {activeTab === 'properties' && (
