@@ -96,12 +96,16 @@ const AssetManagement: React.FC = () => {
   };
 
   // Process properties data - handle both direct array and wrapped data structure
-  const properties: Property[] = Array.isArray(propertiesData?.data) ? propertiesData.data : 
-    Array.isArray(propertiesData) ? propertiesData : [];
+  const properties: Property[] = (() => {
+    if (!propertiesData) return [];
+    if (Array.isArray(propertiesData)) return propertiesData;
+    if (propertiesData.data && Array.isArray(propertiesData.data)) return propertiesData.data;
+    return [];
+  })();
   
   // Debug logging
-  console.log('Properties data:', propertiesData);
-  console.log('Properties array:', properties);
+  console.log('Raw properties data:', propertiesData);
+  console.log('Processed properties array:', properties);
   console.log('Properties length:', properties.length);
   
   // Calculate portfolio metrics

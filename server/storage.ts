@@ -161,24 +161,13 @@ export class DatabaseStorage implements IStorage {
     const userEntities = await this.getUserEntityOwnership(userId);
     const userEntityNames = userEntities.map(e => e.entityName);
     
-    console.log(`Debug getPropertiesForUser - userId: ${userId}`);
-    console.log(`Debug getPropertiesForUser - userEntities:`, userEntities);
-    console.log(`Debug getPropertiesForUser - userEntityNames:`, userEntityNames);
-    
     if (userEntityNames.length === 0) {
-      console.log(`Debug getPropertiesForUser - No entities found for user ${userId}`);
       return [];
     }
     
     // Get all properties and filter by user's entities
     const allProperties = await db.select().from(properties).orderBy(desc(properties.createdAt));
-    console.log(`Debug getPropertiesForUser - allProperties count:`, allProperties.length);
-    console.log(`Debug getPropertiesForUser - sample property entities:`, allProperties.slice(0, 3).map(p => p.entity));
-    
-    const filteredProperties = allProperties.filter(property => userEntityNames.includes(property.entity || ''));
-    console.log(`Debug getPropertiesForUser - filteredProperties count:`, filteredProperties.length);
-    
-    return filteredProperties;
+    return allProperties.filter(property => userEntityNames.includes(property.entity || ''));
   }
 
   async getProperty(id: number): Promise<Property | undefined> {
