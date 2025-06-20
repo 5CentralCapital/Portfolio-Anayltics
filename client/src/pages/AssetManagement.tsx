@@ -119,17 +119,16 @@ const RehabPropertyCard = ({ property, onStatusChange }: { property: Property; o
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{property.address}</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">{property.city}, {property.state}</p>
             </div>
-            <Select value={property.status} onValueChange={(value) => onStatusChange(property.id, value)}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Under Contract">Under Contract</SelectItem>
-                <SelectItem value="Rehabbing">Rehabbing</SelectItem>
-                <SelectItem value="Cashflowing">Cashflowing</SelectItem>
-                <SelectItem value="Sold">Sold</SelectItem>
-              </SelectContent>
-            </Select>
+            <select 
+              value={property.status} 
+              onChange={(e) => onStatusChange(property.id, e.target.value)}
+              className="w-40 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+            >
+              <option value="Under Contract">Under Contract</option>
+              <option value="Rehabbing">Rehabbing</option>
+              <option value="Cashflowing">Cashflowing</option>
+              <option value="Sold">Sold</option>
+            </select>
           </div>
           
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -191,17 +190,16 @@ const SoldPropertyCard = ({ property, onStatusChange }: { property: Property; on
           <h3 className="font-semibold text-gray-900 dark:text-white">{property.address}</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">{property.city}, {property.state}</p>
         </div>
-        <Select value={property.status} onValueChange={(value) => onStatusChange(property.id, value)}>
-          <SelectTrigger className="w-32 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Under Contract">Under Contract</SelectItem>
-            <SelectItem value="Rehabbing">Rehabbing</SelectItem>
-            <SelectItem value="Cashflowing">Cashflowing</SelectItem>
-            <SelectItem value="Sold">Sold</SelectItem>
-          </SelectContent>
-        </Select>
+        <select 
+          value={property.status} 
+          onChange={(e) => onStatusChange(property.id, e.target.value)}
+          className="w-32 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs"
+        >
+          <option value="Under Contract">Under Contract</option>
+          <option value="Rehabbing">Rehabbing</option>
+          <option value="Cashflowing">Cashflowing</option>
+          <option value="Sold">Sold</option>
+        </select>
       </div>
       
       <div className="space-y-2 text-sm">
@@ -251,6 +249,31 @@ const AssetManagement: React.FC = () => {
       setEditingProperty(null);
     }
   });
+
+  // Mutation for updating property status
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/properties/${id}`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` })
+        },
+        body: JSON.stringify({ status })
+      });
+      if (!response.ok) throw new Error('Failed to update property status');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
+    }
+  });
+
+  // Handle status changes
+  const handleStatusChange = (id: number, status: string) => {
+    updateStatusMutation.mutate({ id, status });
+  };
 
   const formatCurrency = (amount: string | number) => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
