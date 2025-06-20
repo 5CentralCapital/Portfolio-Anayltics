@@ -378,6 +378,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/properties/:id", authenticateUser, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      const property = await storage.updateProperty(id, updateData);
+      if (!property) {
+        return res.status(404).json({ error: "Property not found" });
+      }
+      
+      res.json(property);
+    } catch (error) {
+      console.error("Update property error:", error);
+      res.status(500).json({ error: "Failed to update property" });
+    }
+  });
+
   // Company metrics routes
   app.post("/api/metrics", async (req, res) => {
     try {
