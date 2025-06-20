@@ -7,8 +7,6 @@ interface EntityOwnership {
   isNewEntity: boolean;
   assetType: 'real_estate' | 'cash' | 'stocks' | 'bonds' | 'business' | 'other';
   ownershipPercentage: string;
-  currentValue: string;
-  description: string;
 }
 
 const AccountSetup: React.FC = () => {
@@ -29,9 +27,7 @@ const AccountSetup: React.FC = () => {
       entityName: "",
       isNewEntity: false,
       assetType: "real_estate",
-      ownershipPercentage: "",
-      currentValue: "",
-      description: ""
+      ownershipPercentage: ""
     }
   ]);
 
@@ -47,9 +43,7 @@ const AccountSetup: React.FC = () => {
       entityName: "",
       isNewEntity: false,
       assetType: "real_estate",
-      ownershipPercentage: "",
-      currentValue: "",
-      description: ""
+      ownershipPercentage: ""
     }]);
   };
 
@@ -125,7 +119,13 @@ const AccountSetup: React.FC = () => {
           password,
           firstName,
           lastName,
-          entities: entities.filter(e => e.entityName && e.ownershipPercentage)
+          entities: entities.filter(e => e.entityName && e.ownershipPercentage).map(entity => ({
+            entityName: entity.entityName,
+            assetType: entity.assetType,
+            ownershipPercentage: parseFloat(entity.ownershipPercentage),
+            currentValue: 0,
+            description: ""
+          }))
         }),
       });
 
@@ -369,35 +369,6 @@ const AccountSetup: React.FC = () => {
                         required
                       />
                     </div>
-                    <div>
-                      <label htmlFor={`currentValue-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
-                        Current Value (USD)
-                      </label>
-                      <input
-                        id={`currentValue-${index}`}
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={entity.currentValue}
-                        onChange={(e) => updateEntity(index, "currentValue", e.target.value)}
-                        placeholder="e.g., 500000"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor={`description-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
-                    </label>
-                    <input
-                      id={`description-${index}`}
-                      type="text"
-                      value={entity.description}
-                      onChange={(e) => updateEntity(index, "description", e.target.value)}
-                      placeholder="Brief description of the entity or investment"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
                   </div>
                 </div>
               ))}
