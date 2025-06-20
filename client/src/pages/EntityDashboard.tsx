@@ -956,8 +956,50 @@ export default function EntityDashboard() {
       {/* Entity KPIs Section */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
         <div className="border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Entity KPIs</h3>
+          <div className="p-6">
+            <div className="text-center mb-6">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">5Central Capital</h2>
+              <p className="text-gray-600 dark:text-gray-400">Real Estate Investment Entity</p>
+            </div>
+            
+            {/* Entity-Level KPIs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total AUM</p>
+                <p className="text-2xl font-bold text-blue-600">{formatCurrency(metrics.totalAUM)}</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Equity</p>
+                <p className="text-2xl font-bold text-green-600">{formatCurrency(metrics.totalEquity)}</p>
+              </div>
+              <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Monthly Cash Flow</p>
+                <p className="text-2xl font-bold text-purple-600">{formatCurrency(metrics.monthlyCashFlow)}</p>
+              </div>
+              <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Properties</p>
+                <p className="text-2xl font-bold text-orange-600">{metrics.totalProperties}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Units</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{metrics.totalUnits}</p>
+              </div>
+              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Avg Price/Unit</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(metrics.pricePerUnit)}</p>
+              </div>
+              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Equity Multiple</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{metrics.avgEquityMultiple.toFixed(2)}x</p>
+              </div>
+              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Debt</p>
+                <p className="text-xl font-bold text-red-600">{formatCurrency(metrics.totalDebt)}</p>
+              </div>
+            </div>
           </div>
           <nav className="flex space-x-8 px-6">
             {[

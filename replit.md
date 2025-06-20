@@ -128,6 +128,8 @@ Changelog:
 - June 19, 2025. Transformed Properties tab into comprehensive Asset Management dashboard with KPI bar driven by actual property data, financial statement tabs (Balance Sheet, Income Statement, Cash Flow), and real-time portfolio calculations
 - June 20, 2025. Built comprehensive Entity Dashboard with top metric bar (AUM, Price/Unit, Units, Properties, Equity Multiple, Monthly Cash Flow), cash balance management, milestone tracking, to-do list widget, and Entity KPIs section with 6 tabs (Overview, Owner, Financials, Members, Compliance, Properties) - all calculations derived from actual property data
 - June 20, 2025. Reordered admin dashboard tabs to: Dashboard, Asset Management, Deal Analyzer, Roadmap (Coming Soon), Net Worth, Reports - with Entity Dashboard as default landing page
+- June 20, 2025. Enhanced Entity Dashboard with fully editable to-do list and milestone management featuring inline editing, add/delete functionality, status toggling, and comprehensive CRUD operations - all data persisted in component state
+- June 20, 2025. Updated Entity KPIs section header to prominently display "5Central Capital" with redesigned KPI cards showing entity-level metrics derived from property and financial data in modern color-coded layout
 
 ## User Preferences
 
