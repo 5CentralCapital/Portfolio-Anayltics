@@ -218,14 +218,14 @@ const AssetManagement: React.FC = () => {
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Property Portfolio</h2>
               
-              {properties.length === 0 ? (
+              {propertiesArray.length === 0 ? (
                 <div className="text-center py-12">
                   <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500 dark:text-gray-400">No properties found</p>
                 </div>
               ) : (
                 <div className="grid gap-6">
-                  {properties.map((property: Property) => (
+                  {propertiesArray.map((property: Property) => (
                     <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
                       <div className="flex items-center justify-between mb-4">
                         <div>
@@ -397,7 +397,7 @@ const AssetManagement: React.FC = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Investment Activities</span>
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(-properties.reduce((sum: number, prop: Property) => 
+                    {formatCurrency(-propertiesArray.reduce((sum: number, prop: Property) => 
                       sum + parseFloat(prop.acquisitionPrice) + parseFloat(prop.rehabCosts), 0
                     ))}
                   </span>
