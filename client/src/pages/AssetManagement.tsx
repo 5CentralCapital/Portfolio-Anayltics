@@ -309,20 +309,21 @@ const AssetManagement: React.FC = () => {
       </div>
 
       {/* Property Portfolio Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="p-6">
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Property Portfolio</h2>
+      <div className="space-y-8">
+        {/* Active Properties Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div className="p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Active Properties</h2>
             
-            {properties.length === 0 ? (
+            {properties.filter(p => p.status === 'Currently Own').length === 0 ? (
               <div className="text-center py-12">
                 <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">No properties found</p>
+                <p className="text-gray-500 dark:text-gray-400">No active properties found</p>
               </div>
             ) : (
-              <div className="grid gap-6">
-                {properties.map((property: Property) => (
-                  <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+              <div className="space-y-4">
+                {properties.filter(p => p.status === 'Currently Own').map((property: Property) => (
+                  <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 w-full">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -339,7 +340,7 @@ const AssetManagement: React.FC = () => {
                           {editingProperty === property.id ? (
                             <div className="flex items-center gap-2">
                               <select
-                                defaultValue={property.entity || '5Central Capital LLC'}
+                                defaultValue={property.entity || '5Central Capital'}
                                 onChange={(e) => handleEntityChange(property.id, e.target.value)}
                                 className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               >
@@ -357,7 +358,7 @@ const AssetManagement: React.FC = () => {
                           ) : (
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                {property.entity || '5Central Capital LLC'}
+                                {property.entity || '5Central Capital'}
                               </span>
                               <button
                                 onClick={() => setEditingProperty(property.id)}
@@ -369,11 +370,7 @@ const AssetManagement: React.FC = () => {
                           )}
                         </div>
                         
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          property.status === 'Currently Own' 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                        }`}>
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                           {property.status}
                         </span>
                       </div>
@@ -393,22 +390,120 @@ const AssetManagement: React.FC = () => {
                         <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.rehabCosts)}</p>
                       </div>
                       <div>
-                        <p className="text-gray-600 dark:text-gray-400">Cash Flow</p>
-                        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.cashFlow)}</p>
+                        <p className="text-gray-600 dark:text-gray-400">Monthly Cash Flow</p>
+                        <p className="font-semibold text-green-600">{formatCurrency(property.cashFlow)}</p>
                       </div>
                       <div>
                         <p className="text-gray-600 dark:text-gray-400">Total Profits</p>
-                        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.totalProfits)}</p>
+                        <p className="font-semibold text-green-600">{formatCurrency(property.totalProfits)}</p>
                       </div>
                       <div>
                         <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
-                        <p className="font-semibold text-gray-900 dark:text-white">{formatPercentage(property.cashOnCashReturn)}</p>
+                        <p className="font-semibold text-blue-600">{formatPercentage(property.cashOnCashReturn)}</p>
                       </div>
                     </div>
 
                     {property.acquisitionDate && (
                       <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
                         <MapPin className="w-4 h-4 inline mr-1" />
+                        Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Sold Properties Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div className="p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Sold Properties</h2>
+            
+            {properties.filter(p => p.status === 'Sold').length === 0 ? (
+              <div className="text-center py-12">
+                <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">No sold properties found</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {properties.filter(p => p.status === 'Sold').map((property: Property) => (
+                  <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 aspect-square flex flex-col">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-md font-semibold text-gray-900 dark:text-white truncate">
+                          {property.address}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                          {property.city}, {property.state}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        {/* Entity Assignment Dropdown */}
+                        {editingProperty === property.id ? (
+                          <div className="flex items-center gap-1">
+                            <select
+                              defaultValue={property.entity || '5Central Capital'}
+                              onChange={(e) => handleEntityChange(property.id, e.target.value)}
+                              className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            >
+                              {entities.map((entity) => (
+                                <option key={entity} value={entity}>{entity}</option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={() => setEditingProperty(null)}
+                              className="p-1 text-gray-400 hover:text-gray-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                              {property.entity || '5Central Capital'}
+                            </span>
+                            <button
+                              onClick={() => setEditingProperty(property.id)}
+                              className="p-1 text-gray-400 hover:text-gray-600"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
+                          {property.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Units</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{property.apartments}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Purchase</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Sale Price</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.salePrice || '0')}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Total Profit</p>
+                        <p className="font-semibold text-green-600">{formatCurrency(property.totalProfits)}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
+                        <p className="font-semibold text-blue-600">{formatPercentage(property.cashOnCashReturn)}</p>
+                      </div>
+                    </div>
+
+                    {property.acquisitionDate && (
+                      <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                        <MapPin className="w-3 h-3 inline mr-1" />
                         Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
                       </div>
                     )}
