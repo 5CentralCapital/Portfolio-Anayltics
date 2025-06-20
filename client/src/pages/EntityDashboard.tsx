@@ -361,38 +361,40 @@ export default function EntityDashboard() {
     <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       
 
-      {/* Portfolio KPI Bar - Deal Analyzer Style */}
+      {/* Portfolio KPI Bar - Continuous Gradient Style */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6" data-tour="kpi-bar">
         <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-900 dark:text-white">
           <Calculator className="h-5 w-5 mr-2" />
           Portfolio Key Metrics
         </h3>
-        <div className="flex flex-wrap gap-4">
-          <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg flex-1 min-w-[140px]">
-            <label className="text-sm text-blue-900 dark:text-blue-100 font-medium">Total AUM</label>
-            <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">{formatCurrency(collectiveMetrics.totalAUM)}</p>
-          </div>
-          <div className="bg-green-50 dark:bg-green-900 p-4 rounded-lg flex-1 min-w-[140px]">
-            <label className="text-sm text-green-900 dark:text-green-100 font-medium">Price/Unit</label>
-            <p className="text-lg font-semibold text-green-900 dark:text-green-100">{formatCurrency(pricePerUnit)}</p>
-          </div>
-          <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg flex-1 min-w-[140px]">
-            <label className="text-sm text-purple-900 dark:text-purple-100 font-medium">Total Units</label>
-            <p className="text-lg font-semibold text-purple-900 dark:text-purple-100">{collectiveMetrics.totalUnits}</p>
-          </div>
-          <div className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg flex-1 min-w-[140px]">
-            <label className="text-sm text-orange-900 dark:text-orange-100 font-medium">Properties</label>
-            <p className="text-lg font-semibold text-orange-900 dark:text-orange-100">{collectiveMetrics.totalProperties}</p>
-          </div>
-          <div className="bg-indigo-50 dark:bg-indigo-900 p-4 rounded-lg flex-1 min-w-[140px]">
-            <label className="text-sm text-indigo-900 dark:text-indigo-100 font-medium">Equity Multiple</label>
-            <p className="text-lg font-semibold text-indigo-900 dark:text-indigo-100">{equityMultiple.toFixed(2)}x</p>
-          </div>
-          <div className="bg-emerald-50 dark:bg-emerald-900 p-4 rounded-lg flex-1 min-w-[140px]">
-            <label className="text-sm text-emerald-900 dark:text-emerald-100 font-medium">Monthly Cash Flow</label>
-            <p className={`text-lg font-semibold ${
-              collectiveMetrics.totalCashFlow > 0 ? "text-emerald-900 dark:text-emerald-100" : "text-red-600"
-            }`}>{formatCurrency(collectiveMetrics.totalCashFlow)}</p>
+        <div className="bg-gradient-to-r from-blue-600 via-blue-500 via-purple-500 to-purple-600 rounded-lg p-6">
+          <div className="flex justify-between items-center text-white">
+            <div className="text-center flex-1">
+              <div className="text-sm font-medium opacity-90">Total AUM</div>
+              <div className="text-2xl font-bold">{formatCurrency(collectiveMetrics.totalAUM)}</div>
+            </div>
+            <div className="text-center flex-1 border-l border-white/20 pl-4">
+              <div className="text-sm font-medium opacity-90">Price/Unit</div>
+              <div className="text-2xl font-bold">{formatCurrency(pricePerUnit)}</div>
+            </div>
+            <div className="text-center flex-1 border-l border-white/20 pl-4">
+              <div className="text-sm font-medium opacity-90">Total Units</div>
+              <div className="text-2xl font-bold">{collectiveMetrics.totalUnits}</div>
+            </div>
+            <div className="text-center flex-1 border-l border-white/20 pl-4">
+              <div className="text-sm font-medium opacity-90">Properties</div>
+              <div className="text-2xl font-bold">{collectiveMetrics.totalProperties}</div>
+            </div>
+            <div className="text-center flex-1 border-l border-white/20 pl-4">
+              <div className="text-sm font-medium opacity-90">Equity Multiple</div>
+              <div className="text-2xl font-bold">{equityMultiple.toFixed(2)}x</div>
+            </div>
+            <div className="text-center flex-1 border-l border-white/20 pl-4">
+              <div className="text-sm font-medium opacity-90">Monthly Cash Flow</div>
+              <div className={`text-2xl font-bold ${
+                collectiveMetrics.totalCashFlow > 0 ? "" : "text-red-200"
+              }`}>{formatCurrency(collectiveMetrics.totalCashFlow)}</div>
+            </div>
           </div>
         </div>
       </div>
