@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target, BarChart3, Save, Download, Upload, FileDown } from 'lucide-react';
+import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target, BarChart3, Save, Download, Upload, FileDown, Plus, Check } from 'lucide-react';
 
 export default function DealAnalyzer() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -21,6 +21,20 @@ export default function DealAnalyzer() {
     bathrooms: false,
     generalInterior: false,
     finishings: false
+  });
+  
+  // Property import modal state
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importSuccess, setImportSuccess] = useState(false);
+  const [importData, setImportData] = useState({
+    entity: '5Central Capital',
+    broker: '',
+    propertyManager: '',
+    generalContractor: '',
+    closingTimeline: '',
+    notes: '',
+    acquisitionDate: ''
   });
   
   // Exit analysis state
@@ -608,6 +622,46 @@ export default function DealAnalyzer() {
     setExitAnalysis(data.exitAnalysis);
   };
 
+  // Import property to properties database
+  const importToProperties = async () => {
+    setIsImporting(true);
+    try {
+      const importPayload = {
+        propertyName,
+        propertyAddress,
+        assumptions,
+        metrics,
+        rehabBudgetSections,
+        rentRoll,
+        unitTypes,
+        exitAnalysis,
+        ...importData
+      };
+
+      const response = await fetch('/api/properties/import-from-deal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(importPayload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to import property');
+      }
+
+      setImportSuccess(true);
+      setTimeout(() => {
+        setShowImportModal(false);
+        setImportSuccess(false);
+        setIsImporting(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Error importing property:', error);
+      setIsImporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -695,6 +749,76 @@ export default function DealAnalyzer() {
                 Last saved: {lastSaved.toLocaleTimeString()}
               </span>
             )}
+            
+            {/* Import to Properties Button */}
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center space-x-1 px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Import to Properties</span>
+            </button>
+            
+            <button
+              onClick={saveDeal}
+              disabled={isSaving}
+              className="flex items-center space-x-1 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {isSaving ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  <span>Save Deal</span>
+                </>
+              )}
+            </button>
+            
+            <div className="flex space-x-2">
+              <button
+                onClick={exportDealJSON}
+                className="flex items-center space-x-1 px-3 py-1.5 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                <span>JSON</span>
+              </button>
+              
+              <button
+                onClick={exportDealCSV}
+                className="flex items-center space-x-1 px-3 py-1.5 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                <FileDown className="h-4 w-4" />
+                <span>CSV</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Saved Deals Panel */}
+      {savedDeals.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Saved Deals</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {savedDeals.slice(-6).map((deal) => (
+              <div
+                key={deal.id}
+                className="bg-gray-50 p-4 rounded-lg border cursor-pointer hover:bg-blue-50 transition-colors"
+                onClick={() => loadDeal(deal)}
+              >
+                <div className="font-medium text-gray-900">{deal.name}</div>
+                <div className="text-sm text-gray-600">{deal.address}</div>
+                <div className="text-xs text-gray-400 mt-2">
+                  Saved: {new Date(deal.savedAt).toLocaleDateString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
             
             <button
               onClick={saveDeal}
@@ -2494,6 +2618,158 @@ export default function DealAnalyzer() {
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+      
+      {/* Property Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Import to Properties</h2>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {importSuccess ? (
+              <div className="text-center py-8">
+                <Check className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-green-800 mb-2">Property Imported Successfully!</h3>
+                <p className="text-green-600">
+                  {propertyName} has been added to your properties portfolio with "Under Contract" status.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Entity Assignment</label>
+                    <select
+                      value={importData.entity}
+                      onChange={(e) => setImportData(prev => ({ ...prev, entity: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="5Central Capital">5Central Capital</option>
+                      <option value="The House Doctors">The House Doctors</option>
+                      <option value="Arcadia Vision Group">Arcadia Vision Group</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Acquisition Date</label>
+                    <input
+                      type="date"
+                      value={importData.acquisitionDate}
+                      onChange={(e) => setImportData(prev => ({ ...prev, acquisitionDate: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Broker</label>
+                    <input
+                      type="text"
+                      value={importData.broker}
+                      onChange={(e) => setImportData(prev => ({ ...prev, broker: e.target.value }))}
+                      placeholder="Enter broker name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Property Manager</label>
+                    <input
+                      type="text"
+                      value={importData.propertyManager}
+                      onChange={(e) => setImportData(prev => ({ ...prev, propertyManager: e.target.value }))}
+                      placeholder="Enter property manager"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">General Contractor</label>
+                    <input
+                      type="text"
+                      value={importData.generalContractor}
+                      onChange={(e) => setImportData(prev => ({ ...prev, generalContractor: e.target.value }))}
+                      placeholder="Enter GC name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Closing Timeline</label>
+                    <input
+                      type="text"
+                      value={importData.closingTimeline}
+                      onChange={(e) => setImportData(prev => ({ ...prev, closingTimeline: e.target.value }))}
+                      placeholder="e.g., 30-45 days"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea
+                    value={importData.notes}
+                    onChange={(e) => setImportData(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Additional notes about this property..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">Deal Summary</h4>
+                  <div className="text-sm text-blue-800 space-y-1">
+                    <p><strong>Property:</strong> {propertyName}</p>
+                    <p><strong>Address:</strong> {propertyAddress}</p>
+                    <p><strong>Units:</strong> {assumptions.unitCount}</p>
+                    <p><strong>Purchase Price:</strong> {formatCurrency(assumptions.purchasePrice)}</p>
+                    <p><strong>Total Rehab:</strong> {formatCurrency(metrics.totalRehab)}</p>
+                    <p><strong>ARV:</strong> {formatCurrency(metrics.arv)}</p>
+                    <p><strong>Cash Flow:</strong> {formatCurrency(metrics.netCashFlow)}</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    onClick={() => setShowImportModal(false)}
+                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={importToProperties}
+                    disabled={isImporting}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center space-x-2"
+                  >
+                    {isImporting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Importing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4" />
+                        <span>Import Property</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
