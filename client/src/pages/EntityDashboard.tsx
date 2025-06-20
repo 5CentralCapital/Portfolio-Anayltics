@@ -40,6 +40,26 @@ interface Property {
   annualizedReturn: string;
 }
 
+interface EntityMember {
+  id: number;
+  userId: number;
+  name: string;
+  email: string;
+  role: 'owner' | 'manager' | 'member';
+  equityPercentage: number;
+  joinedAt: string;
+}
+
+interface ComplianceItem {
+  id: number;
+  complianceType: string;
+  status: 'pending' | 'completed' | 'overdue' | 'not_required';
+  dueDate?: string;
+  completedDate?: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+}
+
 interface Milestone {
   id: number;
   title: string;
@@ -137,12 +157,49 @@ export default function EntityDashboard() {
   }, {} as Record<string, Property[]>);
 
   // Active tabs for each entity
-  const [activeTabs, setActiveTabs] = useState<Record<string, 'overview' | 'owner' | 'financials' | 'members' | 'compliance' | 'properties'>>(
+  const [activeTabs, setActiveTabs] = useState<Record<string, 'overview' | 'financials' | 'members' | 'compliance' | 'properties'>>(
     entitiesList.reduce((acc, entity) => {
       acc[entity] = 'overview';
       return acc;
-    }, {} as Record<string, 'overview' | 'owner' | 'financials' | 'members' | 'compliance' | 'properties'>)
+    }, {} as Record<string, 'overview' | 'financials' | 'members' | 'compliance' | 'properties'>)
   );
+
+  // Placeholder entity members data
+  const entityMembers: Record<string, EntityMember[]> = {
+    '5Central Capital LLC': [
+      { id: 1, userId: 1, name: 'John Smith', email: 'john@example.com', role: 'owner', equityPercentage: 75, joinedAt: '2023-01-15' },
+      { id: 2, userId: 2, name: 'Sarah Johnson', email: 'sarah@example.com', role: 'manager', equityPercentage: 20, joinedAt: '2023-06-20' },
+      { id: 3, userId: 3, name: 'Mike Davis', email: 'mike@example.com', role: 'member', equityPercentage: 5, joinedAt: '2024-02-10' }
+    ],
+    'Harmony Holdings LLC': [
+      { id: 4, userId: 1, name: 'John Smith', email: 'john@example.com', role: 'owner', equityPercentage: 60, joinedAt: '2023-03-22' },
+      { id: 5, userId: 4, name: 'Lisa Wong', email: 'lisa@example.com', role: 'member', equityPercentage: 40, joinedAt: '2023-07-15' }
+    ],
+    'Crystal Properties LLC': [
+      { id: 6, userId: 2, name: 'Sarah Johnson', email: 'sarah@example.com', role: 'owner', equityPercentage: 80, joinedAt: '2023-05-10' },
+      { id: 7, userId: 5, name: 'Tom Wilson', email: 'tom@example.com', role: 'member', equityPercentage: 20, joinedAt: '2023-11-05' }
+    ]
+  };
+
+  // Placeholder compliance data
+  const entityCompliance: Record<string, ComplianceItem[]> = {
+    '5Central Capital LLC': [
+      { id: 1, complianceType: 'Annual Tax Filing', status: 'completed', dueDate: '2025-03-15', completedDate: '2025-02-28', description: 'Federal and state tax returns filed', priority: 'high' },
+      { id: 2, complianceType: 'Operating Agreement Update', status: 'pending', dueDate: '2025-06-30', description: 'Annual review and update of operating agreement', priority: 'medium' },
+      { id: 3, complianceType: 'State Registration Renewal', status: 'overdue', dueDate: '2025-01-31', description: 'Annual state business registration renewal', priority: 'critical' },
+      { id: 4, complianceType: 'Insurance Policy Review', status: 'pending', dueDate: '2025-08-15', description: 'Annual review of liability and property insurance', priority: 'medium' }
+    ],
+    'Harmony Holdings LLC': [
+      { id: 5, complianceType: 'Annual Tax Filing', status: 'pending', dueDate: '2025-03-15', description: 'Federal and state tax returns', priority: 'high' },
+      { id: 6, complianceType: 'Member Meeting Minutes', status: 'completed', dueDate: '2025-01-15', completedDate: '2025-01-10', description: 'Annual member meeting documentation', priority: 'low' },
+      { id: 7, complianceType: 'Financial Audit', status: 'pending', dueDate: '2025-04-30', description: 'Annual financial audit by CPA', priority: 'high' }
+    ],
+    'Crystal Properties LLC': [
+      { id: 8, complianceType: 'Annual Tax Filing', status: 'pending', dueDate: '2025-03-15', description: 'Federal and state tax returns', priority: 'high' },
+      { id: 9, complianceType: 'Property Management Agreement', status: 'completed', dueDate: '2025-01-01', completedDate: '2024-12-15', description: 'Annual property management contract renewal', priority: 'medium' },
+      { id: 10, complianceType: 'Entity Registration', status: 'pending', dueDate: '2025-07-20', description: 'State entity registration renewal', priority: 'medium' }
+    ]
+  };
 
   // State for editable components
   const [milestones, setMilestones] = useState<Milestone[]>([
@@ -490,9 +547,8 @@ export default function EntityDashboard() {
                 <nav className="flex space-x-8 px-6">
                   {[
                     { id: 'overview', label: 'Overview', icon: PieChart },
-                    { id: 'owner', label: 'Owner', icon: Users },
                     { id: 'financials', label: 'Financials', icon: DollarSign },
-                    { id: 'members', label: 'Members', icon: Users },
+                    { id: 'members', label: 'Owners & Members', icon: Users },
                     { id: 'compliance', label: 'Compliance', icon: FileText },
                     { id: 'properties', label: 'Properties', icon: Building }
                   ].map((tab) => (
@@ -649,13 +705,230 @@ export default function EntityDashboard() {
                   </div>
                 )}
 
-                {(activeTabs[entityName] === 'owner' || activeTabs[entityName] === 'financials' || 
-                  activeTabs[entityName] === 'members' || activeTabs[entityName] === 'compliance') && (
-                  <div className="text-center py-12">
-                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">
-                      {activeTabs[entityName].charAt(0).toUpperCase() + activeTabs[entityName].slice(1)} information will be available here
-                    </p>
+                {activeTabs[entityName] === 'financials' && (
+                  <div className="space-y-6">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Financial Summary</h4>
+                    
+                    {/* Revenue & Income Statement */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+                        <h5 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Income Statement</h5>
+                        <div className="space-y-3">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Gross Rental Income</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">
+                              {formatCurrency(entityMetrics.totalCashFlow * 12)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Total Acquisition Cost</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">
+                              {formatCurrency(entityProperties.reduce((sum, prop) => sum + parseFloat(prop.acquisitionPrice), 0))}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Total Rehab Costs</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">
+                              {formatCurrency(entityProperties.reduce((sum, prop) => sum + parseFloat(prop.rehabCosts), 0))}
+                            </span>
+                          </div>
+                          <div className="border-t border-gray-300 dark:border-gray-600 pt-2">
+                            <div className="flex justify-between">
+                              <span className="font-semibold text-gray-900 dark:text-white">Net Operating Income</span>
+                              <span className="font-bold text-green-600">
+                                {formatCurrency(entityMetrics.totalProfits)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+                        <h5 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Asset Valuation</h5>
+                        <div className="space-y-3">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Current Portfolio Value</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">
+                              {formatCurrency(entityMetrics.totalAUM)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Total Investment</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">
+                              {formatCurrency(entityProperties.reduce((sum, prop) => sum + parseFloat(prop.initialCapitalRequired), 0))}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Unrealized Gains</span>
+                            <span className="font-semibold text-green-600">
+                              {formatCurrency(entityMetrics.totalAUM - entityProperties.reduce((sum, prop) => sum + parseFloat(prop.initialCapitalRequired), 0))}
+                            </span>
+                          </div>
+                          <div className="border-t border-gray-300 dark:border-gray-600 pt-2">
+                            <div className="flex justify-between">
+                              <span className="font-semibold text-gray-900 dark:text-white">Equity Multiple</span>
+                              <span className="font-bold text-blue-600">
+                                {entityEquityMultiple.toFixed(2)}x
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Property Performance Breakdown */}
+                    <div className="space-y-4">
+                      <h5 className="text-md font-semibold text-gray-900 dark:text-white">Property-Level Performance</h5>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                          <thead className="bg-gray-50 dark:bg-gray-800">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Property</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Investment</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cash Flow</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Profits</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">CoC Return</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                            {entityProperties.map((property) => (
+                              <tr key={property.id}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                  {property.address}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                  {formatCurrency(property.initialCapitalRequired)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                  {formatCurrency(property.cashFlow)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
+                                  {formatCurrency(property.totalProfits)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
+                                  {formatPercentage(property.cashOnCashReturn)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTabs[entityName] === 'members' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Owners & Members</h4>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {entityMembers[entityName]?.length || 0} members
+                      </span>
+                    </div>
+                    
+                    <div className="grid gap-4">
+                      {entityMembers[entityName]?.map((member) => (
+                        <div key={member.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <h5 className="font-semibold text-gray-900 dark:text-white">{member.name}</h5>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{member.email}</p>
+                            </div>
+                            <div className="text-right">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                member.role === 'owner' 
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                  : member.role === 'manager'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                              }`}>
+                                {member.role}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="text-gray-600 dark:text-gray-400">Equity Percentage</p>
+                              <p className="font-semibold text-gray-900 dark:text-white">{member.equityPercentage}%</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600 dark:text-gray-400">Joined</p>
+                              <p className="font-semibold text-gray-900 dark:text-white">
+                                {new Date(member.joinedAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeTabs[entityName] === 'compliance' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Compliance Management</h4>
+                      <div className="flex gap-2">
+                        {['overdue', 'pending', 'completed'].map((status) => {
+                          const count = entityCompliance[entityName]?.filter(item => item.status === status).length || 0;
+                          const colorClass = status === 'overdue' ? 'text-red-600' : status === 'pending' ? 'text-yellow-600' : 'text-green-600';
+                          return (
+                            <span key={status} className={`text-sm ${colorClass}`}>
+                              {count} {status}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    
+                    <div className="grid gap-4">
+                      {entityCompliance[entityName]?.map((item) => (
+                        <div key={item.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <h5 className="font-semibold text-gray-900 dark:text-white">{item.complianceType}</h5>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                item.status === 'completed' 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                  : item.status === 'overdue'
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                              }`}>
+                                {item.status}
+                              </span>
+                              <span className={`px-2 py-1 rounded text-xs ${
+                                item.priority === 'critical' 
+                                  ? 'bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-200'
+                                  : item.priority === 'high'
+                                  ? 'bg-orange-50 text-orange-700 dark:bg-orange-900 dark:text-orange-200'
+                                  : item.priority === 'medium'
+                                  ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200'
+                                  : 'bg-gray-50 text-gray-700 dark:bg-gray-900 dark:text-gray-200'
+                              }`}>
+                                {item.priority} priority
+                              </span>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="text-gray-600 dark:text-gray-400">Due Date</p>
+                              <p className="font-semibold text-gray-900 dark:text-white">
+                                {item.dueDate ? new Date(item.dueDate).toLocaleDateString() : 'Not set'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600 dark:text-gray-400">Completed</p>
+                              <p className="font-semibold text-gray-900 dark:text-white">
+                                {item.completedDate ? new Date(item.completedDate).toLocaleDateString() : 'Not completed'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

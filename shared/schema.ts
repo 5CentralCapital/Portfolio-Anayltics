@@ -220,6 +220,31 @@ export const dealComps = pgTable("deal_comps", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Entity memberships table for user access control
+export const entityMemberships = pgTable("entity_memberships", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  entityName: text("entity_name").notNull(),
+  equityPercentage: decimal("equity_percentage", { precision: 5, scale: 2 }).default("0.00"),
+  role: text("role", { enum: ["owner", "manager", "member"] }).default("member"),
+  joinedAt: timestamp("joined_at").defaultNow(),
+});
+
+// Entity compliance table
+export const entityCompliance = pgTable("entity_compliance", {
+  id: serial("id").primaryKey(),
+  entityName: text("entity_name").notNull(),
+  complianceType: text("compliance_type").notNull(), // tax_filing, annual_report, operating_agreement, etc.
+  status: text("status", { enum: ["pending", "completed", "overdue", "not_required"] }).default("pending"),
+  dueDate: timestamp("due_date"),
+  completedDate: timestamp("completed_date"),
+  description: text("description"),
+  filingEntity: text("filing_entity"), // Who is responsible for filing
+  priority: text("priority", { enum: ["low", "medium", "high", "critical"] }).default("medium"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -293,6 +318,17 @@ export const insertDealCompsSchema = createInsertSchema(dealComps).omit({
   createdAt: true,
 });
 
+export const insertEntityMembershipSchema = createInsertSchema(entityMemberships).omit({
+  id: true,
+  joinedAt: true,
+});
+
+export const insertEntityComplianceSchema = createInsertSchema(entityCompliance).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -302,6 +338,10 @@ export type CompanyMetric = typeof companyMetrics.$inferSelect;
 export type InsertCompanyMetric = z.infer<typeof insertCompanyMetricSchema>;
 export type InvestorLead = typeof investorLeads.$inferSelect;
 export type InsertInvestorLead = z.infer<typeof insertInvestorLeadSchema>;
+export type EntityMembership = typeof entityMemberships.$inferSelect;
+export type InsertEntityMembership = z.infer<typeof insertEntityMembershipSchema>;
+export type EntityCompliance = typeof entityCompliance.$inferSelect;
+export type InsertEntityCompliance = z.infer<typeof insertEntityComplianceSchema>;
 
 // Deal analysis types
 export type Deal = typeof deals.$inferSelect;
