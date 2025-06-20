@@ -72,7 +72,7 @@ const AdminDashboard: React.FC = () => {
   const [investorLeads, setInvestorLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [activeTab, setActiveTab] = useState('overview');
   const [refreshing, setRefreshing] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -272,11 +272,39 @@ const AdminDashboard: React.FC = () => {
         </div>
       </header>
 
-
+      {/* Navigation Tabs */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex space-x-8">
+            {[
+              { id: 'overview', label: 'Overview', icon: BarChart3 },
+              { id: 'financial', label: 'Financial', icon: DollarSign },
+              { id: 'financial-dashboard', label: 'Financial Dashboard', icon: Activity },
+              { id: 'deal-analyzer', label: 'Deal Analyzer', icon: Calculator },
+              { id: 'properties', label: 'Properties', icon: Building },
+              { id: 'leads', label: 'Investor Leads', icon: Users },
+              { id: 'reports', label: 'Reports', icon: PieChart },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <tab.icon className="h-4 w-4" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {dashboardData && (
+        {activeTab === 'overview' && dashboardData && (
           <div className="space-y-8">
             {/* Key Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -369,6 +397,85 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
         )}
+
+        {activeTab === 'financial' && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Financial Analytics</h2>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleExport('metrics', 'csv')}
+                  className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Export</span>
+                </button>
+              </div>
+            </div>
+
+            {dashboardData && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <MetricCard
+                  title="Revenue"
+                  value={formatCurrency(dashboardData.financial.revenue)}
+                  icon={DollarSign}
+                  trend={parseFloat(dashboardData.financial.revenueGrowth)}
+                  color="green"
+                />
+                <MetricCard
+                  title="Expenses"
+                  value={formatCurrency(dashboardData.financial.expenses)}
+                  icon={TrendingUp}
+                  color="red"
+                />
+                <MetricCard
+                  title="Profit Margin"
+                  value={formatPercentage(dashboardData.financial.profitMargin)}
+                  icon={Target}
+                  color="blue"
+                />
+              </div>
+            )}
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Revenue vs Expenses</h3>
+                <div className="flex space-x-2">
+                  <button className="px-3 py-1 text-sm bg-gray-100 rounded-lg">Line</button>
+                  <button className="px-3 py-1 text-sm bg-primary text-white rounded-lg">Bar</button>
+                </div>
+              </div>
+              <RevenueChart data={revenueData} type="bar" height={400} />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'properties' && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Property Portfolio</h2>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleExport('properties', 'csv')}
+                  className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Export</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">Cash-on-Cash Returns</h3>
+                <PropertyPerformanceChart data={propertyData} type="returns" height={350} />
+              </div>
+
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">Equity Created</h3>
+                <PropertyPerformanceChart data={propertyData} type="equity" height={350} />
+              </div>
+            </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">Performance Scatter Plot</h3>
