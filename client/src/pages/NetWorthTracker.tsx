@@ -278,17 +278,17 @@ const NetWorthTracker: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-6 space-y-6 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Net Worth Tracker</h1>
-          <p className="text-gray-600">Monitor asset allocation and real estate portfolio performance</p>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Net Worth Dashboard</h1>
+          <p className="text-lg text-gray-600">Real-time wealth tracking and asset allocation analysis</p>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
           {/* View Mode Toggle */}
-          <div className="flex bg-white rounded-lg border border-gray-200 p-1">
+          <div className="flex bg-white rounded-xl shadow-md border border-gray-100 p-1">
             {[
               { id: 'current', label: 'Current', icon: Target },
               { id: 'historical', label: 'Historical', icon: BarChart3 },
@@ -297,13 +297,13 @@ const NetWorthTracker: React.FC = () => {
               <button
                 key={id}
                 onClick={() => setViewMode(id as any)}
-                className={`flex items-center px-3 py-2 rounded text-sm font-medium transition-colors ${
+                className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   viewMode === id
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <Icon className="h-4 w-4 mr-1" />
+                <Icon className="h-4 w-4 mr-2" />
                 {label}
               </button>
             ))}
@@ -311,7 +311,7 @@ const NetWorthTracker: React.FC = () => {
 
           <button
             onClick={exportData}
-            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-md"
           >
             <Download className="h-4 w-4 mr-2" />
             Export
@@ -319,7 +319,7 @@ const NetWorthTracker: React.FC = () => {
           
           <button
             onClick={printReport}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md"
           >
             <Printer className="h-4 w-4 mr-2" />
             Print
@@ -327,288 +327,375 @@ const NetWorthTracker: React.FC = () => {
         </div>
       </div>
 
-      {/* Top-Level KPI Tile */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <DollarSign className="h-8 w-8 text-green-600 mr-2" />
-              <h3 className="text-lg font-semibold text-gray-900">Total Net Worth</h3>
+      {/* Main Net Worth Summary Card */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 rounded-2xl shadow-2xl p-8 text-white">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Total Net Worth</h2>
+            <p className="text-indigo-100">Updated in real-time</p>
+          </div>
+          <div className="bg-white bg-opacity-20 rounded-full p-4">
+            <DollarSign className="h-12 w-12" />
+          </div>
+        </div>
+        <div className="text-6xl font-bold mb-4">{formatCurrency(netWorthData.totalNetWorth)}</div>
+        <div className="grid grid-cols-3 gap-6 mt-8">
+          <div className="bg-white bg-opacity-15 rounded-xl p-4">
+            <div className="flex items-center mb-2">
+              <Building className="h-6 w-6 mr-2 text-blue-200" />
+              <span className="text-blue-100 text-sm font-medium">Real Estate Equity</span>
             </div>
-            <p className="text-3xl font-bold text-green-600">{formatCurrency(netWorthData.totalNetWorth)}</p>
-            <p className="text-sm text-gray-500 mt-1">Auto-calculated</p>
+            <div className="text-2xl font-bold">{formatCurrency(netWorthData.realEstateEquity)}</div>
+            <div className="text-blue-100 text-sm mt-1">
+              {calculatePercentage(netWorthData.realEstateEquity, netWorthData.totalNetWorth).toFixed(1)}% of total
+            </div>
           </div>
           
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Building className="h-8 w-8 text-blue-600 mr-2" />
-              <h3 className="text-lg font-semibold text-gray-900">Real Estate Equity</h3>
+          <div className="bg-white bg-opacity-15 rounded-xl p-4">
+            <div className="flex items-center mb-2">
+              <TrendingUp className="h-6 w-6 mr-2 text-green-200" />
+              <span className="text-green-100 text-sm font-medium">Liquid Assets</span>
             </div>
-            <p className="text-3xl font-bold text-blue-600">{formatCurrency(netWorthData.realEstateEquity)}</p>
-            <p className="text-sm text-gray-500 mt-1">Value - Debt</p>
+            <div className="text-2xl font-bold">{formatCurrency(netWorthData.liquidAssets)}</div>
+            <div className="text-green-100 text-sm mt-1">
+              {calculatePercentage(netWorthData.liquidAssets, netWorthData.totalNetWorth).toFixed(1)}% of total
+            </div>
           </div>
           
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Wallet className="h-8 w-8 text-purple-600 mr-2" />
-              <h3 className="text-lg font-semibold text-gray-900">Liquid Assets</h3>
+          <div className="bg-white bg-opacity-15 rounded-xl p-4">
+            <div className="flex items-center mb-2">
+              <Wallet className="h-6 w-6 mr-2 text-purple-200" />
+              <span className="text-purple-100 text-sm font-medium">Monthly Cash Flow</span>
             </div>
-            <p className="text-3xl font-bold text-purple-600">{formatCurrency(netWorthData.liquidAssets)}</p>
-            <p className="text-sm text-gray-500 mt-1">Cash + Stocks</p>
-          </div>
-          
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <TrendingUp className="h-8 w-8 text-orange-600 mr-2" />
-              <h3 className="text-lg font-semibold text-gray-900">Monthly Cash Flow</h3>
-            </div>
-            <div className="text-3xl font-bold text-orange-600">
+            <div className="text-2xl font-bold">
               <EditableField
                 value={netWorthData.monthlyCashFlow}
                 onSave={(value) => setNetWorthData(prev => ({ ...prev, monthlyCashFlow: value }))}
-                className="justify-center"
+                className="text-white"
               />
             </div>
-            <p className="text-sm text-gray-500 mt-1">
+            <div className="text-purple-100 text-sm mt-1">
               {formatCurrency(netWorthData.monthlyCashFlow * 12)} annually
-            </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Asset Allocation Module */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Real Estate */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
+      {/* Asset Allocation & Portfolio Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Asset Allocation Chart */}
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-xl p-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-6">Asset Allocation</h3>
+          
+          {/* Circular Progress Indicators */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="text-center">
+              <div className="relative w-20 h-20 mx-auto mb-3">
+                <div className="w-20 h-20 rounded-full border-8 border-gray-200"></div>
+                <div 
+                  className="absolute top-0 left-0 w-20 h-20 rounded-full border-8 border-blue-500 border-t-transparent transform -rotate-90"
+                  style={{
+                    background: `conic-gradient(#3b82f6 ${calculatePercentage(assetAllocation.realEstate.equity, netWorthData.totalNetWorth) * 3.6}deg, transparent 0deg)`
+                  }}
+                ></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-sm font-bold text-blue-600">
+                    {calculatePercentage(assetAllocation.realEstate.equity, netWorthData.totalNetWorth).toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+              <div className="text-sm font-medium text-gray-700">Real Estate</div>
+              <div className="text-lg font-bold text-blue-600">{formatCurrency(assetAllocation.realEstate.equity)}</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="relative w-20 h-20 mx-auto mb-3">
+                <div className="w-20 h-20 rounded-full border-8 border-gray-200"></div>
+                <div 
+                  className="absolute top-0 left-0 w-20 h-20 rounded-full border-8 border-green-500 border-t-transparent transform -rotate-90"
+                  style={{
+                    background: `conic-gradient(#10b981 ${calculatePercentage(assetAllocation.stockPortfolio.totalValue, netWorthData.totalNetWorth) * 3.6}deg, transparent 0deg)`
+                  }}
+                ></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-sm font-bold text-green-600">
+                    {calculatePercentage(assetAllocation.stockPortfolio.totalValue, netWorthData.totalNetWorth).toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+              <div className="text-sm font-medium text-gray-700">Stocks</div>
+              <div className="text-lg font-bold text-green-600">{formatCurrency(assetAllocation.stockPortfolio.totalValue)}</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="relative w-20 h-20 mx-auto mb-3">
+                <div className="w-20 h-20 rounded-full border-8 border-gray-200"></div>
+                <div 
+                  className="absolute top-0 left-0 w-20 h-20 rounded-full border-8 border-purple-500 border-t-transparent transform -rotate-90"
+                  style={{
+                    background: `conic-gradient(#8b5cf6 ${calculatePercentage(assetAllocation.cashEquivalents.totalValue, netWorthData.totalNetWorth) * 3.6}deg, transparent 0deg)`
+                  }}
+                ></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-sm font-bold text-purple-600">
+                    {calculatePercentage(assetAllocation.cashEquivalents.totalValue, netWorthData.totalNetWorth).toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+              <div className="text-sm font-medium text-gray-700">Cash</div>
+              <div className="text-lg font-bold text-purple-600">{formatCurrency(assetAllocation.cashEquivalents.totalValue)}</div>
+            </div>
+          </div>
+          
+          {/* Linear Progress Bars */}
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-gray-700">Real Estate Portfolio</span>
+                <span className="text-sm text-gray-500">{assetAllocation.realEstate.propertyCount} properties</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${calculatePercentage(assetAllocation.realEstate.equity, netWorthData.totalNetWorth)}%` }}
+                ></div>
+              </div>
+            </div>
+            
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-gray-700">Stock Portfolio</span>
+                <span className="text-sm text-gray-500">{assetAllocation.stockPortfolio.holdingsCount} holdings</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${calculatePercentage(assetAllocation.stockPortfolio.totalValue, netWorthData.totalNetWorth)}%` }}
+                ></div>
+              </div>
+            </div>
+            
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-gray-700">Cash & Equivalents</span>
+                <span className="text-sm text-gray-500">{assetAllocation.cashEquivalents.accountCount} accounts</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${calculatePercentage(assetAllocation.cashEquivalents.totalValue, netWorthData.totalNetWorth)}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Real Estate Details */}
+        <div className="bg-white rounded-2xl shadow-xl p-6">
           <div className="flex items-center mb-4">
-            <Building className="h-6 w-6 text-blue-600 mr-2" />
-            <h3 className="text-lg font-semibold text-gray-900">Real Estate</h3>
+            <div className="bg-blue-100 rounded-lg p-2 mr-3">
+              <Building className="h-6 w-6 text-blue-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Real Estate</h3>
           </div>
           
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Value:</span>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <div className="text-xs text-gray-500 mb-1">Total Value</div>
               <EditableField
                 value={assetAllocation.realEstate.value}
                 onSave={(value) => updateAssetValue('realEstate', 'value', value)}
+                className="text-lg font-bold"
               />
             </div>
             
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Debt:</span>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <div className="text-xs text-gray-500 mb-1">Total Debt</div>
               <EditableField
                 value={assetAllocation.realEstate.debt}
                 onSave={(value) => updateAssetValue('realEstate', 'debt', value)}
+                className="text-lg font-bold"
               />
             </div>
             
-            <div className="flex justify-between items-center border-t pt-2">
-              <span className="font-medium text-gray-900">Equity:</span>
-              <span className="font-bold text-blue-600">
+            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+              <div className="text-xs text-blue-600 mb-1">Net Equity</div>
+              <div className="text-2xl font-bold text-blue-600">
                 {formatCurrency(assetAllocation.realEstate.equity)}
-              </span>
-            </div>
-            
-            <div className="bg-gray-100 rounded-lg p-3">
-              <div className="flex justify-between text-sm">
-                <span>% of Net Worth</span>
-                <span className="font-medium">
-                  {calculatePercentage(assetAllocation.realEstate.equity, netWorthData.totalNetWorth).toFixed(1)}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full"
-                  style={{ 
-                    width: `${calculatePercentage(assetAllocation.realEstate.equity, netWorthData.totalNetWorth)}%` 
-                  }}
-                ></div>
-              </div>
-              <div className="text-sm text-gray-600 mt-2">
-                {assetAllocation.realEstate.propertyCount} Properties
               </div>
             </div>
           </div>
         </div>
 
-        {/* Stock Portfolio */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        {/* Investment Portfolio */}
+        <div className="bg-white rounded-2xl shadow-xl p-6">
           <div className="flex items-center mb-4">
-            <TrendingUp className="h-6 w-6 text-green-600 mr-2" />
-            <h3 className="text-lg font-semibold text-gray-900">Stock Portfolio</h3>
+            <div className="bg-green-100 rounded-lg p-2 mr-3">
+              <TrendingUp className="h-6 w-6 text-green-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Investments</h3>
           </div>
           
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Total Value:</span>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <div className="text-xs text-gray-500 mb-1">Stock Portfolio</div>
               <EditableField
                 value={assetAllocation.stockPortfolio.totalValue}
                 onSave={(value) => updateAssetValue('stockPortfolio', 'totalValue', value)}
+                className="text-lg font-bold"
               />
             </div>
             
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Unrealized Gain/Loss:</span>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <div className="text-xs text-gray-500 mb-1">Unrealized Gain/Loss</div>
               <EditableField
                 value={assetAllocation.stockPortfolio.unrealizedGainLoss}
                 onSave={(value) => updateAssetValue('stockPortfolio', 'unrealizedGainLoss', value)}
-                className={assetAllocation.stockPortfolio.unrealizedGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}
+                className={`text-lg font-bold ${assetAllocation.stockPortfolio.unrealizedGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}
               />
             </div>
             
-            <div className="bg-gray-100 rounded-lg p-3">
-              <div className="flex justify-between text-sm">
-                <span>% of Net Worth</span>
-                <span className="font-medium">
-                  {calculatePercentage(assetAllocation.stockPortfolio.totalValue, netWorthData.totalNetWorth).toFixed(1)}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div 
-                  className="bg-green-600 h-2 rounded-full"
-                  style={{ 
-                    width: `${calculatePercentage(assetAllocation.stockPortfolio.totalValue, netWorthData.totalNetWorth)}%` 
-                  }}
-                ></div>
-              </div>
-              <div className="text-sm text-gray-600 mt-2">
-                {assetAllocation.stockPortfolio.holdingsCount} Holdings
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Cash & Equivalents */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center mb-4">
-            <Wallet className="h-6 w-6 text-purple-600 mr-2" />
-            <h3 className="text-lg font-semibold text-gray-900">Cash & Equivalents</h3>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Total Value:</span>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <div className="text-xs text-gray-500 mb-1">Cash & Equivalents</div>
               <EditableField
                 value={assetAllocation.cashEquivalents.totalValue}
                 onSave={(value) => updateAssetValue('cashEquivalents', 'totalValue', value)}
+                className="text-lg font-bold"
               />
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Avg Interest Rate:</span>
-              <EditableField
-                value={assetAllocation.cashEquivalents.avgInterestRate}
-                onSave={(value) => updateAssetValue('cashEquivalents', 'avgInterestRate', value)}
-                format="percentage"
-              />
-            </div>
-            
-            <div className="bg-gray-100 rounded-lg p-3">
-              <div className="flex justify-between text-sm">
-                <span>% of Net Worth</span>
-                <span className="font-medium">
-                  {calculatePercentage(assetAllocation.cashEquivalents.totalValue, netWorthData.totalNetWorth).toFixed(1)}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div 
-                  className="bg-purple-600 h-2 rounded-full"
-                  style={{ 
-                    width: `${calculatePercentage(assetAllocation.cashEquivalents.totalValue, netWorthData.totalNetWorth)}%` 
-                  }}
-                ></div>
-              </div>
-              <div className="text-sm text-gray-600 mt-2">
-                {assetAllocation.cashEquivalents.accountCount} Accounts
+              <div className="text-xs text-gray-500 mt-2">
+                Avg Rate: 
+                <EditableField
+                  value={assetAllocation.cashEquivalents.avgInterestRate}
+                  onSave={(value) => updateAssetValue('cashEquivalents', 'avgInterestRate', value)}
+                  format="percentage"
+                  className="ml-1 text-xs"
+                />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Real Estate by Entity Table */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      {/* Real Estate Holdings by Entity */}
+      <div className="bg-white rounded-2xl shadow-xl p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-gray-900">Real Estate by Entity</h3>
+          <div className="flex items-center">
+            <div className="bg-indigo-100 rounded-lg p-2 mr-3">
+              <Building className="h-6 w-6 text-indigo-600" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Real Estate Holdings</h3>
+              <p className="text-sm text-gray-600">Portfolio breakdown by entity</p>
+            </div>
+          </div>
           <button
             onClick={addEntity}
-            className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md"
           >
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus className="h-4 w-4 mr-2" />
             Add Entity
           </button>
         </div>
         
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Entity Name</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Total Value</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Debt</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Equity</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Properties</th>
-                <th className="text-center py-3 px-4 font-semibold text-gray-900">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entities.map((entity) => (
-                <tr key={entity.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <span className="font-medium text-gray-900">{entity.name}</span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <EditableField
-                      value={entity.totalValue}
-                      onSave={(value) => updateEntity(entity.id, 'totalValue', value)}
-                    />
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <EditableField
-                      value={entity.debt}
-                      onSave={(value) => updateEntity(entity.id, 'debt', value)}
-                    />
-                  </td>
-                  <td className="py-3 px-4 text-right font-semibold text-blue-600">
+        {/* Entity Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {entities.map((entity) => (
+            <div key={entity.id} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 border border-gray-200 hover:shadow-lg transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-bold text-gray-900">{entity.name}</h4>
+                <button
+                  onClick={() => removeEntity(entity.id)}
+                  className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white rounded-lg p-3">
+                  <div className="text-xs text-gray-500 mb-1">Total Value</div>
+                  <EditableField
+                    value={entity.totalValue}
+                    onSave={(value) => updateEntity(entity.id, 'totalValue', value)}
+                    className="text-sm font-bold"
+                  />
+                </div>
+                
+                <div className="bg-white rounded-lg p-3">
+                  <div className="text-xs text-gray-500 mb-1">Debt</div>
+                  <EditableField
+                    value={entity.debt}
+                    onSave={(value) => updateEntity(entity.id, 'debt', value)}
+                    className="text-sm font-bold"
+                  />
+                </div>
+                
+                <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                  <div className="text-xs text-blue-600 mb-1">Net Equity</div>
+                  <div className="text-lg font-bold text-blue-600">
                     {formatCurrency(entity.totalValue - entity.debt)}
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <EditableField
-                      value={entity.propertyCount}
-                      onSave={(value) => updateEntity(entity.id, 'propertyCount', value)}
-                      format="number"
-                    />
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <button
-                      onClick={() => removeEntity(entity.id)}
-                      className="p-1 text-red-600 hover:text-red-700"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t-2 border-gray-300 bg-gray-50">
-                <td className="py-3 px-4 font-bold text-gray-900">Total</td>
-                <td className="py-3 px-4 text-right font-bold text-gray-900">
-                  {formatCurrency(entities.reduce((sum, e) => sum + e.totalValue, 0))}
-                </td>
-                <td className="py-3 px-4 text-right font-bold text-gray-900">
-                  {formatCurrency(entities.reduce((sum, e) => sum + e.debt, 0))}
-                </td>
-                <td className="py-3 px-4 text-right font-bold text-blue-600">
-                  {formatCurrency(entities.reduce((sum, e) => sum + (e.totalValue - e.debt), 0))}
-                </td>
-                <td className="py-3 px-4 text-right font-bold text-gray-900">
-                  {entities.reduce((sum, e) => sum + e.propertyCount, 0)}
-                </td>
-                <td className="py-3 px-4"></td>
-              </tr>
-            </tfoot>
-          </table>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg p-3">
+                  <div className="text-xs text-gray-500 mb-1">Properties</div>
+                  <EditableField
+                    value={entity.propertyCount}
+                    onSave={(value) => updateEntity(entity.id, 'propertyCount', value)}
+                    format="number"
+                    className="text-sm font-bold"
+                  />
+                </div>
+              </div>
+              
+              {/* Entity Performance Bar */}
+              <div className="mt-4">
+                <div className="flex justify-between text-xs text-gray-600 mb-1">
+                  <span>Portfolio Share</span>
+                  <span>{calculatePercentage(entity.totalValue - entity.debt, entities.reduce((sum, e) => sum + (e.totalValue - e.debt), 0)).toFixed(1)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                    style={{ 
+                      width: `${calculatePercentage(entity.totalValue - entity.debt, entities.reduce((sum, e) => sum + (e.totalValue - e.debt), 0))}%` 
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Summary Totals */}
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white">
+          <h4 className="text-lg font-bold mb-4">Portfolio Summary</h4>
+          <div className="grid grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold">
+                {formatCurrency(entities.reduce((sum, e) => sum + e.totalValue, 0))}
+              </div>
+              <div className="text-indigo-100 text-sm">Total Value</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">
+                {formatCurrency(entities.reduce((sum, e) => sum + e.debt, 0))}
+              </div>
+              <div className="text-indigo-100 text-sm">Total Debt</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">
+                {formatCurrency(entities.reduce((sum, e) => sum + (e.totalValue - e.debt), 0))}
+              </div>
+              <div className="text-indigo-100 text-sm">Net Equity</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">
+                {entities.reduce((sum, e) => sum + e.propertyCount, 0)}
+              </div>
+              <div className="text-indigo-100 text-sm">Properties</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
