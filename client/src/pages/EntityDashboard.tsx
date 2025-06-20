@@ -471,25 +471,25 @@ export default function EntityDashboard() {
         </div>
 
         {/* Right Column - To-Do List */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 card-hover slide-in-right">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">To-Do List</h3>
             <button 
               onClick={addTodo}
-              className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded"
+              className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded transition-colors-smooth hover-scale btn-bounce"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 icon-bounce" />
             </button>
           </div>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {todos.map((todo) => (
-              <div key={todo.id} className="flex items-center gap-3 p-2 border border-gray-200 dark:border-gray-700 rounded">
+              <div key={todo.id} className="flex items-center gap-3 p-2 border border-gray-200 dark:border-gray-700 rounded hover-lift transition-all-smooth">
                 <button
                   onClick={() => updateTodo(todo.id, { completed: !todo.completed })}
-                  className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                  className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors-smooth hover-scale btn-bounce ${
                     todo.completed 
                       ? 'bg-green-500 border-green-500 text-white' 
-                      : 'border-gray-300 dark:border-gray-600'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-green-400'
                   }`}
                 >
                   {todo.completed && <CheckSquare className="w-2 h-2" />}
@@ -512,9 +512,9 @@ export default function EntityDashboard() {
                 </select>
                 <button
                   onClick={() => deleteTodo(todo.id)}
-                  className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded"
+                  className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded transition-colors-smooth hover-scale btn-bounce"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3 h-3 icon-bounce" />
                 </button>
               </div>
             ))}
