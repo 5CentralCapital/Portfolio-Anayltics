@@ -120,19 +120,21 @@ const EditableValue = ({
 };
 
 export default function EntityDashboard() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'owner' | 'financials' | 'members' | 'compliance' | 'properties'>('overview');
-  const [selectedEntity, setSelectedEntity] = useState('5Central Capital LLC');
-  
   // Fetch properties from database
   const { data: allProperties = [], isLoading } = useQuery({
     queryKey: ['/api/properties'],
     enabled: true
   });
   
-  // Filter properties by selected entity
-  const properties: Property[] = Array.isArray(allProperties) 
-    ? allProperties.filter((prop: Property) => prop.entity === selectedEntity)
-    : [];
+  // All properties for collective KPIs
+  const properties: Property[] = Array.isArray(allProperties) ? allProperties : [];
+  
+  // Properties grouped by entity
+  const entitiesList = ['5Central Capital LLC', 'Harmony Holdings LLC', 'Crystal Properties LLC'];
+  const propertiesByEntity = entitiesList.reduce((acc, entity) => {
+    acc[entity] = properties.filter(prop => prop.entity === entity);
+    return acc;
+  }, {} as Record<string, Property[]>);
 
   // State for editable components
   const [milestones, setMilestones] = useState<Milestone[]>([
@@ -166,8 +168,8 @@ export default function EntityDashboard() {
     return `${num.toFixed(1)}%`;
   };
 
-  // Calculate entity-specific metrics
-  const entityMetrics = {
+  // Calculate collective metrics for all entities
+  const collectiveMetrics = {
     totalProperties: properties.length,
     totalUnits: properties.reduce((sum: number, prop: Property) => sum + prop.apartments, 0),
     totalAUM: properties.reduce((sum: number, prop: Property) => {
@@ -185,8 +187,27 @@ export default function EntityDashboard() {
       : 0
   };
 
-  const pricePerUnit = entityMetrics.totalUnits > 0 ? entityMetrics.totalAUM / entityMetrics.totalUnits : 0;
-  const equityMultiple = entityMetrics.totalAUM > 0 ? (entityMetrics.totalAUM + entityMetrics.totalProfits) / entityMetrics.totalAUM : 0;
+  const pricePerUnit = collectiveMetrics.totalUnits > 0 ? collectiveMetrics.totalAUM / collectiveMetrics.totalUnits : 0;
+  const equityMultiple = collectiveMetrics.totalAUM > 0 ? (collectiveMetrics.totalAUM + collectiveMetrics.totalProfits) / collectiveMetrics.totalAUM : 0;
+
+  // Function to calculate metrics for a specific entity
+  const calculateEntityMetrics = (entityProperties: Property[]) => ({
+    totalProperties: entityProperties.length,
+    totalUnits: entityProperties.reduce((sum: number, prop: Property) => sum + prop.apartments, 0),
+    totalAUM: entityProperties.reduce((sum: number, prop: Property) => {
+      const currentValue = prop.status === 'Currently Own' 
+        ? parseFloat(prop.arvAtTimePurchased || prop.acquisitionPrice)
+        : parseFloat(prop.salePrice || '0');
+      return sum + currentValue;
+    }, 0),
+    totalProfits: entityProperties.reduce((sum: number, prop: Property) => sum + parseFloat(prop.totalProfits), 0),
+    totalCashFlow: entityProperties
+      .filter((prop: Property) => prop.status === 'Currently Own')
+      .reduce((sum: number, prop: Property) => sum + parseFloat(prop.cashFlow), 0),
+    avgCoCReturn: entityProperties.length > 0 
+      ? entityProperties.reduce((sum: number, prop: Property) => sum + parseFloat(prop.cashOnCashReturn), 0) / entityProperties.length 
+      : 0
+  });
 
   const addMilestone = () => {
     const newMilestone: Milestone = {
@@ -241,31 +262,20 @@ export default function EntityDashboard() {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-      {/* Entity Selector */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Entity Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Entity-specific performance and management</p>
-        </div>
-        <select
-          value={selectedEntity}
-          onChange={(e) => setSelectedEntity(e.target.value)}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-        >
-          <option value="5Central Capital LLC">5Central Capital LLC</option>
-          <option value="Harmony Holdings LLC">Harmony Holdings LLC</option>
-          <option value="Crystal Properties LLC">Crystal Properties LLC</option>
-        </select>
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Entity Dashboard</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Collective performance and entity management</p>
       </div>
 
-      {/* Top Metrics Bar */}
+      {/* Collective KPIs - Top Metrics Bar */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">AUM</span>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total AUM</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(entityMetrics.totalAUM)}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(collectiveMetrics.totalAUM)}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
@@ -279,17 +289,17 @@ export default function EntityDashboard() {
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
           <div className="flex items-center gap-2 mb-2">
             <Home className="w-5 h-5 text-purple-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Units</span>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Units</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{entityMetrics.totalUnits}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{collectiveMetrics.totalUnits}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
           <div className="flex items-center gap-2 mb-2">
             <Building className="w-5 h-5 text-orange-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Properties</span>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Properties</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{entityMetrics.totalProperties}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{collectiveMetrics.totalProperties}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
@@ -305,11 +315,11 @@ export default function EntityDashboard() {
             <Calendar className="w-5 h-5 text-indigo-600" />
             <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Monthly Cash Flow</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(entityMetrics.totalCashFlow)}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(collectiveMetrics.totalCashFlow)}</p>
         </div>
       </div>
 
-      {/* Dashboard Grid */}
+      {/* Middle Section - Shared Components */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Cash Balance */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
@@ -328,10 +338,10 @@ export default function EntityDashboard() {
           </div>
         </div>
 
-        {/* Milestones */}
+        {/* Upcoming Milestones */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Milestones</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Milestones</h3>
             <button 
               onClick={addMilestone}
               className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded"
@@ -428,122 +438,96 @@ export default function EntityDashboard() {
         </div>
       </div>
 
-      {/* Entity KPIs Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedEntity}</h2>
-          <p className="text-gray-600 dark:text-gray-400">Entity-specific performance metrics and data</p>
-        </div>
+      {/* Entity Sections */}
+      <div className="space-y-8">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Individual Entities</h2>
+        
+        {entitiesList.map((entityName) => {
+          const entityProperties = propertiesByEntity[entityName];
+          const entityMetrics = calculateEntityMetrics(entityProperties);
+          const entityPricePerUnit = entityMetrics.totalUnits > 0 ? entityMetrics.totalAUM / entityMetrics.totalUnits : 0;
+          const entityEquityMultiple = entityMetrics.totalAUM > 0 ? (entityMetrics.totalAUM + entityMetrics.totalProfits) / entityMetrics.totalAUM : 0;
 
-        {/* Tab Navigation */}
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="flex space-x-8 px-6">
-            {[
-              { id: 'overview', label: 'Overview', icon: PieChart },
-              { id: 'owner', label: 'Owner', icon: Users },
-              { id: 'financials', label: 'Financials', icon: DollarSign },
-              { id: 'members', label: 'Members', icon: Users },
-              { id: 'compliance', label: 'Compliance', icon: FileText },
-              { id: 'properties', label: 'Properties', icon: Building }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </div>
+          return (
+            <div key={entityName} className="bg-white dark:bg-gray-800 rounded-lg shadow">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{entityName}</h3>
+                <p className="text-gray-600 dark:text-gray-400">Entity-specific performance metrics</p>
+              </div>
 
-        {/* Tab Content */}
-        <div className="p-6">
-          {activeTab === 'overview' && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
-                <h4 className="text-lg font-semibold text-blue-900 dark:text-blue-100">Total Revenue</h4>
-                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{formatCurrency(entityMetrics.totalProfits)}</p>
-              </div>
-              <div className="bg-green-50 dark:bg-green-900 p-4 rounded-lg">
-                <h4 className="text-lg font-semibold text-green-900 dark:text-green-100">Portfolio Value</h4>
-                <p className="text-2xl font-bold text-green-900 dark:text-green-100">{formatCurrency(entityMetrics.totalAUM)}</p>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg">
-                <h4 className="text-lg font-semibold text-purple-900 dark:text-purple-100">Active Properties</h4>
-                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{entityMetrics.totalProperties}</p>
-              </div>
-              <div className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg">
-                <h4 className="text-lg font-semibold text-orange-900 dark:text-orange-100">Avg CoC Return</h4>
-                <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{formatPercentage(entityMetrics.avgCoCReturn)}</p>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'properties' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Entity Properties</h3>
-              {properties.length === 0 ? (
-                <div className="text-center py-12">
-                  <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">No properties assigned to {selectedEntity}</p>
+              {/* Entity KPIs */}
+              <div className="p-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
+                    <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">AUM</h4>
+                    <p className="text-xl font-bold text-blue-900 dark:text-blue-100">{formatCurrency(entityMetrics.totalAUM)}</p>
+                  </div>
+                  <div className="bg-green-50 dark:bg-green-900 p-4 rounded-lg">
+                    <h4 className="text-sm font-semibold text-green-900 dark:text-green-100">Properties</h4>
+                    <p className="text-xl font-bold text-green-900 dark:text-green-100">{entityMetrics.totalProperties}</p>
+                  </div>
+                  <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg">
+                    <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-100">Units</h4>
+                    <p className="text-xl font-bold text-purple-900 dark:text-purple-100">{entityMetrics.totalUnits}</p>
+                  </div>
+                  <div className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg">
+                    <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-100">Total Profits</h4>
+                    <p className="text-xl font-bold text-orange-900 dark:text-orange-100">{formatCurrency(entityMetrics.totalProfits)}</p>
+                  </div>
                 </div>
-              ) : (
-                <div className="grid gap-4">
-                  {properties.map((property) => (
-                    <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900 dark:text-white">{property.address}</h4>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          property.status === 'Currently Own' 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                        }`}>
-                          {property.status}
-                        </span>
-                      </div>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
-                        {property.city}, {property.state}
-                      </p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400">Units</p>
-                          <p className="font-semibold text-gray-900 dark:text-white">{property.apartments}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400">Acquisition Price</p>
-                          <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400">Total Profits</p>
-                          <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.totalProfits)}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
-                          <p className="font-semibold text-gray-900 dark:text-white">{formatPercentage(property.cashOnCashReturn)}</p>
-                        </div>
-                      </div>
+
+                {/* Entity Properties */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Properties</h4>
+                  {entityProperties.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Building className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-500 dark:text-gray-400">No properties assigned to {entityName}</p>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="grid gap-3">
+                      {entityProperties.map((property) => (
+                        <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="font-semibold text-gray-900 dark:text-white">{property.address}</h5>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              property.status === 'Currently Own' 
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                            }`}>
+                              {property.status}
+                            </span>
+                          </div>
+                          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                            {property.city}, {property.state}
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <p className="text-gray-600 dark:text-gray-400">Units</p>
+                              <p className="font-semibold text-gray-900 dark:text-white">{property.apartments}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600 dark:text-gray-400">Acquisition Price</p>
+                              <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600 dark:text-gray-400">Total Profits</p>
+                              <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.totalProfits)}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
+                              <p className="font-semibold text-gray-900 dark:text-white">{formatPercentage(property.cashOnCashReturn)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
-          )}
-
-          {(activeTab === 'owner' || activeTab === 'financials' || activeTab === 'members' || activeTab === 'compliance') && (
-            <div className="text-center py-12">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">
-                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} information will be available here
-              </p>
-            </div>
-          )}
-        </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -133,6 +133,7 @@ Changelog:
 - June 20, 2025. Implemented property-to-entity assignment functionality in Asset Management with dropdown selection for entities (5Central Capital LLC, Harmony Holdings LLC, Crystal Properties LLC) and filtered property display in Entity Dashboard properties tab showing only assets assigned to specific entities
 - June 20, 2025. Built comprehensive editable entity management system with separate sections for each entity displaying individual KPIs, property assignments, financial metrics, and entity details - includes add/edit/delete functionality for entities with full CRUD operations and real-time property filtering
 - June 20, 2025. Completely overhauled Asset Management page with KPI bar matching dashboard design, comprehensive financial statement tabs (Balance Sheet, Income Statement, Cash Flow Statement), and modernized property cards with entity assignment dropdowns - all calculations derived from actual property data with authentic financial metrics
+- June 20, 2025. Redesigned Entity Dashboard with collective KPIs at top showing total portfolio metrics, shared middle section with cash balance/milestones/todos for all entities, and individual entity sections at bottom displaying entity-specific metrics and properties filtered by real database assignments
 
 ## User Preferences
 
