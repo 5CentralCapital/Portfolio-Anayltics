@@ -70,9 +70,9 @@ const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(apiService.getStoredUser());
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [revenueData, setRevenueData] = useState([]);
-  const [propertyData, setPropertyData] = useState([]);
-  const [investorLeads, setInvestorLeads] = useState([]);
+  const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [propertyData, setPropertyData] = useState<any[]>([]);
+  const [investorLeads, setInvestorLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
