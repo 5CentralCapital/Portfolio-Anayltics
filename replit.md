@@ -136,6 +136,7 @@ Changelog:
 - June 20, 2025. Redesigned Entity Dashboard with collective KPIs at top showing total portfolio metrics, shared middle section with cash balance/milestones/todos for all entities, and individual entity sections at bottom displaying entity-specific metrics and properties filtered by real database assignments
 - June 20, 2025. Enhanced Entity Dashboard with comprehensive tab system: Overview tab with detailed property analytics, Financials tab with real property-based income statements and asset valuations, combined Owners & Members tab with equity percentages and roles, Compliance tab with entity-specific legal requirements tracking, and Properties tab with filtered property listings - all calculations derived from authentic database property data
 - June 20, 2025. Added database schema for entity memberships and compliance tracking to support user-based access control, equity percentage tracking, and comprehensive compliance management with status tracking, due dates, and priority levels
+- June 20, 2025. Redesigned KPI bars across Asset Management and Entity Dashboard to match Deal Analyzer design style with bordered containers, Calculator icons, and consistent label/value formatting - reorganized Entity Dashboard middle section into two side-by-side columns with Cash Balance/Milestones on left and To-Do List on right - standardized entity headers with unified design showing entity name, summary metrics, and performance indicators across all entities
 
 ## User Preferences
 

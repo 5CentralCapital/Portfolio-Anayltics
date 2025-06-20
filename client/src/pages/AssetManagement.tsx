@@ -143,54 +143,41 @@ const AssetManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center gap-2 mb-2">
-            <Building className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Properties</span>
+      {/* KPI Bar - Deal Analyzer Style */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-900 dark:text-white">
+          <BarChart3 className="h-5 w-5 mr-2" />
+          Portfolio Key Metrics
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Properties</label>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{metrics.totalProperties}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{metrics.totalProperties}</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center gap-2 mb-2">
-            <Home className="w-5 h-5 text-green-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Units</span>
+          <div>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Units</label>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{metrics.totalUnits}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{metrics.totalUnits}</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-5 h-5 text-purple-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">AUM</span>
+          <div>
+            <label className="text-sm text-gray-600 dark:text-gray-400">AUM</label>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{formatCurrency(metrics.totalAUM)}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(metrics.totalAUM)}</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-5 h-5 text-orange-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Profits</span>
+          <div>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Total Profits</label>
+            <p className={`text-lg font-semibold ${
+              metrics.totalEquity > 0 ? "text-green-600" : "text-red-600"
+            }`}>{formatCurrency(metrics.totalEquity)}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(metrics.totalEquity)}</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-5 h-5 text-red-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Monthly Cash Flow</span>
+          <div>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Monthly Cash Flow</label>
+            <p className={`text-lg font-semibold ${
+              metrics.totalMonthlyRent > 0 ? "text-green-600" : "text-red-600"
+            }`}>{formatCurrency(metrics.totalMonthlyRent)}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(metrics.totalMonthlyRent)}</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center gap-2 mb-2">
-            <Percent className="w-5 h-5 text-indigo-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg CoC Return</span>
+          <div>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Avg CoC Return</label>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{formatPercentage(metrics.avgCapRate)}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatPercentage(metrics.avgCapRate)}</p>
         </div>
       </div>
 
