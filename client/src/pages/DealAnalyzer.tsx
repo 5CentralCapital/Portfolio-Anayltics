@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target, BarChart3, Save, Download, Upload, FileDown } from 'lucide-react';
+import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target, BarChart3, Save, Download, Upload, FileDown, Database, X } from 'lucide-react';
 
 export default function DealAnalyzer() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -15,6 +15,15 @@ export default function DealAnalyzer() {
   const [editingExpenses, setEditingExpenses] = useState(false);
   const [editingClosingCosts, setEditingClosingCosts] = useState(false);
   const [editingHoldingCosts, setEditingHoldingCosts] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importingToProperties, setImportingToProperties] = useState(false);
+  const [importFormData, setImportFormData] = useState({
+    entity: '5Central Capital',
+    acquisitionDate: '',
+    broker: '',
+    legalNotes: '',
+    closingTimeline: ''
+  });
   const [editingRehabSections, setEditingRehabSections] = useState({
     exterior: false,
     kitchens: false,
