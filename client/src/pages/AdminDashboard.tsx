@@ -272,39 +272,11 @@ const AdminDashboard: React.FC = () => {
         </div>
       </header>
 
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
-            {[
-              { id: 'overview', label: 'Overview', icon: BarChart3 },
-              { id: 'financial', label: 'Financial', icon: DollarSign },
-              { id: 'financial-dashboard', label: 'Financial Dashboard', icon: Activity },
-              { id: 'deal-analyzer', label: 'Deal Analyzer', icon: Calculator },
-              { id: 'properties', label: 'Properties', icon: Building },
-              { id: 'leads', label: 'Investor Leads', icon: Users },
-              { id: 'reports', label: 'Reports', icon: PieChart },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <tab.icon className="h-4 w-4" />
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
+
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'overview' && dashboardData && (
+        {dashboardData && (
           <div className="space-y-8">
             {/* Key Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
