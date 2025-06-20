@@ -1,26 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Plus,
-  Edit3,
-  Save,
-  X,
-  Trash2,
-  Calculator,
-  DollarSign,
-  Building,
-  TrendingUp,
-  Home,
-  Target,
-  PieChart,
-  Download,
-  Upload,
-  Users,
-  Percent,
-  BarChart3,
-  FileText,
-  Activity,
-  CreditCard
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Building2, DollarSign, TrendingUp, Users, Edit3, Trash2, Plus } from 'lucide-react';
 
 interface Property {
   id: number;
@@ -49,56 +28,16 @@ interface Property {
   entityId?: string;
 }
 
-// Financial statement interfaces
-interface BalanceSheetData {
-  assets: {
-    totalPropertyValue: number;
-    cashAndEquivalents: number;
-    otherAssets: number;
-  };
-  liabilities: {
-    mortgageDebt: number;
-    otherLiabilities: number;
-  };
-  equity: {
-    ownerEquity: number;
-    retainedEarnings: number;
-  };
+interface Entity {
+  id: string;
+  name: string;
+  formationDate: string;
+  structure: string;
+  state: string;
+  ein: string;
+  cashBalance: number;
 }
 
-interface IncomeStatementData {
-  revenue: {
-    rentalIncome: number;
-    otherIncome: number;
-  };
-  expenses: {
-    operatingExpenses: number;
-    interestExpense: number;
-    depreciation: number;
-    otherExpenses: number;
-  };
-  netIncome: number;
-}
-
-interface CashFlowStatementData {
-  operatingActivities: {
-    netIncome: number;
-    depreciation: number;
-    changesInWorkingCapital: number;
-  };
-  investingActivities: {
-    propertyAcquisitions: number;
-    capitalImprovements: number;
-    dispositions: number;
-  };
-  financingActivities: {
-    debtProceeds: number;
-    debtPayments: number;
-    ownerContributions: number;
-  };
-}
-
-// Editable field component for inline editing
 interface EditableFieldProps {
   value: number;
   onSave: (value: number) => void;
@@ -106,848 +45,369 @@ interface EditableFieldProps {
   className?: string;
 }
 
-const EditableField: React.FC<EditableFieldProps> = ({ 
-  value, 
-  onSave, 
-  format = 'currency', 
-  className = '' 
-}) => {
+const EditableField = ({ value, onSave, format = 'currency', className = '' }: EditableFieldProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value.toString());
 
   const formatValue = (val: number) => {
     switch (format) {
       case 'currency':
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        }).format(val);
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
       case 'percentage':
-        return `${val.toFixed(1)}%`;
-      default:
+        return `${val.toFixed(2)}%`;
+      case 'number':
         return val.toLocaleString();
+      default:
+        return val.toString();
     }
   };
 
   const handleSave = () => {
-    const numValue = parseFloat(editValue.replace(/[^0-9.-]/g, ''));
+    const numValue = parseFloat(editValue);
     if (!isNaN(numValue)) {
       onSave(numValue);
     }
     setIsEditing(false);
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    } else if (e.key === 'Escape') {
+      setEditValue(value.toString());
+      setIsEditing(false);
+    }
+  };
+
   if (isEditing) {
     return (
-      <div className="flex items-center space-x-2">
-        <input
-          type="text"
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onBlur={handleSave}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSave();
-            if (e.key === 'Escape') {
-              setEditValue(value.toString());
-              setIsEditing(false);
-            }
-          }}
-          className="px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          autoFocus
-        />
-        <button
-          onClick={handleSave}
-          className="p-1 text-green-600 hover:text-green-700"
-        >
-          <Save className="h-3 w-3" />
-        </button>
-      </div>
+      <input
+        type="number"
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onBlur={handleSave}
+        onKeyDown={handleKeyPress}
+        className="px-2 py-1 border border-blue-300 rounded text-right bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[100px]"
+        autoFocus
+      />
     );
   }
 
   return (
-    <div 
-      className={`group flex items-center space-x-1 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded ${className}`}
+    <span
       onClick={() => setIsEditing(true)}
+      className={`cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors ${className}`}
+      title="Click to edit"
     >
-      <span>{formatValue(value)}</span>
-      <Edit3 className="h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-    </div>
+      {formatValue(value)}
+    </span>
   );
 };
 
 export default function PropertiesManager() {
-  const [activeTab, setActiveTab] = useState<'balance' | 'income' | 'cashflow'>('balance');
-  
-  // Available entities for assignment
-  const [entities] = useState([
-    { id: '5central', name: '5Central Capital LLC' },
-    { id: 'harmony', name: 'Harmony Holdings LLC' },
-    { id: 'crystal', name: 'Crystal Properties LLC' }
-  ]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [entities, setEntities] = useState<Entity[]>([]);
 
-  // Function to assign property to entity
-  const assignPropertyToEntity = (propertyId: number, entityId: string | null) => {
-    setProperties(prev => prev.map(property => 
-      property.id === propertyId 
-        ? { ...property, entityId: entityId || undefined }
-        : property
-    ));
-  };
-
-  const [properties, setProperties] = useState<Property[]>([
-    {
-      id: 1,
-      address: '175 Crystal Ave',
-      city: 'New London',
-      state: 'CT',
-      zipCode: '06320',
-      units: 4,
-      purchasePrice: 350000,
-      purchaseDate: '2021-03-15',
-      rehabCosts: 85000,
-      totalInvestment: 435000,
-      currentValue: 650000,
-      grossRent: 4200,
-      netRent: 3990,
-      expenses: 1890,
-      noi: 2100,
-      cashFlow: 1950,
-      capRate: 0.058,
-      cocReturn: 0.537,
-      annualizedReturn: 0.089,
-      equityCreated: 215000,
-      status: 'Active',
-      propertyType: 'Multifamily',
-      strategy: 'BRRRR'
-    },
-    {
-      id: 2,
-      address: '3408 E Dr MLK BLVD',
-      city: 'Tampa',
-      state: 'FL',
-      zipCode: '33610',
-      units: 8,
-      purchasePrice: 485000,
-      purchaseDate: '2021-08-22',
-      rehabCosts: 125000,
-      totalInvestment: 610000,
-      currentValue: 875000,
-      grossRent: 7200,
-      netRent: 6840,
-      expenses: 3024,
-      noi: 3816,
-      cashFlow: 3450,
-      capRate: 0.063,
-      cocReturn: 0.679,
-      annualizedReturn: 0.124,
-      equityCreated: 265000,
-      status: 'Active',
-      propertyType: 'Multifamily',
-      strategy: 'Value-Add'
-    },
-    {
-      id: 3,
-      address: '1 Harmony St',
-      city: 'New London',
-      state: 'CT',
-      zipCode: '06320',
-      units: 6,
-      purchasePrice: 425000,
-      purchaseDate: '2022-01-10',
-      rehabCosts: 95000,
-      totalInvestment: 520000,
-      currentValue: 725000,
-      grossRent: 5400,
-      netRent: 5130,
-      expenses: 2160,
-      noi: 2970,
-      cashFlow: 2700,
-      capRate: 0.061,
-      cocReturn: 0.623,
-      annualizedReturn: 0.115,
-      equityCreated: 205000,
-      status: 'Active',
-      propertyType: 'Multifamily',
-      strategy: 'BRRRR'
-    }
-  ]);
-
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [newProperty, setNewProperty] = useState<Partial<Property>>({});
-  const [showAddForm, setShowAddForm] = useState(false);
-
-  // Calculate portfolio metrics
-  const calculatePortfolioMetrics = () => {
-    const totalProperties = properties.length;
-    const totalUnits = properties.reduce((sum, prop) => sum + prop.units, 0);
-    const totalValue = properties.reduce((sum, prop) => sum + prop.currentValue, 0);
-    const totalInvestment = properties.reduce((sum, prop) => sum + prop.totalInvestment, 0);
-    const totalEquityCreated = properties.reduce((sum, prop) => sum + prop.equityCreated, 0);
-    const totalMonthlyRent = properties.reduce((sum, prop) => sum + prop.grossRent, 0);
-    const totalMonthlyCashFlow = properties.reduce((sum, prop) => sum + prop.cashFlow, 0);
-    const avgCashOnCash = properties.length > 0 ? 
-      properties.reduce((sum, prop) => sum + prop.cocReturn, 0) / properties.length : 0;
-    const avgAnnualizedReturn = properties.length > 0 ? 
-      properties.reduce((sum, prop) => sum + prop.annualizedReturn, 0) / properties.length : 0;
-    const avgCapRate = properties.length > 0 ? 
-      properties.reduce((sum, prop) => sum + prop.capRate, 0) / properties.length : 0;
-
-    return {
-      totalProperties,
-      totalUnits,
-      totalValue,
-      totalInvestment,
-      totalEquityCreated,
-      totalMonthlyRent,
-      totalMonthlyCashFlow,
-      avgCashOnCash,
-      avgAnnualizedReturn,
-      avgCapRate,
-      equityMultiple: totalInvestment > 0 ? totalValue / totalInvestment : 0,
-      totalROI: totalInvestment > 0 ? (totalValue - totalInvestment) / totalInvestment : 0
-    };
-  };
-
-  const metrics = calculatePortfolioMetrics();
-
-  // Calculate financial statements based on property data
-  const calculateFinancialStatements = () => {
-    const totalPropertyValue = properties.reduce((sum, prop) => sum + prop.currentValue, 0);
-    const totalDebt = properties.reduce((sum, prop) => sum + (prop.totalInvestment * 0.7), 0); // Assume 70% LTV
-    const totalEquity = totalPropertyValue - totalDebt;
-    const totalRentalIncome = properties.reduce((sum, prop) => sum + (prop.grossRent * 12), 0);
-    const totalExpenses = properties.reduce((sum, prop) => sum + (prop.expenses * 12), 0);
-    const netIncome = totalRentalIncome - totalExpenses;
-
-    const balanceSheet: BalanceSheetData = {
-      assets: {
-        totalPropertyValue,
-        cashAndEquivalents: 150000,
-        otherAssets: 25000
+  // Initialize sample data
+  useEffect(() => {
+    const sampleProperties: Property[] = [
+      {
+        id: 1,
+        address: '1 Harmony St',
+        city: 'New Haven',
+        state: 'CT',
+        zipCode: '06511',
+        units: 4,
+        purchasePrice: 275000,
+        purchaseDate: '2023-03-15',
+        rehabCosts: 45000,
+        totalInvestment: 320000,
+        currentValue: 425000,
+        grossRent: 4200,
+        netRent: 3780,
+        expenses: 1260,
+        noi: 2520,
+        cashFlow: 1890,
+        capRate: 7.1,
+        cocReturn: 28.4,
+        annualizedReturn: 35.2,
+        equityCreated: 105000,
+        status: 'Active',
+        propertyType: 'Multifamily',
+        strategy: 'BRRRR',
+        entityId: '5central'
       },
-      liabilities: {
-        mortgageDebt: totalDebt,
-        otherLiabilities: 15000
+      {
+        id: 2,
+        address: '145 Crystal Ave',
+        city: 'New Haven',
+        state: 'CT',
+        zipCode: '06515',
+        units: 2,
+        purchasePrice: 185000,
+        purchaseDate: '2023-06-20',
+        rehabCosts: 32000,
+        totalInvestment: 217000,
+        currentValue: 295000,
+        grossRent: 2800,
+        netRent: 2520,
+        expenses: 840,
+        noi: 1680,
+        cashFlow: 1260,
+        capRate: 6.9,
+        cocReturn: 31.8,
+        annualizedReturn: 38.7,
+        equityCreated: 78000,
+        status: 'Active',
+        propertyType: 'Multifamily',
+        strategy: 'BRRRR',
+        entityId: 'crystal'
       },
-      equity: {
-        ownerEquity: totalEquity,
-        retainedEarnings: netIncome * 0.3
+      {
+        id: 3,
+        address: '25 Huntington Pl',
+        city: 'New Haven',
+        state: 'CT',
+        zipCode: '06511',
+        units: 3,
+        purchasePrice: 225000,
+        purchaseDate: '2023-09-10',
+        rehabCosts: 38000,
+        totalInvestment: 263000,
+        currentValue: 345000,
+        grossRent: 3300,
+        netRent: 2970,
+        expenses: 990,
+        noi: 1980,
+        cashFlow: 1485,
+        capRate: 7.5,
+        cocReturn: 29.7,
+        annualizedReturn: 36.4,
+        equityCreated: 82000,
+        status: 'Active',
+        propertyType: 'Multifamily',
+        strategy: 'BRRRR',
+        entityId: 'harmony'
       }
-    };
+    ];
 
-    const incomeStatement: IncomeStatementData = {
-      revenue: {
-        rentalIncome: totalRentalIncome,
-        otherIncome: 8000
+    const sampleEntities: Entity[] = [
+      {
+        id: '5central',
+        name: '5Central Capital LLC',
+        formationDate: '2022-12-15',
+        structure: 'LLC',
+        state: 'Connecticut',
+        ein: '88-1234567',
+        cashBalance: 125000
       },
-      expenses: {
-        operatingExpenses: totalExpenses,
-        interestExpense: totalDebt * 0.045,
-        depreciation: totalPropertyValue * 0.0364,
-        otherExpenses: 12000
+      {
+        id: 'harmony',
+        name: 'Harmony Holdings LLC',
+        formationDate: '2023-01-20',
+        structure: 'LLC',
+        state: 'Connecticut',
+        ein: '88-2345678',
+        cashBalance: 75000
       },
-      netIncome
-    };
-
-    const cashFlowStatement: CashFlowStatementData = {
-      operatingActivities: {
-        netIncome,
-        depreciation: totalPropertyValue * 0.0364,
-        changesInWorkingCapital: -5000
-      },
-      investingActivities: {
-        propertyAcquisitions: -150000,
-        capitalImprovements: -35000,
-        dispositions: 0
-      },
-      financingActivities: {
-        debtProceeds: 105000,
-        debtPayments: -48000,
-        ownerContributions: 25000
+      {
+        id: 'crystal',
+        name: 'Crystal Properties LLC',
+        formationDate: '2023-02-10',
+        structure: 'LLC',
+        state: 'Connecticut',
+        ein: '88-3456789',
+        cashBalance: 50000
       }
-    };
+    ];
 
-    return { balanceSheet, incomeStatement, cashFlowStatement };
-  };
+    setProperties(sampleProperties);
+    setEntities(sampleEntities);
+  }, []);
 
-  const financialStatements = calculateFinancialStatements();
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value || 0);
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
 
   const formatPercent = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'percent',
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-    }).format(value || 0);
+    return `${value.toFixed(1)}%`;
+  };
+
+  // Calculate portfolio metrics
+  const totalPropertyValue = properties.reduce((sum, prop) => sum + prop.currentValue, 0);
+  const totalMonthlyRent = properties.reduce((sum, prop) => sum + prop.grossRent, 0);
+  const totalCashFlow = properties.reduce((sum, prop) => sum + prop.cashFlow, 0);
+  const totalUnits = properties.reduce((sum, prop) => sum + prop.units, 0);
+  const totalEquityCreated = properties.reduce((sum, prop) => sum + prop.equityCreated, 0);
+  const avgCoC = properties.length > 0 ? properties.reduce((sum, prop) => sum + prop.cocReturn, 0) / properties.length : 0;
+
+  const handleSave = (id: number, updates: Partial<Property>) => {
+    setProperties(prev => prev.map(prop => 
+      prop.id === id ? { ...prop, ...updates } : prop
+    ));
   };
 
   const handleEdit = (id: number) => {
-    setEditingId(id);
-  };
-
-  const handleSave = (id: number, updatedProperty: Partial<Property>) => {
-    setProperties(properties.map(prop => 
-      prop.id === id ? { ...prop, ...updatedProperty } : prop
-    ));
-    setEditingId(null);
-  };
-
-  const handleCancel = () => {
-    setEditingId(null);
+    console.log('Edit property:', id);
   };
 
   const handleDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this property?')) {
-      setProperties(properties.filter(prop => prop.id !== id));
-    }
+    setProperties(prev => prev.filter(prop => prop.id !== id));
   };
 
-  const handleAddProperty = () => {
-    if (newProperty.address && newProperty.city && newProperty.state) {
-      const id = Math.max(...properties.map(p => p.id), 0) + 1;
-      const property: Property = {
-        id,
-        address: newProperty.address || '',
-        city: newProperty.city || '',
-        state: newProperty.state || '',
-        zipCode: newProperty.zipCode || '',
-        units: newProperty.units || 1,
-        purchasePrice: newProperty.purchasePrice || 0,
-        purchaseDate: newProperty.purchaseDate || new Date().toISOString().split('T')[0],
-        rehabCosts: newProperty.rehabCosts || 0,
-        totalInvestment: (newProperty.purchasePrice || 0) + (newProperty.rehabCosts || 0),
-        currentValue: newProperty.currentValue || 0,
-        grossRent: newProperty.grossRent || 0,
-        netRent: (newProperty.grossRent || 0) * 0.95, // Assume 5% vacancy
-        expenses: newProperty.expenses || 0,
-        noi: ((newProperty.grossRent || 0) * 0.95) - (newProperty.expenses || 0),
-        cashFlow: newProperty.cashFlow || 0,
-        capRate: newProperty.currentValue ? ((((newProperty.grossRent || 0) * 0.95) - (newProperty.expenses || 0)) * 12) / newProperty.currentValue : 0,
-        cocReturn: newProperty.cocReturn || 0,
-        annualizedReturn: newProperty.annualizedReturn || 0,
-        equityCreated: (newProperty.currentValue || 0) - ((newProperty.purchasePrice || 0) + (newProperty.rehabCosts || 0)),
-        status: (newProperty.status as Property['status']) || 'Active',
-        propertyType: (newProperty.propertyType as Property['propertyType']) || 'Multifamily',
-        strategy: (newProperty.strategy as Property['strategy']) || 'Buy & Hold'
-      };
-      setProperties([...properties, property]);
-      setNewProperty({});
-      setShowAddForm(false);
-    }
+  const assignPropertyToEntity = (propertyId: number, entityId: string | null) => {
+    setProperties(prev => prev.map(prop => 
+      prop.id === propertyId ? { ...prop, entityId } : prop
+    ));
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Asset Management</h1>
-          <p className="text-gray-600">Real estate portfolio performance and financial tracking</p>
+          <p className="text-gray-500 mt-1">Portfolio overview and property management</p>
         </div>
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Property
-          </button>
-          <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </button>
-        </div>
+        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors">
+          <Plus className="h-4 w-4" />
+          <span>Add Property</span>
+        </button>
       </div>
 
-      {/* KPI Bar - Top Level Summary Cards */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
-        <div className="grid grid-cols-4 gap-4">
+      {/* KPI Bar */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
           <div className="text-center">
-            <p className="text-sm opacity-90 mb-2">Total Portfolio Value</p>
-            <p className="text-xl font-bold">{formatCurrency(metrics.totalValue)}</p>
-            <p className="text-xs opacity-75 mt-1">{metrics.totalProperties} properties</p>
+            <div className="text-2xl font-bold">{formatCurrency(totalPropertyValue)}</div>
+            <div className="text-sm text-blue-100">Total Portfolio Value</div>
           </div>
           <div className="text-center">
-            <p className="text-sm opacity-90 mb-2">Monthly Cash Flow</p>
-            <p className="text-xl font-bold text-green-300">{formatCurrency(metrics.totalMonthlyCashFlow)}</p>
-            <p className="text-xs opacity-75 mt-1">{formatCurrency(metrics.totalMonthlyCashFlow * 12)} annually</p>
+            <div className="text-2xl font-bold">{formatCurrency(totalMonthlyRent)}</div>
+            <div className="text-sm text-blue-100">Monthly Gross Rent</div>
           </div>
           <div className="text-center">
-            <p className="text-sm opacity-90 mb-2">Equity Created</p>
-            <p className="text-xl font-bold text-orange-300">{formatCurrency(metrics.totalEquityCreated)}</p>
-            <p className="text-xs opacity-75 mt-1">{formatPercent(metrics.totalROI)} total ROI</p>
+            <div className="text-2xl font-bold">{formatCurrency(totalCashFlow)}</div>
+            <div className="text-sm text-blue-100">Monthly Cash Flow</div>
           </div>
           <div className="text-center">
-            <p className="text-sm opacity-90 mb-2">Avg Cash-on-Cash</p>
-            <p className="text-xl font-bold">{formatPercent(metrics.avgCashOnCash)}</p>
-            <p className="text-xs opacity-75 mt-1">{formatPercent(metrics.avgCapRate)} avg cap rate</p>
+            <div className="text-2xl font-bold">{totalUnits}</div>
+            <div className="text-sm text-blue-100">Total Units</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold">{formatCurrency(totalEquityCreated)}</div>
+            <div className="text-sm text-blue-100">Equity Created</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold">{formatPercent(avgCoC)}</div>
+            <div className="text-sm text-blue-100">Avg CoC Return</div>
           </div>
         </div>
       </div>
 
-      {/* Financial Tabs */}
-      <div className="bg-white rounded-xl shadow-lg">
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
-            {[
-              { id: 'balance', label: 'Balance Sheet', icon: BarChart3 },
-              { id: 'income', label: 'Income Statement', icon: FileText },
-              { id: 'cashflow', label: 'Cash Flow Statement', icon: Activity }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <tab.icon className="h-4 w-4" />
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        <div className="p-6">
-          {activeTab === 'balance' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Assets */}
+      {/* Property Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {properties.map((property) => (
+          <div key={property.id} className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-start justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Assets</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Real Estate Properties</span>
-                    <EditableField
-                      value={financialStatements.balanceSheet.assets.totalPropertyValue}
-                      onSave={(value) => {}}
-                      className="font-semibold"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Cash & Equivalents</span>
-                    <EditableField
-                      value={financialStatements.balanceSheet.assets.cashAndEquivalents}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Other Assets</span>
-                    <EditableField
-                      value={financialStatements.balanceSheet.assets.otherAssets}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
-                    <span>Total Assets</span>
-                    <span className="text-blue-600">
-                      {formatCurrency(
-                        financialStatements.balanceSheet.assets.totalPropertyValue +
-                        financialStatements.balanceSheet.assets.cashAndEquivalents +
-                        financialStatements.balanceSheet.assets.otherAssets
-                      )}
-                    </span>
-                  </div>
+                <h3 className="text-lg font-semibold text-gray-900">{property.address}</h3>
+                <p className="text-sm text-gray-500">{property.city}, {property.state}</p>
+                <div className="flex items-center space-x-4 mt-2">
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                    {property.units} units
+                  </span>
+                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                    {property.strategy}
+                  </span>
                 </div>
               </div>
-
-              {/* Liabilities */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Liabilities</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Mortgage Debt</span>
-                    <EditableField
-                      value={financialStatements.balanceSheet.liabilities.mortgageDebt}
-                      onSave={(value) => {}}
-                      className="font-semibold"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Other Liabilities</span>
-                    <EditableField
-                      value={financialStatements.balanceSheet.liabilities.otherLiabilities}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
-                    <span>Total Liabilities</span>
-                    <span className="text-red-600">
-                      {formatCurrency(
-                        financialStatements.balanceSheet.liabilities.mortgageDebt +
-                        financialStatements.balanceSheet.liabilities.otherLiabilities
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Equity */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Owner's Equity</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Owner Equity</span>
-                    <EditableField
-                      value={financialStatements.balanceSheet.equity.ownerEquity}
-                      onSave={(value) => {}}
-                      className="font-semibold"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Retained Earnings</span>
-                    <EditableField
-                      value={financialStatements.balanceSheet.equity.retainedEarnings}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
-                    <span>Total Equity</span>
-                    <span className="text-green-600">
-                      {formatCurrency(
-                        financialStatements.balanceSheet.equity.ownerEquity +
-                        financialStatements.balanceSheet.equity.retainedEarnings
-                      )}
-                    </span>
-                  </div>
-                </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleEdit(property.id)}
+                  className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                >
+                  <Edit3 className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(property.id)}
+                  className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             </div>
-          )}
 
-          {activeTab === 'income' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Revenue */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Rental Income</span>
-                    <EditableField
-                      value={financialStatements.incomeStatement.revenue.rentalIncome}
-                      onSave={(value) => {}}
-                      className="font-semibold"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Other Income</span>
-                    <EditableField
-                      value={financialStatements.incomeStatement.revenue.otherIncome}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
-                    <span>Total Revenue</span>
-                    <span className="text-green-600">
-                      {formatCurrency(
-                        financialStatements.incomeStatement.revenue.rentalIncome +
-                        financialStatements.incomeStatement.revenue.otherIncome
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 mt-8">Net Income</h3>
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-blue-900">Net Income</span>
-                    <span className="text-2xl font-bold text-blue-600">
-                      {formatCurrency(financialStatements.incomeStatement.netIncome)}
-                    </span>
-                  </div>
-                  <p className="text-sm text-blue-700 mt-1">
-                    {formatPercent(
-                      financialStatements.incomeStatement.netIncome / 
-                      (financialStatements.incomeStatement.revenue.rentalIncome + 
-                       financialStatements.incomeStatement.revenue.otherIncome)
-                    )} profit margin
-                  </p>
-                </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Entity</span>
+                <select
+                  value={property.entityId || ''}
+                  onChange={(e) => assignPropertyToEntity(property.id, e.target.value || null)}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Unassigned</option>
+                  {entities.map((entity) => (
+                    <option key={entity.id} value={entity.id}>
+                      {entity.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-
-              {/* Expenses */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Expenses</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Operating Expenses</span>
-                    <EditableField
-                      value={financialStatements.incomeStatement.expenses.operatingExpenses}
-                      onSave={(value) => {}}
-                      className="font-semibold"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Interest Expense</span>
-                    <EditableField
-                      value={financialStatements.incomeStatement.expenses.interestExpense}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Depreciation</span>
-                    <EditableField
-                      value={financialStatements.incomeStatement.expenses.depreciation}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Other Expenses</span>
-                    <EditableField
-                      value={financialStatements.incomeStatement.expenses.otherExpenses}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
-                    <span>Total Expenses</span>
-                    <span className="text-red-600">
-                      {formatCurrency(
-                        financialStatements.incomeStatement.expenses.operatingExpenses +
-                        financialStatements.incomeStatement.expenses.interestExpense +
-                        financialStatements.incomeStatement.expenses.depreciation +
-                        financialStatements.incomeStatement.expenses.otherExpenses
-                      )}
-                    </span>
-                  </div>
-                </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Purchase Price</span>
+                <EditableField
+                  value={property.purchasePrice}
+                  onSave={(value) => handleSave(property.id, { purchasePrice: value })}
+                />
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Current Value</span>
+                <EditableField
+                  value={property.currentValue}
+                  onSave={(value) => handleSave(property.id, { currentValue: value })}
+                  className="font-semibold text-blue-600"
+                />
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Monthly Rent</span>
+                <EditableField
+                  value={property.grossRent}
+                  onSave={(value) => handleSave(property.id, { grossRent: value })}
+                />
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Cash Flow</span>
+                <EditableField
+                  value={property.cashFlow}
+                  onSave={(value) => handleSave(property.id, { cashFlow: value })}
+                  className="font-semibold text-green-600"
+                />
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">CoC Return</span>
+                <EditableField
+                  value={property.cocReturn}
+                  onSave={(value) => handleSave(property.id, { cocReturn: value })}
+                  format="percentage"
+                  className="font-semibold"
+                />
+              </div>
+              
+              <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                <span className="text-sm font-semibold text-gray-900">Equity Created</span>
+                <span className="font-semibold text-purple-600">
+                  {formatCurrency(property.equityCreated)}
+                </span>
               </div>
             </div>
-          )}
-
-          {activeTab === 'cashflow' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Operating Activities */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Operating Activities</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Net Income</span>
-                    <span className="font-semibold">{formatCurrency(financialStatements.cashFlowStatement.operatingActivities.netIncome)}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Depreciation</span>
-                    <span>{formatCurrency(financialStatements.cashFlowStatement.operatingActivities.depreciation)}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Working Capital Changes</span>
-                    <EditableField
-                      value={financialStatements.cashFlowStatement.operatingActivities.changesInWorkingCapital}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
-                    <span>Operating Cash Flow</span>
-                    <span className="text-green-600">
-                      {formatCurrency(
-                        financialStatements.cashFlowStatement.operatingActivities.netIncome +
-                        financialStatements.cashFlowStatement.operatingActivities.depreciation +
-                        financialStatements.cashFlowStatement.operatingActivities.changesInWorkingCapital
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Investing Activities */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Investing Activities</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Property Acquisitions</span>
-                    <EditableField
-                      value={financialStatements.cashFlowStatement.investingActivities.propertyAcquisitions}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Capital Improvements</span>
-                    <EditableField
-                      value={financialStatements.cashFlowStatement.investingActivities.capitalImprovements}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Property Dispositions</span>
-                    <EditableField
-                      value={financialStatements.cashFlowStatement.investingActivities.dispositions}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
-                    <span>Investing Cash Flow</span>
-                    <span className="text-red-600">
-                      {formatCurrency(
-                        financialStatements.cashFlowStatement.investingActivities.propertyAcquisitions +
-                        financialStatements.cashFlowStatement.investingActivities.capitalImprovements +
-                        financialStatements.cashFlowStatement.investingActivities.dispositions
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Financing Activities */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Financing Activities</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Debt Proceeds</span>
-                    <EditableField
-                      value={financialStatements.cashFlowStatement.financingActivities.debtProceeds}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Debt Payments</span>
-                    <EditableField
-                      value={financialStatements.cashFlowStatement.financingActivities.debtPayments}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Owner Contributions</span>
-                    <EditableField
-                      value={financialStatements.cashFlowStatement.financingActivities.ownerContributions}
-                      onSave={(value) => {}}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
-                    <span>Financing Cash Flow</span>
-                    <span className="text-blue-600">
-                      {formatCurrency(
-                        financialStatements.cashFlowStatement.financingActivities.debtProceeds +
-                        financialStatements.cashFlowStatement.financingActivities.debtPayments +
-                        financialStatements.cashFlowStatement.financingActivities.ownerContributions
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Property Portfolio Table */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-gray-900">Property Portfolio</h3>
-          <div className="text-sm text-gray-500">
-            All calculations drive dashboard KPIs above
           </div>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Property</th>
-                <th className="text-center py-3 px-4 font-semibold text-gray-900">Entity</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Purchase Price</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Current Value</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Monthly Rent</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Cash Flow</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">CoC Return</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Equity Created</th>
-                <th className="text-center py-3 px-4 font-semibold text-gray-900">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {properties.map((property) => (
-                <tr key={property.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <div>
-                      <div className="font-medium text-gray-900">{property.address}</div>
-                      <div className="text-sm text-gray-500">{property.city}, {property.state}</div>
-                      <div className="text-xs text-gray-400">{property.units} units • {property.strategy}</div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <select
-                      value={property.entityId || ''}
-                      onChange={(e) => assignPropertyToEntity(property.id, e.target.value || null)}
-                      className="px-3 py-1 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Unassigned</option>
-                      {entities.map((entity) => (
-                        <option key={entity.id} value={entity.id}>
-                          {entity.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <EditableField
-                      value={property.purchasePrice}
-                      onSave={(value) => handleSave(property.id, { purchasePrice: value })}
-                    />
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <EditableField
-                      value={property.currentValue}
-                      onSave={(value) => handleSave(property.id, { currentValue: value })}
-                      className="font-semibold text-blue-600"
-                    />
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <EditableField
-                      value={property.grossRent}
-                      onSave={(value) => handleSave(property.id, { grossRent: value })}
-                    />
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <EditableField
-                      value={property.cashFlow}
-                      onSave={(value) => handleSave(property.id, { cashFlow: value })}
-                      className="font-semibold text-green-600"
-                    />
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <EditableField
-                      value={property.cocReturn}
-                      onSave={(value) => handleSave(property.id, { cocReturn: value })}
-                      format="percentage"
-                      className="font-semibold"
-                    />
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <span className="font-semibold text-purple-600">
-                      {formatCurrency(property.equityCreated)}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <div className="flex justify-center space-x-2">
-                      <button
-                        onClick={() => handleEdit(property.id)}
-                        className="p-1 text-blue-600 hover:text-blue-700"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(property.id)}
-                        className="p-1 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        ))}
       </div>
     </div>
   );
