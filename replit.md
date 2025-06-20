@@ -127,6 +127,7 @@ Changelog:
 - June 19, 2025. Redesigned Net Worth Tracker with modern gradient styling, circular progress indicators, enhanced visual analytics, and card-based entity management layout
 - June 19, 2025. Transformed Properties tab into comprehensive Asset Management dashboard with KPI bar driven by actual property data, financial statement tabs (Balance Sheet, Income Statement, Cash Flow), and real-time portfolio calculations
 - June 20, 2025. Built comprehensive Entity Dashboard with top metric bar (AUM, Price/Unit, Units, Properties, Equity Multiple, Monthly Cash Flow), cash balance management, milestone tracking, to-do list widget, and Entity KPIs section with 6 tabs (Overview, Owner, Financials, Members, Compliance, Properties) - all calculations derived from actual property data
+- June 20, 2025. Reordered admin dashboard tabs to: Dashboard, Asset Management, Deal Analyzer, Roadmap (Coming Soon), Net Worth, Reports - with Entity Dashboard as default landing page
 
 ## User Preferences
 
