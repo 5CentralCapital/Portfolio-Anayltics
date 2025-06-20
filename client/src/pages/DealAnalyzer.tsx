@@ -767,7 +767,7 @@ export default function DealAnalyzer() {
   ];
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="py-6 space-y-6">
       {/* Header */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between">

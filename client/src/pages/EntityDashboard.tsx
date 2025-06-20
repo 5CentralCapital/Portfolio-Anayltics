@@ -359,7 +359,7 @@ export default function EntityDashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       
 
       {/* Portfolio KPI Bar - Continuous Gradient Style */}

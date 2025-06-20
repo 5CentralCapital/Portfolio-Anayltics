@@ -278,7 +278,7 @@ const NetWorthTracker: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div className="space-y-6 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
