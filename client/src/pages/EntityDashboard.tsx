@@ -330,7 +330,7 @@ export default function EntityDashboard() {
       
 
       {/* Collective KPIs - Deal Analyzer Style */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6" data-tour="kpi-bar">
         <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-900 dark:text-white">
           <Calculator className="h-5 w-5 mr-2" />
           Portfolio Key Metrics
@@ -488,7 +488,7 @@ export default function EntityDashboard() {
       </div>
 
       {/* Entity Sections */}
-      <div className="space-y-8">
+      <div className="space-y-8" data-tour="entities">
         
         {entitiesList.map((entityName) => {
           const entityProperties = propertiesByEntity[entityName];

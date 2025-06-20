@@ -259,6 +259,14 @@ const AdminDashboard: React.FC = () => {
                 <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
               </button>
               
+              <button
+                onClick={() => setShowOnboarding(true)}
+                className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                title="Restart Onboarding Tour"
+              >
+                <Users className="h-5 w-5" />
+              </button>
+              
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <span>Welcome, {user?.first_name}</span>
                 <span className="px-2 py-1 bg-primary text-white text-xs rounded-full">
@@ -434,6 +442,13 @@ const AdminDashboard: React.FC = () => {
 
         
       </main>
+
+      {/* Onboarding Tour */}
+      <OnboardingTour
+        isOpen={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
+        onSkip={() => setShowOnboarding(false)}
+      />
     </div>
   );
 };
