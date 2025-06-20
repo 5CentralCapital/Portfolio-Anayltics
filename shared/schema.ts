@@ -245,6 +245,19 @@ export const entityCompliance = pgTable("entity_compliance", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Entity ownership table for user-defined entities and asset allocation
+export const entityOwnership = pgTable("entity_ownership", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  entityName: text("entity_name").notNull(),
+  assetType: text("asset_type", { enum: ["real_estate", "cash", "stocks", "bonds", "business", "other"] }).notNull(),
+  ownershipPercentage: decimal("ownership_percentage", { precision: 5, scale: 2 }).notNull(),
+  currentValue: decimal("current_value", { precision: 15, scale: 2 }).default("0"),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -329,6 +342,12 @@ export const insertEntityComplianceSchema = createInsertSchema(entityCompliance)
   updatedAt: true,
 });
 
+export const insertEntityOwnershipSchema = createInsertSchema(entityOwnership).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -342,6 +361,8 @@ export type EntityMembership = typeof entityMemberships.$inferSelect;
 export type InsertEntityMembership = z.infer<typeof insertEntityMembershipSchema>;
 export type EntityCompliance = typeof entityCompliance.$inferSelect;
 export type InsertEntityCompliance = z.infer<typeof insertEntityComplianceSchema>;
+export type EntityOwnership = typeof entityOwnership.$inferSelect;
+export type InsertEntityOwnership = z.infer<typeof insertEntityOwnershipSchema>;
 
 // Deal analysis types
 export type Deal = typeof deals.$inferSelect;

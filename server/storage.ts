@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { 
-  users, properties, companyMetrics, investorLeads, sessions,
+  users, properties, companyMetrics, investorLeads, sessions, entityOwnership,
   deals, dealRehab, dealUnits, dealExpenses, dealClosingCosts, 
   dealHoldingCosts, dealLoans, dealOtherIncome, dealComps
 } from "@shared/schema";
@@ -13,6 +13,8 @@ import type {
   InsertCompanyMetric,
   InvestorLead,
   InsertInvestorLead,
+  EntityOwnership,
+  InsertEntityOwnership,
   Deal,
   InsertDeal,
   DealRehab,
@@ -117,6 +119,12 @@ export interface IStorage {
   createDealComps(comp: InsertDealComps): Promise<DealComps>;
   updateDealComps(id: number, comp: Partial<InsertDealComps>): Promise<DealComps | undefined>;
   deleteDealComps(id: number): Promise<boolean>;
+  
+  // Entity ownership operations
+  getUserEntityOwnership(userId: number): Promise<EntityOwnership[]>;
+  createEntityOwnership(ownership: InsertEntityOwnership): Promise<EntityOwnership>;
+  updateEntityOwnership(id: number, ownership: Partial<InsertEntityOwnership>): Promise<EntityOwnership | undefined>;
+  deleteEntityOwnership(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
