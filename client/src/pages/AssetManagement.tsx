@@ -15,6 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import apiService from '../services/api';
 
 interface Property {
   id: number;
@@ -51,18 +52,23 @@ const AssetManagement: React.FC = () => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const queryClient = useQueryClient();
 
-  // Fetch properties from database
+  // Fetch properties from database using authenticated API
   const { data: propertiesData, isLoading } = useQuery({
     queryKey: ['/api/properties'],
+    queryFn: () => apiService.getProperties(),
     enabled: true
   });
 
   // Mutation for updating property entity
   const updatePropertyMutation = useMutation({
     mutationFn: async ({ id, entity }: { id: number; entity: string }) => {
+      const token = localStorage.getItem('authToken');
       const response = await fetch(`/api/properties/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` })
+        },
         body: JSON.stringify({ entity })
       });
       if (!response.ok) throw new Error('Failed to update property');
@@ -89,8 +95,9 @@ const AssetManagement: React.FC = () => {
     return `${num.toFixed(1)}%`;
   };
 
-  // Process properties data
-  const properties: Property[] = Array.isArray(propertiesData) ? propertiesData : [];
+  // Process properties data - handle both direct array and wrapped data structure
+  const properties: Property[] = Array.isArray(propertiesData?.data) ? propertiesData.data : 
+    Array.isArray(propertiesData) ? propertiesData : [];
   
   // Debug logging
   console.log('Properties data:', propertiesData);
