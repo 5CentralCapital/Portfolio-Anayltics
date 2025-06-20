@@ -363,12 +363,12 @@ export default function EntityDashboard() {
       
 
       {/* Portfolio KPI Bar - Continuous Gradient Style */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6" data-tour="kpi-bar">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 fade-in card-hover" data-tour="kpi-bar">
         <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-900 dark:text-white">
-          <Calculator className="h-5 w-5 mr-2" />
+          <Calculator className="h-5 w-5 mr-2 icon-bounce" />
           Portfolio Key Metrics
         </h3>
-        <div className="bg-gradient-to-r from-blue-600 via-blue-500 via-purple-500 to-purple-600 rounded-lg p-6">
+        <div className="bg-gradient-to-r from-blue-600 via-blue-500 via-purple-500 to-purple-600 rounded-lg p-6 hover-glow transition-all-smooth">
           <div className="flex justify-between items-center text-white">
             <div className="text-center flex-1">
               <div className="text-sm font-medium opacity-90">Total AUM</div>
@@ -405,10 +405,10 @@ export default function EntityDashboard() {
         {/* Left Column - Cash Balance and Milestones */}
         <div className="space-y-6">
           {/* Cash Balance */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 card-hover slide-in-up">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Cash Balance</h3>
-              <Banknote className="w-5 h-5 text-green-600" />
+              <Banknote className="w-5 h-5 text-green-600 icon-pulse" />
             </div>
             <div className="text-center">
               <EditableValue 
@@ -422,14 +422,14 @@ export default function EntityDashboard() {
           </div>
 
           {/* Upcoming Milestones */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 card-hover slide-in-up">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Milestones</h3>
               <button 
                 onClick={addMilestone}
-                className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded"
+                className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded transition-colors-smooth hover-scale btn-bounce"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 icon-bounce" />
               </button>
             </div>
             <div className="space-y-3 max-h-64 overflow-y-auto">
