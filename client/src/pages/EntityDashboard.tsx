@@ -162,6 +162,7 @@ export default function EntityDashboard() {
   // Fetch user's properties
   const { data: allProperties = [], isLoading } = useQuery({
     queryKey: ['/api/properties'],
+    queryFn: () => apiService.getProperties(),
     enabled: !!currentUserId
   });
 
@@ -169,6 +170,10 @@ export default function EntityDashboard() {
   useEffect(() => {
     if (userEntityData?.data) {
       const entityNames = userEntityData.data.map((entity: any) => entity.entityName);
+      setUserEntities(entityNames);
+    } else if (userEntityData && !userEntityData.error) {
+      // Handle case where data is directly in userEntityData
+      const entityNames = userEntityData.map((entity: any) => entity.entityName);
       setUserEntities(entityNames);
     }
   }, [userEntityData]);
