@@ -499,9 +499,9 @@ export default function AssetManagement() {
           </h2>
           
           {properties.filter((p: Property) => p.status === 'Under Contract').length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-3 stagger-children">
               {properties.filter((p: Property) => p.status === 'Under Contract').map((property: Property) => (
-                <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover-scale transition-all-smooth card-hover cursor-pointer">
                   <div className="flex justify-between items-center">
                     <div>
                       <h3 className="font-semibold text-gray-900 dark:text-white">{property.address}</h3>
@@ -515,7 +515,7 @@ export default function AssetManagement() {
                       <select 
                         value={property.status} 
                         onChange={(e) => handleStatusChange(property.id, e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm transition-all-smooth hover:border-blue-400 hover-scale"
                       >
                         <option value="Under Contract">Under Contract</option>
                         <option value="Rehabbing">Rehabbing</option>
@@ -536,21 +536,21 @@ export default function AssetManagement() {
         </div>
 
         {/* Rehabbing - Side by Side with Progress Tracking */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 fade-in card-hover">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-6">
-            <Wrench className="h-5 w-5 mr-2 text-blue-500" />
+            <Wrench className="h-5 w-5 mr-2 text-blue-500 icon-bounce" />
             Rehabbing ({properties.filter((p: Property) => p.status === 'Rehabbing').length})
           </h2>
           
           {properties.filter((p: Property) => p.status === 'Rehabbing').length > 0 ? (
-            <div className="space-y-6">
+            <div className="space-y-6 stagger-children">
               {properties.filter((p: Property) => p.status === 'Rehabbing').map((property: Property) => {
                 const rehabBudget = parseFloat(property.rehabCosts);
                 const rehabSpent = rehabBudget * 0.65; // Mock 65% completion
                 const rehabProgress = (rehabSpent / rehabBudget) * 100;
                 
                 return (
-                  <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                  <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover-scale transition-all-smooth card-hover cursor-pointer">
                     <div className="grid md:grid-cols-2 gap-8">
                       {/* Left Side - Property Details */}
                       <div className="space-y-4">
@@ -676,14 +676,14 @@ export default function AssetManagement() {
         </div>
 
         {/* Cashflowing Properties */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 fade-in card-hover">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-6">
-            <DollarSign className="h-5 w-5 mr-2 text-green-500" />
+            <DollarSign className="h-5 w-5 mr-2 text-green-500 icon-bounce" />
             Cashflowing ({properties.filter((p: Property) => p.status === 'Cashflowing').length})
           </h2>
           
           {properties.filter((p: Property) => p.status === 'Cashflowing').length > 0 ? (
-            <div className="grid gap-4">
+            <div className="grid gap-4 stagger-children">
               {properties.filter((p: Property) => p.status === 'Cashflowing').map((property: Property) => (
                 <PropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} />
               ))}
