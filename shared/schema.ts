@@ -53,7 +53,7 @@ export const properties = pgTable("properties", {
   city: text("city").notNull(),
   state: text("state").notNull(),
   zipCode: text("zip_code"),
-  entity: text("entity").default("5Central Capital LLC"), // Entity assignment
+  entity: text("entity").default("5Central Capital"), // Entity assignment
   acquisitionDate: date("acquisition_date"),
   acquisitionPrice: decimal("acquisition_price", { precision: 15, scale: 2 }).notNull(),
   rehabCosts: decimal("rehab_costs", { precision: 15, scale: 2 }).default("0"),
@@ -66,6 +66,22 @@ export const properties = pgTable("properties", {
   yearsHeld: decimal("years_held", { precision: 3, scale: 1 }),
   cashOnCashReturn: decimal("cash_on_cash_return", { precision: 8, scale: 2 }).notNull(),
   annualizedReturn: decimal("annualized_return", { precision: 8, scale: 2 }).notNull(),
+  
+  // Additional fields from deal analysis import
+  capRate: decimal("cap_rate", { precision: 5, scale: 4 }),
+  dscr: decimal("dscr", { precision: 5, scale: 2 }),
+  loanAmount: decimal("loan_amount", { precision: 15, scale: 2 }),
+  interestRate: decimal("interest_rate", { precision: 5, scale: 4 }),
+  loanTermYears: integer("loan_term_years"),
+  vacancyRate: decimal("vacancy_rate", { precision: 5, scale: 4 }),
+  broker: text("broker"),
+  propertyManager: text("property_manager"),
+  generalContractor: text("general_contractor"),
+  closingTimeline: text("closing_timeline"),
+  notes: text("notes"),
+  importedFromDeal: boolean("imported_from_deal").default(false),
+  dealAnalysisData: text("deal_analysis_data"), // JSON storage for original deal data
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

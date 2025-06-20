@@ -298,11 +298,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ? (Number(p.cashFlow) * 12 / Number(p.acquisitionPrice)) * 100 
           : 0,
       }));
-
+      
       res.json(transformedProperties);
     } catch (error) {
       console.error("Property performance error:", error);
       res.status(500).json({ error: "Failed to load property performance" });
+    }
+  });
+
+  // Import property from deal analyzer
+  app.post('/api/properties/import-from-deal', authenticateUser, async (req: any, res) => {
+    try {
+      const {
+        // Deal analyzer data
+        propertyName,
+        propertyAddress,
+        assumptions,
+        metrics,
+        rehabBudgetSections,
+        rentRoll,
+        unitTypes,
+        exitAnalysis,
+        // Additional property data
+        entity,
+        broker,
+        propertyManager,
+        generalContractor,
+        closingTimeline,
+        notes,
+        acquisitionDate
+      } = req.body;
+
+      // Parse address into components
+      const addressParts = propertyAddress.split(',').map((part: string) => part.trim());
+      const address = addressParts[0] || propertyAddress;
+      const city = addressParts[1] || '';
+      const stateZip = addressParts[2] || '';
+      const [state, zipCode] = stateZip.split(' ');
+
+      // Calculate total rehab costs from sections
+      const totalRehabCosts = Object.values(rehabBudgetSections || {}).reduce((total: number, section: any) => {
+        if (Array.isArray(section)) {
+          return total + section.reduce((sectionTotal: number, item: any) => sectionTotal + (item.totalCost || 0), 0);
+        }
+        return total;
+      }, 0);
+
+      // Create property record
+      const propertyData = {
+        status: 'Under Contract' as const,
+        apartments: assumptions.unitCount || 1,
+        address: address,
+        city: city,
+        state: state || '',
+        zipCode: zipCode || null,
+        entity: entity || '5Central Capital',
+        acquisitionDate: acquisitionDate || null,
+        acquisitionPrice: String(assumptions.purchasePrice || 0),
+        rehabCosts: String(totalRehabCosts),
+        arvAtTimePurchased: String(metrics.arv || 0),
+        initialCapitalRequired: String(metrics.allInCost || assumptions.purchasePrice || 0),
+        cashFlow: String(metrics.netCashFlow || 0),
+        salePrice: null,
+        salePoints: null,
+        totalProfits: String(metrics.totalProfit || 0),
+        yearsHeld: exitAnalysis?.holdPeriodYears || null,
+        cashOnCashReturn: String(metrics.cashOnCashReturn || 0),
+        annualizedReturn: String(metrics.irr || 0),
+        
+        // Additional fields from deal analysis
+        capRate: String(metrics.capRate || 0),
+        dscr: String(metrics.dscr || 0),
+        loanAmount: String((assumptions.purchasePrice || 0) * (assumptions.loanPercentage || 0)),
+        interestRate: String(assumptions.interestRate || 0),
+        loanTermYears: assumptions.loanTermYears || null,
+        vacancyRate: String(assumptions.vacancyRate || 0),
+        broker: broker || null,
+        propertyManager: propertyManager || null,
+        generalContractor: generalContractor || null,
+        closingTimeline: closingTimeline || null,
+        notes: notes || null,
+        importedFromDeal: true,
+        dealAnalysisData: JSON.stringify({
+          propertyName,
+          propertyAddress,
+          assumptions,
+          metrics,
+          rehabBudgetSections,
+          rentRoll,
+          unitTypes,
+          exitAnalysis,
+          importedAt: new Date().toISOString()
+        })
+      };
+
+      const property = await storage.createProperty(propertyData);
+      res.status(201).json(property);
+    } catch (error) {
+      console.error('Error importing property from deal:', error);
+      res.status(500).json({ error: 'Failed to import property from deal analysis' });
     }
   });
 
