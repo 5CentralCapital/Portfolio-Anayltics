@@ -136,6 +136,14 @@ export default function EntityDashboard() {
     return acc;
   }, {} as Record<string, Property[]>);
 
+  // Active tabs for each entity
+  const [activeTabs, setActiveTabs] = useState<Record<string, 'overview' | 'owner' | 'financials' | 'members' | 'compliance' | 'properties'>>(
+    entitiesList.reduce((acc, entity) => {
+      acc[entity] = 'overview';
+      return acc;
+    }, {} as Record<string, 'overview' | 'owner' | 'financials' | 'members' | 'compliance' | 'properties'>)
+  );
+
   // State for editable components
   const [milestones, setMilestones] = useState<Milestone[]>([
     { id: 1, title: 'Acquire 50 Units', completed: false, targetDate: '2025-12-31', description: 'Expand portfolio to 50 total units' },
@@ -456,8 +464,8 @@ export default function EntityDashboard() {
               </div>
 
               {/* Entity KPIs */}
-              <div className="p-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
                     <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">AUM</h4>
                     <p className="text-xl font-bold text-blue-900 dark:text-blue-100">{formatCurrency(entityMetrics.totalAUM)}</p>
@@ -475,55 +483,181 @@ export default function EntityDashboard() {
                     <p className="text-xl font-bold text-orange-900 dark:text-orange-100">{formatCurrency(entityMetrics.totalProfits)}</p>
                   </div>
                 </div>
+              </div>
 
-                {/* Entity Properties */}
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Properties</h4>
-                  {entityProperties.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Building className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-500 dark:text-gray-400">No properties assigned to {entityName}</p>
+              {/* Tab Navigation */}
+              <div className="border-b border-gray-200 dark:border-gray-700">
+                <nav className="flex space-x-8 px-6">
+                  {[
+                    { id: 'overview', label: 'Overview', icon: PieChart },
+                    { id: 'owner', label: 'Owner', icon: Users },
+                    { id: 'financials', label: 'Financials', icon: DollarSign },
+                    { id: 'members', label: 'Members', icon: Users },
+                    { id: 'compliance', label: 'Compliance', icon: FileText },
+                    { id: 'properties', label: 'Properties', icon: Building }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTabs(prev => ({ ...prev, [entityName]: tab.id as any }))}
+                      className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                        activeTabs[entityName] === tab.id
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      <tab.icon className="w-4 h-4" />
+                      {tab.label}
+                    </button>
+                  ))}
+                </nav>
+              </div>
+
+              {/* Tab Content */}
+              <div className="p-6">
+                {activeTabs[entityName] === 'overview' && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                      <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
+                        <h4 className="text-lg font-semibold text-blue-900 dark:text-blue-100">Total Profits</h4>
+                        <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{formatCurrency(entityMetrics.totalProfits)}</p>
+                      </div>
+                      <div className="bg-green-50 dark:bg-green-900 p-4 rounded-lg">
+                        <h4 className="text-lg font-semibold text-green-900 dark:text-green-100">Portfolio Value</h4>
+                        <p className="text-2xl font-bold text-green-900 dark:text-green-100">{formatCurrency(entityMetrics.totalAUM)}</p>
+                      </div>
+                      <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg">
+                        <h4 className="text-lg font-semibold text-purple-900 dark:text-purple-100">Cash Flow</h4>
+                        <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{formatCurrency(entityMetrics.totalCashFlow)}</p>
+                      </div>
+                      <div className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg">
+                        <h4 className="text-lg font-semibold text-orange-900 dark:text-orange-100">Avg CoC Return</h4>
+                        <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{formatPercentage(entityMetrics.avgCoCReturn)}</p>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="grid gap-3">
-                      {entityProperties.map((property) => (
-                        <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h5 className="font-semibold text-gray-900 dark:text-white">{property.address}</h5>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              property.status === 'Currently Own' 
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                            }`}>
-                              {property.status}
-                            </span>
+                    
+                    {/* Additional entity metrics */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <h5 className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Investment</h5>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white">
+                          {formatCurrency(entityProperties.reduce((sum, prop) => sum + parseFloat(prop.acquisitionPrice) + parseFloat(prop.rehabCosts), 0))}
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <h5 className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Price per Unit</h5>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white">
+                          {formatCurrency(entityPricePerUnit)}
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <h5 className="text-sm font-medium text-gray-600 dark:text-gray-400">Equity Multiple</h5>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white">
+                          {entityEquityMultiple.toFixed(2)}x
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Property performance breakdown */}
+                    <div className="space-y-4">
+                      <h5 className="text-lg font-semibold text-gray-900 dark:text-white">Performance Summary</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                          <h6 className="font-medium text-gray-900 dark:text-white mb-3">Property Status Distribution</h6>
+                          <div className="space-y-2">
+                            {Object.entries(
+                              entityProperties.reduce((acc, prop) => {
+                                acc[prop.status] = (acc[prop.status] || 0) + 1;
+                                return acc;
+                              }, {} as Record<string, number>)
+                            ).map(([status, count]) => (
+                              <div key={status} className="flex justify-between">
+                                <span className="text-gray-600 dark:text-gray-400">{status}</span>
+                                <span className="font-semibold text-gray-900 dark:text-white">{count}</span>
+                              </div>
+                            ))}
                           </div>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
-                            {property.city}, {property.state}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <p className="text-gray-600 dark:text-gray-400">Units</p>
-                              <p className="font-semibold text-gray-900 dark:text-white">{property.apartments}</p>
+                        </div>
+                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                          <h6 className="font-medium text-gray-900 dark:text-white mb-3">Returns Distribution</h6>
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600 dark:text-gray-400">Best CoC Return</span>
+                              <span className="font-semibold text-gray-900 dark:text-white">
+                                {entityProperties.length > 0 ? formatPercentage(Math.max(...entityProperties.map(p => parseFloat(p.cashOnCashReturn)))) : '0%'}
+                              </span>
                             </div>
-                            <div>
-                              <p className="text-gray-600 dark:text-gray-400">Acquisition Price</p>
-                              <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600 dark:text-gray-400">Total Profits</p>
-                              <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.totalProfits)}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
-                              <p className="font-semibold text-gray-900 dark:text-white">{formatPercentage(property.cashOnCashReturn)}</p>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600 dark:text-gray-400">Total Rehab Costs</span>
+                              <span className="font-semibold text-gray-900 dark:text-white">
+                                {formatCurrency(entityProperties.reduce((sum, prop) => sum + parseFloat(prop.rehabCosts), 0))}
+                              </span>
                             </div>
                           </div>
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {activeTabs[entityName] === 'properties' && (
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Entity Properties</h4>
+                    {entityProperties.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Building className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500 dark:text-gray-400">No properties assigned to {entityName}</p>
+                      </div>
+                    ) : (
+                      <div className="grid gap-3">
+                        {entityProperties.map((property) => (
+                          <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h5 className="font-semibold text-gray-900 dark:text-white">{property.address}</h5>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                property.status === 'Currently Own' 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                              }`}>
+                                {property.status}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                              {property.city}, {property.state}
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <p className="text-gray-600 dark:text-gray-400">Units</p>
+                                <p className="font-semibold text-gray-900 dark:text-white">{property.apartments}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600 dark:text-gray-400">Acquisition Price</p>
+                                <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600 dark:text-gray-400">Total Profits</p>
+                                <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.totalProfits)}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
+                                <p className="font-semibold text-gray-900 dark:text-white">{formatPercentage(property.cashOnCashReturn)}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {(activeTabs[entityName] === 'owner' || activeTabs[entityName] === 'financials' || 
+                  activeTabs[entityName] === 'members' || activeTabs[entityName] === 'compliance') && (
+                  <div className="text-center py-12">
+                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400">
+                      {activeTabs[entityName].charAt(0).toUpperCase() + activeTabs[entityName].slice(1)} information will be available here
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           );
