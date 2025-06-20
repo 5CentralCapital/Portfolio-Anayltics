@@ -19,8 +19,12 @@ import {
   BarChart3,
   FileText,
   Activity,
-  CreditCard
+  CreditCard,
+  MapPin,
+  Calendar,
+  Briefcase
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 interface Property {
   id: number;
