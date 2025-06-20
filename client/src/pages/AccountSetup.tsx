@@ -50,13 +50,9 @@ const AccountSetup: React.FC = () => {
     }
   };
 
-  const updateEntity = (index: number, field: keyof EntityOwnership, value: string) => {
+  const updateEntity = (index: number, field: keyof EntityOwnership, value: string | boolean) => {
     const updated = [...entities];
-    if (field === 'isNewEntity') {
-      updated[index] = { ...updated[index], [field]: value === 'true' };
-    } else {
-      updated[index] = { ...updated[index], [field]: value };
-    }
+    updated[index] = { ...updated[index], [field]: value };
     setEntities(updated);
   };
 
@@ -292,10 +288,10 @@ const AccountSetup: React.FC = () => {
                           value={entity.isNewEntity ? "new" : entity.entityName}
                           onChange={(e) => {
                             if (e.target.value === "new") {
-                              updateEntity(index, "isNewEntity", "true");
+                              updateEntity(index, "isNewEntity", true);
                               updateEntity(index, "entityName", "");
                             } else {
-                              updateEntity(index, "isNewEntity", "false");
+                              updateEntity(index, "isNewEntity", false);
                               updateEntity(index, "entityName", e.target.value);
                             }
                           }}
