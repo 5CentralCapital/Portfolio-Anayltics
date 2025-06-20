@@ -169,14 +169,35 @@ export default function AssetManagement() {
   const [activeTab, setActiveTab] = useState('balance-sheet');
   const [editingProperty, setEditingProperty] = useState<number | null>(null);
 
-  const { data: properties = [], isLoading, error } = useQuery({
+  const { data: propertiesResponse, isLoading, error } = useQuery({
     queryKey: ['/api/properties'],
-    queryFn: () => apiService.get('/api/properties')
+    queryFn: () => apiService.getProperties()
   });
 
+  // Ensure properties is always an array
+  const properties = (() => {
+    if (!propertiesResponse) return [];
+    if (Array.isArray(propertiesResponse)) return propertiesResponse;
+    if (propertiesResponse.data && Array.isArray(propertiesResponse.data)) return propertiesResponse.data;
+    return [];
+  })();
+
   const updatePropertyMutation = useMutation({
-    mutationFn: (data: { id: number; property: Partial<Property> }) =>
-      apiService.put(`/api/properties/${data.id}`, data.property),
+    mutationFn: async (data: { id: number; property: Partial<Property> }) => {
+      const response = await fetch(`/api/properties/${data.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data.property),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update property');
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
     }
@@ -208,32 +229,96 @@ export default function AssetManagement() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Error Loading Properties</h2>
           <p className="text-gray-600 dark:text-gray-400">Please try refreshing the page</p>
+          <p className="text-sm text-red-500 mt-2">{error instanceof Error ? error.message : 'Unknown error'}</p>
         </div>
       </div>
     );
   }
 
-  // Calculate metrics
+  // Add defensive check for empty properties
+  if (!properties || properties.length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* KPI Bar with zero values */}
+        <div className="bg-gradient-to-r from-blue-600 via-blue-500 via-purple-500 to-purple-600 rounded-lg shadow-lg border border-blue-200 p-6">
+          <div className="flex items-center justify-between text-white">
+            <div className="flex items-center">
+              <Calculator className="h-6 w-6 mr-3" />
+              <span className="text-lg font-semibold">Portfolio Performance</span>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mt-4">
+            <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+              <div className="text-2xl font-bold text-white">0</div>
+              <div className="text-sm text-white/80">Total Units</div>
+            </div>
+            <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+              <div className="text-2xl font-bold text-white">$0</div>
+              <div className="text-sm text-white/80">Total AUM</div>
+            </div>
+            <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+              <div className="text-2xl font-bold text-white">$0</div>
+              <div className="text-sm text-white/80">Price/Unit</div>
+            </div>
+            <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+              <div className="text-2xl font-bold text-white">$0</div>
+              <div className="text-sm text-white/80">Total Equity</div>
+            </div>
+            <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+              <div className="text-2xl font-bold text-white">$0</div>
+              <div className="text-sm text-white/80">Monthly Cash Flow</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-white">0.0%</div>
+              <div className="text-sm text-white/80">Avg CoC Return</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center py-12">
+          <Building className="mx-auto h-16 w-16 text-gray-400" />
+          <h3 className="mt-4 text-xl font-medium text-gray-900 dark:text-white">No Properties Found</h3>
+          <p className="mt-2 text-gray-500 dark:text-gray-400">Your property portfolio will appear here once properties are added</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate metrics with safe operations
   const metrics = {
-    totalUnits: properties.reduce((sum: number, prop: Property) => sum + prop.apartments, 0),
-    totalAUM: properties.reduce((sum: number, prop: Property) => {
-      const acquisition = parseFloat(prop.acquisitionPrice.replace(/[^0-9.-]/g, ''));
-      const rehab = parseFloat(prop.rehabCosts.replace(/[^0-9.-]/g, ''));
-      return sum + acquisition + rehab;
-    }, 0),
-    totalEquity: properties.reduce((sum: number, prop: Property) => sum + parseFloat(prop.totalProfits), 0),
-    totalCashFlow: properties
+    totalUnits: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0) : 0,
+    totalAUM: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => {
+      const acquisition = parseFloat((prop.acquisitionPrice || '0').toString().replace(/[^0-9.-]/g, ''));
+      const rehab = parseFloat((prop.rehabCosts || '0').toString().replace(/[^0-9.-]/g, ''));
+      return sum + (isNaN(acquisition) ? 0 : acquisition) + (isNaN(rehab) ? 0 : rehab);
+    }, 0) : 0,
+    totalEquity: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => {
+      const profits = parseFloat((prop.totalProfits || '0').toString().replace(/[^0-9.-]/g, ''));
+      return sum + (isNaN(profits) ? 0 : profits);
+    }, 0) : 0,
+    totalCashFlow: Array.isArray(properties) ? properties
       .filter((prop: Property) => prop.status === 'Cashflowing')
-      .reduce((sum: number, prop: Property) => sum + parseFloat(prop.cashFlow), 0),
-    avgCoCReturn: properties.length > 0 
-      ? properties.reduce((sum: number, prop: Property) => sum + parseFloat(prop.cashOnCashReturn), 0) / properties.length 
+      .reduce((sum: number, prop: Property) => {
+        const cashFlow = parseFloat((prop.cashFlow || '0').toString().replace(/[^0-9.-]/g, ''));
+        return sum + (isNaN(cashFlow) ? 0 : cashFlow);
+      }, 0) : 0,
+    avgCoCReturn: Array.isArray(properties) && properties.length > 0 
+      ? properties.reduce((sum: number, prop: Property) => {
+          const cocReturn = parseFloat((prop.cashOnCashReturn || '0').toString().replace(/[^0-9.-]/g, ''));
+          return sum + (isNaN(cocReturn) ? 0 : cocReturn);
+        }, 0) / properties.length 
       : 0,
-    pricePerUnit: properties.length > 0 ? 
-      properties.reduce((sum: number, prop: Property) => {
-        const acquisition = parseFloat(prop.acquisitionPrice.replace(/[^0-9.-]/g, ''));
-        const rehab = parseFloat(prop.rehabCosts.replace(/[^0-9.-]/g, ''));
-        return sum + (acquisition + rehab);
-      }, 0) / properties.reduce((sum: number, prop: Property) => sum + prop.apartments, 0) : 0
+    pricePerUnit: (() => {
+      if (!Array.isArray(properties) || properties.length === 0) return 0;
+      const totalValue = properties.reduce((sum: number, prop: Property) => {
+        const acquisition = parseFloat((prop.acquisitionPrice || '0').toString().replace(/[^0-9.-]/g, ''));
+        const rehab = parseFloat((prop.rehabCosts || '0').toString().replace(/[^0-9.-]/g, ''));
+        return sum + (isNaN(acquisition) ? 0 : acquisition) + (isNaN(rehab) ? 0 : rehab);
+      }, 0);
+      const totalUnits = properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0);
+      return totalUnits > 0 ? totalValue / totalUnits : 0;
+    })()
   };
 
   return (
