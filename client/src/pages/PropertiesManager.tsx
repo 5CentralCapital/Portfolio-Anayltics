@@ -502,7 +502,7 @@ export default function PropertiesManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Asset Management</h1>
+          
           <p className="text-gray-600">Real estate portfolio performance and financial tracking</p>
         </div>
         <div className="flex items-center space-x-3">
