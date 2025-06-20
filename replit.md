@@ -122,6 +122,8 @@ Changelog:
 - June 19, 2025. Moved admin login button to header navigation positioned right of Invest button with standard header text styling
 - June 19, 2025. Added comprehensive save/export functionality to deal analyzer with localStorage persistence, JSON/CSV export options, and saved deals management panel
 - June 19, 2025. Made saved deal and export buttons smaller for enhanced spacing in deal analyzer header
+- June 19, 2025. Removed Overview, Financial, Financial Dashboard, and Investor Leads tabs from admin dashboard, keeping only Deal Analyzer, Properties, and Reports tabs with Deal Analyzer as default
+- June 19, 2025. Built comprehensive Net Worth Tracker tab with interactive asset allocation monitoring, editable entity management, and automatic net worth calculations based on real estate equity, stock portfolio, and cash equivalents
 
 ## User Preferences
 

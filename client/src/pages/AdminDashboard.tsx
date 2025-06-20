@@ -34,6 +34,7 @@ import PropertyPerformanceChart from '../components/charts/PropertyPerformanceCh
 import DealAnalyzer from './DealAnalyzer';
 import FinancialDashboard from './FinancialDashboard';
 import PropertiesManager from './PropertiesManager';
+import NetWorthTracker from './NetWorthTracker';
 
 interface DashboardData {
   financial: {
@@ -72,7 +73,7 @@ const AdminDashboard: React.FC = () => {
   const [investorLeads, setInvestorLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('deal-analyzer');
   const [refreshing, setRefreshing] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -278,6 +279,7 @@ const AdminDashboard: React.FC = () => {
           <nav className="flex space-x-8">
             {[
               { id: 'deal-analyzer', label: 'Deal Analyzer', icon: Calculator },
+              { id: 'net-worth', label: 'Net Worth', icon: DollarSign },
               { id: 'properties', label: 'Properties', icon: Building },
               { id: 'reports', label: 'Reports', icon: PieChart },
             ].map((tab) => (
@@ -360,6 +362,14 @@ const AdminDashboard: React.FC = () => {
           <div className="space-y-8">
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <PropertiesManager />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'net-worth' && (
+          <div className="space-y-8">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <NetWorthTracker />
             </div>
           </div>
         )}
