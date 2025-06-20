@@ -47,7 +47,7 @@ export const companyMetrics = pgTable("company_metrics", {
 // Properties table for real estate portfolio
 export const properties = pgTable("properties", {
   id: serial("id").primaryKey(),
-  status: text("status").notNull(), // "Sold" or "Currently Own"
+  status: text("status", { enum: ["Under Contract", "Rehabbing", "Cashflowing", "Sold"] }).notNull().default("Under Contract"),
   apartments: integer("apartments").notNull(),
   address: text("address").notNull(),
   city: text("city").notNull(),
