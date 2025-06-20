@@ -503,56 +503,27 @@ export default function PropertiesManager() {
       </div>
 
       {/* KPI Bar - Top Level Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Portfolio Value</p>
-              <p className="text-3xl font-bold text-blue-600">{formatCurrency(metrics.totalValue)}</p>
-              <p className="text-sm text-gray-500 mt-1">{metrics.totalProperties} properties</p>
-            </div>
-            <div className="bg-blue-100 rounded-full p-3">
-              <Building className="h-8 w-8 text-blue-600" />
-            </div>
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
+        <div className="grid grid-cols-4 gap-4">
+          <div className="text-center">
+            <p className="text-sm opacity-90 mb-2">Total Portfolio Value</p>
+            <p className="text-xl font-bold">{formatCurrency(metrics.totalValue)}</p>
+            <p className="text-xs opacity-75 mt-1">{metrics.totalProperties} properties</p>
           </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Monthly Cash Flow</p>
-              <p className="text-3xl font-bold text-green-600">{formatCurrency(metrics.totalMonthlyCashFlow)}</p>
-              <p className="text-sm text-gray-500 mt-1">{formatCurrency(metrics.totalMonthlyCashFlow * 12)} annually</p>
-            </div>
-            <div className="bg-green-100 rounded-full p-3">
-              <TrendingUp className="h-8 w-8 text-green-600" />
-            </div>
+          <div className="text-center">
+            <p className="text-sm opacity-90 mb-2">Monthly Cash Flow</p>
+            <p className="text-xl font-bold text-green-300">{formatCurrency(metrics.totalMonthlyCashFlow)}</p>
+            <p className="text-xs opacity-75 mt-1">{formatCurrency(metrics.totalMonthlyCashFlow * 12)} annually</p>
           </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Equity Created</p>
-              <p className="text-3xl font-bold text-purple-600">{formatCurrency(metrics.totalEquityCreated)}</p>
-              <p className="text-sm text-gray-500 mt-1">{formatPercent(metrics.totalROI)} total ROI</p>
-            </div>
-            <div className="bg-purple-100 rounded-full p-3">
-              <Target className="h-8 w-8 text-purple-600" />
-            </div>
+          <div className="text-center">
+            <p className="text-sm opacity-90 mb-2">Equity Created</p>
+            <p className="text-xl font-bold text-orange-300">{formatCurrency(metrics.totalEquityCreated)}</p>
+            <p className="text-xs opacity-75 mt-1">{formatPercent(metrics.totalROI)} total ROI</p>
           </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Avg Cash-on-Cash</p>
-              <p className="text-3xl font-bold text-orange-600">{formatPercent(metrics.avgCashOnCash)}</p>
-              <p className="text-sm text-gray-500 mt-1">{formatPercent(metrics.avgCapRate)} avg cap rate</p>
-            </div>
-            <div className="bg-orange-100 rounded-full p-3">
-              <Percent className="h-8 w-8 text-orange-600" />
-            </div>
+          <div className="text-center">
+            <p className="text-sm opacity-90 mb-2">Avg Cash-on-Cash</p>
+            <p className="text-xl font-bold">{formatPercent(metrics.avgCashOnCash)}</p>
+            <p className="text-xs opacity-75 mt-1">{formatPercent(metrics.avgCapRate)} avg cap rate</p>
           </div>
         </div>
       </div>

@@ -466,64 +466,31 @@ export default function EntityDashboard() {
       </div>
 
       {/* Top Metric Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">AUM</p>
-              <p className="text-2xl font-bold text-blue-600">{formatCompact(metrics.totalAUM)}</p>
-            </div>
-            <Building className="h-8 w-8 text-blue-600" />
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
+        <div className="grid grid-cols-6 gap-4">
+          <div className="text-center">
+            <p className="text-sm opacity-90 mb-2">AUM</p>
+            <p className="text-xl font-bold">{formatCompact(metrics.totalAUM)}</p>
           </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Price/Unit</p>
-              <p className="text-2xl font-bold text-green-600">{formatCompact(metrics.pricePerUnit)}</p>
-            </div>
-            <Home className="h-8 w-8 text-green-600" />
+          <div className="text-center">
+            <p className="text-sm opacity-90 mb-2">Price/Unit</p>
+            <p className="text-xl font-bold">{formatCompact(metrics.pricePerUnit)}</p>
           </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Units</p>
-              <p className="text-2xl font-bold text-purple-600">{metrics.totalUnits}</p>
-            </div>
-            <Users className="h-8 w-8 text-purple-600" />
+          <div className="text-center">
+            <p className="text-sm opacity-90 mb-2">Units</p>
+            <p className="text-xl font-bold text-green-300">{metrics.totalUnits}</p>
           </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Properties</p>
-              <p className="text-2xl font-bold text-orange-600">{metrics.totalProperties}</p>
-            </div>
-            <Target className="h-8 w-8 text-orange-600" />
+          <div className="text-center">
+            <p className="text-sm opacity-90 mb-2">Properties</p>
+            <p className="text-xl font-bold text-orange-300">{metrics.totalProperties}</p>
           </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Equity Multiple</p>
-              <p className="text-2xl font-bold text-red-600">{metrics.avgEquityMultiple.toFixed(1)}x</p>
-            </div>
-            <TrendingUp className="h-8 w-8 text-red-600" />
+          <div className="text-center">
+            <p className="text-sm opacity-90 mb-2">Avg Equity Multiple</p>
+            <p className="text-xl font-bold">{metrics.avgEquityMultiple.toFixed(1)}x</p>
           </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Monthly Cash Flow</p>
-              <p className="text-2xl font-bold text-teal-600">{formatCompact(metrics.monthlyCashFlow)}</p>
-            </div>
-            <DollarSign className="h-8 w-8 text-teal-600" />
+          <div className="text-center">
+            <p className="text-sm opacity-90 mb-2">Monthly Cash Flow</p>
+            <p className="text-xl font-bold text-green-300">{formatCompact(metrics.monthlyCashFlow)}</p>
           </div>
         </div>
       </div>
