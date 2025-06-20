@@ -32,6 +32,7 @@ import apiService from '../services/api';
 import RevenueChart from '../components/charts/RevenueChart';
 import PropertyPerformanceChart from '../components/charts/PropertyPerformanceChart';
 import DealAnalyzer from './DealAnalyzer';
+import EntityDashboard from './EntityDashboard';
 import FinancialDashboard from './FinancialDashboard';
 import PropertiesManager from './PropertiesManager';
 import NetWorthTracker from './NetWorthTracker';
@@ -73,7 +74,7 @@ const AdminDashboard: React.FC = () => {
   const [investorLeads, setInvestorLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('deal-analyzer');
+  const [activeTab, setActiveTab] = useState('entity-dashboard');
   const [refreshing, setRefreshing] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -278,6 +279,7 @@ const AdminDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
             {[
+              { id: 'entity-dashboard', label: 'Entity Dashboard', icon: Users },
               { id: 'deal-analyzer', label: 'Deal Analyzer', icon: Calculator },
               { id: 'net-worth', label: 'Net Worth', icon: DollarSign },
               { id: 'properties', label: 'Asset Management', icon: Building },
@@ -302,9 +304,21 @@ const AdminDashboard: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'entity-dashboard' && (
+          <EntityDashboard />
+        )}
 
+        {activeTab === 'deal-analyzer' && (
+          <DealAnalyzer />
+        )}
 
+        {activeTab === 'net-worth' && (
+          <NetWorthTracker />
+        )}
 
+        {activeTab === 'properties' && (
+          <PropertiesManager />
+        )}
 
         {activeTab === 'reports' && (
           <div className="space-y-8">
