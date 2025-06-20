@@ -150,7 +150,7 @@ export default function EntityDashboard() {
   const properties: Property[] = Array.isArray(allProperties) ? allProperties : [];
   
   // Properties grouped by entity
-  const entitiesList = ['5Central Capital LLC', 'Harmony Holdings LLC', 'Crystal Properties LLC'];
+  const entitiesList = ['5Central Capital', 'The House Doctors', 'Arcadia Vision Group'];
   const propertiesByEntity = entitiesList.reduce((acc, entity) => {
     acc[entity] = properties.filter(prop => prop.entity === entity);
     return acc;
@@ -166,16 +166,16 @@ export default function EntityDashboard() {
 
   // Placeholder entity members data
   const entityMembers: Record<string, EntityMember[]> = {
-    '5Central Capital LLC': [
+    '5Central Capital': [
       { id: 1, userId: 1, name: 'John Smith', email: 'john@example.com', role: 'owner', equityPercentage: 75, joinedAt: '2023-01-15' },
       { id: 2, userId: 2, name: 'Sarah Johnson', email: 'sarah@example.com', role: 'manager', equityPercentage: 20, joinedAt: '2023-06-20' },
       { id: 3, userId: 3, name: 'Mike Davis', email: 'mike@example.com', role: 'member', equityPercentage: 5, joinedAt: '2024-02-10' }
     ],
-    'Harmony Holdings LLC': [
+    'The House Doctors': [
       { id: 4, userId: 1, name: 'John Smith', email: 'john@example.com', role: 'owner', equityPercentage: 60, joinedAt: '2023-03-22' },
       { id: 5, userId: 4, name: 'Lisa Wong', email: 'lisa@example.com', role: 'member', equityPercentage: 40, joinedAt: '2023-07-15' }
     ],
-    'Crystal Properties LLC': [
+    'Arcadia Vision Group': [
       { id: 6, userId: 2, name: 'Sarah Johnson', email: 'sarah@example.com', role: 'owner', equityPercentage: 80, joinedAt: '2023-05-10' },
       { id: 7, userId: 5, name: 'Tom Wilson', email: 'tom@example.com', role: 'member', equityPercentage: 20, joinedAt: '2023-11-05' }
     ]
@@ -183,18 +183,18 @@ export default function EntityDashboard() {
 
   // Placeholder compliance data
   const entityCompliance: Record<string, ComplianceItem[]> = {
-    '5Central Capital LLC': [
+    '5Central Capital': [
       { id: 1, complianceType: 'Annual Tax Filing', status: 'completed', dueDate: '2025-03-15', completedDate: '2025-02-28', description: 'Federal and state tax returns filed', priority: 'high' },
       { id: 2, complianceType: 'Operating Agreement Update', status: 'pending', dueDate: '2025-06-30', description: 'Annual review and update of operating agreement', priority: 'medium' },
       { id: 3, complianceType: 'State Registration Renewal', status: 'overdue', dueDate: '2025-01-31', description: 'Annual state business registration renewal', priority: 'critical' },
       { id: 4, complianceType: 'Insurance Policy Review', status: 'pending', dueDate: '2025-08-15', description: 'Annual review of liability and property insurance', priority: 'medium' }
     ],
-    'Harmony Holdings LLC': [
+    'The House Doctors': [
       { id: 5, complianceType: 'Annual Tax Filing', status: 'pending', dueDate: '2025-03-15', description: 'Federal and state tax returns', priority: 'high' },
       { id: 6, complianceType: 'Member Meeting Minutes', status: 'completed', dueDate: '2025-01-15', completedDate: '2025-01-10', description: 'Annual member meeting documentation', priority: 'low' },
       { id: 7, complianceType: 'Financial Audit', status: 'pending', dueDate: '2025-04-30', description: 'Annual financial audit by CPA', priority: 'high' }
     ],
-    'Crystal Properties LLC': [
+    'Arcadia Vision Group': [
       { id: 8, complianceType: 'Annual Tax Filing', status: 'pending', dueDate: '2025-03-15', description: 'Federal and state tax returns', priority: 'high' },
       { id: 9, complianceType: 'Property Management Agreement', status: 'completed', dueDate: '2025-01-01', completedDate: '2024-12-15', description: 'Annual property management contract renewal', priority: 'medium' },
       { id: 10, complianceType: 'Entity Registration', status: 'pending', dueDate: '2025-07-20', description: 'State entity registration renewal', priority: 'medium' }

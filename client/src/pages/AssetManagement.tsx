@@ -40,9 +40,9 @@ interface Property {
 }
 
 const entities = [
-  '5Central Capital LLC',
-  'Harmony Holdings LLC',
-  'Crystal Properties LLC'
+  '5Central Capital',
+  'The House Doctors',
+  'Arcadia Vision Group'
 ];
 
 const AssetManagement: React.FC = () => {
