@@ -48,6 +48,7 @@ const entities = [
 const AssetManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState('balance-sheet');
   const [editingProperty, setEditingProperty] = useState<number | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch properties from database
@@ -117,6 +118,14 @@ const AssetManagement: React.FC = () => {
 
   const handleEntityChange = (propertyId: number, newEntity: string) => {
     updatePropertyMutation.mutate({ id: propertyId, entity: newEntity });
+  };
+
+  const handlePropertyDoubleClick = (property: Property) => {
+    setSelectedProperty(property);
+  };
+
+  const closePropertyModal = () => {
+    setSelectedProperty(null);
   };
 
   if (isLoading) {
@@ -323,7 +332,12 @@ const AssetManagement: React.FC = () => {
             ) : (
               <div className="space-y-4">
                 {properties.filter(p => p.status === 'Currently Own').map((property: Property) => (
-                  <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 w-full">
+                  <div 
+                    key={property.id} 
+                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 w-full cursor-pointer hover:shadow-lg transition-shadow"
+                    onDoubleClick={() => handlePropertyDoubleClick(property)}
+                    title="Double-click to view full property details"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -429,7 +443,12 @@ const AssetManagement: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {properties.filter(p => p.status === 'Sold').map((property: Property) => (
-                  <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 aspect-square flex flex-col">
+                  <div 
+                    key={property.id} 
+                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 aspect-square flex flex-col cursor-pointer hover:shadow-lg transition-shadow"
+                    onDoubleClick={() => handlePropertyDoubleClick(property)}
+                    title="Double-click to view full property details"
+                  >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-md font-semibold text-gray-900 dark:text-white truncate">
@@ -514,6 +533,181 @@ const AssetManagement: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Property Detail Modal */}
+      {selectedProperty && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {selectedProperty.address}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {selectedProperty.city}, {selectedProperty.state} {selectedProperty.zipCode || ''}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  selectedProperty.status === 'Currently Own' 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                }`}>
+                  {selectedProperty.status}
+                </span>
+                <button
+                  onClick={closePropertyModal}
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Left Column - Basic Information */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Property Details</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                        <p className="text-gray-600 dark:text-gray-400">Units</p>
+                        <p className="font-semibold text-gray-900 dark:text-white text-lg">{selectedProperty.apartments}</p>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                        <p className="text-gray-600 dark:text-gray-400">Entity</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{selectedProperty.entity || '5Central Capital'}</p>
+                      </div>
+                      {selectedProperty.acquisitionDate && (
+                        <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                          <p className="text-gray-600 dark:text-gray-400">Acquisition Date</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">
+                            {new Date(selectedProperty.acquisitionDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                      )}
+                      {selectedProperty.yearsHeld && (
+                        <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                          <p className="text-gray-600 dark:text-gray-400">Years Held</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{selectedProperty.yearsHeld}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Financial Summary */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Financial Summary</h3>
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <p className="text-blue-700 dark:text-blue-300 text-sm">Acquisition Price</p>
+                        <p className="font-bold text-blue-900 dark:text-blue-100 text-xl">{formatCurrency(selectedProperty.acquisitionPrice)}</p>
+                      </div>
+                      <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                        <p className="text-purple-700 dark:text-purple-300 text-sm">Rehab Costs</p>
+                        <p className="font-bold text-purple-900 dark:text-purple-100 text-xl">{formatCurrency(selectedProperty.rehabCosts)}</p>
+                      </div>
+                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                        <p className="text-green-700 dark:text-green-300 text-sm">
+                          {selectedProperty.status === 'Currently Own' ? 'Monthly Cash Flow' : 'Total Profits'}
+                        </p>
+                        <p className="font-bold text-green-900 dark:text-green-100 text-xl">
+                          {selectedProperty.status === 'Currently Own' 
+                            ? formatCurrency(selectedProperty.cashFlow)
+                            : formatCurrency(selectedProperty.totalProfits)
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column - Investment Metrics */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Investment Metrics</h3>
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">Initial Capital Required</p>
+                        <p className="font-semibold text-gray-900 dark:text-white text-lg">{formatCurrency(selectedProperty.initialCapitalRequired)}</p>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">Cash-on-Cash Return</p>
+                        <p className="font-semibold text-blue-600 text-lg">{formatPercentage(selectedProperty.cashOnCashReturn)}</p>
+                      </div>
+                      {selectedProperty.annualizedReturn && (
+                        <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                          <p className="text-gray-600 dark:text-gray-400 text-sm">Annualized Return</p>
+                          <p className="font-semibold text-blue-600 text-lg">{formatPercentage(selectedProperty.annualizedReturn)}</p>
+                        </div>
+                      )}
+                      {selectedProperty.arvAtTimePurchased && (
+                        <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                          <p className="text-gray-600 dark:text-gray-400 text-sm">ARV at Purchase</p>
+                          <p className="font-semibold text-gray-900 dark:text-white text-lg">{formatCurrency(selectedProperty.arvAtTimePurchased)}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Sale Information (if sold) */}
+                  {selectedProperty.status === 'Sold' && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Sale Information</h3>
+                      <div className="space-y-3">
+                        {selectedProperty.salePrice && (
+                          <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                            <p className="text-orange-700 dark:text-orange-300 text-sm">Sale Price</p>
+                            <p className="font-bold text-orange-900 dark:text-orange-100 text-xl">{formatCurrency(selectedProperty.salePrice)}</p>
+                          </div>
+                        )}
+                        {selectedProperty.salePoints && (
+                          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                            <p className="text-gray-600 dark:text-gray-400 text-sm">Sale Points</p>
+                            <p className="font-semibold text-gray-900 dark:text-white text-lg">{formatCurrency(selectedProperty.salePoints)}</p>
+                          </div>
+                        )}
+                        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                          <p className="text-emerald-700 dark:text-emerald-300 text-sm">Total Profits</p>
+                          <p className="font-bold text-emerald-900 dark:text-emerald-100 text-xl">{formatCurrency(selectedProperty.totalProfits)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Performance Summary */}
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                    <h4 className="text-indigo-900 dark:text-indigo-100 font-semibold mb-2">Performance Summary</h4>
+                    <div className="text-sm text-indigo-700 dark:text-indigo-300">
+                      <p>• {selectedProperty.apartments} unit property in {selectedProperty.city}, {selectedProperty.state}</p>
+                      <p>• Total investment: {formatCurrency((parseFloat(selectedProperty.acquisitionPrice) + parseFloat(selectedProperty.rehabCosts)).toString())}</p>
+                      <p>• Current status: {selectedProperty.status}</p>
+                      {selectedProperty.status === 'Currently Own' ? (
+                        <p>• Generating {formatCurrency(selectedProperty.cashFlow)} monthly cash flow</p>
+                      ) : (
+                        <p>• Realized {formatCurrency(selectedProperty.totalProfits)} in total profits</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={closePropertyModal}
+                className="px-6 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

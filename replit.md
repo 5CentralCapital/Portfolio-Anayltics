@@ -140,6 +140,7 @@ Changelog:
 - June 20, 2025. Applied Deal Analyzer color scheme to KPI bars in Entity Dashboard and Asset Management with colored background sections (blue-50, green-50, purple-50, orange-50, indigo-50, emerald-50) and matching text colors for visual consistency - positive/negative values use appropriate green/red coloring - all KPI sections now have unified visual design across the entire application
 - June 20, 2025. Updated entity names across the entire application: "Harmony Holdings LLC" renamed to "The House Doctors", "Crystal Properties LLC" renamed to "Arcadia Vision Group", and "5Central Capital LLC" simplified to "5Central Capital" - updated all frontend components, database records, and entity assignment dropdowns to reflect the new branding
 - June 20, 2025. Reorganized Asset Management property portfolio into separate sections for active and sold properties with distinct layouts - active properties display in horizontal cards with full-width layout, sold properties display in square grid boxes (3 per row) with compact design - both sections maintain full database integration and entity assignment functionality
+- June 20, 2025. Added comprehensive property detail modal functionality - double-clicking any property card opens a large modal displaying complete property information including financial metrics, investment data, acquisition details, performance summaries, and sale information for sold properties - modal features responsive design with two-column layout and color-coded sections
 
 ## User Preferences
 
