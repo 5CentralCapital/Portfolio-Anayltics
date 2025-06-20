@@ -280,7 +280,7 @@ const AdminDashboard: React.FC = () => {
             {[
               { id: 'deal-analyzer', label: 'Deal Analyzer', icon: Calculator },
               { id: 'net-worth', label: 'Net Worth', icon: DollarSign },
-              { id: 'properties', label: 'Properties', icon: Building },
+              { id: 'properties', label: 'Asset Management', icon: Building },
               { id: 'reports', label: 'Reports', icon: PieChart },
             ].map((tab) => (
               <button

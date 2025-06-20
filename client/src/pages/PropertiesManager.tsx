@@ -13,7 +13,13 @@ import {
   Target,
   PieChart,
   Download,
-  Upload
+  Upload,
+  Users,
+  Percent,
+  BarChart3,
+  FileText,
+  Activity,
+  CreditCard
 } from 'lucide-react';
 
 interface Property {
@@ -42,7 +48,137 @@ interface Property {
   strategy: 'Buy & Hold' | 'Fix & Flip' | 'BRRRR' | 'Value-Add';
 }
 
+// Financial statement interfaces
+interface BalanceSheetData {
+  assets: {
+    totalPropertyValue: number;
+    cashAndEquivalents: number;
+    otherAssets: number;
+  };
+  liabilities: {
+    mortgageDebt: number;
+    otherLiabilities: number;
+  };
+  equity: {
+    ownerEquity: number;
+    retainedEarnings: number;
+  };
+}
+
+interface IncomeStatementData {
+  revenue: {
+    rentalIncome: number;
+    otherIncome: number;
+  };
+  expenses: {
+    operatingExpenses: number;
+    interestExpense: number;
+    depreciation: number;
+    otherExpenses: number;
+  };
+  netIncome: number;
+}
+
+interface CashFlowStatementData {
+  operatingActivities: {
+    netIncome: number;
+    depreciation: number;
+    changesInWorkingCapital: number;
+  };
+  investingActivities: {
+    propertyAcquisitions: number;
+    capitalImprovements: number;
+    dispositions: number;
+  };
+  financingActivities: {
+    debtProceeds: number;
+    debtPayments: number;
+    ownerContributions: number;
+  };
+}
+
+// Editable field component for inline editing
+interface EditableFieldProps {
+  value: number;
+  onSave: (value: number) => void;
+  format?: 'currency' | 'percentage' | 'number';
+  className?: string;
+}
+
+const EditableField: React.FC<EditableFieldProps> = ({ 
+  value, 
+  onSave, 
+  format = 'currency', 
+  className = '' 
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value.toString());
+
+  const formatValue = (val: number) => {
+    switch (format) {
+      case 'currency':
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(val);
+      case 'percentage':
+        return `${val.toFixed(1)}%`;
+      default:
+        return val.toLocaleString();
+    }
+  };
+
+  const handleSave = () => {
+    const numValue = parseFloat(editValue.replace(/[^0-9.-]/g, ''));
+    if (!isNaN(numValue)) {
+      onSave(numValue);
+    }
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center space-x-2">
+        <input
+          type="text"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSave();
+            if (e.key === 'Escape') {
+              setEditValue(value.toString());
+              setIsEditing(false);
+            }
+          }}
+          className="px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          autoFocus
+        />
+        <button
+          onClick={handleSave}
+          className="p-1 text-green-600 hover:text-green-700"
+        >
+          <Save className="h-3 w-3" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className={`group flex items-center space-x-1 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded ${className}`}
+      onClick={() => setIsEditing(true)}
+    >
+      <span>{formatValue(value)}</span>
+      <Edit3 className="h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+    </div>
+  );
+};
+
 export default function PropertiesManager() {
+  const [activeTab, setActiveTab] = useState<'balance' | 'income' | 'cashflow'>('balance');
   const [properties, setProperties] = useState<Property[]>([
     {
       id: 1,
@@ -209,6 +345,68 @@ export default function PropertiesManager() {
 
   const metrics = calculatePortfolioMetrics();
 
+  // Calculate financial statements based on property data
+  const calculateFinancialStatements = () => {
+    const totalPropertyValue = properties.reduce((sum, prop) => sum + prop.currentValue, 0);
+    const totalDebt = properties.reduce((sum, prop) => sum + (prop.totalInvestment * 0.7), 0); // Assume 70% LTV
+    const totalEquity = totalPropertyValue - totalDebt;
+    const totalRentalIncome = properties.reduce((sum, prop) => sum + (prop.grossRent * 12), 0);
+    const totalExpenses = properties.reduce((sum, prop) => sum + (prop.expenses * 12), 0);
+    const netIncome = totalRentalIncome - totalExpenses;
+
+    const balanceSheet: BalanceSheetData = {
+      assets: {
+        totalPropertyValue,
+        cashAndEquivalents: 150000,
+        otherAssets: 25000
+      },
+      liabilities: {
+        mortgageDebt: totalDebt,
+        otherLiabilities: 15000
+      },
+      equity: {
+        ownerEquity: totalEquity,
+        retainedEarnings: netIncome * 0.3
+      }
+    };
+
+    const incomeStatement: IncomeStatementData = {
+      revenue: {
+        rentalIncome: totalRentalIncome,
+        otherIncome: 8000
+      },
+      expenses: {
+        operatingExpenses: totalExpenses,
+        interestExpense: totalDebt * 0.045,
+        depreciation: totalPropertyValue * 0.0364,
+        otherExpenses: 12000
+      },
+      netIncome
+    };
+
+    const cashFlowStatement: CashFlowStatementData = {
+      operatingActivities: {
+        netIncome,
+        depreciation: totalPropertyValue * 0.0364,
+        changesInWorkingCapital: -5000
+      },
+      investingActivities: {
+        propertyAcquisitions: -150000,
+        capitalImprovements: -35000,
+        dispositions: 0
+      },
+      financingActivities: {
+        debtProceeds: 105000,
+        debtPayments: -48000,
+        ownerContributions: 25000
+      }
+    };
+
+    return { balanceSheet, incomeStatement, cashFlowStatement };
+  };
+
+  const financialStatements = calculateFinancialStatements();
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -281,165 +479,525 @@ export default function PropertiesManager() {
     }
   };
 
-  const EditableCell = ({ 
-    value, 
-    type = 'text', 
-    onChange, 
-    isEditing, 
-    format,
-    options 
-  }: {
-    value: any;
-    type?: string;
-    onChange: (value: any) => void;
-    isEditing: boolean;
-    format?: (val: any) => string;
-    options?: string[];
-  }) => {
-    if (!isEditing) {
-      return <span>{format ? format(value) : value}</span>;
-    }
+  return (
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Asset Management</h1>
+          <p className="text-gray-600">Real estate portfolio performance and financial tracking</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Property
+          </button>
+          <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </button>
+        </div>
+      </div>
 
-    if (options) {
-      return (
-        <select 
-          value={value} 
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full px-1 py-1 text-xs border border-gray-300 rounded"
-        >
-          {options.map(option => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
-      );
-    }
+      {/* KPI Bar - Top Level Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Portfolio Value</p>
+              <p className="text-3xl font-bold text-blue-600">{formatCurrency(metrics.totalValue)}</p>
+              <p className="text-sm text-gray-500 mt-1">{metrics.totalProperties} properties</p>
+            </div>
+            <div className="bg-blue-100 rounded-full p-3">
+              <Building className="h-8 w-8 text-blue-600" />
+            </div>
+          </div>
+        </div>
 
-    return (
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
-        className="w-full px-1 py-1 text-xs border border-gray-300 rounded"
-      />
-    );
-  };
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Monthly Cash Flow</p>
+              <p className="text-3xl font-bold text-green-600">{formatCurrency(metrics.totalMonthlyCashFlow)}</p>
+              <p className="text-sm text-gray-500 mt-1">{formatCurrency(metrics.totalMonthlyCashFlow * 12)} annually</p>
+            </div>
+            <div className="bg-green-100 rounded-full p-3">
+              <TrendingUp className="h-8 w-8 text-green-600" />
+            </div>
+          </div>
+        </div>
 
-  const PropertyRow = ({ property }: { property: Property }) => {
-    const isEditing = editingId === property.id;
-    const [editData, setEditData] = useState(property);
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Equity Created</p>
+              <p className="text-3xl font-bold text-purple-600">{formatCurrency(metrics.totalEquityCreated)}</p>
+              <p className="text-sm text-gray-500 mt-1">{formatPercent(metrics.totalROI)} total ROI</p>
+            </div>
+            <div className="bg-purple-100 rounded-full p-3">
+              <Target className="h-8 w-8 text-purple-600" />
+            </div>
+          </div>
+        </div>
 
-    useEffect(() => {
-      if (isEditing) {
-        setEditData(property);
-      }
-    }, [isEditing, property]);
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Avg Cash-on-Cash</p>
+              <p className="text-3xl font-bold text-orange-600">{formatPercent(metrics.avgCashOnCash)}</p>
+              <p className="text-sm text-gray-500 mt-1">{formatPercent(metrics.avgCapRate)} avg cap rate</p>
+            </div>
+            <div className="bg-orange-100 rounded-full p-3">
+              <Percent className="h-8 w-8 text-orange-600" />
+            </div>
+          </div>
+        </div>
+      </div>
 
-    const updateField = (field: keyof Property, value: any) => {
-      setEditData(prev => ({ ...prev, [field]: value }));
-    };
+      {/* Financial Tabs */}
+      <div className="bg-white rounded-xl shadow-lg">
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8 px-6">
+            {[
+              { id: 'balance', label: 'Balance Sheet', icon: BarChart3 },
+              { id: 'income', label: 'Income Statement', icon: FileText },
+              { id: 'cashflow', label: 'Cash Flow Statement', icon: Activity }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <tab.icon className="h-4 w-4" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
 
-    return (
-      <tr className="border-b hover:bg-gray-50">
-        <td className="px-2 py-2 text-xs">
-          <EditableCell 
-            value={editData.address} 
-            onChange={(v) => updateField('address', v)}
-            isEditing={isEditing}
-          />
-        </td>
-        <td className="px-2 py-2 text-xs">
-          <EditableCell 
-            value={editData.city} 
-            onChange={(v) => updateField('city', v)}
-            isEditing={isEditing}
-          />
-        </td>
-        <td className="px-2 py-2 text-xs">
-          <EditableCell 
-            value={editData.state} 
-            onChange={(v) => updateField('state', v)}
-            isEditing={isEditing}
-          />
-        </td>
-        <td className="px-2 py-2 text-xs">
-          <EditableCell 
-            value={editData.zipCode} 
-            onChange={(v) => updateField('zipCode', v)}
-            isEditing={isEditing}
-          />
-        </td>
-        <td className="px-2 py-2 text-xs">
-          <EditableCell 
-            value={editData.units} 
-            type="number"
-            onChange={(v) => updateField('units', v)}
-            isEditing={isEditing}
-          />
-        </td>
-        <td className="px-2 py-2 text-xs">
-          <EditableCell 
-            value={editData.purchasePrice} 
-            type="number"
-            onChange={(v) => updateField('purchasePrice', v)}
-            isEditing={isEditing}
-            format={formatCurrency}
-          />
-        </td>
-        <td className="px-2 py-2 text-xs">
-          <EditableCell 
-            value={editData.purchaseDate} 
-            type="date"
-            onChange={(v) => updateField('purchaseDate', v)}
-            isEditing={isEditing}
-          />
-        </td>
-        <td className="px-2 py-2 text-xs">
-          <EditableCell 
-            value={editData.rehabCosts} 
-            type="number"
-            onChange={(v) => updateField('rehabCosts', v)}
-            isEditing={isEditing}
-            format={formatCurrency}
-          />
-        </td>
-        <td className="px-2 py-2 text-xs font-medium">
-          {formatCurrency(editData.purchasePrice + editData.rehabCosts)}
-        </td>
-        <td className="px-2 py-2 text-xs">
-          <EditableCell 
-            value={editData.currentValue} 
-            type="number"
-            onChange={(v) => updateField('currentValue', v)}
-            isEditing={isEditing}
-            format={formatCurrency}
-          />
-        </td>
-        <td className="px-2 py-2 text-xs">
-          <EditableCell 
-            value={editData.grossRent} 
-            type="number"
-            onChange={(v) => updateField('grossRent', v)}
-            isEditing={isEditing}
-            format={formatCurrency}
-          />
-        </td>
-        <td className="px-2 py-2 text-xs">
-          <EditableCell 
-            value={editData.expenses} 
-            type="number"
-            onChange={(v) => updateField('expenses', v)}
-            isEditing={isEditing}
-            format={formatCurrency}
-          />
-        </td>
-        <td className="px-2 py-2 text-xs font-medium">
-          {formatCurrency((editData.grossRent * 0.95) - editData.expenses)}
-        </td>
-        <td className="px-2 py-2 text-xs">
-          <EditableCell 
-            value={editData.cashFlow} 
-            type="number"
-            onChange={(v) => updateField('cashFlow', v)}
+        <div className="p-6">
+          {activeTab === 'balance' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Assets */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Assets</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Real Estate Properties</span>
+                    <EditableField
+                      value={financialStatements.balanceSheet.assets.totalPropertyValue}
+                      onSave={(value) => {}}
+                      className="font-semibold"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Cash & Equivalents</span>
+                    <EditableField
+                      value={financialStatements.balanceSheet.assets.cashAndEquivalents}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Other Assets</span>
+                    <EditableField
+                      value={financialStatements.balanceSheet.assets.otherAssets}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
+                    <span>Total Assets</span>
+                    <span className="text-blue-600">
+                      {formatCurrency(
+                        financialStatements.balanceSheet.assets.totalPropertyValue +
+                        financialStatements.balanceSheet.assets.cashAndEquivalents +
+                        financialStatements.balanceSheet.assets.otherAssets
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Liabilities */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Liabilities</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Mortgage Debt</span>
+                    <EditableField
+                      value={financialStatements.balanceSheet.liabilities.mortgageDebt}
+                      onSave={(value) => {}}
+                      className="font-semibold"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Other Liabilities</span>
+                    <EditableField
+                      value={financialStatements.balanceSheet.liabilities.otherLiabilities}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
+                    <span>Total Liabilities</span>
+                    <span className="text-red-600">
+                      {formatCurrency(
+                        financialStatements.balanceSheet.liabilities.mortgageDebt +
+                        financialStatements.balanceSheet.liabilities.otherLiabilities
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Equity */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Owner's Equity</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Owner Equity</span>
+                    <EditableField
+                      value={financialStatements.balanceSheet.equity.ownerEquity}
+                      onSave={(value) => {}}
+                      className="font-semibold"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Retained Earnings</span>
+                    <EditableField
+                      value={financialStatements.balanceSheet.equity.retainedEarnings}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
+                    <span>Total Equity</span>
+                    <span className="text-green-600">
+                      {formatCurrency(
+                        financialStatements.balanceSheet.equity.ownerEquity +
+                        financialStatements.balanceSheet.equity.retainedEarnings
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'income' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Revenue */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Rental Income</span>
+                    <EditableField
+                      value={financialStatements.incomeStatement.revenue.rentalIncome}
+                      onSave={(value) => {}}
+                      className="font-semibold"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Other Income</span>
+                    <EditableField
+                      value={financialStatements.incomeStatement.revenue.otherIncome}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
+                    <span>Total Revenue</span>
+                    <span className="text-green-600">
+                      {formatCurrency(
+                        financialStatements.incomeStatement.revenue.rentalIncome +
+                        financialStatements.incomeStatement.revenue.otherIncome
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 mt-8">Net Income</h3>
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-blue-900">Net Income</span>
+                    <span className="text-2xl font-bold text-blue-600">
+                      {formatCurrency(financialStatements.incomeStatement.netIncome)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-blue-700 mt-1">
+                    {formatPercent(
+                      financialStatements.incomeStatement.netIncome / 
+                      (financialStatements.incomeStatement.revenue.rentalIncome + 
+                       financialStatements.incomeStatement.revenue.otherIncome)
+                    )} profit margin
+                  </p>
+                </div>
+              </div>
+
+              {/* Expenses */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Expenses</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Operating Expenses</span>
+                    <EditableField
+                      value={financialStatements.incomeStatement.expenses.operatingExpenses}
+                      onSave={(value) => {}}
+                      className="font-semibold"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Interest Expense</span>
+                    <EditableField
+                      value={financialStatements.incomeStatement.expenses.interestExpense}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Depreciation</span>
+                    <EditableField
+                      value={financialStatements.incomeStatement.expenses.depreciation}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Other Expenses</span>
+                    <EditableField
+                      value={financialStatements.incomeStatement.expenses.otherExpenses}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
+                    <span>Total Expenses</span>
+                    <span className="text-red-600">
+                      {formatCurrency(
+                        financialStatements.incomeStatement.expenses.operatingExpenses +
+                        financialStatements.incomeStatement.expenses.interestExpense +
+                        financialStatements.incomeStatement.expenses.depreciation +
+                        financialStatements.incomeStatement.expenses.otherExpenses
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'cashflow' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Operating Activities */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Operating Activities</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Net Income</span>
+                    <span className="font-semibold">{formatCurrency(financialStatements.cashFlowStatement.operatingActivities.netIncome)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Depreciation</span>
+                    <span>{formatCurrency(financialStatements.cashFlowStatement.operatingActivities.depreciation)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Working Capital Changes</span>
+                    <EditableField
+                      value={financialStatements.cashFlowStatement.operatingActivities.changesInWorkingCapital}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
+                    <span>Operating Cash Flow</span>
+                    <span className="text-green-600">
+                      {formatCurrency(
+                        financialStatements.cashFlowStatement.operatingActivities.netIncome +
+                        financialStatements.cashFlowStatement.operatingActivities.depreciation +
+                        financialStatements.cashFlowStatement.operatingActivities.changesInWorkingCapital
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Investing Activities */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Investing Activities</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Property Acquisitions</span>
+                    <EditableField
+                      value={financialStatements.cashFlowStatement.investingActivities.propertyAcquisitions}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Capital Improvements</span>
+                    <EditableField
+                      value={financialStatements.cashFlowStatement.investingActivities.capitalImprovements}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Property Dispositions</span>
+                    <EditableField
+                      value={financialStatements.cashFlowStatement.investingActivities.dispositions}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
+                    <span>Investing Cash Flow</span>
+                    <span className="text-red-600">
+                      {formatCurrency(
+                        financialStatements.cashFlowStatement.investingActivities.propertyAcquisitions +
+                        financialStatements.cashFlowStatement.investingActivities.capitalImprovements +
+                        financialStatements.cashFlowStatement.investingActivities.dispositions
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Financing Activities */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Financing Activities</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Debt Proceeds</span>
+                    <EditableField
+                      value={financialStatements.cashFlowStatement.financingActivities.debtProceeds}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Debt Payments</span>
+                    <EditableField
+                      value={financialStatements.cashFlowStatement.financingActivities.debtPayments}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Owner Contributions</span>
+                    <EditableField
+                      value={financialStatements.cashFlowStatement.financingActivities.ownerContributions}
+                      onSave={(value) => {}}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-t-2 border-gray-300 font-bold">
+                    <span>Financing Cash Flow</span>
+                    <span className="text-blue-600">
+                      {formatCurrency(
+                        financialStatements.cashFlowStatement.financingActivities.debtProceeds +
+                        financialStatements.cashFlowStatement.financingActivities.debtPayments +
+                        financialStatements.cashFlowStatement.financingActivities.ownerContributions
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Property Portfolio Table */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-gray-900">Property Portfolio</h3>
+          <div className="text-sm text-gray-500">
+            All calculations drive dashboard KPIs above
+          </div>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 font-semibold text-gray-900">Property</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-900">Purchase Price</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-900">Current Value</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-900">Monthly Rent</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-900">Cash Flow</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-900">CoC Return</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-900">Equity Created</th>
+                <th className="text-center py-3 px-4 font-semibold text-gray-900">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {properties.map((property) => (
+                <tr key={property.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="py-3 px-4">
+                    <div>
+                      <div className="font-medium text-gray-900">{property.address}</div>
+                      <div className="text-sm text-gray-500">{property.city}, {property.state}</div>
+                      <div className="text-xs text-gray-400">{property.units} units • {property.strategy}</div>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <EditableField
+                      value={property.purchasePrice}
+                      onSave={(value) => handleSave(property.id, { purchasePrice: value })}
+                    />
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <EditableField
+                      value={property.currentValue}
+                      onSave={(value) => handleSave(property.id, { currentValue: value })}
+                      className="font-semibold text-blue-600"
+                    />
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <EditableField
+                      value={property.grossRent}
+                      onSave={(value) => handleSave(property.id, { grossRent: value })}
+                    />
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <EditableField
+                      value={property.cashFlow}
+                      onSave={(value) => handleSave(property.id, { cashFlow: value })}
+                      className="font-semibold text-green-600"
+                    />
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <EditableField
+                      value={property.cocReturn}
+                      onSave={(value) => handleSave(property.id, { cocReturn: value })}
+                      format="percentage"
+                      className="font-semibold"
+                    />
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <span className="font-semibold text-purple-600">
+                      {formatCurrency(property.equityCreated)}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex justify-center space-x-2">
+                      <button
+                        onClick={() => handleEdit(property.id)}
+                        className="p-1 text-blue-600 hover:text-blue-700"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(property.id)}
+                        className="p-1 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
             isEditing={isEditing}
             format={formatCurrency}
           />

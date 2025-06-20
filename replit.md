@@ -125,6 +125,7 @@ Changelog:
 - June 19, 2025. Removed Overview, Financial, Financial Dashboard, and Investor Leads tabs from admin dashboard, keeping only Deal Analyzer, Properties, and Reports tabs with Deal Analyzer as default
 - June 19, 2025. Built comprehensive Net Worth Tracker tab with interactive asset allocation monitoring, editable entity management, and automatic net worth calculations based on real estate equity, stock portfolio, and cash equivalents
 - June 19, 2025. Redesigned Net Worth Tracker with modern gradient styling, circular progress indicators, enhanced visual analytics, and card-based entity management layout
+- June 19, 2025. Transformed Properties tab into comprehensive Asset Management dashboard with KPI bar driven by actual property data, financial statement tabs (Balance Sheet, Income Statement, Cash Flow), and real-time portfolio calculations
 
 ## User Preferences
 
