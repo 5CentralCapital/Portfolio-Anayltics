@@ -798,39 +798,651 @@ export default function DealAnalyzer() {
           </div>
         )}
 
-        {/* Content for other tabs would go here - truncated for brevity */}
+        {/* Rent Roll Tab */}
         {activeTab === 'rentroll' && (
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Rent Roll Analysis</h3>
-            <p className="text-gray-600">Rent roll content coming soon...</p>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Rent Roll Analysis</h3>
+              <div className="text-sm text-gray-600">
+                Total Units: {rentRoll.length} | Occupied: {rentRoll.filter(unit => unit.isOccupied).length} | 
+                Vacancy: {rentRoll.filter(unit => !unit.isOccupied).length}
+              </div>
+            </div>
+
+            {/* Unit Types Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {unitTypes.map(type => {
+                const unitsOfType = rentRoll.filter(unit => unit.unitTypeId === type.id);
+                const occupiedUnits = unitsOfType.filter(unit => unit.isOccupied);
+                return (
+                  <div key={type.id} className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900">{type.name}</h4>
+                    <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-600">Market Rent</p>
+                        <p className="font-semibold">{formatCurrency(type.marketRent)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Avg Current Rent</p>
+                        <p className="font-semibold">
+                          {formatCurrency(occupiedUnits.reduce((sum, unit) => sum + unit.currentRent, 0) / (occupiedUnits.length || 1))}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Units</p>
+                        <p className="font-semibold">{unitsOfType.length}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Occupancy</p>
+                        <p className="font-semibold">{((occupiedUnits.length / unitsOfType.length) * 100).toFixed(0)}%</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Detailed Rent Roll Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full border border-gray-200 rounded-lg">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Unit</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Type</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-900">Current Rent</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-900">Market Rent</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-900">Status</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-900">Lease Expiry</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-900">Upside</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {rentRoll.map(unit => {
+                    const unitType = unitTypes.find(type => type.id === unit.unitTypeId);
+                    const upside = (unitType?.marketRent || 0) - unit.currentRent;
+                    return (
+                      <tr key={unit.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{unit.unitNumber}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{unitType?.name}</td>
+                        <td className="px-4 py-3 text-sm text-right">{formatCurrency(unit.currentRent)}</td>
+                        <td className="px-4 py-3 text-sm text-right">{formatCurrency(unitType?.marketRent || 0)}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                            unit.isOccupied ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {unit.isOccupied ? 'Occupied' : 'Vacant'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-center text-gray-600">
+                          {unit.leaseExpiry ? new Date(unit.leaseExpiry).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right">
+                          <span className={upside > 0 ? 'text-green-600' : 'text-gray-600'}>
+                            {formatCurrency(upside)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
+        {/* Rehab Budget Tab */}
         {activeTab === 'rehab' && (
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Rehab Budget</h3>
-            <p className="text-gray-600">Rehab budget content coming soon...</p>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Rehab Budget</h3>
+              <div className="text-sm text-gray-600">
+                Total Budget: {formatCurrency(totalRehabCosts)} | 
+                Per Unit: {formatCurrency(totalRehabCosts / assumptions.unitCount)}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {Object.entries(rehabBudgetSections).map(([sectionName, items]) => (
+                <div key={sectionName} className="bg-white border border-gray-200 rounded-lg">
+                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-gray-900 capitalize">
+                        {sectionName.replace(/([A-Z])/g, ' $1').trim()}
+                      </h4>
+                      <button
+                        onClick={() => setEditingRehabSections(prev => ({ ...prev, [sectionName]: !prev[sectionName as keyof typeof prev] }))}
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        {editingRehabSections[sectionName as keyof typeof editingRehabSections] ? 'Done' : 'Edit'}
+                      </button>
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Subtotal: {formatCurrency(items.reduce((sum, item) => sum + item.totalCost, 0))}
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="text-left text-sm text-gray-600">
+                            <th className="pb-2">Category</th>
+                            <th className="pb-2 text-right">Per Unit</th>
+                            <th className="pb-2 text-right">Quantity</th>
+                            <th className="pb-2 text-right">Total Cost</th>
+                          </tr>
+                        </thead>
+                        <tbody className="space-y-2">
+                          {items.map((item, index) => (
+                            <tr key={index} className="border-t border-gray-100">
+                              <td className="py-2 text-sm text-gray-900">{item.category}</td>
+                              <td className="py-2 text-right">
+                                {editingRehabSections[sectionName as keyof typeof editingRehabSections] ? (
+                                  <input
+                                    type="number"
+                                    value={item.perUnitCost}
+                                    onChange={(e) => updateRehabItem(sectionName, index, 'perUnitCost', Number(e.target.value))}
+                                    className="w-20 px-2 py-1 text-sm border border-gray-300 rounded text-right"
+                                  />
+                                ) : (
+                                  <span className="text-sm">{formatCurrency(item.perUnitCost)}</span>
+                                )}
+                              </td>
+                              <td className="py-2 text-right">
+                                {editingRehabSections[sectionName as keyof typeof editingRehabSections] ? (
+                                  <input
+                                    type="number"
+                                    value={item.quantity}
+                                    onChange={(e) => updateRehabItem(sectionName, index, 'quantity', Number(e.target.value))}
+                                    className="w-16 px-2 py-1 text-sm border border-gray-300 rounded text-right"
+                                  />
+                                ) : (
+                                  <span className="text-sm">{item.quantity}</span>
+                                )}
+                              </td>
+                              <td className="py-2 text-right">
+                                <span className="text-sm font-medium">{formatCurrency(item.totalCost)}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Rehab Summary */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-blue-600">Total Rehab Budget</p>
+                    <p className="text-lg font-bold text-blue-900">{formatCurrency(totalRehabCosts)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-blue-600">Per Unit Average</p>
+                    <p className="text-lg font-bold text-blue-900">{formatCurrency(totalRehabCosts / assumptions.unitCount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-blue-600">10% Buffer</p>
+                    <p className="text-lg font-bold text-blue-900">{formatCurrency(totalRehabCosts * 0.10)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-blue-600">Total w/ Buffer</p>
+                    <p className="text-lg font-bold text-blue-900">{formatCurrency(totalRehabCosts * 1.10)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
+        {/* Exit Analysis Tab */}
         {activeTab === 'exit' && (
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Exit Analysis</h3>
-            <p className="text-gray-600">Exit analysis content coming soon...</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Exit Analysis</h3>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Exit Assumptions */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900">Exit Assumptions</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Sale Factor (% of ARV)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={exitAnalysis.saleFactor}
+                      onChange={(e) => setExitAnalysis(prev => ({ ...prev, saleFactor: Number(e.target.value) }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Sale Costs (%)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={exitAnalysis.saleCostsPercent}
+                      onChange={(e) => setExitAnalysis(prev => ({ ...prev, saleCostsPercent: Number(e.target.value) }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Hold Period (Years)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={exitAnalysis.holdPeriodYears}
+                      onChange={(e) => setExitAnalysis(prev => ({ ...prev, holdPeriodYears: Number(e.target.value) }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Exit Scenarios */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900">Exit Scenarios</h4>
+                <div className="space-y-3">
+                  {[0.85, 0.95, 1.0, 1.05, 1.15].map(factor => {
+                    const salePrice = metrics.arv * factor;
+                    const saleCosts = salePrice * exitAnalysis.saleCostsPercent;
+                    const netSaleProceeds = salePrice - saleCosts - loanAmount;
+                    const totalReturn = netSaleProceeds + (metrics.netCashFlow * exitAnalysis.holdPeriodYears);
+                    const totalInvested = downPayment + totalRehabCosts + totalClosingCosts;
+                    const multiple = totalReturn / totalInvested;
+                    const annualizedReturn = Math.pow(multiple, 1/exitAnalysis.holdPeriodYears) - 1;
+
+                    return (
+                      <div key={factor} className={`p-3 rounded-lg border ${factor === 1.0 ? 'border-blue-300 bg-blue-50' : 'border-gray-200'}`}>
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">{(factor * 100).toFixed(0)}% of ARV</span>
+                          <span className="text-sm text-gray-600">{formatCurrency(salePrice)}</span>
+                        </div>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-gray-600">Total Return:</span>
+                            <span className={`ml-1 font-medium ${totalReturn > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(totalReturn)}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">IRR:</span>
+                            <span className={`ml-1 font-medium ${annualizedReturn > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatPercentage(annualizedReturn)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Cash Flow Summary */}
+            <div className="mt-8 bg-gray-50 p-6 rounded-lg">
+              <h4 className="font-medium text-gray-900 mb-4">Cash Flow Summary</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">Cash Outflows</h5>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>Down Payment</span>
+                      <span>{formatCurrency(downPayment)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Rehab Costs</span>
+                      <span>{formatCurrency(totalRehabCosts)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Closing Costs</span>
+                      <span>{formatCurrency(totalClosingCosts)}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-1 font-medium">
+                      <span>Total Cash Invested</span>
+                      <span>{formatCurrency(downPayment + totalRehabCosts + totalClosingCosts)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">Cash Inflows</h5>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>Cash Out (Refi)</span>
+                      <span>{formatCurrency(metrics.cashOut)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Annual Cash Flow</span>
+                      <span>{formatCurrency(metrics.netCashFlow)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Cash Flow ({exitAnalysis.holdPeriodYears}yr)</span>
+                      <span>{formatCurrency(metrics.netCashFlow * exitAnalysis.holdPeriodYears)}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-1 font-medium">
+                      <span>Total Cash Generated</span>
+                      <span>{formatCurrency(metrics.cashOut + (metrics.netCashFlow * exitAnalysis.holdPeriodYears))}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
+        {/* Sensitivity Analysis Tab */}
         {activeTab === 'sensitivity' && (
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Sensitivity Analysis</h3>
-            <p className="text-gray-600">Sensitivity analysis content coming soon...</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Sensitivity Analysis</h3>
+            
+            {/* Cap Rate vs Purchase Price Sensitivity */}
+            <div className="mb-8">
+              <h4 className="font-medium text-gray-900 mb-4">IRR Sensitivity (Cap Rate vs Purchase Price)</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full border border-gray-200 rounded-lg">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-sm font-medium text-gray-900">Purchase Price</th>
+                      {[0.045, 0.05, 0.055, 0.06, 0.065].map(rate => (
+                        <th key={rate} className="px-3 py-2 text-center text-sm font-medium text-gray-900">
+                          {formatPercentage(rate)} Cap
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {[0.9, 0.95, 1.0, 1.05, 1.1].map(priceMultiplier => {
+                      const testPrice = assumptions.purchasePrice * priceMultiplier;
+                      return (
+                        <tr key={priceMultiplier}>
+                          <td className="px-3 py-2 text-sm font-medium">
+                            {formatCurrency(testPrice)}
+                          </td>
+                          {[0.045, 0.05, 0.055, 0.06, 0.065].map(capRate => {
+                            const testArv = noi / capRate;
+                            const testAllInCost = testPrice + totalRehabCosts + totalClosingCosts;
+                            const testLoanAmount = testPrice * assumptions.loanPercentage;
+                            const testRefinanceLoan = testArv * assumptions.refinanceLTV;
+                            const testCashOut = testRefinanceLoan - testLoanAmount - (testRefinanceLoan * assumptions.refinanceClosingCostPercent);
+                            const testTotalInvested = (testPrice - testLoanAmount) + totalRehabCosts + totalClosingCosts;
+                            const testTotalProfit = testCashOut + (metrics.netCashFlow * exitAnalysis.holdPeriodYears);
+                            const testIrr = Math.pow(testTotalProfit / testTotalInvested, 1 / exitAnalysis.holdPeriodYears) - 1;
+                            
+                            return (
+                              <td key={capRate} className={`px-3 py-2 text-center text-sm ${
+                                priceMultiplier === 1.0 && capRate === assumptions.marketCapRate 
+                                  ? 'bg-blue-100 font-medium' 
+                                  : testIrr > 0.15 ? 'bg-green-100 text-green-800' 
+                                  : testIrr > 0.10 ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {formatPercentage(testIrr)}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Key Variable Impact */}
+            <div>
+              <h4 className="font-medium text-gray-900 mb-4">Key Variable Impact on IRR</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[
+                  { name: 'Purchase Price', baseValue: assumptions.purchasePrice, unit: '$', variations: [-10, -5, 0, 5, 10] },
+                  { name: 'Rehab Costs', baseValue: totalRehabCosts, unit: '$', variations: [-10, -5, 0, 5, 10] },
+                  { name: 'Market Rent', baseValue: totalMarketRent, unit: '$', variations: [-10, -5, 0, 5, 10] },
+                  { name: 'Cap Rate', baseValue: assumptions.marketCapRate * 100, unit: '%', variations: [-10, -5, 0, 5, 10] }
+                ].map(variable => (
+                  <div key={variable.name} className="bg-gray-50 p-4 rounded-lg">
+                    <h5 className="font-medium text-gray-900 mb-3">{variable.name}</h5>
+                    <div className="space-y-2">
+                      {variable.variations.map(variation => {
+                        let testValue;
+                        let testIrr = metrics.irr;
+                        
+                        if (variable.name === 'Purchase Price') {
+                          testValue = variable.baseValue * (1 + variation/100);
+                          const testLoan = testValue * assumptions.loanPercentage;
+                          const testTotalInvested = (testValue - testLoan) + totalRehabCosts + totalClosingCosts;
+                          testIrr = Math.pow(metrics.totalProfit / testTotalInvested, 1 / exitAnalysis.holdPeriodYears) - 1;
+                        } else if (variable.name === 'Rehab Costs') {
+                          testValue = variable.baseValue * (1 + variation/100);
+                          const testTotalInvested = downPayment + testValue + totalClosingCosts;
+                          testIrr = Math.pow(metrics.totalProfit / testTotalInvested, 1 / exitAnalysis.holdPeriodYears) - 1;
+                        } else if (variable.name === 'Market Rent') {
+                          testValue = variable.baseValue * (1 + variation/100);
+                          const testGrossIncome = testValue * 12;
+                          const testEffectiveIncome = testGrossIncome * (1 - assumptions.vacancyRate);
+                          const testNoi = testEffectiveIncome - totalOperatingExpenses;
+                          const testArv = testNoi / assumptions.marketCapRate;
+                          const testRefinanceLoan = testArv * assumptions.refinanceLTV;
+                          const testCashOut = testRefinanceLoan - loanAmount - (testRefinanceLoan * assumptions.refinanceClosingCostPercent);
+                          const testTotalProfit = testCashOut + (testNoi - (testRefinanceLoan * assumptions.refinanceInterestRate)) * exitAnalysis.holdPeriodYears;
+                          testIrr = Math.pow(testTotalProfit / (downPayment + totalRehabCosts + totalClosingCosts), 1 / exitAnalysis.holdPeriodYears) - 1;
+                        } else if (variable.name === 'Cap Rate') {
+                          testValue = (variable.baseValue * (1 + variation/100)) / 100;
+                          const testArv = noi / testValue;
+                          const testRefinanceLoan = testArv * assumptions.refinanceLTV;
+                          const testCashOut = testRefinanceLoan - loanAmount - (testRefinanceLoan * assumptions.refinanceClosingCostPercent);
+                          const testTotalProfit = testCashOut + (metrics.netCashFlow * exitAnalysis.holdPeriodYears);
+                          testIrr = Math.pow(testTotalProfit / (downPayment + totalRehabCosts + totalClosingCosts), 1 / exitAnalysis.holdPeriodYears) - 1;
+                        }
+
+                        return (
+                          <div key={variation} className={`flex justify-between text-sm ${variation === 0 ? 'font-medium' : ''}`}>
+                            <span>{variation > 0 ? '+' : ''}{variation}%</span>
+                            <span className={`${
+                              testIrr > metrics.irr ? 'text-green-600' : 
+                              testIrr < metrics.irr ? 'text-red-600' : 'text-gray-900'
+                            }`}>
+                              {formatPercentage(testIrr)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
+        {/* 12 Month Pro Forma Tab */}
         {activeTab === 'proforma' && (
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">12 Month Pro Forma</h3>
-            <p className="text-gray-600">Pro forma content coming soon...</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">12 Month Pro Forma</h3>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full border border-gray-200 rounded-lg text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium text-gray-900">Item</th>
+                    {Array.from({length: 12}, (_, i) => (
+                      <th key={i} className="px-2 py-3 text-center font-medium text-gray-900">
+                        {new Date(2024, i).toLocaleDateString('en-US', { month: 'short' })}
+                      </th>
+                    ))}
+                    <th className="px-4 py-3 text-right font-medium text-gray-900">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {/* Revenue Section */}
+                  <tr className="bg-green-50">
+                    <td className="px-4 py-3 font-semibold text-green-800">RENTAL INCOME</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="px-2 py-3 text-center font-semibold text-green-800">
+                        {formatCurrency(metrics.effectiveGrossIncome / 12)}
+                      </td>
+                    ))}
+                    <td className="px-4 py-3 text-right font-bold text-green-600">
+                      {formatCurrency(metrics.effectiveGrossIncome)}
+                    </td>
+                  </tr>
+                  
+                  {/* Operating Expenses */}
+                  <tr className="border-b bg-red-100">
+                    <td className="py-2 px-4 font-semibold">OPERATING EXPENSES</td>
+                    <td className="py-2 px-2"></td><td className="py-2 px-2"></td><td className="py-2 px-2"></td>
+                    <td className="py-2 px-2"></td><td className="py-2 px-2"></td><td className="py-2 px-2"></td>
+                    <td className="py-2 px-2"></td><td className="py-2 px-2"></td><td className="py-2 px-2"></td>
+                    <td className="py-2 px-2"></td><td className="py-2 px-2"></td><td className="py-2 px-2"></td>
+                    <td className="py-2 px-4"></td>
+                  </tr>
+                  
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Property Taxes</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-center">
+                        {formatCurrency(expenses.propertyTaxes / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(expenses.propertyTaxes)}
+                    </td>
+                  </tr>
+                  
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Insurance</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-center">
+                        {formatCurrency(expenses.insurance / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(expenses.insurance)}
+                    </td>
+                  </tr>
+                  
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Property Management</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-center">
+                        {formatCurrency(expenses.management / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(expenses.management)}
+                    </td>
+                  </tr>
+                  
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Maintenance & Repairs</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-center">
+                        {formatCurrency(expenses.maintenance / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(expenses.maintenance)}
+                    </td>
+                  </tr>
+                  
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Utilities</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-center">
+                        {formatCurrency(expenses.utilities / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(expenses.utilities)}
+                    </td>
+                  </tr>
+                  
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Marketing & Leasing</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-center">
+                        {formatCurrency(expenses.marketing / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(expenses.marketing)}
+                    </td>
+                  </tr>
+                  
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Legal & Professional</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-center">
+                        {formatCurrency(expenses.legal / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(expenses.legal)}
+                    </td>
+                  </tr>
+                  
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Other Operating Expenses</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-center">
+                        {formatCurrency(expenses.other / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold">
+                      {formatCurrency(expenses.other)}
+                    </td>
+                  </tr>
+                  <tr className="border-b bg-red-100">
+                    <td className="py-2 px-4 font-semibold">Total Expenses</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-center font-semibold">
+                        {formatCurrency(metrics.totalOperatingExpenses / 12)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold text-red-600">
+                      {formatCurrency(metrics.totalOperatingExpenses)}
+                    </td>
+                  </tr>
+
+                  {/* NOI Section */}
+                  <tr className="border-b bg-blue-100">
+                    <td className="py-3 px-4 font-bold text-blue-800">NET OPERATING INCOME</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-3 px-2 text-center font-bold text-blue-800">
+                        {formatCurrency(metrics.noi / 12)}
+                      </td>
+                    ))}
+                    <td className="py-3 px-4 text-right font-bold text-blue-600 text-lg">
+                      {formatCurrency(metrics.noi)}
+                    </td>
+                  </tr>
+
+                  {/* Debt Service */}
+                  <tr className="border-b">
+                    <td className="py-2 px-4 text-gray-700">Debt Service (Post-Refi)</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-2 px-2 text-center text-red-600">
+                        -{formatCurrency(metrics.monthlyDebtService)}
+                      </td>
+                    ))}
+                    <td className="py-2 px-4 text-right font-bold text-red-600">
+                      -{formatCurrency(metrics.annualDebtService)}
+                    </td>
+                  </tr>
+
+                  {/* Cash Flow */}
+                  <tr className="border-t-2 bg-green-200">
+                    <td className="py-3 px-4 font-bold text-green-800">NET CASH FLOW</td>
+                    {Array.from({length: 12}, (_, i) => (
+                      <td key={i} className="py-3 px-2 text-center font-bold text-green-800">
+                        {formatCurrency(metrics.netCashFlow / 12)}
+                      </td>
+                    ))}
+                    <td className="py-3 px-4 text-right font-bold text-green-600 text-lg">
+                      {formatCurrency(metrics.netCashFlow)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
