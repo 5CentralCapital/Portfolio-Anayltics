@@ -35,7 +35,7 @@ import PropertyPerformanceChart from '../components/charts/PropertyPerformanceCh
 import DealAnalyzer from './DealAnalyzer';
 import EntityDashboard from './EntityDashboard';
 import FinancialDashboard from './FinancialDashboard';
-import PropertiesManager from './PropertiesManager';
+import AssetManagement from './AssetManagement';
 import NetWorthTracker from './NetWorthTracker';
 
 interface DashboardData {
