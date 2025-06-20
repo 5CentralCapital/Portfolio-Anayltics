@@ -12,6 +12,7 @@ import Investor from './pages/Investor';
 import InvestorPortal from './pages/InvestorPortal';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import AccountSetup from './pages/AccountSetup';
 import DealAnalysis from './pages/DealAnalysis';
 import DealAnalysisSimple from './pages/DealAnalysisSimple';
 import DealAnalyzer from './pages/DealAnalyzer';

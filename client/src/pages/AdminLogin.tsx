@@ -164,7 +164,7 @@ const AdminLogin: React.FC = () => {
                 </div>
               </div>
 
-              <div>
+              <div className="space-y-3">
                 <button
                   type="submit"
                   disabled={loading}
@@ -181,6 +181,17 @@ const AdminLogin: React.FC = () => {
                       Secure Sign In
                     </div>
                   )}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => navigate('/account-setup')}
+                  className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+                >
+                  <div className="flex items-center">
+                    <Building2 className="h-4 w-4 mr-2" />
+                    Create an Account
+                  </div>
                 </button>
               </div>
             </form>

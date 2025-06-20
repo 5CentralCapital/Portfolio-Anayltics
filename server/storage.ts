@@ -452,7 +452,34 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDealComps(id: number): Promise<boolean> {
     const result = await db.delete(dealComps).where(eq(dealComps.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Entity ownership operations
+  async getUserEntityOwnership(userId: number): Promise<EntityOwnership[]> {
+    return await db.select().from(entityOwnership).where(eq(entityOwnership.userId, userId));
+  }
+
+  async createEntityOwnership(ownership: InsertEntityOwnership): Promise<EntityOwnership> {
+    const [newOwnership] = await db
+      .insert(entityOwnership)
+      .values(ownership)
+      .returning();
+    return newOwnership;
+  }
+
+  async updateEntityOwnership(id: number, ownership: Partial<InsertEntityOwnership>): Promise<EntityOwnership | undefined> {
+    const [updated] = await db
+      .update(entityOwnership)
+      .set(ownership)
+      .where(eq(entityOwnership.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteEntityOwnership(id: number): Promise<boolean> {
+    const result = await db.delete(entityOwnership).where(eq(entityOwnership.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 }
 

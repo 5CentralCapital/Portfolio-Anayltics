@@ -83,6 +83,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "Logged out successfully" });
   });
 
+  // User registration route
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { email, password, firstName, lastName, entities } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ error: "User already exists" });
+      }
+
+      // Create user account
+      const hashedPassword = await storage.hashPassword(password);
+      const newUser = await storage.createUser({
+        email,
+        passwordHash: hashedPassword,
+        firstName,
+        lastName,
+        role: "viewer"
+      });
+
+      // Create entity ownership records
+      if (entities && Array.isArray(entities)) {
+        for (const entity of entities) {
+          await storage.createEntityOwnership({
+            userId: newUser.id,
+            entityName: entity.entityName,
+            assetType: entity.assetType,
+            ownershipPercentage: entity.ownershipPercentage,
+            currentValue: entity.currentValue || "0",
+            description: entity.description
+          });
+        }
+      }
+
+      const userWithoutPassword = {
+        id: newUser.id,
+        email: newUser.email,
+        role: newUser.role,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+      };
+
+      res.status(201).json({ 
+        user: userWithoutPassword,
+        message: "Account created successfully"
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get user entity ownership
+  app.get("/api/user/:userId/entities", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const entities = await storage.getUserEntityOwnership(userId);
+      res.json(entities);
+    } catch (error) {
+      console.error("Error fetching user entities:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Dashboard data route
   app.get("/api/dashboard", async (req, res) => {
     try {
