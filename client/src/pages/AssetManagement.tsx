@@ -91,6 +91,11 @@ const AssetManagement: React.FC = () => {
   // Process properties data
   const properties: Property[] = Array.isArray(propertiesData) ? propertiesData : [];
   
+  // Debug logging
+  console.log('Properties data:', propertiesData);
+  console.log('Properties array:', properties);
+  console.log('Properties length:', properties.length);
+  
   // Calculate portfolio metrics
   const metrics = {
     totalProperties: properties.length,

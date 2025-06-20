@@ -17,12 +17,19 @@ import DealAnalysisSimple from './pages/DealAnalysisSimple';
 import DealAnalyzer from './pages/DealAnalyzer';
 import DealsList from './pages/DealsList';
 
-// Create a client
+// Create a client with default fetcher
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
       retry: 1,
+      queryFn: async ({ queryKey }) => {
+        const response = await fetch(queryKey[0] as string);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      },
     },
   },
 });
