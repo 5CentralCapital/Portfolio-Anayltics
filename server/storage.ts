@@ -34,7 +34,7 @@ import type {
   DealComps,
   InsertDealComps
 } from "@shared/schema";
-import { eq, desc, and, gte, lte } from "drizzle-orm";
+import { eq, desc, and, gte, lte, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -46,6 +46,7 @@ export interface IStorage {
   
   // Property operations
   getProperties(): Promise<Property[]>;
+  getPropertiesForUser(userId: number): Promise<Property[]>;
   getProperty(id: number): Promise<Property | undefined>;
   createProperty(property: InsertProperty): Promise<Property>;
   updateProperty(id: number, property: Partial<InsertProperty>): Promise<Property | undefined>;
@@ -153,6 +154,22 @@ export class DatabaseStorage implements IStorage {
   // Property operations
   async getProperties(): Promise<Property[]> {
     return await db.select().from(properties).orderBy(desc(properties.createdAt));
+  }
+
+  async getPropertiesForUser(userId: number): Promise<Property[]> {
+    // Get user's entity ownerships
+    const userEntities = await this.getUserEntityOwnership(userId);
+    const userEntityNames = userEntities.map(e => e.entityName);
+    
+    if (userEntityNames.length === 0) {
+      return [];
+    }
+    
+    // Get properties that belong to user's entities
+    return await db.select()
+      .from(properties)
+      .where(sql`${properties.entity} IN (${userEntityNames.map(() => '?').join(',')})`)
+      .orderBy(desc(properties.createdAt));
   }
 
   async getProperty(id: number): Promise<Property | undefined> {
