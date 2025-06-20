@@ -54,6 +54,7 @@ function App() {
               <Route path="/investor-portal" element={<InvestorPortal />} />
               <Route path="/admin-login" element={<AdminLogin />} />
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/account-setup" element={<AccountSetup />} />
               <Route path="/deals" element={<DealsList />} />
               <Route path="/deal-analysis/:id" element={<DealAnalysis />} />
               <Route path="/deal-demo" element={<DealAnalyzer />} />

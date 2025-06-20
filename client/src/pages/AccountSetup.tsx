@@ -1,12 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, User, Building, DollarSign } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Plus, Trash2, User, Building } from "lucide-react";
 
 interface EntityOwnership {
   entityName: string;
@@ -18,8 +12,8 @@ interface EntityOwnership {
 
 const AccountSetup: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   
   // User information
   const [email, setEmail] = useState("");
@@ -61,52 +55,37 @@ const AccountSetup: React.FC = () => {
     setEntities(updated);
   };
 
+  const showMessage = (type: 'success' | 'error', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 5000);
+  };
+
   const validateForm = () => {
     if (!email || !password || !firstName || !lastName) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
+      showMessage('error', 'Please fill in all required fields');
       return false;
     }
 
     if (password !== confirmPassword) {
-      toast({
-        title: "Validation Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
+      showMessage('error', 'Passwords do not match');
       return false;
     }
 
     if (password.length < 6) {
-      toast({
-        title: "Validation Error",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
-      });
+      showMessage('error', 'Password must be at least 6 characters long');
       return false;
     }
 
     // Validate entities
     for (const entity of entities) {
       if (!entity.entityName || !entity.ownershipPercentage) {
-        toast({
-          title: "Validation Error",
-          description: "Please complete all entity information",
-          variant: "destructive",
-        });
+        showMessage('error', 'Please complete all entity information');
         return false;
       }
 
       const percentage = parseFloat(entity.ownershipPercentage);
       if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
-        toast({
-          title: "Validation Error",
-          description: "Ownership percentage must be between 0 and 100",
-          variant: "destructive",
-        });
+        showMessage('error', 'Ownership percentage must be between 0 and 100');
         return false;
       }
     }
@@ -142,19 +121,14 @@ const AccountSetup: React.FC = () => {
         throw new Error(data.error || "Registration failed");
       }
 
-      toast({
-        title: "Account Created Successfully",
-        description: "You can now log in with your credentials",
-      });
-
-      // Redirect to login page
-      navigate("/admin");
+      showMessage('success', 'Account created successfully! You can now log in with your credentials.');
+      
+      // Redirect to login page after 2 seconds
+      setTimeout(() => {
+        navigate("/admin-login");
+      }, 2000);
     } catch (error) {
-      toast({
-        title: "Registration Failed",
-        description: error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
-      });
+      showMessage('error', error instanceof Error ? error.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -170,154 +144,180 @@ const AccountSetup: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl w-full space-y-8">
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
             Create Your Account
           </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-sm text-gray-600">
             Set up your account and define your entity ownership
           </p>
         </div>
 
+        {/* Message Display */}
+        {message && (
+          <div className={`rounded-md p-4 ${
+            message.type === 'success' 
+              ? 'bg-green-50 border border-green-200 text-green-800' 
+              : 'bg-red-50 border border-red-200 text-red-800'
+          }`}>
+            {message.text}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           {/* Personal Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Personal Information
-              </CardTitle>
-              <CardDescription>
-                Enter your personal details for account creation
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <User className="w-5 h-5 text-gray-700" />
+              <h3 className="text-lg font-medium text-gray-900">Personal Information</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Enter your personal details for account creation
+            </p>
+            
+            <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="firstName">First Name *</Label>
-                  <Input
+                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name *
+                  </label>
+                  <input
                     id="firstName"
                     type="text"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lastName">Last Name *</Label>
-                  <Input
+                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name *
+                  </label>
+                  <input
                     id="lastName"
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
                 </div>
               </div>
               <div>
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address *
+                </label>
+                <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="password">Password *</Label>
-                  <Input
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                    Password *
+                  </label>
+                  <input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                  <Input
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                    Confirm Password *
+                  </label>
+                  <input
                     id="confirmPassword"
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Entity Ownership */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="w-5 h-5" />
-                Entity Ownership Setup
-              </CardTitle>
-              <CardDescription>
-                Define your ownership in various entities and assets
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Building className="w-5 h-5 text-gray-700" />
+              <h3 className="text-lg font-medium text-gray-900">Entity Ownership Setup</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Define your ownership in various entities and assets
+            </p>
+            
+            <div className="space-y-4">
               {entities.map((entity, index) => (
-                <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
+                <div key={index} className="border border-gray-200 rounded-lg p-4 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-gray-900 dark:text-white">
+                    <h4 className="font-medium text-gray-900">
                       Entity {index + 1}
                     </h4>
                     {entities.length > 1 && (
-                      <Button
+                      <button
                         type="button"
-                        variant="outline"
-                        size="sm"
                         onClick={() => removeEntity(index)}
-                        className="text-red-600 hover:text-red-700"
+                        className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </Button>
+                      </button>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor={`entityName-${index}`}>Entity Name *</Label>
-                      <Input
+                      <label htmlFor={`entityName-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                        Entity Name *
+                      </label>
+                      <input
                         id={`entityName-${index}`}
                         type="text"
                         value={entity.entityName}
                         onChange={(e) => updateEntity(index, "entityName", e.target.value)}
                         placeholder="e.g., My Real Estate LLC"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor={`assetType-${index}`}>Asset Type *</Label>
-                      <Select 
-                        value={entity.assetType} 
-                        onValueChange={(value) => updateEntity(index, "assetType", value as EntityOwnership['assetType'])}
+                      <label htmlFor={`assetType-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                        Asset Type *
+                      </label>
+                      <select
+                        id={`assetType-${index}`}
+                        value={entity.assetType}
+                        onChange={(e) => updateEntity(index, "assetType", e.target.value as EntityOwnership['assetType'])}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {assetTypeOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        {assetTypeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor={`ownershipPercentage-${index}`}>Ownership Percentage *</Label>
-                      <Input
+                      <label htmlFor={`ownershipPercentage-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                        Ownership Percentage *
+                      </label>
+                      <input
                         id={`ownershipPercentage-${index}`}
                         type="number"
                         min="0"
@@ -326,12 +326,15 @@ const AccountSetup: React.FC = () => {
                         value={entity.ownershipPercentage}
                         onChange={(e) => updateEntity(index, "ownershipPercentage", e.target.value)}
                         placeholder="e.g., 50.00"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor={`currentValue-${index}`}>Current Value (USD)</Label>
-                      <Input
+                      <label htmlFor={`currentValue-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                        Current Value (USD)
+                      </label>
+                      <input
                         id={`currentValue-${index}`}
                         type="number"
                         min="0"
@@ -339,52 +342,54 @@ const AccountSetup: React.FC = () => {
                         value={entity.currentValue}
                         onChange={(e) => updateEntity(index, "currentValue", e.target.value)}
                         placeholder="e.g., 500000"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor={`description-${index}`}>Description</Label>
-                    <Input
+                    <label htmlFor={`description-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
+                    <input
                       id={`description-${index}`}
                       type="text"
                       value={entity.description}
                       onChange={(e) => updateEntity(index, "description", e.target.value)}
                       placeholder="Brief description of the entity or investment"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                 </div>
               ))}
 
-              <Button
+              <button
                 type="button"
-                variant="outline"
                 onClick={addEntity}
-                className="w-full"
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4" />
                 Add Another Entity
-              </Button>
-            </CardContent>
-          </Card>
+              </button>
+            </div>
+          </div>
 
           {/* Submit Button */}
           <div className="flex gap-4">
-            <Button
+            <button
               type="button"
-              variant="outline"
-              onClick={() => navigate("/admin")}
-              className="flex-1"
+              onClick={() => navigate("/admin-login")}
+              className="flex-1 py-2 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Back to Login
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
               disabled={isLoading}
-              className="flex-1"
+              className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? "Creating Account..." : "Create Account"}
-            </Button>
+            </button>
           </div>
         </form>
       </div>
