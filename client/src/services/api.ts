@@ -122,6 +122,14 @@ class ApiService {
     return this.request<any[]>('/property-performance');
   }
 
+  async getProperties() {
+    return this.request<any[]>('/properties');
+  }
+
+  async getUserEntities(userId: number) {
+    return this.request<any[]>(`/user/${userId}/entities`);
+  }
+
   async getInvestorLeads(status?: string, limit: number = 50) {
     const params = new URLSearchParams();
     if (status) params.append('status', status);

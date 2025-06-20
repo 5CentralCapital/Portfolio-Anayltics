@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import apiService from '../services/api';
 import { 
   Building, 
   DollarSign, 
@@ -140,29 +141,58 @@ const EditableValue = ({
 };
 
 export default function EntityDashboard() {
-  // Fetch properties from database
+  const [userEntities, setUserEntities] = useState<string[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
+  // Get current user
+  useEffect(() => {
+    const user = apiService.getStoredUser();
+    if (user) {
+      setCurrentUserId(user.id);
+    }
+  }, []);
+
+  // Fetch user's entities
+  const { data: userEntityData, isLoading: entitiesLoading } = useQuery({
+    queryKey: ['/api/user', currentUserId, 'entities'],
+    queryFn: () => currentUserId ? apiService.getUserEntities(currentUserId) : Promise.resolve({ data: [] }),
+    enabled: !!currentUserId
+  });
+
+  // Fetch user's properties
   const { data: allProperties = [], isLoading } = useQuery({
     queryKey: ['/api/properties'],
-    enabled: true
+    enabled: !!currentUserId
   });
+
+  // Set user entities when data loads
+  useEffect(() => {
+    if (userEntityData?.data) {
+      const entityNames = userEntityData.data.map((entity: any) => entity.entityName);
+      setUserEntities(entityNames);
+    }
+  }, [userEntityData]);
   
-  // All properties for collective KPIs
+  // All properties for collective KPIs (only user's properties)
   const properties: Property[] = Array.isArray(allProperties) ? allProperties : [];
   
-  // Properties grouped by entity
-  const entitiesList = ['5Central Capital', 'The House Doctors', 'Arcadia Vision Group'];
-  const propertiesByEntity = entitiesList.reduce((acc, entity) => {
+  // Properties grouped by user's entities only
+  const propertiesByEntity = userEntities.reduce((acc, entity) => {
     acc[entity] = properties.filter(prop => prop.entity === entity);
     return acc;
   }, {} as Record<string, Property[]>);
 
-  // Active tabs for each entity
-  const [activeTabs, setActiveTabs] = useState<Record<string, 'overview' | 'financials' | 'members' | 'compliance' | 'properties'>>(
-    entitiesList.reduce((acc, entity) => {
+  // Active tabs for each entity (only user's entities)
+  const [activeTabs, setActiveTabs] = useState<Record<string, 'overview' | 'financials' | 'members' | 'compliance' | 'properties'>>({});
+
+  // Update active tabs when user entities change
+  useEffect(() => {
+    const newActiveTabs = userEntities.reduce((acc, entity) => {
       acc[entity] = 'overview';
       return acc;
-    }, {} as Record<string, 'overview' | 'financials' | 'members' | 'compliance' | 'properties'>)
-  );
+    }, {} as Record<string, 'overview' | 'financials' | 'members' | 'compliance' | 'properties'>);
+    setActiveTabs(newActiveTabs);
+  }, [userEntities]);
 
   // Placeholder entity members data
   const entityMembers: Record<string, EntityMember[]> = {
@@ -490,7 +520,7 @@ export default function EntityDashboard() {
       {/* Entity Sections */}
       <div className="space-y-8" data-tour="entities">
         
-        {entitiesList.map((entityName) => {
+        {userEntities.map((entityName) => {
           const entityProperties = propertiesByEntity[entityName];
           const entityMetrics = calculateEntityMetrics(entityProperties);
           const entityPricePerUnit = entityMetrics.totalUnits > 0 ? entityMetrics.totalAUM / entityMetrics.totalUnits : 0;
