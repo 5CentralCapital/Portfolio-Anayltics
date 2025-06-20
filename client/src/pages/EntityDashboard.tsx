@@ -358,14 +358,126 @@ export default function EntityDashboard() {
   ]);
 
   const [cashBalance, setCashBalance] = useState(850000);
-  const [entityData, setEntityData] = useState({
-    name: '5Central Capital LLC',
-    formationDate: '2023-01-01',
+  
+  // Entities management
+  const [entities, setEntities] = useState([
+    {
+      id: '5central',
+      name: '5Central Capital LLC',
+      formationDate: '2023-01-01',
+      structure: 'Limited Liability Company',
+      taxStatus: 'Pass-through',
+      state: 'Massachusetts',
+      ein: '12-3456789',
+      cashBalance: 850000
+    },
+    {
+      id: 'harmony',
+      name: 'Harmony Holdings LLC',
+      formationDate: '2022-08-15',
+      structure: 'Limited Liability Company',
+      taxStatus: 'Pass-through',
+      state: 'Connecticut',
+      ein: '98-7654321',
+      cashBalance: 420000
+    },
+    {
+      id: 'crystal',
+      name: 'Crystal Properties LLC',
+      formationDate: '2024-02-10',
+      structure: 'Limited Liability Company',
+      taxStatus: 'Pass-through',
+      state: 'Florida',
+      ein: '56-7890123',
+      cashBalance: 285000
+    }
+  ]);
+  
+  const [showAddEntity, setShowAddEntity] = useState(false);
+  const [editingEntity, setEditingEntity] = useState<string | null>(null);
+  const [newEntity, setNewEntity] = useState({
+    name: '',
+    formationDate: '',
     structure: 'Limited Liability Company',
     taxStatus: 'Pass-through',
-    state: 'Massachusetts',
-    ein: '12-3456789'
+    state: '',
+    ein: '',
+    cashBalance: 0
   });
+
+  // Entity CRUD functions
+  const addEntity = () => {
+    if (newEntity.name && newEntity.formationDate && newEntity.state && newEntity.ein) {
+      const id = newEntity.name.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 10);
+      const entity = {
+        id,
+        ...newEntity
+      };
+      setEntities([...entities, entity]);
+      setNewEntity({
+        name: '',
+        formationDate: '',
+        structure: 'Limited Liability Company',
+        taxStatus: 'Pass-through',
+        state: '',
+        ein: '',
+        cashBalance: 0
+      });
+      setShowAddEntity(false);
+    }
+  };
+
+  const updateEntity = (id: string, updates: any) => {
+    setEntities(entities.map(entity => 
+      entity.id === id ? { ...entity, ...updates } : entity
+    ));
+    setEditingEntity(null);
+  };
+
+  const deleteEntity = (id: string) => {
+    if (entities.length > 1) { // Keep at least one entity
+      setEntities(entities.filter(entity => entity.id !== id));
+      // Also update properties that were assigned to this entity
+      // This would be handled by a proper state management system in production
+    }
+  };
+
+  // Get properties for a specific entity
+  const getEntityProperties = (entityId: string) => {
+    return properties.filter(property => property.entityId === entityId);
+  };
+
+  // Calculate metrics for a specific entity
+  const getEntityMetrics = (entityId: string) => {
+    const entityProperties = getEntityProperties(entityId);
+    const entity = entities.find(e => e.id === entityId);
+    
+    if (entityProperties.length === 0) {
+      return {
+        totalAUM: 0,
+        totalProperties: 0,
+        totalUnits: 0,
+        totalEquity: 0,
+        monthlyCashFlow: 0,
+        cashBalance: entity?.cashBalance || 0
+      };
+    }
+
+    const totalAUM = entityProperties.reduce((sum, prop) => sum + prop.currentValue, 0);
+    const totalProperties = entityProperties.length;
+    const totalUnits = entityProperties.reduce((sum, prop) => sum + prop.units, 0);
+    const totalEquity = entityProperties.reduce((sum, prop) => sum + prop.equityCreated, 0);
+    const monthlyCashFlow = entityProperties.reduce((sum, prop) => sum + prop.cashFlow, 0);
+
+    return {
+      totalAUM,
+      totalProperties,
+      totalUnits,
+      totalEquity,
+      monthlyCashFlow,
+      cashBalance: entity?.cashBalance || 0
+    };
+  };
 
   // Editing states
   const [editingMilestone, setEditingMilestone] = useState<number | null>(null);
@@ -958,52 +1070,191 @@ export default function EntityDashboard() {
         </div>
       </div>
 
-      {/* Entity KPIs Section */}
+      {/* Entity Management Section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Entity Management</h2>
+          <button
+            onClick={() => setShowAddEntity(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Entity</span>
+          </button>
+        </div>
+
+        {/* Add New Entity Form */}
+        {showAddEntity && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add New Entity</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                value={newEntity.name}
+                onChange={(e) => setNewEntity({ ...newEntity, name: e.target.value })}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                placeholder="Entity Name"
+              />
+              <input
+                type="date"
+                value={newEntity.formationDate}
+                onChange={(e) => setNewEntity({ ...newEntity, formationDate: e.target.value })}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+              />
+              <select
+                value={newEntity.structure}
+                onChange={(e) => setNewEntity({ ...newEntity, structure: e.target.value })}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+              >
+                <option value="Limited Liability Company">Limited Liability Company</option>
+                <option value="Corporation">Corporation</option>
+                <option value="Partnership">Partnership</option>
+                <option value="Sole Proprietorship">Sole Proprietorship</option>
+              </select>
+              <input
+                type="text"
+                value={newEntity.state}
+                onChange={(e) => setNewEntity({ ...newEntity, state: e.target.value })}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                placeholder="Formation State"
+              />
+              <input
+                type="text"
+                value={newEntity.ein}
+                onChange={(e) => setNewEntity({ ...newEntity, ein: e.target.value })}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                placeholder="EIN (XX-XXXXXXX)"
+              />
+              <input
+                type="number"
+                value={newEntity.cashBalance}
+                onChange={(e) => setNewEntity({ ...newEntity, cashBalance: Number(e.target.value) })}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                placeholder="Initial Cash Balance"
+              />
+            </div>
+            <div className="flex justify-end space-x-2 mt-4">
+              <button
+                onClick={() => {
+                  setShowAddEntity(false);
+                  setNewEntity({
+                    name: '',
+                    formationDate: '',
+                    structure: 'Limited Liability Company',
+                    taxStatus: 'Pass-through',
+                    state: '',
+                    ein: '',
+                    cashBalance: 0
+                  });
+                }}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addEntity}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Add Entity
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Entity Sections */}
+        {entities.map((entity) => {
+          const entityMetrics = getEntityMetrics(entity.id);
+          const entityProperties = getEntityProperties(entity.id);
+          
+          return (
+            <div key={entity.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+              <div className="border-b border-gray-200 dark:border-gray-700">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="text-center flex-1">
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{entity.name}</h3>
+                      <p className="text-gray-600 dark:text-gray-400">{entity.structure} • Formed: {entity.formationDate}</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setEditingEntity(entity.id)}
+                        className="text-gray-400 hover:text-blue-600"
+                      >
+                        <Edit3 className="h-5 w-5" />
+                      </button>
+                      {entities.length > 1 && (
+                        <button
+                          onClick={() => deleteEntity(entity.id)}
+                          className="text-gray-400 hover:text-red-600"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Entity KPIs */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total AUM</p>
+                      <p className="text-xl font-bold text-blue-600">{formatCurrency(entityMetrics.totalAUM)}</p>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Equity</p>
+                      <p className="text-xl font-bold text-green-600">{formatCurrency(entityMetrics.totalEquity)}</p>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Monthly Cash Flow</p>
+                      <p className="text-xl font-bold text-purple-600">{formatCurrency(entityMetrics.monthlyCashFlow)}</p>
+                    </div>
+                    <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Properties</p>
+                      <p className="text-xl font-bold text-orange-600">{entityMetrics.totalProperties}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Units</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{entityMetrics.totalUnits}</p>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Cash Balance</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(entityMetrics.cashBalance)}</p>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">State</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{entity.state}</p>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">EIN</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{entity.ein}</p>
+                    </div>
+                  </div>
+
+                  {/* Entity Properties Summary */}
+                  {entityProperties.length > 0 && (
+                    <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Properties ({entityProperties.length})</h4>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {entityProperties.map(prop => prop.address).join(', ')}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Original Entity KPIs Section for backward compatibility */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
         <div className="border-b border-gray-200 dark:border-gray-700">
           <div className="p-6">
             <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">5Central Capital</h2>
-              <p className="text-gray-600 dark:text-gray-400">Real Estate Investment Entity</p>
-            </div>
-            
-            {/* Entity-Level KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total AUM</p>
-                <p className="text-2xl font-bold text-blue-600">{formatCurrency(metrics.totalAUM)}</p>
-              </div>
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Equity</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(metrics.totalEquity)}</p>
-              </div>
-              <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Monthly Cash Flow</p>
-                <p className="text-2xl font-bold text-purple-600">{formatCurrency(metrics.monthlyCashFlow)}</p>
-              </div>
-              <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Properties</p>
-                <p className="text-2xl font-bold text-orange-600">{metrics.totalProperties}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Units</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{metrics.totalUnits}</p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Avg Price/Unit</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(metrics.pricePerUnit)}</p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Equity Multiple</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{metrics.avgEquityMultiple.toFixed(2)}x</p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Debt</p>
-                <p className="text-xl font-bold text-red-600">{formatCurrency(metrics.totalDebt)}</p>
-              </div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Legacy Entity View</h2>
+              <p className="text-gray-600 dark:text-gray-400">Detailed Entity Management (Legacy)</p>
             </div>
           </div>
           <nav className="flex space-x-8 px-6">
@@ -1039,19 +1290,19 @@ export default function EntityDashboard() {
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Entity Name</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{entityData.name}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.name || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Formation Date</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{entityData.formationDate}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.formationDate || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Structure</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{entityData.structure}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.structure || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Tax Status</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{entityData.taxStatus}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.taxStatus || 'N/A'}</p>
                   </div>
                 </div>
               </div>
@@ -1274,15 +1525,15 @@ export default function EntityDashboard() {
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">State of Formation</p>
-                      <p className="font-semibold text-gray-900 dark:text-white">{entityData.state}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.state || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">EIN</p>
-                      <p className="font-semibold text-gray-900 dark:text-white">{entityData.ein}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.ein || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">Tax Status</p>
-                      <p className="font-semibold text-gray-900 dark:text-white">{entityData.taxStatus}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{entities[0]?.taxStatus || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
