@@ -46,12 +46,12 @@ const entities = [
 ];
 
 const AssetManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('balance-sheet');
   const [editingProperty, setEditingProperty] = useState<number | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch properties from database
-  const { data: properties = [], isLoading } = useQuery<Property[]>({
+  const { data: propertiesData, isLoading } = useQuery({
     queryKey: ['/api/properties'],
     enabled: true
   });
@@ -88,23 +88,25 @@ const AssetManagement: React.FC = () => {
     return `${num.toFixed(1)}%`;
   };
 
+  // Process properties data
+  const properties: Property[] = Array.isArray(propertiesData) ? propertiesData : [];
+  
   // Calculate portfolio metrics
-  const propertiesArray = Array.isArray(properties) ? properties as Property[] : [];
   const metrics = {
-    totalProperties: propertiesArray.length,
-    totalUnits: propertiesArray.reduce((sum: number, prop: Property) => sum + prop.apartments, 0),
-    totalAUM: propertiesArray.reduce((sum: number, prop: Property) => {
+    totalProperties: properties.length,
+    totalUnits: properties.reduce((sum: number, prop: Property) => sum + prop.apartments, 0),
+    totalAUM: properties.reduce((sum: number, prop: Property) => {
       const currentValue = prop.status === 'Currently Own' 
         ? parseFloat(prop.arvAtTimePurchased || prop.acquisitionPrice)
         : parseFloat(prop.salePrice || '0');
       return sum + currentValue;
     }, 0),
-    totalEquity: propertiesArray.reduce((sum: number, prop: Property) => sum + parseFloat(prop.totalProfits), 0),
-    totalMonthlyRent: propertiesArray
+    totalEquity: properties.reduce((sum: number, prop: Property) => sum + parseFloat(prop.totalProfits), 0),
+    totalMonthlyRent: properties
       .filter((prop: Property) => prop.status === 'Currently Own')
       .reduce((sum: number, prop: Property) => sum + parseFloat(prop.cashFlow), 0),
-    avgCapRate: propertiesArray.length > 0 
-      ? propertiesArray.reduce((sum: number, prop: Property) => sum + parseFloat(prop.cashOnCashReturn), 0) / propertiesArray.length 
+    avgCapRate: properties.length > 0 
+      ? properties.reduce((sum: number, prop: Property) => sum + parseFloat(prop.cashOnCashReturn), 0) / properties.length 
       : 0
   };
 
@@ -187,12 +189,11 @@ const AssetManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Tab Navigation */}
+      {/* Financial Statements Tab Navigation */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
         <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="flex space-x-8 px-6">
             {[
-              { id: 'overview', label: 'Property Portfolio', icon: BarChart3 },
               { id: 'balance-sheet', label: 'Balance Sheet', icon: Building },
               { id: 'income-statement', label: 'Income Statement', icon: Activity },
               { id: 'cash-flow', label: 'Cash Flow Statement', icon: TrendingUp }
@@ -214,115 +215,6 @@ const AssetManagement: React.FC = () => {
         </div>
 
         <div className="p-6">
-          {activeTab === 'overview' && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Property Portfolio</h2>
-              
-              {propertiesArray.length === 0 ? (
-                <div className="text-center py-12">
-                  <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">No properties found</p>
-                </div>
-              ) : (
-                <div className="grid gap-6">
-                  {propertiesArray.map((property: Property) => (
-                    <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                            {property.address}
-                          </h3>
-                          <p className="text-gray-600 dark:text-gray-400">
-                            {property.city}, {property.state} {property.zipCode}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          {/* Entity Assignment Dropdown */}
-                          <div className="flex items-center gap-2">
-                            <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Entity:</label>
-                            {editingProperty === property.id ? (
-                              <div className="flex items-center gap-2">
-                                <select
-                                  defaultValue={property.entity || '5Central Capital LLC'}
-                                  onChange={(e) => handleEntityChange(property.id, e.target.value)}
-                                  className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                >
-                                  {entities.map((entity) => (
-                                    <option key={entity} value={entity}>{entity}</option>
-                                  ))}
-                                </select>
-                                <button
-                                  onClick={() => setEditingProperty(null)}
-                                  className="p-1 text-gray-400 hover:text-gray-600"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                  {property.entity || '5Central Capital LLC'}
-                                </span>
-                                <button
-                                  onClick={() => setEditingProperty(property.id)}
-                                  className="p-1 text-gray-400 hover:text-gray-600"
-                                >
-                                  <Edit3 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                          
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            property.status === 'Currently Own' 
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                          }`}>
-                            {property.status}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400">Units</p>
-                          <p className="font-semibold text-gray-900 dark:text-white">{property.apartments}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400">Acquisition Price</p>
-                          <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400">Rehab Costs</p>
-                          <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.rehabCosts)}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400">Cash Flow</p>
-                          <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.cashFlow)}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400">Total Profits</p>
-                          <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.totalProfits)}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
-                          <p className="font-semibold text-gray-900 dark:text-white">{formatPercentage(property.cashOnCashReturn)}</p>
-                        </div>
-                      </div>
-
-                      {property.acquisitionDate && (
-                        <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                          <MapPin className="w-4 h-4 inline mr-1" />
-                          Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
           {activeTab === 'balance-sheet' && (
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Balance Sheet</h2>
@@ -397,7 +289,7 @@ const AssetManagement: React.FC = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Investment Activities</span>
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(-propertiesArray.reduce((sum: number, prop: Property) => 
+                    {formatCurrency(-properties.reduce((sum: number, prop: Property) => 
                       sum + parseFloat(prop.acquisitionPrice) + parseFloat(prop.rehabCosts), 0
                     ))}
                   </span>
@@ -413,6 +305,118 @@ const AssetManagement: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Property Portfolio Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="p-6">
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Property Portfolio</h2>
+            
+            {properties.length === 0 ? (
+              <div className="text-center py-12">
+                <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">No properties found</p>
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {properties.map((property: Property) => (
+                  <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {property.address}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          {property.city}, {property.state} {property.zipCode || ''}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        {/* Entity Assignment Dropdown */}
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Entity:</label>
+                          {editingProperty === property.id ? (
+                            <div className="flex items-center gap-2">
+                              <select
+                                defaultValue={property.entity || '5Central Capital LLC'}
+                                onChange={(e) => handleEntityChange(property.id, e.target.value)}
+                                className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              >
+                                {entities.map((entity) => (
+                                  <option key={entity} value={entity}>{entity}</option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => setEditingProperty(null)}
+                                className="p-1 text-gray-400 hover:text-gray-600"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {property.entity || '5Central Capital LLC'}
+                              </span>
+                              <button
+                                onClick={() => setEditingProperty(property.id)}
+                                className="p-1 text-gray-400 hover:text-gray-600"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          property.status === 'Currently Own' 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                        }`}>
+                          {property.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Units</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{property.apartments}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Acquisition Price</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Rehab Costs</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.rehabCosts)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Cash Flow</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.cashFlow)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">Total Profits</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.totalProfits)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{formatPercentage(property.cashOnCashReturn)}</p>
+                      </div>
+                    </div>
+
+                    {property.acquisitionDate && (
+                      <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                        <MapPin className="w-4 h-4 inline mr-1" />
+                        Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
