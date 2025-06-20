@@ -4,6 +4,7 @@ import { Plus, Trash2, User, Building } from "lucide-react";
 
 interface EntityOwnership {
   entityName: string;
+  isNewEntity: boolean;
   assetType: 'real_estate' | 'cash' | 'stocks' | 'bonds' | 'business' | 'other';
   ownershipPercentage: string;
   currentValue: string;
@@ -26,6 +27,7 @@ const AccountSetup: React.FC = () => {
   const [entities, setEntities] = useState<EntityOwnership[]>([
     {
       entityName: "",
+      isNewEntity: false,
       assetType: "real_estate",
       ownershipPercentage: "",
       currentValue: "",
@@ -33,9 +35,17 @@ const AccountSetup: React.FC = () => {
     }
   ]);
 
+  // Existing entities that users can select from
+  const existingEntities = [
+    "5Central Capital",
+    "The House Doctors", 
+    "Arcadia Vision Group"
+  ];
+
   const addEntity = () => {
     setEntities([...entities, {
       entityName: "",
+      isNewEntity: false,
       assetType: "real_estate",
       ownershipPercentage: "",
       currentValue: "",
@@ -51,7 +61,11 @@ const AccountSetup: React.FC = () => {
 
   const updateEntity = (index: number, field: keyof EntityOwnership, value: string) => {
     const updated = [...entities];
-    updated[index] = { ...updated[index], [field]: value };
+    if (field === 'isNewEntity') {
+      updated[index] = { ...updated[index], [field]: value === 'true' };
+    } else {
+      updated[index] = { ...updated[index], [field]: value };
+    }
     setEntities(updated);
   };
 
@@ -281,17 +295,42 @@ const AccountSetup: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor={`entityName-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
-                        Entity Name *
+                        Entity Selection *
                       </label>
-                      <input
-                        id={`entityName-${index}`}
-                        type="text"
-                        value={entity.entityName}
-                        onChange={(e) => updateEntity(index, "entityName", e.target.value)}
-                        placeholder="e.g., My Real Estate LLC"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
+                      <div className="space-y-2">
+                        <select
+                          value={entity.isNewEntity ? "new" : entity.entityName}
+                          onChange={(e) => {
+                            if (e.target.value === "new") {
+                              updateEntity(index, "isNewEntity", "true");
+                              updateEntity(index, "entityName", "");
+                            } else {
+                              updateEntity(index, "isNewEntity", "false");
+                              updateEntity(index, "entityName", e.target.value);
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="">Select an entity or create new</option>
+                          {existingEntities.map((entityName) => (
+                            <option key={entityName} value={entityName}>
+                              {entityName}
+                            </option>
+                          ))}
+                          <option value="new">+ Create New Entity</option>
+                        </select>
+                        
+                        {entity.isNewEntity && (
+                          <input
+                            type="text"
+                            value={entity.entityName}
+                            onChange={(e) => updateEntity(index, "entityName", e.target.value)}
+                            placeholder="Enter new entity name"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required
+                          />
+                        )}
+                      </div>
                     </div>
                     <div>
                       <label htmlFor={`assetType-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
