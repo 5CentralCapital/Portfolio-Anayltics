@@ -47,6 +47,7 @@ interface Property {
   status: 'Active' | 'Sold' | 'Under Contract' | 'Rehab';
   propertyType: 'Multifamily' | 'Single Family' | 'Commercial';
   strategy: 'Buy & Hold' | 'Fix & Flip' | 'BRRRR' | 'Value-Add';
+  entityId?: string;
 }
 
 interface EntityMember {

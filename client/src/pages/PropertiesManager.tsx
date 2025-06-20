@@ -46,6 +46,7 @@ interface Property {
   status: 'Active' | 'Sold' | 'Under Contract' | 'Rehab';
   propertyType: 'Multifamily' | 'Single Family' | 'Commercial';
   strategy: 'Buy & Hold' | 'Fix & Flip' | 'BRRRR' | 'Value-Add';
+  entityId?: string;
 }
 
 // Financial statement interfaces
@@ -179,6 +180,23 @@ const EditableField: React.FC<EditableFieldProps> = ({
 
 export default function PropertiesManager() {
   const [activeTab, setActiveTab] = useState<'balance' | 'income' | 'cashflow'>('balance');
+  
+  // Available entities for assignment
+  const [entities] = useState([
+    { id: '5central', name: '5Central Capital LLC' },
+    { id: 'harmony', name: 'Harmony Holdings LLC' },
+    { id: 'crystal', name: 'Crystal Properties LLC' }
+  ]);
+
+  // Function to assign property to entity
+  const assignPropertyToEntity = (propertyId: number, entityId: string | null) => {
+    setProperties(prev => prev.map(property => 
+      property.id === propertyId 
+        ? { ...property, entityId: entityId || undefined }
+        : property
+    ));
+  };
+
   const [properties, setProperties] = useState<Property[]>([
     {
       id: 1,
@@ -886,6 +904,7 @@ export default function PropertiesManager() {
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-4 font-semibold text-gray-900">Property</th>
+                <th className="text-center py-3 px-4 font-semibold text-gray-900">Entity</th>
                 <th className="text-right py-3 px-4 font-semibold text-gray-900">Purchase Price</th>
                 <th className="text-right py-3 px-4 font-semibold text-gray-900">Current Value</th>
                 <th className="text-right py-3 px-4 font-semibold text-gray-900">Monthly Rent</th>
@@ -904,6 +923,20 @@ export default function PropertiesManager() {
                       <div className="text-sm text-gray-500">{property.city}, {property.state}</div>
                       <div className="text-xs text-gray-400">{property.units} units • {property.strategy}</div>
                     </div>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <select
+                      value={property.entityId || ''}
+                      onChange={(e) => assignPropertyToEntity(property.id, e.target.value || null)}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Unassigned</option>
+                      {entities.map((entity) => (
+                        <option key={entity.id} value={entity.id}>
+                          {entity.name}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td className="py-3 px-4 text-right">
                     <EditableField
