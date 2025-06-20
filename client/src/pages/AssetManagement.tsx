@@ -398,113 +398,6 @@ const AssetManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Property Portfolio - Organized by Status */}
-      <div className="space-y-8">
-        {/* Under Contract Properties */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-                <FileText className="h-5 w-5 mr-2 text-orange-500" />
-                Under Contract ({properties.filter(p => p.status === 'Under Contract').length})
-              </h2>
-            </div>
-            
-            <div className="grid gap-4">
-              {properties.filter(p => p.status === 'Under Contract').map((property) => (
-                <PropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} />
-              ))}
-              
-              {properties.filter(p => p.status === 'Under Contract').length === 0 && (
-                <div className="text-center py-12">
-                  <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No Properties Under Contract</h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Properties in negotiation or pending closing will appear here.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Rehabbing Properties */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-                <Wrench className="h-5 w-5 mr-2 text-blue-500" />
-                Rehabbing ({properties.filter(p => p.status === 'Rehabbing').length})
-              </h2>
-            </div>
-            
-            <div className="space-y-6">
-              {properties.filter(p => p.status === 'Rehabbing').map((property) => (
-                <RehabPropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} />
-              ))}
-              
-              {properties.filter(p => p.status === 'Rehabbing').length === 0 && (
-                <div className="text-center py-12">
-                  <Wrench className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No Properties in Rehab</h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Properties undergoing renovation will appear here.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Cashflowing Properties */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-                <DollarSign className="h-5 w-5 mr-2 text-green-500" />
-                Cashflowing ({properties.filter(p => p.status === 'Cashflowing').length})
-              </h2>
-            </div>
-            
-            <div className="grid gap-4">
-              {properties.filter(p => p.status === 'Cashflowing').map((property) => (
-                <PropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} />
-              ))}
-              
-              {properties.filter(p => p.status === 'Cashflowing').length === 0 && (
-                <div className="text-center py-12">
-                  <DollarSign className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No Cashflowing Properties</h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Rental properties generating income will appear here.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Sold Properties */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-                <CheckCircle className="h-5 w-5 mr-2 text-purple-500" />
-                Sold ({properties.filter(p => p.status === 'Sold').length})
-              </h2>
-            </div>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {properties.filter(p => p.status === 'Sold').map((property) => (
-                <SoldPropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} />
-              ))}
-              
-              {properties.filter(p => p.status === 'Sold').length === 0 && (
-                <div className="col-span-full text-center py-12">
-                  <CheckCircle className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No Sold Properties</h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Completed property sales will appear here.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Financial Statements Tab Navigation */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
         <div className="border-b border-gray-200 dark:border-gray-700">
@@ -1015,6 +908,237 @@ const AssetManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Property Portfolio Sections */}
+      <div className="space-y-6">
+        {/* Under Contract - Compact Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-4">
+            <FileText className="h-5 w-5 mr-2 text-orange-500" />
+            Under Contract ({properties.filter(p => p.status === 'Under Contract').length})
+          </h2>
+          
+          {properties.filter(p => p.status === 'Under Contract').length > 0 ? (
+            <div className="space-y-3">
+              {properties.filter(p => p.status === 'Under Contract').map((property) => (
+                <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">{property.address}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{property.city}, {property.state}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Purchase Price</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
+                      </div>
+                      <select 
+                        value={property.status} 
+                        onChange={(e) => handleStatusChange(property.id, e.target.value)}
+                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                      >
+                        <option value="Under Contract">Under Contract</option>
+                        <option value="Rehabbing">Rehabbing</option>
+                        <option value="Cashflowing">Cashflowing</option>
+                        <option value="Sold">Sold</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <FileText className="mx-auto h-8 w-8 text-gray-400" />
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">No properties under contract</p>
+            </div>
+          )}
+        </div>
+
+        {/* Rehabbing - Side by Side with Progress Tracking */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-6">
+            <Wrench className="h-5 w-5 mr-2 text-blue-500" />
+            Rehabbing ({properties.filter(p => p.status === 'Rehabbing').length})
+          </h2>
+          
+          {properties.filter(p => p.status === 'Rehabbing').length > 0 ? (
+            <div className="space-y-6">
+              {properties.filter(p => p.status === 'Rehabbing').map((property) => {
+                const rehabBudget = parseFloat(property.rehabCosts);
+                const rehabSpent = rehabBudget * 0.65; // Mock 65% completion
+                const rehabProgress = (rehabSpent / rehabBudget) * 100;
+                
+                return (
+                  <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                    <div className="grid md:grid-cols-2 gap-8">
+                      {/* Left Side - Property Details */}
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{property.address}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{property.city}, {property.state}</p>
+                            <div className="mt-2">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                {property.entity}
+                              </span>
+                            </div>
+                          </div>
+                          <select 
+                            value={property.status} 
+                            onChange={(e) => handleStatusChange(property.id, e.target.value)}
+                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                          >
+                            <option value="Under Contract">Under Contract</option>
+                            <option value="Rehabbing">Rehabbing</option>
+                            <option value="Cashflowing">Cashflowing</option>
+                            <option value="Sold">Sold</option>
+                          </select>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-600 dark:text-gray-400">Units</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">{property.apartments}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600 dark:text-gray-400">Purchase Price</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600 dark:text-gray-400">ARV</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.arvAtTimePurchased)}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600 dark:text-gray-400">Initial Capital</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.initialCapitalRequired)}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Side - Progress Tracking */}
+                      <div className="space-y-6">
+                        {/* Rehab Progress */}
+                        <div>
+                          <div className="flex justify-between items-center mb-3">
+                            <h4 className="text-lg font-medium text-gray-900 dark:text-white">Rehab Progress</h4>
+                            <span className="text-lg font-semibold text-gray-600 dark:text-gray-400">{rehabProgress.toFixed(0)}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
+                            <div 
+                              className="bg-gradient-to-r from-blue-500 to-purple-600 h-4 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.min(rehabProgress, 100)}%` }}
+                            ></div>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mt-2">
+                            <span>Started</span>
+                            <span>In Progress</span>
+                            <span>Complete</span>
+                          </div>
+                        </div>
+
+                        {/* Budget Tracking */}
+                        <div>
+                          <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Budget Tracking</h4>
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                              <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Total Budget</span>
+                              <span className="text-lg font-bold text-blue-900 dark:text-blue-100">{formatCurrency(rehabBudget)}</span>
+                            </div>
+                            <div className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                              <span className="text-sm font-medium text-red-900 dark:text-red-100">Spent to Date</span>
+                              <span className="text-lg font-bold text-red-900 dark:text-red-100">{formatCurrency(rehabSpent)}</span>
+                            </div>
+                            <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                              <span className="text-sm font-medium text-green-900 dark:text-green-100">Remaining</span>
+                              <span className="text-lg font-bold text-green-900 dark:text-green-100">{formatCurrency(rehabBudget - rehabSpent)}</span>
+                            </div>
+                            
+                            {/* Budget Progress Bar */}
+                            <div className="mt-4">
+                              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                                <div 
+                                  className={`h-3 rounded-full transition-all duration-300 ${
+                                    rehabProgress > 90 ? 'bg-red-500' : rehabProgress > 75 ? 'bg-yellow-500' : 'bg-green-500'
+                                  }`}
+                                  style={{ width: `${Math.min(rehabProgress, 100)}%` }}
+                                ></div>
+                              </div>
+                              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                <span>$0</span>
+                                <span>{formatCurrency(rehabBudget)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status Indicator */}
+                        <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                            <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Active Renovation</span>
+                          </div>
+                          <span className="text-sm text-blue-600 dark:text-blue-300 font-medium">On Track</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Wrench className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">No Properties in Rehab</h3>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Properties undergoing renovation will appear here</p>
+            </div>
+          )}
+        </div>
+
+        {/* Cashflowing Properties */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-6">
+            <DollarSign className="h-5 w-5 mr-2 text-green-500" />
+            Cashflowing ({properties.filter(p => p.status === 'Cashflowing').length})
+          </h2>
+          
+          {properties.filter(p => p.status === 'Cashflowing').length > 0 ? (
+            <div className="grid gap-4">
+              {properties.filter(p => p.status === 'Cashflowing').map((property) => (
+                <PropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <DollarSign className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">No Cashflowing Properties</h3>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Rental properties generating income will appear here</p>
+            </div>
+          )}
+        </div>
+
+        {/* Sold Properties */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center mb-6">
+            <CheckCircle className="h-5 w-5 mr-2 text-purple-500" />
+            Sold ({properties.filter(p => p.status === 'Sold').length})
+          </h2>
+          
+          {properties.filter(p => p.status === 'Sold').length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {properties.filter(p => p.status === 'Sold').map((property) => (
+                <SoldPropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <CheckCircle className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">No Sold Properties</h3>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Completed property sales will appear here</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
