@@ -174,10 +174,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user entity ownership
-  app.get("/api/user/:userId/entities", async (req, res) => {
+  app.get("/api/user/:userId/entities", authenticateUser, async (req: any, res) => {
     try {
-      const userId = parseInt(req.params.userId);
-      const entities = await storage.getUserEntityOwnership(userId);
+      const requestedUserId = parseInt(req.params.userId);
+      const authenticatedUserId = req.user.id;
+      
+      // Users can only access their own entity ownership data
+      if (requestedUserId !== authenticatedUserId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const entities = await storage.getUserEntityOwnership(authenticatedUserId);
       res.json(entities);
     } catch (error) {
       console.error("Error fetching user entities:", error);
@@ -186,9 +193,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard data route
-  app.get("/api/dashboard", async (req, res) => {
+  app.get("/api/dashboard", authenticateUser, async (req: any, res) => {
     try {
-      const properties = await storage.getProperties();
+      const userId = req.user.id;
+      const properties = await storage.getPropertiesForUser(userId);
       const latestMetrics = await storage.getLatestCompanyMetrics();
       const investorLeads = await storage.getInvestorLeads();
 
@@ -263,9 +271,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Property performance route
-  app.get("/api/property-performance", async (req, res) => {
+  app.get("/api/property-performance", authenticateUser, async (req: any, res) => {
     try {
-      const properties = await storage.getProperties();
+      const userId = req.user.id;
+      const properties = await storage.getPropertiesForUser(userId);
       
       // Transform properties to match the expected format
       const transformedProperties = properties.map(p => ({
@@ -327,9 +336,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Properties routes
-  app.get("/api/properties", async (req, res) => {
+  app.get("/api/properties", authenticateUser, async (req: any, res) => {
     try {
-      const properties = await storage.getProperties();
+      const userId = req.user.id;
+      const properties = await storage.getPropertiesForUser(userId);
       res.json(properties);
     } catch (error) {
       console.error("Properties error:", error);
