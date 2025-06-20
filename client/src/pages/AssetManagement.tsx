@@ -168,6 +168,11 @@ export default function AssetManagement() {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [activeTab, setActiveTab] = useState('balance-sheet');
   const [editingProperty, setEditingProperty] = useState<number | null>(null);
+  const [statusChangeModal, setStatusChangeModal] = useState<{
+    property: Property;
+    newStatus: string;
+  } | null>(null);
+  const [editingPropertyData, setEditingPropertyData] = useState<Property | null>(null);
 
   const { data: propertiesResponse, isLoading, error } = useQuery({
     queryKey: ['/api/properties'],
@@ -192,7 +197,36 @@ export default function AssetManagement() {
   });
 
   const handleStatusChange = (id: number, status: string) => {
-    updatePropertyMutation.mutate({ id, property: { status } });
+    const property = properties.find(p => p.id === id);
+    if (property) {
+      setStatusChangeModal({ property, newStatus: status });
+      setEditingPropertyData({ ...property, status });
+    }
+  };
+
+  const confirmStatusChange = () => {
+    if (statusChangeModal && editingPropertyData) {
+      updatePropertyMutation.mutate({ 
+        id: editingPropertyData.id, 
+        property: editingPropertyData 
+      });
+      setStatusChangeModal(null);
+      setEditingPropertyData(null);
+    }
+  };
+
+  const cancelStatusChange = () => {
+    setStatusChangeModal(null);
+    setEditingPropertyData(null);
+  };
+
+  const updateEditingPropertyData = (field: string, value: any) => {
+    if (editingPropertyData) {
+      setEditingPropertyData({
+        ...editingPropertyData,
+        [field]: value
+      });
+    }
   };
 
   const handlePropertyDoubleClick = (property: Property) => {
@@ -833,6 +867,223 @@ export default function AssetManagement() {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Change Confirmation Modal */}
+      {statusChangeModal && editingPropertyData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Confirm Status Change: {statusChangeModal.property.status} → {statusChangeModal.newStatus}
+              </h2>
+              <button
+                onClick={cancelStatusChange}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Property Details */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Property Information</h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      value={editingPropertyData.address}
+                      onChange={(e) => updateEditingPropertyData('address', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={editingPropertyData.city}
+                        onChange={(e) => updateEditingPropertyData('city', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        State
+                      </label>
+                      <input
+                        type="text"
+                        value={editingPropertyData.state}
+                        onChange={(e) => updateEditingPropertyData('state', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Zip Code
+                      </label>
+                      <input
+                        type="text"
+                        value={editingPropertyData.zipCode || ''}
+                        onChange={(e) => updateEditingPropertyData('zipCode', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Units
+                      </label>
+                      <input
+                        type="number"
+                        value={editingPropertyData.apartments}
+                        onChange={(e) => updateEditingPropertyData('apartments', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Entity
+                    </label>
+                    <select
+                      value={editingPropertyData.entity}
+                      onChange={(e) => updateEditingPropertyData('entity', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="5Central Capital">5Central Capital</option>
+                      <option value="The House Doctors">The House Doctors</option>
+                      <option value="Arcadia Vision Group">Arcadia Vision Group</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={editingPropertyData.status}
+                      onChange={(e) => updateEditingPropertyData('status', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="Under Contract">Under Contract</option>
+                      <option value="Rehabbing">Rehabbing</option>
+                      <option value="Cashflowing">Cashflowing</option>
+                      <option value="Sold">Sold</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Financial Details */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Financial Information</h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Acquisition Price
+                    </label>
+                    <input
+                      type="number"
+                      value={editingPropertyData.acquisitionPrice}
+                      onChange={(e) => updateEditingPropertyData('acquisitionPrice', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Rehab Costs
+                    </label>
+                    <input
+                      type="number"
+                      value={editingPropertyData.rehabCosts}
+                      onChange={(e) => updateEditingPropertyData('rehabCosts', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      ARV At Purchase
+                    </label>
+                    <input
+                      type="number"
+                      value={editingPropertyData.arvAtTimePurchased}
+                      onChange={(e) => updateEditingPropertyData('arvAtTimePurchased', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Cash Flow (Monthly)
+                    </label>
+                    <input
+                      type="number"
+                      value={editingPropertyData.cashFlow}
+                      onChange={(e) => updateEditingPropertyData('cashFlow', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Cash-on-Cash Return (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={editingPropertyData.cashOnCashReturn}
+                      onChange={(e) => updateEditingPropertyData('cashOnCashReturn', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Acquisition Date
+                    </label>
+                    <input
+                      type="date"
+                      value={editingPropertyData.acquisitionDate}
+                      onChange={(e) => updateEditingPropertyData('acquisitionDate', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={cancelStatusChange}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmStatusChange}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                disabled={updatePropertyMutation.isPending}
+              >
+                {updatePropertyMutation.isPending ? 'Updating...' : 'Confirm & Update'}
+              </button>
             </div>
           </div>
         </div>
