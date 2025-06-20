@@ -143,6 +143,7 @@ const EditableValue = ({
 export default function EntityDashboard() {
   const [userEntities, setUserEntities] = useState<string[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [selectedPropertyModal, setSelectedPropertyModal] = useState<Property | null>(null);
 
   // Get current user
   useEffect(() => {
@@ -834,7 +835,11 @@ export default function EntityDashboard() {
                           </thead>
                           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                             {entityProperties.map((property) => (
-                              <tr key={property.id}>
+                              <tr 
+                                key={property.id}
+                                onDoubleClick={() => setSelectedPropertyModal(property)}
+                                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                              >
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                   {property.address}
                                 </td>
@@ -978,6 +983,299 @@ export default function EntityDashboard() {
           );
         })}
       </div>
+
+      {/* Property Financial Breakdown Modal */}
+      {selectedPropertyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Property Financial Analysis - {selectedPropertyModal.address}
+              </h2>
+              <button
+                onClick={() => setSelectedPropertyModal(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Financial Breakdown */}
+              <div className="space-y-6">
+                {/* Revenue Section */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                  <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-4 flex items-center">
+                    <DollarSign className="h-5 w-5 mr-2" />
+                    Revenue
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-blue-700 dark:text-blue-300">Gross Rent (Annual)</span>
+                      <span className="font-semibold text-blue-900 dark:text-blue-200">
+                        {formatCurrency(Number(selectedPropertyModal.cashFlow) * 12)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-blue-700 dark:text-blue-300">Vacancy Loss (5.0%)</span>
+                      <span className="font-semibold text-red-600">
+                        -{formatCurrency(Number(selectedPropertyModal.cashFlow) * 12 * 0.05)}
+                      </span>
+                    </div>
+                    <div className="border-t border-blue-300 dark:border-blue-700 pt-2">
+                      <div className="flex justify-between">
+                        <span className="font-semibold text-blue-900 dark:text-blue-200">Net Revenue</span>
+                        <span className="font-bold text-blue-900 dark:text-blue-200">
+                          {formatCurrency(Number(selectedPropertyModal.cashFlow) * 12 * 0.95)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expenses Section */}
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                  <h3 className="text-lg font-semibold text-red-900 dark:text-red-300 mb-4 flex items-center">
+                    <TrendingDown className="h-5 w-5 mr-2" />
+                    Expenses
+                  </h3>
+                  <div className="space-y-3">
+                    {(() => {
+                      const grossRent = Number(selectedPropertyModal.cashFlow) * 12;
+                      const propertyTax = grossRent * 0.12;
+                      const insurance = grossRent * 0.06;
+                      const maintenance = grossRent * 0.08;
+                      const waterSewerTrash = grossRent * 0.04;
+                      const capitalReserves = grossRent * 0.032;
+                      const utilities = grossRent * 0.024;
+                      const other = grossRent * 0.016;
+                      const managementFee = grossRent * 0.08;
+                      const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
+
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-red-700 dark:text-red-300">Property Tax</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(propertyTax)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-red-700 dark:text-red-300">Insurance</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(insurance)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-red-700 dark:text-red-300">Maintenance</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(maintenance)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-red-700 dark:text-red-300">Water/Sewer/Trash</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(waterSewerTrash)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-red-700 dark:text-red-300">Capital Reserves</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(capitalReserves)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-red-700 dark:text-red-300">Utilities</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(utilities)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-red-700 dark:text-red-300">Other</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(other)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-red-700 dark:text-red-300">Management Fee (8%)</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(managementFee)}</span>
+                          </div>
+                          <div className="border-t border-red-300 dark:border-red-700 pt-2">
+                            <div className="flex justify-between">
+                              <span className="font-semibold text-red-900 dark:text-red-200">Total Expenses</span>
+                              <span className="font-bold text-red-900 dark:text-red-200">{formatCurrency(totalExpenses)}</span>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Net Operating Income */}
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                  <h3 className="text-lg font-semibold text-green-900 dark:text-green-300 mb-4 flex items-center">
+                    <TrendingUp className="h-5 w-5 mr-2" />
+                    Net Operating Income
+                  </h3>
+                  <div className="space-y-3">
+                    {(() => {
+                      const grossRent = Number(selectedPropertyModal.cashFlow) * 12;
+                      const netRevenue = grossRent * 0.95;
+                      const totalExpenses = grossRent * 0.448; // Sum of all expense percentages
+                      const noi = netRevenue - totalExpenses;
+                      const monthlyDebtService = grossRent * 0.055; // Estimated debt service
+                      const netCashFlow = (noi - (monthlyDebtService * 12)) / 12;
+
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="font-semibold text-green-900 dark:text-green-200">Net Operating Income (NOI)</span>
+                            <span className="font-bold text-green-900 dark:text-green-200">{formatCurrency(noi)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-green-700 dark:text-green-300">Monthly Debt Service</span>
+                            <span className="font-semibold text-red-600">-{formatCurrency(monthlyDebtService)}</span>
+                          </div>
+                          <div className="border-t border-green-300 dark:border-green-700 pt-2">
+                            <div className="flex justify-between">
+                              <span className="font-semibold text-green-900 dark:text-green-200">Net Cash Flow (Monthly)</span>
+                              <span className={`font-bold ${netCashFlow > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatCurrency(netCashFlow)}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Investment Summary & Loan Analysis */}
+              <div className="space-y-6">
+                {/* Investment Summary */}
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                  <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-300 mb-4 flex items-center">
+                    <BarChart3 className="h-5 w-5 mr-2" />
+                    Investment Summary
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-purple-700 dark:text-purple-300">Total Cash Invested</span>
+                      <span className="font-semibold text-purple-900 dark:text-purple-200">
+                        {formatCurrency(selectedPropertyModal.initialCapitalRequired)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-purple-700 dark:text-purple-300">Annual Cash Flow</span>
+                      <span className={`font-semibold ${Number(selectedPropertyModal.cashFlow) * 12 > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(Number(selectedPropertyModal.cashFlow) * 12)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-purple-700 dark:text-purple-300">Cash-Out at Refi</span>
+                      <span className="font-semibold text-purple-900 dark:text-purple-200">
+                        {formatCurrency(Number(selectedPropertyModal.totalProfits))}
+                      </span>
+                    </div>
+                    <div className="border-t border-purple-300 dark:border-purple-700 pt-2">
+                      <div className="flex justify-between">
+                        <span className="font-semibold text-purple-900 dark:text-purple-200">Total Return</span>
+                        <span className={`font-bold ${Number(selectedPropertyModal.totalProfits) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatCurrency(Number(selectedPropertyModal.totalProfits))}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Loan Analysis */}
+                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+                  <h3 className="text-lg font-semibold text-orange-900 dark:text-orange-300 mb-4 flex items-center">
+                    <Calculator className="h-5 w-5 mr-2" />
+                    Loan Analysis
+                  </h3>
+                  <div className="space-y-3">
+                    {(() => {
+                      const acquisitionPrice = Number(selectedPropertyModal.acquisitionPrice);
+                      const ltcLoan = acquisitionPrice * 0.8; // 80% LTC
+                      const arvLoan = Number(selectedPropertyModal.arvAtTimePurchased) * 0.65; // 65% ARV
+                      const monthlyDebtService = acquisitionPrice * 0.055 / 12; // Estimated
+                      const interestRate = 8.75;
+
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-orange-700 dark:text-orange-300">Initial Loan (LTC)</span>
+                            <span className="font-semibold text-orange-900 dark:text-orange-200">{formatCurrency(ltcLoan)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-orange-700 dark:text-orange-300">Max Loan Amount (65% ARV)</span>
+                            <span className="font-semibold text-orange-900 dark:text-orange-200">{formatCurrency(arvLoan)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-orange-700 dark:text-orange-300">Monthly Debt Service</span>
+                            <span className="font-semibold text-orange-900 dark:text-orange-200">{formatCurrency(monthlyDebtService)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-orange-700 dark:text-orange-300">Interest Rate</span>
+                            <span className="font-semibold text-orange-900 dark:text-orange-200">{interestRate}%</span>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Property Details */}
+                <div className="bg-gray-50 dark:bg-gray-900/20 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-300 mb-4 flex items-center">
+                    <Home className="h-5 w-5 mr-2" />
+                    Property Details
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-700 dark:text-gray-300">Address</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-200">{selectedPropertyModal.address}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-700 dark:text-gray-300">City, State</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-200">{selectedPropertyModal.city}, {selectedPropertyModal.state}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-700 dark:text-gray-300">Units</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-200">{selectedPropertyModal.apartments}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-700 dark:text-gray-300">Status</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        selectedPropertyModal.status === 'Cashflowing' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : selectedPropertyModal.status === 'Under Contract'
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          : selectedPropertyModal.status === 'Rehabbing'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                      }`}>
+                        {selectedPropertyModal.status}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-700 dark:text-gray-300">Acquisition Date</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-200">
+                        {selectedPropertyModal.acquisitionDate ? new Date(selectedPropertyModal.acquisitionDate).toLocaleDateString() : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-700 dark:text-gray-300">Cash-on-Cash Return</span>
+                      <span className={`font-semibold ${Number(selectedPropertyModal.cashOnCashReturn) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatPercentage(selectedPropertyModal.cashOnCashReturn)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setSelectedPropertyModal(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
