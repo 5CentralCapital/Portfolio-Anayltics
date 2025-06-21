@@ -24,6 +24,12 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 // Remove toast for now and focus on fixing the save functionality
 import apiService from '../services/api';
+import { SmartField, CalculationBreakdownModal } from '../components/SmartField';
+import { 
+  recalculateFields, 
+  getAffectedFields,
+  PropertyCalculationConfig 
+} from '../utils/propertyCalculations';
 
 interface Property {
   id: number;
