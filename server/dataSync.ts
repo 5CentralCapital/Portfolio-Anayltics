@@ -180,9 +180,24 @@ export class DataSyncManager {
       }
     }
 
-    // Calculate cash flow
-    calculations.annualCashFlow = calculations.noi - annualDebtService;
-    calculations.monthlyCashFlow = calculations.annualCashFlow / 12;
+    // Priority 1: Use 12-month proforma data if available (most accurate)
+    if (dealData.proforma && Array.isArray(dealData.proforma) && dealData.proforma.length > 0) {
+      const totalAnnualCashFlow = dealData.proforma.reduce((sum: number, month: any) => 
+        sum + (parseFloat(month.cashFlow) || 0), 0);
+      
+      if (totalAnnualCashFlow !== 0) {
+        calculations.annualCashFlow = totalAnnualCashFlow;
+        calculations.monthlyCashFlow = totalAnnualCashFlow / 12;
+      } else {
+        // Fall back to NOI calculation
+        calculations.annualCashFlow = calculations.noi - annualDebtService;
+        calculations.monthlyCashFlow = calculations.annualCashFlow / 12;
+      }
+    } else {
+      // Priority 2: Calculate from NOI minus debt service
+      calculations.annualCashFlow = calculations.noi - annualDebtService;
+      calculations.monthlyCashFlow = calculations.annualCashFlow / 12;
+    }
 
     // Calculate ARV from cap rate
     if (dealData.exitAnalysis?.salesCapRate) {

@@ -233,6 +233,7 @@ export default function AssetManagement() {
   const [propertyDetailTab, setPropertyDetailTab] = useState('overview');
   const [editingModalProperty, setEditingModalProperty] = useState<Property | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [calculationRefreshKey, setCalculationRefreshKey] = useState(0);
   
   // Calculation breakdown modal state
   const [calculationBreakdown, setCalculationBreakdown] = useState<{
@@ -1853,9 +1854,16 @@ export default function AssetManagement() {
                               <div>
                                 <p className="text-sm text-green-700 dark:text-green-300">Annual Cash Flow</p>
 {(() => {
-                                  // Use centralized calculation system
-                                  const propertyData = isEditing && editingModalProperty ? editingModalProperty : showPropertyDetailModal;
-                                  const metrics = calculatePropertyMetrics(propertyData as PropertyData);
+                                  // Force fresh calculation using current property data
+                                  const currentProperty = isEditing && editingModalProperty ? editingModalProperty : showPropertyDetailModal;
+                                  
+                                  // Create a fresh property data object with current dealAnalyzerData
+                                  const freshPropertyData = {
+                                    ...currentProperty,
+                                    dealAnalyzerData: currentProperty?.dealAnalyzerData
+                                  };
+                                  
+                                  const metrics = calculatePropertyMetrics(freshPropertyData as PropertyData);
                                   
                                   return (
                                     <p className={`font-medium ${metrics.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -1867,10 +1875,16 @@ export default function AssetManagement() {
                               <div>
                                 <p className="text-sm text-green-700 dark:text-green-300">Cash-on-Cash Return</p>
 {(() => {
-                                  // Use centralized calculation system
-                                  const propertyData = isEditing && editingModalProperty ? editingModalProperty : showPropertyDetailModal;
-                                  const metrics = calculatePropertyMetrics(propertyData as PropertyData);
-
+                                  // Force fresh calculation using current property data
+                                  const currentProperty = isEditing && editingModalProperty ? editingModalProperty : showPropertyDetailModal;
+                                  
+                                  // Create a fresh property data object with current dealAnalyzerData
+                                  const freshPropertyData = {
+                                    ...currentProperty,
+                                    dealAnalyzerData: currentProperty?.dealAnalyzerData
+                                  };
+                                  
+                                  const metrics = calculatePropertyMetrics(freshPropertyData as PropertyData);
                                   
                                   return (
                                     <p className={`font-medium ${metrics.cashOnCashReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
