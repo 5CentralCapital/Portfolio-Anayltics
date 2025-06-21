@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
+import { runSimpleMigration } from "./simpleMigration";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
@@ -56,6 +57,12 @@ app.use((req, res, next) => {
     
     if (!dbConnected) {
       log("Warning: Database connection failed, but continuing with server startup");
+    } else {
+      log("Database connection successful");
+      // Run migration analysis
+      runSimpleMigration().catch(error => {
+        log(`Migration analysis failed: ${error}`);
+      });
     }
 
     const server = await registerRoutes(app);
