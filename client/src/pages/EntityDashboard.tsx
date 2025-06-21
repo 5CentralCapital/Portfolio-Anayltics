@@ -144,6 +144,7 @@ export default function EntityDashboard() {
   const [userEntities, setUserEntities] = useState<string[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [selectedPropertyModal, setSelectedPropertyModal] = useState<Property | null>(null);
+  const [activeFinancialTab, setActiveFinancialTab] = useState<Record<string, string>>({});
 
   // Get current user
   useEffect(() => {
@@ -750,115 +751,112 @@ export default function EntityDashboard() {
 
                 {activeTabs[entityName] === 'financials' && (
                   <div className="space-y-6">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Financial Summary</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Financial Statements</h4>
                     
-                    {/* Revenue & Income Statement */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
-                        <h5 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Income Statement</h5>
-                        <div className="space-y-3">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">Gross Rental Income</span>
-                            <span className="font-semibold text-gray-900 dark:text-white">
-                              {formatCurrency(entityMetrics.totalCashFlow * 12)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">Total Acquisition Cost</span>
-                            <span className="font-semibold text-gray-900 dark:text-white">
-                              {formatCurrency(entityProperties.reduce((sum, prop) => sum + parseFloat(prop.acquisitionPrice), 0))}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">Total Rehab Costs</span>
-                            <span className="font-semibold text-gray-900 dark:text-white">
-                              {formatCurrency(entityProperties.reduce((sum, prop) => sum + parseFloat(prop.rehabCosts), 0))}
-                            </span>
-                          </div>
-                          <div className="border-t border-gray-300 dark:border-gray-600 pt-2">
-                            <div className="flex justify-between">
-                              <span className="font-semibold text-gray-900 dark:text-white">Net Operating Income</span>
-                              <span className="font-bold text-green-600">
-                                {formatCurrency(entityMetrics.totalProfits)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
+                    {/* Financial Statement Tabs */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+                      <div className="border-b border-gray-200 dark:border-gray-700">
+                        <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+                          {[
+                            { id: 'balance-sheet', name: 'Balance Sheet' },
+                            { id: 'income-statement', name: 'Income Statement' },
+                            { id: 'cash-flow', name: 'Cash Flow Statement' }
+                          ].map((tab) => (
+                            <button
+                              key={tab.id}
+                              onClick={() => setActiveFinancialTab(prev => ({ ...prev, [entityName]: tab.id }))}
+                              className={`${
+                                (activeFinancialTab[entityName] || 'balance-sheet') === tab.id
+                                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                            >
+                              {tab.name}
+                            </button>
+                          ))}
+                        </nav>
                       </div>
 
-                      <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
-                        <h5 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Asset Valuation</h5>
-                        <div className="space-y-3">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">Current Portfolio Value</span>
-                            <span className="font-semibold text-gray-900 dark:text-white">
-                              {formatCurrency(entityMetrics.totalAUM)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">Total Investment</span>
-                            <span className="font-semibold text-gray-900 dark:text-white">
-                              {formatCurrency(entityProperties.reduce((sum, prop) => sum + parseFloat(prop.initialCapitalRequired), 0))}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">Unrealized Gains</span>
-                            <span className="font-semibold text-green-600">
-                              {formatCurrency(entityMetrics.totalAUM - entityProperties.reduce((sum, prop) => sum + parseFloat(prop.initialCapitalRequired), 0))}
-                            </span>
-                          </div>
-                          <div className="border-t border-gray-300 dark:border-gray-600 pt-2">
-                            <div className="flex justify-between">
-                              <span className="font-semibold text-gray-900 dark:text-white">Equity Multiple</span>
-                              <span className="font-bold text-blue-600">
-                                {entityEquityMultiple.toFixed(2)}x
-                              </span>
+                      <div className="p-6">
+                        {(activeFinancialTab[entityName] || 'balance-sheet') === 'balance-sheet' && (
+                          <div className="grid md:grid-cols-2 gap-8">
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Assets</h3>
+                              <div className="space-y-3">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600 dark:text-gray-400">Real Estate Properties</span>
+                                  <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(entityMetrics.totalAUM)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600 dark:text-gray-400">Cash & Cash Equivalents</span>
+                                  <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(75000)}</span>
+                                </div>
+                                <div className="border-t pt-3 flex justify-between">
+                                  <span className="font-semibold text-gray-900 dark:text-white">Total Assets</span>
+                                  <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(entityMetrics.totalAUM + 75000)}</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Liabilities & Equity</h3>
+                              <div className="space-y-3">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600 dark:text-gray-400">Mortgages Payable</span>
+                                  <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(entityMetrics.totalAUM * 0.7)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600 dark:text-gray-400">Owner's Equity</span>
+                                  <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency((entityMetrics.totalAUM * 0.3) + 75000)}</span>
+                                </div>
+                                <div className="border-t pt-3 flex justify-between">
+                                  <span className="font-semibold text-gray-900 dark:text-white">Total Liabilities & Equity</span>
+                                  <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(entityMetrics.totalAUM + 75000)}</span>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    </div>
+                        )}
 
-                    {/* Property Performance Breakdown */}
-                    <div className="space-y-4">
-                      <h5 className="text-md font-semibold text-gray-900 dark:text-white">Property-Level Performance</h5>
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                          <thead className="bg-gray-50 dark:bg-gray-800">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Property</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Investment</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cash Flow</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Profits</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">CoC Return</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                            {entityProperties.map((property) => (
-                              <tr 
-                                key={property.id}
-                                onDoubleClick={() => setSelectedPropertyModal(property)}
-                                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-all-smooth hover-scale"
-                              >
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                  {property.address}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                  {formatCurrency(property.initialCapitalRequired)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                  {formatCurrency(property.cashFlow)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
-                                  {formatCurrency(property.totalProfits)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
-                                  {formatPercentage(property.cashOnCashReturn)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                        {(activeFinancialTab[entityName] || 'balance-sheet') === 'income-statement' && (
+                          <div className="max-w-2xl">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Monthly Income Statement</h3>
+                            <div className="space-y-3">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600 dark:text-gray-400">Gross Rental Income</span>
+                                <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(entityMetrics.totalCashFlow * 1.15)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600 dark:text-gray-400">Operating Expenses</span>
+                                <span className="font-semibold text-red-600">{formatCurrency(-entityMetrics.totalCashFlow * 0.15)}</span>
+                              </div>
+                              <div className="border-t pt-3 flex justify-between">
+                                <span className="font-semibold text-gray-900 dark:text-white">Net Operating Income</span>
+                                <span className="font-bold text-green-600">{formatCurrency(entityMetrics.totalCashFlow)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {(activeFinancialTab[entityName] || 'balance-sheet') === 'cash-flow' && (
+                          <div className="max-w-2xl">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Monthly Cash Flow</h3>
+                            <div className="space-y-3">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600 dark:text-gray-400">Operating Cash Flow</span>
+                                <span className="font-semibold text-green-600">{formatCurrency(entityMetrics.totalCashFlow)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600 dark:text-gray-400">Capital Expenditures</span>
+                                <span className="font-semibold text-red-600">{formatCurrency(-5000)}</span>
+                              </div>
+                              <div className="border-t pt-3 flex justify-between">
+                                <span className="font-semibold text-gray-900 dark:text-white">Net Cash Flow</span>
+                                <span className="font-bold text-green-600">{formatCurrency(entityMetrics.totalCashFlow - 5000)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

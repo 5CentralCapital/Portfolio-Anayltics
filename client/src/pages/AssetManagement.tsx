@@ -176,7 +176,6 @@ const formatPercentage = (value: string | number) => {
 export default function AssetManagement() {
   const queryClient = useQueryClient();
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [activeTab, setActiveTab] = useState('balance-sheet');
   const [editingProperty, setEditingProperty] = useState<number | null>(null);
   const [statusChangeModal, setStatusChangeModal] = useState<{
     property: Property;
@@ -392,112 +391,7 @@ export default function AssetManagement() {
         </div>
       </div>
 
-      {/* Financial Statements */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
-            {[
-              { id: 'balance-sheet', name: 'Balance Sheet' },
-              { id: 'income-statement', name: 'Income Statement' },
-              { id: 'cash-flow', name: 'Cash Flow Statement' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                {tab.name}
-              </button>
-            ))}
-          </nav>
-        </div>
 
-        <div className="p-6">
-          {activeTab === 'balance-sheet' && (
-            <div className="grid md:grid-cols-2 gap-8">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Assets</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Real Estate Properties</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(metrics.totalAUM)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Cash & Cash Equivalents</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(75000)}</span>
-                  </div>
-                  <div className="border-t pt-3 flex justify-between">
-                    <span className="font-semibold text-gray-900 dark:text-white">Total Assets</span>
-                    <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(metrics.totalAUM + 75000)}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Liabilities & Equity</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Mortgages Payable</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(metrics.totalAUM * 0.7)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Owner's Equity</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency((metrics.totalAUM * 0.3) + 75000)}</span>
-                  </div>
-                  <div className="border-t pt-3 flex justify-between">
-                    <span className="font-semibold text-gray-900 dark:text-white">Total Liabilities & Equity</span>
-                    <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(metrics.totalAUM + 75000)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'income-statement' && (
-            <div className="max-w-2xl">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Monthly Income Statement</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Gross Rental Income</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(metrics.totalCashFlow * 1.15)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Operating Expenses</span>
-                  <span className="font-semibold text-red-600">{formatCurrency(-metrics.totalCashFlow * 0.15)}</span>
-                </div>
-                <div className="border-t pt-3 flex justify-between">
-                  <span className="font-semibold text-gray-900 dark:text-white">Net Operating Income</span>
-                  <span className="font-bold text-green-600">{formatCurrency(metrics.totalCashFlow)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'cash-flow' && (
-            <div className="max-w-2xl">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Monthly Cash Flow</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Operating Cash Flow</span>
-                  <span className="font-semibold text-green-600">{formatCurrency(metrics.totalCashFlow)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Capital Expenditures</span>
-                  <span className="font-semibold text-red-600">{formatCurrency(-5000)}</span>
-                </div>
-                <div className="border-t pt-3 flex justify-between">
-                  <span className="font-semibold text-gray-900 dark:text-white">Net Cash Flow</span>
-                  <span className="font-bold text-green-600">{formatCurrency(metrics.totalCashFlow - 5000)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Property Portfolio Sections */}
       <div className="space-y-6">
