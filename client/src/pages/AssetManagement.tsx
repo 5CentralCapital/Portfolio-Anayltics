@@ -17,7 +17,9 @@ import {
   FileText,
   Wrench,
   CheckCircle,
-  PieChart
+  PieChart,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiService from '../services/api';
@@ -187,7 +189,6 @@ const formatPercentage = (value: string | number) => {
 export default function AssetManagement() {
   const queryClient = useQueryClient();
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [editingProperty, setEditingProperty] = useState<number | null>(null);
   const [statusChangeModal, setStatusChangeModal] = useState<{
     property: Property;
     newStatus: string;
@@ -197,6 +198,8 @@ export default function AssetManagement() {
   const [showRehabModal, setShowRehabModal] = useState<Property | null>(null);
   const [showPropertyDetailModal, setShowPropertyDetailModal] = useState<Property | null>(null);
   const [propertyDetailTab, setPropertyDetailTab] = useState('overview');
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Initialize default rehab line items for a property
   const initializeRehabItems = (property: Property): RehabLineItem[] => {
@@ -306,7 +309,27 @@ export default function AssetManagement() {
     
     // Show comprehensive property detail modal with all Deal Analyzer tabs
     setShowPropertyDetailModal(property);
+    setEditingProperty({ ...property });
     setPropertyDetailTab('overview');
+  };
+
+  const savePropertyChanges = () => {
+    if (editingProperty) {
+      updatePropertyMutation.mutate({
+        id: editingProperty.id,
+        property: editingProperty
+      });
+      setIsEditing(false);
+    }
+  };
+
+  const handlePropertyFieldChange = (field: string, value: any) => {
+    if (editingProperty) {
+      setEditingProperty({
+        ...editingProperty,
+        [field]: value
+      });
+    }
   };
 
   const closePropertyModal = () => {
@@ -1475,13 +1498,15 @@ export default function AssetManagement() {
 
             {/* Tab Navigation */}
             <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-              <nav className="-mb-px flex space-x-8">
+              <nav className="-mb-px flex space-x-8 overflow-x-auto">
                 {[
                   { id: 'overview', name: 'Overview', icon: Building },
                   { id: 'rentroll', name: 'Rent Roll', icon: DollarSign },
                   { id: 'rehab', name: 'Rehab Budget', icon: Wrench },
-                  { id: 'expenses', name: 'Operating Expenses', icon: Calculator },
+                  { id: 'income-expenses', name: 'Income & Expenses', icon: Calculator },
                   { id: 'financing', name: 'Financing', icon: PieChart },
+                  { id: 'sensitivity', name: 'Sensitivity', icon: BarChart3 },
+                  { id: 'proforma', name: '12-Month Proforma', icon: Calendar },
                   { id: 'exit', name: 'Exit Analysis', icon: TrendingUp }
                 ].map((tab) => {
                   const Icon = tab.icon;
