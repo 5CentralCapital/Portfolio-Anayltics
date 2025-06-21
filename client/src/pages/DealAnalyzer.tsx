@@ -659,39 +659,15 @@ export default function DealAnalyzer() {
       const downPayment = (assumptions.purchasePrice || 0) * (1 - (assumptions.loanPercentage || 0.8));
       const initialCapital = downPayment + totalRehabCosts + totalClosingCosts + totalHoldingCosts;
 
-      // Calculate cash flow (annual) with detailed calculations
-      const totalAnnualRent = rentRoll.reduce((sum, unit) => {
-        const unitType = unitTypes.find(ut => ut.id === unit.unitTypeId);
-        return sum + (unitType ? unitType.marketRent * 12 : unit.proFormaRent * 12);
-      }, 0);
-      
-      const vacancyLoss = totalAnnualRent * assumptions.vacancyRate;
-      const netRevenue = totalAnnualRent - vacancyLoss;
-      const managementFee = netRevenue * 0.08; // 8% management fee
-      const totalAnnualExpenses = Object.values(expenses || {}).reduce((sum, expense) => sum + (Number(expense) || 0), 0) + managementFee;
-      const noi = netRevenue - totalAnnualExpenses;
-      
-      // Calculate debt service using initial loan terms (not refinance terms for import)
-      const loanAmount = (assumptions.purchasePrice || 0) * (assumptions.loanPercentage || 0.8);
-      const interestRate = assumptions.interestRate || 0.0875;
-      const loanTermYears = assumptions.loanTermYears || 2;
-      
-      let monthlyPayment = 0;
-      if (loanAmount > 0 && interestRate > 0) {
-        const monthlyRate = interestRate / 12;
-        const numPayments = loanTermYears * 12;
-        monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-      }
-      
-      const annualDebtService = monthlyPayment * 12;
-      const annualCashFlow = noi - annualDebtService;
+      // Use annual cash flow from 12-month proforma calculation (metrics.netCashFlow)
+      const annualCashFlow = metrics.netCashFlow;
 
       // Calculate cash-on-cash return using actual initial capital
       const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) : 0;
 
-      // Calculate ARV
+      // Calculate ARV using NOI from 12-month proforma (metrics.noi)
       const marketCapRate = assumptions.marketCapRate || 0.055;
-      const arv = noi > 0 && marketCapRate > 0 ? noi / marketCapRate : assumptions.purchasePrice || 0;
+      const arv = metrics.noi > 0 && marketCapRate > 0 ? metrics.noi / marketCapRate : assumptions.purchasePrice || 0;
 
       const propertyData = {
         status: 'Under Contract' as const,
@@ -729,7 +705,7 @@ export default function DealAnalyzer() {
             totalHoldingCosts,
             initialCapital,
             arv,
-            noi,
+            noi: metrics.noi,
             annualCashFlow,
             cashOnCashReturn
           }
