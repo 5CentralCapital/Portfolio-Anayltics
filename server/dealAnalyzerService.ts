@@ -1,5 +1,6 @@
 import { db } from './db';
 import { 
+  properties,
   propertyAssumptions,
   propertyUnitTypes,
   propertyRentRoll,
