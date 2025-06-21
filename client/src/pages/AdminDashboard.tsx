@@ -26,7 +26,8 @@ import {
   ArrowUp,
   ArrowDown,
   Calculator,
-  MapPin
+  MapPin,
+  Keyboard
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
@@ -38,6 +39,12 @@ import FinancialDashboard from './FinancialDashboard';
 import AssetManagement from './AssetManagement';
 import NetWorthTracker from './NetWorthTracker';
 import OnboardingTour from '../components/OnboardingTour';
+import { useRealtimeUpdates, useSmartCacheInvalidation } from '../hooks/useRealtimeUpdates';
+import LoadingState from '../components/LoadingState';
+import { ErrorHandler, useErrorHandler } from '../components/ErrorHandler';
+import { Breadcrumb } from '../components/Breadcrumb';
+import { useKeyboardShortcuts, KeyboardShortcutsHelp, createDashboardShortcuts } from '../components/KeyboardShortcuts';
+import { HelpTooltip, InfoTooltip } from '../components/Tooltip';
 
 interface DashboardData {
   financial: {
@@ -80,6 +87,20 @@ const AdminDashboard: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [currentSection, setCurrentSection] = useState<string[]>([]);
+
+  // Enhanced error handling
+  const { handleError } = useErrorHandler();
+  
+  // Smart cache invalidation
+  const { invalidateRelatedQueries } = useSmartCacheInvalidation();
+
+  // Real-time updates
+  const { forceUpdate } = useRealtimeUpdates({
+    enabled: !loading,
+    queryKeys: ['/api/dashboard', '/api/properties', '/api/user/entities']
+  });
 
   useEffect(() => {
     if (!apiService.isAuthenticated()) {
@@ -122,7 +143,8 @@ const AdminDashboard: React.FC = () => {
       setInvestorLeads(leadsRes.data || []);
       setRetryCount(0);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+      handleError(err, 'Dashboard Data Loading');
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard data. Please check your connection and try again.');
       setRetryCount(prev => prev + 1);
     } finally {
       setLoading(false);
