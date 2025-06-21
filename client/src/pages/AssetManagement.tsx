@@ -251,12 +251,12 @@ export default function AssetManagement() {
 
   // Ensure properties is always an array with proper error handling
   const properties = React.useMemo(() => {
-    if (propertiesQuery.isLoading || propertiesQuery.isError) return [];
+    if (isLoading || error) return [];
     if (!propertiesResponse) return [];
     if (Array.isArray(propertiesResponse)) return propertiesResponse;
     if (propertiesResponse.data && Array.isArray(propertiesResponse.data)) return propertiesResponse.data;
     return [];
-  }, [propertiesResponse, propertiesQuery.isLoading, propertiesQuery.isError]);
+  }, [propertiesResponse, isLoading, error]);
 
   const updatePropertyMutation = useMutation({
     mutationFn: async (data: { id: number; property: Partial<Property> }) => {
