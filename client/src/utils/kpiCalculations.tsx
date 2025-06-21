@@ -308,6 +308,107 @@ export const getKPICalculationBreakdown = (
       }
       break;
 
+    case 'total_equity':
+      const totalEquity = properties.reduce((sum, prop) => {
+        const dealData = getDealAnalyzerData(prop);
+        const arv = dealData.assumptions?.arv || parseNumber(prop.acquisitionPrice) * 1.2;
+        const loanBalance = dealData.assumptions?.loanAmount || parseNumber(prop.acquisitionPrice) * 0.75;
+        return sum + Math.max(0, arv - loanBalance);
+      }, 0);
+
+      return {
+        title: 'Total Equity Breakdown',
+        formula: 'Sum of (Current Property Value - Loan Balance) for all properties',
+        breakdown: [
+          {
+            label: 'Portfolio Properties',
+            description: 'Number of properties with equity',
+            value: properties.length
+          },
+          {
+            label: 'Property Equity Distribution',
+            description: 'Equity by individual property',
+            value: totalEquity,
+            subItems: properties.map(prop => {
+              const dealData = getDealAnalyzerData(prop);
+              const arv = dealData.assumptions?.arv || parseNumber(prop.acquisitionPrice) * 1.2;
+              const loanBalance = dealData.assumptions?.loanAmount || parseNumber(prop.acquisitionPrice) * 0.75;
+              const equity = Math.max(0, arv - loanBalance);
+              return {
+                label: prop.address,
+                value: equity,
+                description: `ARV: ${arv.toLocaleString()} - Loan: ${loanBalance.toLocaleString()}`
+              };
+            })
+          }
+        ]
+      };
+
+    case 'total_profits':
+      const portfolioProfits = properties.reduce((sum, prop) => sum + parseNumber(prop.totalProfits), 0);
+      
+      return {
+        title: 'Total Profits Breakdown',
+        formula: 'Sum of all realized and unrealized profits across portfolio',
+        breakdown: [
+          {
+            label: 'Profit-Generating Properties',
+            description: 'Properties with positive returns',
+            value: properties.filter(prop => parseNumber(prop.totalProfits) > 0).length
+          },
+          {
+            label: 'Individual Property Profits',
+            description: 'Profit breakdown by property',
+            value: portfolioProfits,
+            subItems: properties.map(prop => ({
+              label: prop.address,
+              value: parseNumber(prop.totalProfits),
+              description: `Status: ${prop.status}`
+            }))
+          }
+        ]
+      };
+
+    case 'total_properties':
+      return {
+        title: 'Total Properties Breakdown',
+        formula: 'Count of all properties in portfolio',
+        breakdown: [
+          {
+            label: 'Portfolio Size',
+            description: 'Total number of properties',
+            value: properties.length
+          },
+          {
+            label: 'Properties by Status',
+            description: 'Distribution across investment stages',
+            value: properties.length,
+            subItems: [
+              {
+                label: 'Under Contract',
+                value: properties.filter(p => p.status === 'Under Contract').length,
+                description: 'Properties in acquisition phase'
+              },
+              {
+                label: 'Rehabbing',
+                value: properties.filter(p => p.status === 'Rehabbing').length,
+                description: 'Properties under renovation'
+              },
+              {
+                label: 'Cashflowing',
+                value: properties.filter(p => p.status === 'Cashflowing').length,
+                description: 'Properties generating income'
+              },
+              {
+                label: 'Sold',
+                value: properties.filter(p => p.status === 'Sold').length,
+                description: 'Properties successfully exited'
+              }
+            ]
+          }
+        ]
+      };
+
     default:
       return {
         title: 'KPI Breakdown',
