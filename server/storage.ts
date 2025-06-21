@@ -126,6 +126,56 @@ export interface IStorage {
   createEntityOwnership(ownership: InsertEntityOwnership): Promise<EntityOwnership>;
   updateEntityOwnership(id: number, ownership: Partial<InsertEntityOwnership>): Promise<EntityOwnership | undefined>;
   deleteEntityOwnership(id: number): Promise<boolean>;
+  
+  // Property Deal Analyzer normalized data operations
+  getPropertyAssumptions(propertyId: number): Promise<PropertyAssumptions | undefined>;
+  createPropertyAssumptions(assumptions: InsertPropertyAssumptions): Promise<PropertyAssumptions>;
+  updatePropertyAssumptions(propertyId: number, assumptions: Partial<InsertPropertyAssumptions>): Promise<PropertyAssumptions | undefined>;
+  
+  getPropertyUnitTypes(propertyId: number): Promise<PropertyUnitTypes[]>;
+  createPropertyUnitTypes(unitType: InsertPropertyUnitTypes): Promise<PropertyUnitTypes>;
+  updatePropertyUnitTypes(id: number, unitType: Partial<InsertPropertyUnitTypes>): Promise<PropertyUnitTypes | undefined>;
+  deletePropertyUnitTypes(id: number): Promise<boolean>;
+  
+  getPropertyRentRoll(propertyId: number): Promise<PropertyRentRoll[]>;
+  createPropertyRentRoll(rentRoll: InsertPropertyRentRoll): Promise<PropertyRentRoll>;
+  updatePropertyRentRoll(id: number, rentRoll: Partial<InsertPropertyRentRoll>): Promise<PropertyRentRoll | undefined>;
+  deletePropertyRentRoll(id: number): Promise<boolean>;
+  
+  getPropertyExpenses(propertyId: number): Promise<PropertyExpenses[]>;
+  createPropertyExpenses(expense: InsertPropertyExpenses): Promise<PropertyExpenses>;
+  updatePropertyExpenses(id: number, expense: Partial<InsertPropertyExpenses>): Promise<PropertyExpenses | undefined>;
+  deletePropertyExpenses(id: number): Promise<boolean>;
+  
+  getPropertyRehabBudget(propertyId: number): Promise<PropertyRehabBudget[]>;
+  createPropertyRehabBudget(rehabItem: InsertPropertyRehabBudget): Promise<PropertyRehabBudget>;
+  updatePropertyRehabBudget(id: number, rehabItem: Partial<InsertPropertyRehabBudget>): Promise<PropertyRehabBudget | undefined>;
+  deletePropertyRehabBudget(id: number): Promise<boolean>;
+  
+  getPropertyClosingCosts(propertyId: number): Promise<PropertyClosingCosts[]>;
+  createPropertyClosingCosts(closingCost: InsertPropertyClosingCosts): Promise<PropertyClosingCosts>;
+  updatePropertyClosingCosts(id: number, closingCost: Partial<InsertPropertyClosingCosts>): Promise<PropertyClosingCosts | undefined>;
+  deletePropertyClosingCosts(id: number): Promise<boolean>;
+  
+  getPropertyHoldingCosts(propertyId: number): Promise<PropertyHoldingCosts[]>;
+  createPropertyHoldingCosts(holdingCost: InsertPropertyHoldingCosts): Promise<PropertyHoldingCosts>;
+  updatePropertyHoldingCosts(id: number, holdingCost: Partial<InsertPropertyHoldingCosts>): Promise<PropertyHoldingCosts | undefined>;
+  deletePropertyHoldingCosts(id: number): Promise<boolean>;
+  
+  getPropertyExitAnalysis(propertyId: number): Promise<PropertyExitAnalysis | undefined>;
+  createPropertyExitAnalysis(exitAnalysis: InsertPropertyExitAnalysis): Promise<PropertyExitAnalysis>;
+  updatePropertyExitAnalysis(propertyId: number, exitAnalysis: Partial<InsertPropertyExitAnalysis>): Promise<PropertyExitAnalysis | undefined>;
+  
+  getPropertyIncomeOther(propertyId: number): Promise<PropertyIncomeOther[]>;
+  createPropertyIncomeOther(income: InsertPropertyIncomeOther): Promise<PropertyIncomeOther>;
+  updatePropertyIncomeOther(id: number, income: Partial<InsertPropertyIncomeOther>): Promise<PropertyIncomeOther | undefined>;
+  deletePropertyIncomeOther(id: number): Promise<boolean>;
+  
+  // Helper method to sync JSON data to normalized tables
+  syncDealAnalyzerDataToTables(propertyId: number, dealAnalyzerData: string): Promise<void>;
+  
+  // Helper method to build JSON from normalized tables
+  buildDealAnalyzerDataFromTables(propertyId: number): Promise<string | null>;
 }
 
 export class DatabaseStorage implements IStorage {

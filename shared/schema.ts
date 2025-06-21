@@ -66,7 +66,134 @@ export const properties = pgTable("properties", {
   yearsHeld: decimal("years_held", { precision: 3, scale: 1 }),
   cashOnCashReturn: decimal("cash_on_cash_return", { precision: 8, scale: 2 }).notNull(),
   annualizedReturn: decimal("annualized_return", { precision: 8, scale: 2 }).notNull(),
-  dealAnalyzerData: text("deal_analyzer_data"), // JSON field to store comprehensive Deal Analyzer data
+  dealAnalyzerData: text("deal_analyzer_data"), // Legacy JSON field - kept for backward compatibility
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Property Assumptions - Core deal assumptions and market data
+export const propertyAssumptions = pgTable("property_assumptions", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  unitCount: integer("unit_count").default(1),
+  purchasePrice: decimal("purchase_price", { precision: 15, scale: 2 }).default("0"),
+  loanPercentage: decimal("loan_percentage", { precision: 5, scale: 4 }).default("0.8"),
+  interestRate: decimal("interest_rate", { precision: 5, scale: 4 }).default("0.07"),
+  loanTermYears: integer("loan_term_years").default(30),
+  vacancyRate: decimal("vacancy_rate", { precision: 5, scale: 4 }).default("0.05"),
+  expenseRatio: decimal("expense_ratio", { precision: 5, scale: 4 }).default("0.45"),
+  marketCapRate: decimal("market_cap_rate", { precision: 5, scale: 4 }).default("0.055"),
+  refinanceLTV: decimal("refinance_ltv", { precision: 5, scale: 4 }).default("0.75"),
+  refinanceInterestRate: decimal("refinance_interest_rate", { precision: 5, scale: 4 }).default("0.065"),
+  refinanceClosingCostPercent: decimal("refinance_closing_cost_percent", { precision: 5, scale: 4 }).default("0.02"),
+  dscrThreshold: decimal("dscr_threshold", { precision: 5, scale: 2 }).default("1.25"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Property Unit Types - Defines different unit configurations
+export const propertyUnitTypes = pgTable("property_unit_types", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  unitTypeId: text("unit_type_id").notNull(), // Internal reference ID for the property
+  name: text("name").notNull(),
+  bedrooms: integer("bedrooms").default(1),
+  bathrooms: decimal("bathrooms", { precision: 3, scale: 1 }).default("1.0"),
+  squareFeet: integer("square_feet"),
+  marketRent: decimal("market_rent", { precision: 10, scale: 2 }).default("0"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Property Rent Roll - Individual unit rental data
+export const propertyRentRoll = pgTable("property_rent_roll", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  unitTypeId: text("unit_type_id").notNull(),
+  unitNumber: text("unit_number").notNull(),
+  currentRent: decimal("current_rent", { precision: 10, scale: 2 }).default("0"),
+  proFormaRent: decimal("pro_forma_rent", { precision: 10, scale: 2 }).default("0"),
+  isVacant: boolean("is_vacant").default(false),
+  leaseEndDate: date("lease_end_date"),
+  tenantName: text("tenant_name"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Property Expenses - Operating expense breakdown
+export const propertyExpenses = pgTable("property_expenses", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  expenseType: text("expense_type").notNull(), // taxes, insurance, utilities, etc.
+  expenseName: text("expense_name").notNull(),
+  annualAmount: decimal("annual_amount", { precision: 12, scale: 2 }).default("0"),
+  isPercentage: boolean("is_percentage").default(false),
+  percentageBase: text("percentage_base"), // gross_income, noi, etc.
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Property Rehab Budget - Detailed rehab line items
+export const propertyRehabBudget = pgTable("property_rehab_budget", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  section: text("section").notNull(), // exterior, kitchens, bathrooms, generalInterior, finishings
+  category: text("category").notNull(),
+  perUnitCost: decimal("per_unit_cost", { precision: 12, scale: 2 }).default("0"),
+  quantity: integer("quantity").default(1),
+  totalCost: decimal("total_cost", { precision: 12, scale: 2 }).default("0"),
+  spentAmount: decimal("spent_amount", { precision: 12, scale: 2 }).default("0"),
+  completionStatus: text("completion_status", { enum: ["Not Started", "In Progress", "Completed"] }).default("Not Started"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Property Closing Costs - Acquisition closing cost breakdown
+export const propertyClosingCosts = pgTable("property_closing_costs", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  costType: text("cost_type").notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).default("0"),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Property Holding Costs - Costs during rehab/holding period
+export const propertyHoldingCosts = pgTable("property_holding_costs", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  costType: text("cost_type").notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).default("0"),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Property Exit Analysis - Hold vs sell scenarios
+export const propertyExitAnalysis = pgTable("property_exit_analysis", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  holdPeriodYears: decimal("hold_period_years", { precision: 5, scale: 1 }).default("3.0"),
+  saleFactor: decimal("sale_factor", { precision: 5, scale: 2 }).default("1.0"),
+  saleCostsPercent: decimal("sale_costs_percent", { precision: 5, scale: 4 }).default("0.06"),
+  annualRentGrowth: decimal("annual_rent_growth", { precision: 5, scale: 4 }).default("0.03"),
+  annualExpenseGrowth: decimal("annual_expense_growth", { precision: 5, scale: 4 }).default("0.03"),
+  exitCapRate: decimal("exit_cap_rate", { precision: 5, scale: 4 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Property Income Sources - Other income beyond rent
+export const propertyIncomeOther = pgTable("property_income_other", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  incomeType: text("income_type").notNull(),
+  incomeName: text("income_name").notNull(),
+  annualAmount: decimal("annual_amount", { precision: 12, scale: 2 }).default("0"),
+  description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -351,6 +478,61 @@ export const insertEntityOwnershipSchema = createInsertSchema(entityOwnership).o
   updatedAt: true,
 });
 
+// Property Deal Analyzer normalized table insert schemas
+export const insertPropertyAssumptionsSchema = createInsertSchema(propertyAssumptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPropertyUnitTypesSchema = createInsertSchema(propertyUnitTypes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPropertyRentRollSchema = createInsertSchema(propertyRentRoll).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPropertyExpensesSchema = createInsertSchema(propertyExpenses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPropertyRehabBudgetSchema = createInsertSchema(propertyRehabBudget).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPropertyClosingCostsSchema = createInsertSchema(propertyClosingCosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPropertyHoldingCostsSchema = createInsertSchema(propertyHoldingCosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPropertyExitAnalysisSchema = createInsertSchema(propertyExitAnalysis).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPropertyIncomeOtherSchema = createInsertSchema(propertyIncomeOther).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -366,6 +548,26 @@ export type EntityCompliance = typeof entityCompliance.$inferSelect;
 export type InsertEntityCompliance = z.infer<typeof insertEntityComplianceSchema>;
 export type EntityOwnership = typeof entityOwnership.$inferSelect;
 export type InsertEntityOwnership = z.infer<typeof insertEntityOwnershipSchema>;
+
+// Property Deal Analyzer normalized table types
+export type PropertyAssumptions = typeof propertyAssumptions.$inferSelect;
+export type InsertPropertyAssumptions = z.infer<typeof insertPropertyAssumptionsSchema>;
+export type PropertyUnitTypes = typeof propertyUnitTypes.$inferSelect;
+export type InsertPropertyUnitTypes = z.infer<typeof insertPropertyUnitTypesSchema>;
+export type PropertyRentRoll = typeof propertyRentRoll.$inferSelect;
+export type InsertPropertyRentRoll = z.infer<typeof insertPropertyRentRollSchema>;
+export type PropertyExpenses = typeof propertyExpenses.$inferSelect;
+export type InsertPropertyExpenses = z.infer<typeof insertPropertyExpensesSchema>;
+export type PropertyRehabBudget = typeof propertyRehabBudget.$inferSelect;
+export type InsertPropertyRehabBudget = z.infer<typeof insertPropertyRehabBudgetSchema>;
+export type PropertyClosingCosts = typeof propertyClosingCosts.$inferSelect;
+export type InsertPropertyClosingCosts = z.infer<typeof insertPropertyClosingCostsSchema>;
+export type PropertyHoldingCosts = typeof propertyHoldingCosts.$inferSelect;
+export type InsertPropertyHoldingCosts = z.infer<typeof insertPropertyHoldingCostsSchema>;
+export type PropertyExitAnalysis = typeof propertyExitAnalysis.$inferSelect;
+export type InsertPropertyExitAnalysis = z.infer<typeof insertPropertyExitAnalysisSchema>;
+export type PropertyIncomeOther = typeof propertyIncomeOther.$inferSelect;
+export type InsertPropertyIncomeOther = z.infer<typeof insertPropertyIncomeOtherSchema>;
 
 // Deal analysis types
 export type Deal = typeof deals.$inferSelect;
