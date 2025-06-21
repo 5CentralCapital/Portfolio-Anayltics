@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { kpiService } from "./kpi.service";
+import { dataMigrationService } from "./data-migration";
 import { 
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
@@ -663,6 +664,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       console.log('WebSocket client disconnected');
     });
+  });
+
+  // Data Migration and Fix Endpoints
+  app.post("/api/admin/fix-property-dataset", authenticateUser, async (req, res) => {
+    try {
+      const result = await dataMigrationService.fixPropertyDataset();
+      res.json(result);
+    } catch (error) {
+      console.error('Property dataset fix error:', error);
+      res.status(500).json({ error: 'Failed to fix property dataset' });
+    }
+  });
+
+  app.get("/api/admin/migration-status", authenticateUser, async (req, res) => {
+    try {
+      const status = await dataMigrationService.getMigrationStatus();
+      res.json(status);
+    } catch (error) {
+      console.error('Migration status error:', error);
+      res.status(500).json({ error: 'Failed to get migration status' });
+    }
   });
   
   return httpServer;
