@@ -26,11 +26,7 @@ function authenticateUser(req: any, res: any, next: any) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Debug middleware for API routes
-  app.use('/api', (req, res, next) => {
-    console.log(`API Request: ${req.method} ${req.path}`, req.body);
-    next();
-  });
+
   
   // Auth endpoints
   app.post('/api/auth/login', async (req, res) => {
