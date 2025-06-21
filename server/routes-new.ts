@@ -26,16 +26,27 @@ function authenticateUser(req: any, res: any, next: any) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Debug middleware for API routes
+  app.use('/api', (req, res, next) => {
+    console.log(`API Request: ${req.method} ${req.path}`, req.body);
+    next();
+  });
+  
   // Auth endpoints
-  app.post('/api/login', async (req, res) => {
+  app.post('/api/auth/login', async (req, res) => {
     try {
       const { email, password } = req.body;
       
-      // Find user by email (simplified)
-      const users = await storage.getProperties(); // This will be replaced with proper user lookup
-      const user = { id: '1', email: 'michael@5central.capital', passwordHash: await bcrypt.hash('test123', 10) };
+      // Test users for authentication
+      const testUsers = [
+        { id: '1', email: 'michael@5central.capital', password: 'test123' },
+        { id: '2', email: 'sarah@housedoctors.com', password: 'test123' },
+        { id: '3', email: 'tom@arcadiavision.com', password: 'test123' }
+      ];
       
-      if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+      const user = testUsers.find(u => u.email === email);
+      
+      if (!user || user.password !== password) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
@@ -57,13 +68,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/logout', (req, res) => {
+  app.post('/api/auth/logout', (req, res) => {
     const authHeader = req.headers.authorization;
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '');
       activeSessions.delete(token);
     }
     res.json({ message: 'Logged out' });
+  });
+
+  app.get('/api/auth/user', authenticateUser, async (req: any, res) => {
+    try {
+      res.json({
+        id: req.user.userId,
+        email: req.user.email
+      });
+    } catch (error) {
+      console.error('Get user error:', error);
+      res.status(500).json({ message: 'Failed to fetch user' });
+    }
   });
 
   // Property endpoints
