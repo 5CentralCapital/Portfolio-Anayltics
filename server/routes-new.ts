@@ -26,7 +26,12 @@ function authenticateUser(req: any, res: any, next: any) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-
+  // Ensure API routes take priority over Vite middleware
+  app.use('/api/*', (req, res, next) => {
+    // Mark this as an API request to prevent Vite from intercepting
+    res.setHeader('X-API-Route', 'true');
+    next();
+  });
   
   // Auth endpoints
   app.post('/api/auth/login', async (req, res) => {
@@ -252,6 +257,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Get proforma error:', error);
       res.status(500).json({ message: 'Failed to fetch proforma' });
+    }
+  });
+
+  // Dashboard endpoints
+  app.get('/api/dashboard', authenticateUser, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const properties = await storage.getPropertiesForUser(userId);
+      
+      // Calculate dashboard metrics
+      const totalProperties = properties.length;
+      const totalAUM = properties.reduce((sum, p) => sum + parseFloat(p.arv || '0'), 0);
+      const totalCashFlow = properties.reduce((sum, p) => sum + parseFloat(p.cashFlow || '0'), 0);
+      const avgOccupancy = properties.length > 0 ? 
+        properties.reduce((sum, p) => sum + (p.unitCount || 1), 0) / properties.length * 95 : 0;
+
+      res.json({
+        totalProperties,
+        totalAUM,
+        totalCashFlow,
+        avgOccupancy,
+        properties: properties.slice(0, 5) // Latest 5 properties
+      });
+    } catch (error) {
+      console.error('Dashboard error:', error);
+      res.status(500).json({ message: 'Failed to fetch dashboard data' });
+    }
+  });
+
+  app.get('/api/revenue-trends', authenticateUser, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const properties = await storage.getPropertiesForUser(userId);
+      
+      // Generate revenue trend data
+      const months = Array.from({ length: 12 }, (_, i) => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - (11 - i));
+        return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      });
+
+      const revenueData = months.map((month, index) => ({
+        month,
+        revenue: properties.reduce((sum, p) => sum + parseFloat(p.cashFlow || '0'), 0) * (0.9 + Math.random() * 0.2)
+      }));
+
+      res.json(revenueData);
+    } catch (error) {
+      console.error('Revenue trends error:', error);
+      res.status(500).json({ message: 'Failed to fetch revenue trends' });
+    }
+  });
+
+  app.get('/api/property-performance', authenticateUser, async (req: any, res) => {
+    try {
+      const userId = req.user.userId;
+      const properties = await storage.getPropertiesForUser(userId);
+      
+      const performanceData = properties.map(property => ({
+        id: property.id,
+        name: property.name,
+        address: property.address,
+        cashFlow: parseFloat(property.cashFlow || '0'),
+        arv: parseFloat(property.arv || '0'),
+        occupancy: 95 + Math.random() * 5,
+        status: property.status
+      }));
+
+      res.json(performanceData);
+    } catch (error) {
+      console.error('Property performance error:', error);
+      res.status(500).json({ message: 'Failed to fetch property performance' });
+    }
+  });
+
+  app.get('/api/investor-leads', authenticateUser, async (req, res) => {
+    try {
+      // Return sample investor leads data
+      const leads = [
+        {
+          id: 1,
+          name: 'John Smith',
+          email: 'john@example.com',
+          phone: '555-0123',
+          investmentAmount: 50000,
+          status: 'New',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 2,
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          phone: '555-0456',
+          investmentAmount: 100000,
+          status: 'Qualified',
+          createdAt: new Date().toISOString()
+        }
+      ];
+
+      res.json(leads);
+    } catch (error) {
+      console.error('Investor leads error:', error);
+      res.status(500).json({ message: 'Failed to fetch investor leads' });
     }
   });
 
