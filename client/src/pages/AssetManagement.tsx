@@ -224,6 +224,21 @@ export default function AssetManagement() {
   const [propertyDetailTab, setPropertyDetailTab] = useState('overview');
   const [editingModalProperty, setEditingModalProperty] = useState<Property | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  
+  // Calculation breakdown modal state
+  const [calculationBreakdown, setCalculationBreakdown] = useState<{
+    isOpen: boolean;
+    tabName: keyof PropertyCalculationConfig;
+    fieldName: string;
+    propertyData: any;
+    label?: string;
+  }>({
+    isOpen: false,
+    tabName: 'overview',
+    fieldName: '',
+    propertyData: {},
+    label: ''
+  });
 
   // Initialize default rehab line items for a property
   const initializeRehabItems = (property: Property): RehabLineItem[] => {
@@ -395,6 +410,44 @@ export default function AssetManagement() {
     setShowPropertyDetailModal(null);
     setEditingModalProperty(null);
     setIsEditing(false);
+  };
+
+  // Calculation breakdown modal functions
+  const openCalculationBreakdown = (
+    tabName: keyof PropertyCalculationConfig,
+    fieldName: string,
+    propertyData: any,
+    label?: string
+  ) => {
+    setCalculationBreakdown({
+      isOpen: true,
+      tabName,
+      fieldName,
+      propertyData,
+      label
+    });
+  };
+
+  const closeCalculationBreakdown = () => {
+    setCalculationBreakdown(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // Smart field change handler with auto-calculation
+  const handleSmartFieldChange = (
+    tabName: keyof PropertyCalculationConfig,
+    fieldName: string,
+    value: number | string
+  ) => {
+    if (!editingModalProperty) return;
+
+    // Update the field value
+    const updatedProperty = { ...editingModalProperty, [fieldName]: value };
+    
+    // Recalculate dependent fields
+    const recalculatedData = recalculateFields(tabName, updatedProperty);
+    
+    // Update the editing property with new calculated values
+    setEditingModalProperty({ ...updatedProperty, ...recalculatedData });
   };
 
   // Update rehab line item

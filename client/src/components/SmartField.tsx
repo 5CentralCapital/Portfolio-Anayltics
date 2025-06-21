@@ -157,6 +157,15 @@ interface CalculationBreakdownModalProps {
   tabName: keyof PropertyCalculationConfig;
   fieldName: string;
   propertyData: any;
+  label?: string;
+}
+
+interface BreakdownItem {
+  label: string;
+  value: any;
+  isInput?: boolean;
+  calculated?: string;
+  isTotal?: boolean;
 }
 
 export const CalculationBreakdownModal: React.FC<CalculationBreakdownModalProps> = ({
@@ -164,7 +173,8 @@ export const CalculationBreakdownModal: React.FC<CalculationBreakdownModalProps>
   onClose,
   tabName,
   fieldName,
-  propertyData
+  propertyData,
+  label: fieldLabel
 }) => {
   if (!isOpen) return null;
 
@@ -172,7 +182,7 @@ export const CalculationBreakdownModal: React.FC<CalculationBreakdownModalProps>
   const calculatedValue = calculateFieldValue(tabName, fieldName, propertyData);
 
   // Get breakdown details based on field type
-  const getBreakdownDetails = () => {
+  const getBreakdownDetails = (): BreakdownItem[] => {
     switch (fieldName) {
       case 'initialCapitalRequired':
         const purchasePrice = propertyData.acquisitionPrice || 0;
@@ -238,7 +248,7 @@ export const CalculationBreakdownModal: React.FC<CalculationBreakdownModalProps>
         <div className="space-y-4">
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
             <p className="text-sm text-blue-700 dark:text-blue-300 font-medium mb-1">
-              {label || fieldName}
+              {fieldLabel || fieldName}
             </p>
             <p className="text-xs text-blue-600 dark:text-blue-400">
               {description}
