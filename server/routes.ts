@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { kpiService } from "./kpi.service";
+import { dealAnalyzerService } from "./dealAnalyzerService";
+import { migratePropertyData } from "./migration";
 import { 
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
@@ -663,6 +665,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       console.log('WebSocket client disconnected');
     });
+  });
+
+  // Migration endpoint to move from JSON to normalized tables
+  app.post('/api/migrate-deal-data', authenticateUser, async (req, res) => {
+    try {
+      console.log('Starting Deal Analyzer data migration...');
+      await migratePropertyData();
+      res.json({ message: 'Migration completed successfully' });
+    } catch (error) {
+      console.error('Migration failed:', error);
+      res.status(500).json({ error: 'Migration failed' });
+    }
+  });
+
+  // Get normalized deal analyzer data for a property
+  app.get('/api/properties/:id/deal-data', authenticateUser, async (req, res) => {
+    try {
+      const propertyId = parseInt(req.params.id);
+      const dealData = await dealAnalyzerService.getPropertyDealData(propertyId);
+      res.json(dealData);
+    } catch (error) {
+      console.error('Error fetching deal data:', error);
+      res.status(500).json({ error: 'Failed to fetch deal data' });
+    }
+  });
+
+  // Save deal analyzer data to normalized tables
+  app.post('/api/properties/:id/deal-data', authenticateUser, async (req, res) => {
+    try {
+      const propertyId = parseInt(req.params.id);
+      const dealData = req.body;
+      
+      // Save to normalized tables
+      await dealAnalyzerService.saveFromJSON(propertyId, dealData);
+      
+      // Also update the JSON column for backward compatibility
+      await storage.updateProperty(propertyId, {
+        dealAnalyzerData: JSON.stringify(dealData)
+      });
+      
+      res.json({ message: 'Deal data saved successfully' });
+    } catch (error) {
+      console.error('Error saving deal data:', error);
+      res.status(500).json({ error: 'Failed to save deal data' });
+    }
   });
   
   return httpServer;
