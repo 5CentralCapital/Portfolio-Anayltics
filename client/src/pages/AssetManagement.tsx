@@ -32,9 +32,10 @@ import { Pagination, usePagination } from '../components/Pagination';
 import { useKeyboardShortcuts, KeyboardShortcutsHelp, createDashboardShortcuts } from '../components/KeyboardShortcuts';
 import { SmartField, CalculationBreakdownModal } from '../components/SmartField';
 import { 
-  recalculateFields, 
-  getAffectedFields,
-  PropertyCalculationConfig 
+  calculatePropertyMetrics,
+  formatCurrency as formatCurrencyUtil,
+  formatPercentage as formatPercentageUtil,
+  PropertyData
 } from '../utils/propertyCalculations';
 import { ClickableKPI, ClickableKPIBar } from '../components/ClickableKPI';
 
@@ -1845,13 +1846,13 @@ export default function AssetManagement() {
                               <div>
                                 <p className="text-sm text-green-700 dark:text-green-300">Annual Cash Flow</p>
 {(() => {
-                                  // Use stored monthly cash flow value and convert to annual
-                                  const monthlyCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
-                                  const annualCashFlow = monthlyCashFlow * 12;
+                                  // Use centralized calculation system
+                                  const propertyData = isEditing && editingModalProperty ? editingModalProperty : showPropertyDetailModal;
+                                  const metrics = calculatePropertyMetrics(propertyData as PropertyData);
                                   
                                   return (
-                                    <p className={`font-medium ${annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                      {formatCurrency(annualCashFlow)}
+                                    <p className={`font-medium ${metrics.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {formatCurrencyUtil(metrics.annualCashFlow)}
                                     </p>
                                   );
                                 })()}
@@ -1859,13 +1860,9 @@ export default function AssetManagement() {
                               <div>
                                 <p className="text-sm text-green-700 dark:text-green-300">Cash-on-Cash Return</p>
 {(() => {
-                                  // Get current data for calculations
-                                  const currentData = isEditing && editingModalProperty?.dealAnalyzerData 
-                                    ? JSON.parse(editingModalProperty.dealAnalyzerData) 
-                                    : dealAnalyzerData;
-                                  
-                                  let annualCashFlow = 0;
-                                  const initialCapital = parseFloat(showPropertyDetailModal.initialCapitalRequired || '0');
+                                  // Use centralized calculation system
+                                  const propertyData = isEditing && editingModalProperty ? editingModalProperty : showPropertyDetailModal;
+                                  const metrics = calculatePropertyMetrics(propertyData as PropertyData);
                                   
                                   if (currentData?.rentRoll && Array.isArray(currentData.rentRoll)) {
                                     // Calculate from rent roll data (same logic as annual cash flow)
@@ -1916,12 +1913,9 @@ export default function AssetManagement() {
                                     annualCashFlow = monthlyCashFlow * 12;
                                   }
                                   
-                                  // Use the correctly stored cash-on-cash return from database
-                                  const cashOnCashReturn = parseFloat(showPropertyDetailModal.cashOnCashReturn || '0');
-                                  
                                   return (
-                                    <p className={`font-medium ${cashOnCashReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                      {formatPercentage(cashOnCashReturn)}
+                                    <p className={`font-medium ${metrics.cashOnCashReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {formatPercentageUtil(metrics.cashOnCashReturn)}
                                     </p>
                                   );
                                 })()}
