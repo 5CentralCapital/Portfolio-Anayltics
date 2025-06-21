@@ -345,10 +345,13 @@ export default function AssetManagement() {
 
   const handlePropertyFieldChange = (field: string, value: any) => {
     if (editingModalProperty) {
-      setEditingModalProperty({
+      console.log('Updating field:', field, 'with value:', value);
+      const updatedProperty = {
         ...editingModalProperty,
         [field]: value
-      });
+      };
+      console.log('Updated property:', updatedProperty);
+      setEditingModalProperty(updatedProperty);
     }
   };
 
@@ -1600,9 +1603,12 @@ export default function AssetManagement() {
               {(() => {
                 let dealAnalyzerData = null;
                 try {
-                  dealAnalyzerData = showPropertyDetailModal.dealAnalyzerData 
-                    ? JSON.parse(showPropertyDetailModal.dealAnalyzerData) 
-                    : null;
+                  // Prioritize editing state for real-time updates
+                  const dataSource = isEditing && editingModalProperty?.dealAnalyzerData 
+                    ? editingModalProperty.dealAnalyzerData 
+                    : showPropertyDetailModal.dealAnalyzerData;
+                  
+                  dealAnalyzerData = dataSource ? JSON.parse(dataSource) : null;
                 } catch (e) {
                   console.warn('Failed to parse dealAnalyzerData:', e);
                 }
@@ -1674,25 +1680,43 @@ export default function AssetManagement() {
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <p className="text-sm text-green-700 dark:text-green-300">Annual Cash Flow</p>
-                                {(() => {
-                                  // Calculate annual cash flow from Deal Analyzer data
+{(() => {
+                                  // Get current data for calculations
+                                  const currentData = isEditing && editingModalProperty?.dealAnalyzerData 
+                                    ? JSON.parse(editingModalProperty.dealAnalyzerData) 
+                                    : dealAnalyzerData;
+                                  
                                   let annualCashFlow = 0;
                                   
-                                  if (dealAnalyzerData?.calculations) {
-                                    // Use Deal Analyzer calculations if available
-                                    annualCashFlow = dealAnalyzerData.calculations.annualCashFlow || 0;
-                                  } else if (dealAnalyzerData?.rentRoll && dealAnalyzerData?.incomeAndExpenses) {
-                                    // Calculate from rent roll and expenses
-                                    const grossRentalIncome = dealAnalyzerData.rentRoll.reduce((sum: number, unit: any) => 
-                                      sum + (unit.proFormaRent || 0), 0) * 12;
+                                  if (currentData?.rentRoll && Array.isArray(currentData.rentRoll)) {
+                                    // Calculate from rent roll data
+                                    const grossRentalIncome = currentData.rentRoll.reduce((sum: number, unit: any) => 
+                                      sum + (parseFloat(unit.proFormaRent) || 0), 0) * 12;
                                     
-                                    const totalExpenses = (dealAnalyzerData.incomeAndExpenses.operatingExpenses || [])
-                                      .reduce((sum: number, expense: any) => sum + (expense.annualAmount || 0), 0);
+                                    // Calculate total expenses from income & expenses tab
+                                    const totalExpenses = currentData?.incomeAndExpenses?.operatingExpenses 
+                                      ? currentData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
+                                          sum + (parseFloat(expense.annualAmount) || 0), 0)
+                                      : grossRentalIncome * 0.4; // 40% expense ratio default
                                     
-                                    const assumedDebtService = grossRentalIncome * 0.6; // Estimate if not available
-                                    annualCashFlow = grossRentalIncome - totalExpenses - assumedDebtService;
+                                    // Calculate debt service (if loan data exists)
+                                    let debtService = 0;
+                                    if (currentData?.assumptions) {
+                                      const loanAmount = (currentData.assumptions.purchasePrice || 0) * (currentData.assumptions.loanPercentage || 0.8);
+                                      const monthlyRate = (currentData.assumptions.interestRate || 0.07) / 12;
+                                      const numPayments = (currentData.assumptions.loanTermYears || 30) * 12;
+                                      
+                                      if (monthlyRate > 0) {
+                                        const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+                                        debtService = monthlyPayment * 12;
+                                      }
+                                    } else {
+                                      debtService = grossRentalIncome * 0.5; // 50% debt service default
+                                    }
+                                    
+                                    annualCashFlow = grossRentalIncome - totalExpenses - debtService;
                                   } else {
-                                    // Fallback to stored value
+                                    // Use stored value as fallback
                                     annualCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
                                   }
                                   
@@ -1705,33 +1729,48 @@ export default function AssetManagement() {
                               </div>
                               <div>
                                 <p className="text-sm text-green-700 dark:text-green-300">Cash-on-Cash Return</p>
-                                {(() => {
-                                  // Calculate cash-on-cash return
+{(() => {
+                                  // Get current data for calculations
+                                  const currentData = isEditing && editingModalProperty?.dealAnalyzerData 
+                                    ? JSON.parse(editingModalProperty.dealAnalyzerData) 
+                                    : dealAnalyzerData;
+                                  
                                   let annualCashFlow = 0;
-                                  let cashOnCashReturn = 0;
                                   const initialCapital = parseFloat(showPropertyDetailModal.initialCapitalRequired || '0');
                                   
-                                  if (dealAnalyzerData?.calculations) {
-                                    // Use Deal Analyzer calculations if available
-                                    annualCashFlow = dealAnalyzerData.calculations.annualCashFlow || 0;
-                                    cashOnCashReturn = dealAnalyzerData.calculations.cashOnCashReturn || 0;
-                                  } else if (dealAnalyzerData?.rentRoll && dealAnalyzerData?.incomeAndExpenses) {
-                                    // Calculate from rent roll and expenses
-                                    const grossRentalIncome = dealAnalyzerData.rentRoll.reduce((sum: number, unit: any) => 
-                                      sum + (unit.proFormaRent || 0), 0) * 12;
+                                  if (currentData?.rentRoll && Array.isArray(currentData.rentRoll)) {
+                                    // Calculate from rent roll data (same logic as annual cash flow)
+                                    const grossRentalIncome = currentData.rentRoll.reduce((sum: number, unit: any) => 
+                                      sum + (parseFloat(unit.proFormaRent) || 0), 0) * 12;
                                     
-                                    const totalExpenses = (dealAnalyzerData.incomeAndExpenses.operatingExpenses || [])
-                                      .reduce((sum: number, expense: any) => sum + (expense.annualAmount || 0), 0);
+                                    // Calculate total expenses from income & expenses tab
+                                    const totalExpenses = currentData?.incomeAndExpenses?.operatingExpenses 
+                                      ? currentData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
+                                          sum + (parseFloat(expense.annualAmount) || 0), 0)
+                                      : grossRentalIncome * 0.4; // 40% expense ratio default
                                     
-                                    const assumedDebtService = grossRentalIncome * 0.6; // Estimate if not available
-                                    annualCashFlow = grossRentalIncome - totalExpenses - assumedDebtService;
+                                    // Calculate debt service (if loan data exists)
+                                    let debtService = 0;
+                                    if (currentData?.assumptions) {
+                                      const loanAmount = (currentData.assumptions.purchasePrice || 0) * (currentData.assumptions.loanPercentage || 0.8);
+                                      const monthlyRate = (currentData.assumptions.interestRate || 0.07) / 12;
+                                      const numPayments = (currentData.assumptions.loanTermYears || 30) * 12;
+                                      
+                                      if (monthlyRate > 0) {
+                                        const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+                                        debtService = monthlyPayment * 12;
+                                      }
+                                    } else {
+                                      debtService = grossRentalIncome * 0.5; // 50% debt service default
+                                    }
                                     
-                                    cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) * 100 : 0;
+                                    annualCashFlow = grossRentalIncome - totalExpenses - debtService;
                                   } else {
-                                    // Calculate from stored cash flow
+                                    // Use stored value as fallback
                                     annualCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
-                                    cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) * 100 : 0;
                                   }
+                                  
+                                  const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) * 100 : 0;
                                   
                                   return (
                                     <p className={`font-medium ${cashOnCashReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
