@@ -8,8 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Calculator, Building, DollarSign, TrendingUp, Home, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
-import { PropertyDetailModal } from '@/components/property-detail-modal';
-import { EnhancedPropertyCard } from '@/components/EnhancedPropertyCard';
+import EnhancedPropertyCard from '@/components/EnhancedPropertyCard';
 
 interface Property {
   id: number;
@@ -603,14 +602,7 @@ export default function AssetManagement() {
         </div>
       </div>
 
-      {/* Property Detail Modal */}
-      {showPropertyDetailModal && (
-        <PropertyDetailModal
-          property={showPropertyDetailModal}
-          isOpen={!!showPropertyDetailModal}
-          onClose={() => setShowPropertyDetailModal(null)}
-        />
-      )}
+      {/* Property detail modal functionality will be integrated with enhanced property cards */}
     </div>
   );
 }
