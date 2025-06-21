@@ -16,7 +16,8 @@ import {
   Calculator,
   FileText,
   Wrench,
-  CheckCircle
+  CheckCircle,
+  PieChart
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiService from '../services/api';
@@ -50,8 +51,10 @@ const entities = [
   'Arcadia Vision Group'
 ];
 
-const PropertyCard = ({ property, onStatusChange }: { property: Property; onStatusChange: (id: number, status: string) => void }) => (
-  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 w-full cursor-pointer hover:shadow-lg transition-shadow">
+const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => (
+  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 w-full cursor-pointer hover:shadow-lg transition-shadow card-hover"
+       onDoubleClick={() => onDoubleClick(property)}
+       title="Double-click for financial breakdown">
     <div className="flex items-center justify-between mb-4">
       <div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{property.address}</h3>
@@ -107,8 +110,10 @@ const PropertyCard = ({ property, onStatusChange }: { property: Property; onStat
   </div>
 );
 
-const SoldPropertyCard = ({ property, onStatusChange }: { property: Property; onStatusChange: (id: number, status: string) => void }) => (
-  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 aspect-square flex flex-col cursor-pointer card-hover transition-all-smooth">
+const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => (
+  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 aspect-square flex flex-col cursor-pointer card-hover transition-all-smooth"
+       onDoubleClick={() => onDoubleClick(property)}
+       title="Double-click for financial breakdown">
     <div className="flex items-center justify-between mb-3">
       <div className="flex-1 min-w-0">
         <h3 className="text-md font-semibold text-gray-900 dark:text-white truncate">{property.address}</h3>
@@ -550,7 +555,9 @@ export default function AssetManagement() {
                 const rehabProgress = (rehabSpent / rehabBudget) * 100;
                 
                 return (
-                  <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover-scale transition-all-smooth card-hover cursor-pointer">
+                  <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover-scale transition-all-smooth card-hover cursor-pointer"
+                       onDoubleClick={() => handlePropertyDoubleClick(property)}
+                       title="Double-click for financial breakdown">
                     <div className="grid md:grid-cols-2 gap-8">
                       {/* Left Side - Property Details */}
                       <div className="space-y-4">
@@ -685,7 +692,7 @@ export default function AssetManagement() {
           {properties.filter((p: Property) => p.status === 'Cashflowing').length > 0 ? (
             <div className="grid gap-4 stagger-children">
               {properties.filter((p: Property) => p.status === 'Cashflowing').map((property: Property) => (
-                <PropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} />
+                <PropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} />
               ))}
             </div>
           ) : (
@@ -707,7 +714,7 @@ export default function AssetManagement() {
           {properties.filter((p: Property) => p.status === 'Sold').length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
               {properties.filter((p: Property) => p.status === 'Sold').map((property: Property) => (
-                <SoldPropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} />
+                <SoldPropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} />
               ))}
             </div>
           ) : (
