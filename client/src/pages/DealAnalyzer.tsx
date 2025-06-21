@@ -31,6 +31,19 @@ export default function DealAnalyzer() {
     generalInterior: false,
     finishings: false
   });
+
+  // Calculation breakdown modal state
+  const [showCalculationModal, setShowCalculationModal] = useState(false);
+  const [calculationDetails, setCalculationDetails] = useState<{
+    title: string;
+    value: number;
+    formula: string;
+    breakdown: Array<{
+      label: string;
+      value: number;
+      source: string;
+    }>;
+  } | null>(null);
   
   // Exit analysis state
   const [exitAnalysis, setExitAnalysis] = useState({
@@ -628,6 +641,122 @@ export default function DealAnalyzer() {
     const updatedDeals = savedDeals.filter(deal => deal.id !== dealId);
     localStorage.setItem('dealAnalyzerDeals', JSON.stringify(updatedDeals));
     setSavedDeals(updatedDeals);
+  };
+
+  // Show calculation breakdown
+  const showCalculationBreakdown = (metric: string) => {
+    const metrics = calculateMetrics();
+    
+    switch (metric) {
+      case 'totalRehabCost':
+        const exteriorTotal = rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+        const kitchensTotal = rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+        const bathroomsTotal = rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+        const generalInteriorTotal = rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+        const finishingsTotal = rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+        const subtotal = exteriorTotal + kitchensTotal + bathroomsTotal + generalInteriorTotal + finishingsTotal;
+        const buffer = subtotal * 0.10;
+        
+        setCalculationDetails({
+          title: 'Total Rehab Cost',
+          value: subtotal + buffer,
+          formula: 'Sum of all rehab sections + 10% buffer',
+          breakdown: [
+            { label: 'Exterior Work', value: exteriorTotal, source: 'Rehab Budget → Exterior' },
+            { label: 'Kitchen Renovations', value: kitchensTotal, source: 'Rehab Budget → Kitchens' },
+            { label: 'Bathroom Renovations', value: bathroomsTotal, source: 'Rehab Budget → Bathrooms' },
+            { label: 'General Interior', value: generalInteriorTotal, source: 'Rehab Budget → General Interior' },
+            { label: 'Finishings', value: finishingsTotal, source: 'Rehab Budget → Finishings' },
+            { label: 'Buffer (10%)', value: buffer, source: 'Calculated: 10% of subtotal' }
+          ]
+        });
+        break;
+      
+      case 'allInCost':
+        setCalculationDetails({
+          title: 'All-In Cost',
+          value: calculations.allInCost,
+          formula: 'Purchase Price + Rehab Cost + Closing Costs + Holding Costs',
+          breakdown: [
+            { label: 'Purchase Price', value: assumptions.purchasePrice, source: 'Deal Assumptions → Purchase Price' },
+            { label: 'Total Rehab Cost', value: calculations.totalRehabCost, source: 'Calculated from rehab sections' },
+            { label: 'Closing Costs', value: calculations.totalClosingCosts, source: 'Closing Costs section' },
+            { label: 'Holding Costs', value: calculations.totalHoldingCosts, source: 'Holding Costs section' }
+          ]
+        });
+        break;
+      
+      case 'cashOnCashReturn':
+        setCalculationDetails({
+          title: 'Cash-on-Cash Return',
+          value: calculations.cashOnCashReturn,
+          formula: 'Annual Cash Flow ÷ Total Cash Invested × 100',
+          breakdown: [
+            { label: 'Annual Cash Flow', value: calculations.annualCashFlow, source: 'Monthly cash flow × 12' },
+            { label: 'Total Cash Invested', value: calculations.totalCashInvested, source: 'Down payment + rehab + closing + holding costs' },
+            { label: 'CoC Return (%)', value: calculations.cashOnCashReturn, source: 'Cash Flow ÷ Cash Invested × 100' }
+          ]
+        });
+        break;
+      
+      case 'capRate':
+        setCalculationDetails({
+          title: 'Cap Rate',
+          value: calculations.capRate,
+          formula: 'Net Operating Income ÷ All-In Cost × 100',
+          breakdown: [
+            { label: 'Net Operating Income', value: calculations.noi, source: 'Gross Income - Operating Expenses' },
+            { label: 'All-In Cost', value: calculations.allInCost, source: 'Purchase + Rehab + Closing + Holding' },
+            { label: 'Cap Rate (%)', value: calculations.capRate, source: 'NOI ÷ All-In Cost × 100' }
+          ]
+        });
+        break;
+      
+      case 'dscr':
+        setCalculationDetails({
+          title: 'Debt Service Coverage Ratio',
+          value: calculations.dscr,
+          formula: 'Net Operating Income ÷ Annual Debt Service',
+          breakdown: [
+            { label: 'Net Operating Income', value: calculations.noi, source: 'Gross Income - Operating Expenses' },
+            { label: 'Annual Debt Service', value: calculations.annualDebtService, source: 'Monthly payment × 12' },
+            { label: 'DSCR Ratio', value: calculations.dscr, source: 'NOI ÷ Annual Debt Service' }
+          ]
+        });
+        break;
+      
+      case 'breakEvenOccupancy':
+        setCalculationDetails({
+          title: 'Break-Even Occupancy',
+          value: calculations.breakEvenOccupancy,
+          formula: '(Operating Expenses + Debt Service) ÷ Gross Rental Income × 100',
+          breakdown: [
+            { label: 'Operating Expenses', value: calculations.totalOperatingExpenses, source: 'Sum of all operating expenses' },
+            { label: 'Annual Debt Service', value: calculations.annualDebtService, source: 'Monthly payment × 12' },
+            { label: 'Gross Rental Income', value: calculations.grossRentalIncome, source: 'Sum of all unit rents × 12' },
+            { label: 'Break-Even %', value: calculations.breakEvenOccupancy, source: '(Expenses + Debt) ÷ Gross Income × 100' }
+          ]
+        });
+        break;
+      
+      case 'projectedSalesPrice':
+        setCalculationDetails({
+          title: 'Projected Sales Price',
+          value: calculations.projectedSalesPrice,
+          formula: 'Net Operating Income ÷ Sales Cap Rate',
+          breakdown: [
+            { label: 'Net Operating Income', value: calculations.noi, source: 'Gross Income - Operating Expenses' },
+            { label: 'Sales Cap Rate', value: exitAnalysis.saleFactor * 100, source: 'Exit Analysis → Sales Cap Rate' },
+            { label: 'Sales Price', value: calculations.projectedSalesPrice, source: 'NOI ÷ Cap Rate' }
+          ]
+        });
+        break;
+      
+      default:
+        return;
+    }
+    
+    setShowCalculationModal(true);
   };
 
   // Import deal to Properties database
@@ -2848,6 +2977,72 @@ export default function DealAnalyzer() {
                 className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
               >
                 {importingToProperties ? 'Importing...' : 'Import Property'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Calculation Breakdown Modal */}
+      {showCalculationModal && calculationDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
+                <Calculator className="h-5 w-5 mr-2 text-blue-500" />
+                {calculationDetails.title} Breakdown
+              </h3>
+              <button
+                onClick={() => setShowCalculationModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
+                <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Formula</h4>
+                <p className="text-blue-700 dark:text-blue-300 font-mono text-sm">{calculationDetails.formula}</p>
+              </div>
+
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mb-4">
+                <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2">Final Result</h4>
+                <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+                  {calculationDetails.title.includes('Return') || calculationDetails.title.includes('Rate') || calculationDetails.title.includes('Occupancy') || calculationDetails.title.includes('DSCR') 
+                    ? `${calculationDetails.value.toFixed(2)}${calculationDetails.title.includes('DSCR') ? 'x' : '%'}`
+                    : `$${calculationDetails.value.toLocaleString()}`
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">Components Breakdown</h4>
+              {calculationDetails.breakdown.map((item, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 dark:text-white">{item.label}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{item.source}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900 dark:text-white">
+                      {item.label.includes('Rate') || item.label.includes('%') || item.label.includes('Return') || item.label.includes('DSCR')
+                        ? `${item.value.toFixed(2)}${item.label.includes('DSCR') ? 'x' : '%'}`
+                        : `$${item.value.toLocaleString()}`
+                      }
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowCalculationModal(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              >
+                Close
               </button>
             </div>
           </div>
