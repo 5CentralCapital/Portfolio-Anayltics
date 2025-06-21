@@ -66,6 +66,7 @@ export const properties = pgTable("properties", {
   yearsHeld: decimal("years_held", { precision: 3, scale: 1 }),
   cashOnCashReturn: decimal("cash_on_cash_return", { precision: 8, scale: 2 }).notNull(),
   annualizedReturn: decimal("annualized_return", { precision: 8, scale: 2 }).notNull(),
+  dealAnalyzerData: text("deal_analyzer_data"), // JSON field to store comprehensive Deal Analyzer data
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

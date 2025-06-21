@@ -636,23 +636,36 @@ export default function DealAnalyzer() {
       const state = stateZip.split(' ')[0] || '';
       const zipCode = stateZip.split(' ')[1] || '';
 
-      // Calculate total rehab costs with safe defaults
-      const totalRehabCosts = Object.values(rehabBudgetSections || {}).reduce((total, section: any) => {
-        if (!section || !section.items) return total;
-        return total + Object.values(section.items).reduce((sum: number, cost: any) => sum + (Number(cost) || 0), 0);
-      }, 0);
+      // Calculate rehab costs from detailed sections
+      const exteriorTotal = rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+      const generalInteriorTotal = rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+      const kitchensTotal = rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+      const bathroomsTotal = rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+      const finishingsTotal = rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+      
+      const rehabSubtotal = exteriorTotal + generalInteriorTotal + kitchensTotal + bathroomsTotal + finishingsTotal;
+      const contingency = rehabSubtotal * 0.10; // 10% buffer
+      const totalRehabCosts = rehabSubtotal + contingency;
 
-      // Calculate total initial capital with safe defaults
+      // Calculate total closing costs and holding costs
       const totalClosingCosts = Object.values(closingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
       const totalHoldingCosts = Object.values(holdingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
       const downPayment = (assumptions.purchasePrice || 0) * (1 - (assumptions.loanPercentage || 0.8));
       const initialCapital = downPayment + totalRehabCosts + totalClosingCosts + totalHoldingCosts;
 
-      // Calculate cash flow (annual) with safe defaults
-      const totalAnnualRent = Object.values(rentRoll || {}).reduce((sum: number, unit: any) => {
-        return sum + ((Number(unit?.rent) || 0) * 12);
+      // Calculate cash flow (annual) with detailed calculations
+      const totalAnnualRent = rentRoll.reduce((sum, unit) => {
+        const unitType = unitTypes.find(ut => ut.id === unit.unitTypeId);
+        return sum + (unitType ? unitType.marketRent * 12 : unit.proFormaRent * 12);
       }, 0);
-      const totalAnnualExpenses = Object.values(expenses || {}).reduce((sum, expense) => sum + (Number(expense) || 0), 0) * 12;
+      
+      const vacancyLoss = totalAnnualRent * assumptions.vacancyRate;
+      const netRevenue = totalAnnualRent - vacancyLoss;
+      const managementFee = netRevenue * 0.08; // 8% management fee
+      const totalAnnualExpenses = Object.values(expenses || {}).reduce((sum, expense) => sum + (Number(expense) || 0), 0) + managementFee;
+      const noi = netRevenue - totalAnnualExpenses;
+      
+      // Calculate debt service
       const loanAmount = (assumptions.purchasePrice || 0) * (assumptions.loanPercentage || 0.8);
       const interestRate = assumptions.interestRate || 0.0875;
       const loanTermYears = assumptions.loanTermYears || 2;
@@ -665,14 +678,14 @@ export default function DealAnalyzer() {
       }
       
       const annualDebtService = monthlyPayment * 12;
-      const annualCashFlow = totalAnnualRent - totalAnnualExpenses - annualDebtService;
+      const annualCashFlow = noi - annualDebtService;
 
-      // Calculate cash-on-cash return with safe defaults
+      // Calculate cash-on-cash return
       const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) : 0;
 
-      // Calculate ARV with safe defaults
+      // Calculate ARV
       const marketCapRate = assumptions.marketCapRate || 0.055;
-      const arv = totalAnnualRent > 0 && marketCapRate > 0 ? totalAnnualRent / marketCapRate : assumptions.purchasePrice || 0;
+      const arv = noi > 0 && marketCapRate > 0 ? noi / marketCapRate : assumptions.purchasePrice || 0;
 
       const propertyData = {
         status: 'Under Contract' as const,
@@ -691,7 +704,30 @@ export default function DealAnalyzer() {
         totalProfits: '0',
         cashOnCashReturn: Number((cashOnCashReturn * 100).toFixed(2)).toString(),
         annualizedReturn: Number((cashOnCashReturn * 100).toFixed(2)).toString(),
-        yearsHeld: '0'
+        yearsHeld: '0',
+        // Include all deal analyzer data for comprehensive import
+        dealAnalyzerData: {
+          propertyName,
+          propertyAddress,
+          assumptions,
+          rehabBudgetSections,
+          closingCosts,
+          holdingCosts,
+          expenses,
+          rentRoll,
+          unitTypes,
+          exitAnalysis,
+          calculations: {
+            totalRehabCosts,
+            totalClosingCosts,
+            totalHoldingCosts,
+            initialCapital,
+            arv,
+            noi,
+            annualCashFlow,
+            cashOnCashReturn
+          }
+        }
       };
 
       console.log('Importing property data:', propertyData);
@@ -720,6 +756,11 @@ export default function DealAnalyzer() {
       const result = await response.json();
       console.log('Import successful:', result);
 
+      // After successful property creation, import the rehab line items
+      if (result.id) {
+        await importRehabLineItems(result.id);
+      }
+
       // Close modal and reset form
       setShowImportModal(false);
       setImportFormData({
@@ -746,6 +787,52 @@ export default function DealAnalyzer() {
       }
     } finally {
       setImportingToProperties(false);
+    }
+  };
+
+  // Import rehab line items to Asset Management
+  const importRehabLineItems = async (propertyId: number) => {
+    try {
+      const rehabLineItems: any[] = [];
+      
+      // Convert Deal Analyzer rehab budget sections to line items
+      Object.entries(rehabBudgetSections).forEach(([sectionKey, items]: [string, any[]]) => {
+        const categoryMap: Record<string, string> = {
+          exterior: 'Exterior',
+          kitchens: 'Kitchens',
+          bathrooms: 'Bathrooms',
+          generalInterior: 'General Interior',
+          finishings: 'General Interior' // Map finishings to General Interior
+        };
+        
+        const category = categoryMap[sectionKey] || 'General Interior';
+        
+        items.forEach((item, index) => {
+          if (item.category && item.perUnitCost > 0) {
+            rehabLineItems.push({
+              id: Date.now() + index,
+              category,
+              item: item.category,
+              budgetAmount: item.perUnitCost * item.quantity,
+              spentAmount: 0,
+              completed: false,
+              notes: `Imported from Deal Analyzer - ${item.quantity} units at $${item.perUnitCost} each`
+            });
+          }
+        });
+      });
+
+      // Store the rehab line items in localStorage for Asset Management to access
+      const existingRehabData = localStorage.getItem('rehabLineItems');
+      const rehabData = existingRehabData ? JSON.parse(existingRehabData) : {};
+      rehabData[propertyId] = rehabLineItems;
+      localStorage.setItem('rehabLineItems', JSON.stringify(rehabData));
+      
+      console.log(`Imported ${rehabLineItems.length} rehab line items for property ${propertyId}`);
+      
+    } catch (error) {
+      console.error('Error importing rehab line items:', error);
+      // Don't throw error here as the main property import was successful
     }
   };
 

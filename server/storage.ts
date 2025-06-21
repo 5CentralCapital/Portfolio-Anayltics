@@ -176,7 +176,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProperty(property: InsertProperty): Promise<Property> {
-    const result = await db.insert(properties).values(property).returning();
+    // Handle dealAnalyzerData serialization if it exists
+    const propertyData = { ...property };
+    if (propertyData.dealAnalyzerData && typeof propertyData.dealAnalyzerData === 'object') {
+      propertyData.dealAnalyzerData = JSON.stringify(propertyData.dealAnalyzerData);
+    }
+    
+    const result = await db.insert(properties).values(propertyData).returning();
     return result[0];
   }
 
