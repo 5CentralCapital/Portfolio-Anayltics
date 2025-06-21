@@ -155,6 +155,7 @@ Changelog:
 - June 20, 2025. Updated spacing across all admin dashboard pages to be full width by removing container width constraints (max-w-7xl mx-auto, max-w-6xl mx-auto, container mx-auto) from AdminDashboard, EntityDashboard, DealAnalyzer, and NetWorthTracker pages while preserving existing layout structure - all admin dashboard pages now utilize full browser width for improved space utilization
 - June 20, 2025. Extended full-width layout to header logo and navigation tabs by removing max-width constraints from header and navigation sections - entire admin dashboard now uses complete browser width including header, tabs, and all page content
 - June 21, 2025. Updated sold property card KPIs to show: Capital Invested (initial capital required), Total Profit (cashflow + sale profits), Equity Multiple (calculated return multiple), and Sale Price - replaced previous metrics with investor-focused financial performance indicators
+- June 21, 2025. Redesigned sold property cards with smaller, more compact layout displaying 4 cards per row instead of 3 - reduced padding, spacing, and text sizes while maintaining color-coded metric sections and visual hierarchy
 
 ## User Preferences
 
