@@ -518,6 +518,13 @@ const AdminDashboard: React.FC = () => {
         onComplete={() => setShowOnboarding(false)}
         onSkip={() => setShowOnboarding(false)}
       />
+
+      {/* Keyboard Shortcuts Help */}
+      <KeyboardShortcutsHelp
+        isOpen={showKeyboardHelp}
+        onClose={() => setShowKeyboardHelp(false)}
+        shortcuts={keyboardShortcuts}
+      />
     </div>
   );
 };

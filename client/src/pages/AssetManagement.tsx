@@ -19,11 +19,17 @@ import {
   CheckCircle,
   PieChart,
   Plus,
-  Trash2
+  Trash2,
+  RefreshCw,
+  Keyboard
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// Remove toast for now and focus on fixing the save functionality
 import apiService from '../services/api';
+import { useRealtimeUpdates } from '../hooks/useRealtimeUpdates';
+import LoadingState from '../components/LoadingState';
+import { ErrorHandler, useErrorHandler } from '../components/ErrorHandler';
+import { Pagination, usePagination } from '../components/Pagination';
+import { useKeyboardShortcuts, KeyboardShortcutsHelp, createDashboardShortcuts } from '../components/KeyboardShortcuts';
 import { SmartField, CalculationBreakdownModal } from '../components/SmartField';
 import { 
   recalculateFields, 
@@ -278,6 +284,42 @@ export default function AssetManagement() {
     if (propertiesResponse.data && Array.isArray(propertiesResponse.data)) return propertiesResponse.data;
     return [];
   }, [propertiesResponse, isLoading, error]);
+
+  // Real-time updates
+  const { forceUpdate } = useRealtimeUpdates({
+    enabled: !isLoading,
+    queryKeys: ['/api/properties']
+  });
+
+  // Error handling
+  const { handleError } = useErrorHandler();
+
+  // Pagination for performance optimization
+  const {
+    currentPage,
+    totalPages,
+    totalItems,
+    itemsPerPage,
+    paginatedData: paginatedProperties,
+    handlePageChange,
+    handleItemsPerPageChange
+  } = usePagination(properties, 20);
+
+  // Keyboard shortcuts
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const keyboardShortcuts = createDashboardShortcuts({
+    goToDashboard: () => window.location.href = '#dashboard',
+    goToProperties: () => {},
+    goToDealAnalyzer: () => window.location.href = '#deal-analyzer',
+    goToNetWorth: () => window.location.href = '#net-worth',
+    refresh: () => forceUpdate(),
+    search: () => {},
+    save: () => {},
+    newProperty: () => {},
+    showHelp: () => setShowKeyboardHelp(true)
+  });
+
+  useKeyboardShortcuts(keyboardShortcuts, true);
 
   const updatePropertyMutation = useMutation({
     mutationFn: async (data: { id: number; property: Partial<Property> }) => {
@@ -3510,6 +3552,29 @@ export default function AssetManagement() {
         propertyData={calculationBreakdown.propertyData}
         label={calculationBreakdown.label}
       />
+
+      {/* Keyboard Shortcuts Help */}
+      <KeyboardShortcutsHelp
+        isOpen={showKeyboardHelp}
+        onClose={() => setShowKeyboardHelp(false)}
+        shortcuts={keyboardShortcuts}
+      />
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-8">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            showItemsPerPage={true}
+            itemsPerPageOptions={[10, 20, 50]}
+          />
+        </div>
+      )}
     </div>
   );
 }
