@@ -1698,13 +1698,20 @@ export default function AssetManagement() {
                                     const vacancyRate = currentData?.assumptions?.vacancyRate || 0.05;
                                     const effectiveGrossIncome = grossRentalIncome * (1 - vacancyRate);
                                     
-                                    // Calculate total expenses
+                                    // Calculate total expenses including management fee
                                     let totalExpenses = 0;
                                     if (currentData?.incomeAndExpenses?.operatingExpenses) {
                                       totalExpenses = currentData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
                                         sum + (parseFloat(expense.annualAmount) || 0), 0);
+                                    } else if (currentData?.expenses) {
+                                      // Use Deal Analyzer expenses object
+                                      totalExpenses = Object.values(currentData.expenses).reduce((sum: number, expense: any) => 
+                                        sum + (parseFloat(expense) || 0), 0);
+                                      // Add management fee (8% of effective gross income)
+                                      const managementFee = effectiveGrossIncome * 0.08;
+                                      totalExpenses += managementFee;
                                     } else {
-                                      // Use Deal Analyzer assumptions expense ratio if available
+                                      // Use expense ratio fallback
                                       const expenseRatio = currentData?.assumptions?.expenseRatio || 0.45;
                                       totalExpenses = effectiveGrossIncome * expenseRatio;
                                     }
