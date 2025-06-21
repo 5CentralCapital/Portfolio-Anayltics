@@ -45,6 +45,16 @@ interface Property {
   annualizedReturn: string;
 }
 
+interface RehabLineItem {
+  id: string;
+  category: string;
+  item: string;
+  budgetAmount: number;
+  spentAmount: number;
+  completed: boolean;
+  notes?: string;
+}
+
 const entities = [
   '5Central Capital',
   'The House Doctors',
@@ -182,6 +192,33 @@ export default function AssetManagement() {
     newStatus: string;
   } | null>(null);
   const [editingPropertyData, setEditingPropertyData] = useState<Property | null>(null);
+  const [rehabLineItems, setRehabLineItems] = useState<Record<number, RehabLineItem[]>>({});
+  const [showRehabModal, setShowRehabModal] = useState<Property | null>(null);
+
+  // Initialize default rehab line items for a property
+  const initializeRehabItems = (property: Property): RehabLineItem[] => {
+    const totalBudget = parseFloat(property.rehabCosts) || 100000;
+    return [
+      // Exterior
+      { id: '1', category: 'Exterior', item: 'Roof Repair/Replacement', budgetAmount: totalBudget * 0.15, spentAmount: 0, completed: false },
+      { id: '2', category: 'Exterior', item: 'Siding & Paint', budgetAmount: totalBudget * 0.12, spentAmount: 0, completed: false },
+      { id: '3', category: 'Exterior', item: 'Windows & Doors', budgetAmount: totalBudget * 0.10, spentAmount: 0, completed: false },
+      
+      // Kitchens
+      { id: '4', category: 'Kitchens', item: 'Cabinets & Countertops', budgetAmount: totalBudget * 0.15, spentAmount: 0, completed: false },
+      { id: '5', category: 'Kitchens', item: 'Appliances', budgetAmount: totalBudget * 0.08, spentAmount: 0, completed: false },
+      { id: '6', category: 'Kitchens', item: 'Plumbing & Electrical', budgetAmount: totalBudget * 0.06, spentAmount: 0, completed: false },
+      
+      // Bathrooms
+      { id: '7', category: 'Bathrooms', item: 'Fixtures & Vanities', budgetAmount: totalBudget * 0.08, spentAmount: 0, completed: false },
+      { id: '8', category: 'Bathrooms', item: 'Tile & Flooring', budgetAmount: totalBudget * 0.06, spentAmount: 0, completed: false },
+      
+      // General Interior
+      { id: '9', category: 'General Interior', item: 'Flooring', budgetAmount: totalBudget * 0.10, spentAmount: 0, completed: false },
+      { id: '10', category: 'General Interior', item: 'Paint & Finishes', budgetAmount: totalBudget * 0.05, spentAmount: 0, completed: false },
+      { id: '11', category: 'General Interior', item: 'HVAC', budgetAmount: totalBudget * 0.05, spentAmount: 0, completed: false }
+    ];
+  };
 
   const { data: propertiesResponse, isLoading, error } = useQuery({
     queryKey: ['/api/properties'],
@@ -239,11 +276,74 @@ export default function AssetManagement() {
   };
 
   const handlePropertyDoubleClick = (property: Property) => {
-    setSelectedProperty(property);
+    if (property.status === 'Rehabbing') {
+      // Initialize rehab items if not already present
+      if (!rehabLineItems[property.id]) {
+        setRehabLineItems(prev => ({
+          ...prev,
+          [property.id]: initializeRehabItems(property)
+        }));
+      }
+      setShowRehabModal(property);
+    } else {
+      setSelectedProperty(property);
+    }
   };
 
   const closePropertyModal = () => {
     setSelectedProperty(null);
+  };
+
+  // Update rehab line item
+  const updateRehabItem = (propertyId: number, itemId: string, updates: Partial<RehabLineItem>) => {
+    setRehabLineItems(prev => ({
+      ...prev,
+      [propertyId]: prev[propertyId]?.map(item => 
+        item.id === itemId ? { ...item, ...updates } : item
+      ) || []
+    }));
+  };
+
+  // Add new rehab line item
+  const addRehabItem = (propertyId: number, category: string) => {
+    const newItem: RehabLineItem = {
+      id: Date.now().toString(),
+      category,
+      item: 'New Item',
+      budgetAmount: 0,
+      spentAmount: 0,
+      completed: false
+    };
+    
+    setRehabLineItems(prev => ({
+      ...prev,
+      [propertyId]: [...(prev[propertyId] || []), newItem]
+    }));
+  };
+
+  // Delete rehab line item
+  const deleteRehabItem = (propertyId: number, itemId: string) => {
+    setRehabLineItems(prev => ({
+      ...prev,
+      [propertyId]: prev[propertyId]?.filter(item => item.id !== itemId) || []
+    }));
+  };
+
+  // Calculate progress for a property
+  const calculateRehabProgress = (propertyId: number) => {
+    const items = rehabLineItems[propertyId] || [];
+    if (items.length === 0) return { completionPercentage: 0, spentPercentage: 0, totalBudget: 0, totalSpent: 0 };
+    
+    const completedItems = items.filter(item => item.completed).length;
+    const totalBudget = items.reduce((sum, item) => sum + item.budgetAmount, 0);
+    const totalSpent = items.reduce((sum, item) => sum + item.spentAmount, 0);
+    
+    return {
+      completionPercentage: (completedItems / items.length) * 100,
+      spentPercentage: totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0,
+      totalBudget,
+      totalSpent
+    };
   };
 
   if (isLoading) {
@@ -451,9 +551,18 @@ export default function AssetManagement() {
           {properties.filter((p: Property) => p.status === 'Rehabbing').length > 0 ? (
             <div className="space-y-6 stagger-children">
               {properties.filter((p: Property) => p.status === 'Rehabbing').map((property: Property) => {
-                const rehabBudget = parseFloat(property.rehabCosts);
-                const rehabSpent = rehabBudget * 0.65; // Mock 65% completion
-                const rehabProgress = (rehabSpent / rehabBudget) * 100;
+                // Initialize rehab items if not present
+                if (!rehabLineItems[property.id]) {
+                  setRehabLineItems(prev => ({
+                    ...prev,
+                    [property.id]: initializeRehabItems(property)
+                  }));
+                }
+                
+                const progress = calculateRehabProgress(property.id);
+                const rehabBudget = progress.totalBudget || parseFloat(property.rehabCosts);
+                const rehabSpent = progress.totalSpent;
+                const rehabProgress = progress.spentPercentage;
                 
                 return (
                   <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover-scale transition-all-smooth card-hover cursor-pointer"
@@ -1126,6 +1235,203 @@ export default function AssetManagement() {
                 disabled={updatePropertyMutation.isPending}
               >
                 {updatePropertyMutation.isPending ? 'Updating...' : 'Confirm & Update'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Editable Rehab Line Items Modal */}
+      {showRehabModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Rehab Progress - {showRehabModal.address}
+              </h2>
+              <button
+                onClick={() => setShowRehabModal(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Progress Summary */}
+              <div className="lg:col-span-1 space-y-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                  <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-4">
+                    Progress Summary
+                  </h3>
+                  {(() => {
+                    const progress = calculateRehabProgress(showRehabModal.id);
+                    return (
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-blue-700 dark:text-blue-300">Completion</span>
+                            <span className="font-semibold text-blue-900 dark:text-blue-200">
+                              {progress.completionPercentage.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${progress.completionPercentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-blue-700 dark:text-blue-300">Budget Spent</span>
+                            <span className="font-semibold text-blue-900 dark:text-blue-200">
+                              {progress.spentPercentage.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full transition-all duration-300 ${
+                                progress.spentPercentage > 100 ? 'bg-red-600' :
+                                progress.spentPercentage > 90 ? 'bg-yellow-600' : 'bg-green-600'
+                              }`}
+                              style={{ width: `${Math.min(progress.spentPercentage, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="bg-white dark:bg-gray-700 p-2 rounded">
+                            <p className="text-gray-600 dark:text-gray-400">Budget</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">
+                              {formatCurrency(progress.totalBudget)}
+                            </p>
+                          </div>
+                          <div className="bg-white dark:bg-gray-700 p-2 rounded">
+                            <p className="text-gray-600 dark:text-gray-400">Spent</p>
+                            <p className="font-semibold text-gray-900 dark:text-white">
+                              {formatCurrency(progress.totalSpent)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-700 p-2 rounded">
+                          <p className="text-gray-600 dark:text-gray-400">Remaining</p>
+                          <p className={`font-semibold ${
+                            progress.totalBudget - progress.totalSpent >= 0 
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                          }`}>
+                            {formatCurrency(progress.totalBudget - progress.totalSpent)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Line Items */}
+              <div className="lg:col-span-2">
+                <div className="space-y-6">
+                  {['Exterior', 'Kitchens', 'Bathrooms', 'General Interior'].map(category => {
+                    const categoryItems = (rehabLineItems[showRehabModal.id] || []).filter(item => item.category === category);
+                    
+                    return (
+                      <div key={category} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div className="flex justify-between items-center mb-4">
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{category}</h4>
+                          <button
+                            onClick={() => addRehabItem(showRehabModal.id, category)}
+                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                          >
+                            Add Item
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          {categoryItems.map(item => (
+                            <div key={item.id} className="bg-white dark:bg-gray-800 rounded p-3 grid grid-cols-12 gap-2 items-center">
+                              <div className="col-span-1">
+                                <input
+                                  type="checkbox"
+                                  checked={item.completed}
+                                  onChange={(e) => updateRehabItem(showRehabModal.id, item.id, { completed: e.target.checked })}
+                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                              </div>
+                              
+                              <div className="col-span-4">
+                                <input
+                                  type="text"
+                                  value={item.item}
+                                  onChange={(e) => updateRehabItem(showRehabModal.id, item.id, { item: e.target.value })}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                />
+                              </div>
+                              
+                              <div className="col-span-2">
+                                <input
+                                  type="number"
+                                  value={item.budgetAmount}
+                                  onChange={(e) => updateRehabItem(showRehabModal.id, item.id, { budgetAmount: parseFloat(e.target.value) || 0 })}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                  placeholder="Budget"
+                                />
+                              </div>
+                              
+                              <div className="col-span-2">
+                                <input
+                                  type="number"
+                                  value={item.spentAmount}
+                                  onChange={(e) => updateRehabItem(showRehabModal.id, item.id, { spentAmount: parseFloat(e.target.value) || 0 })}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                  placeholder="Spent"
+                                />
+                              </div>
+                              
+                              <div className="col-span-2">
+                                <input
+                                  type="text"
+                                  value={item.notes || ''}
+                                  onChange={(e) => updateRehabItem(showRehabModal.id, item.id, { notes: e.target.value })}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                  placeholder="Notes"
+                                />
+                              </div>
+                              
+                              <div className="col-span-1">
+                                <button
+                                  onClick={() => deleteRehabItem(showRehabModal.id, item.id)}
+                                  className="text-red-600 hover:text-red-800 p-1"
+                                  title="Delete item"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {categoryItems.length === 0 && (
+                            <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                              No items in this category. Click "Add Item" to get started.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setShowRehabModal(null)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Save & Close
               </button>
             </div>
           </div>
