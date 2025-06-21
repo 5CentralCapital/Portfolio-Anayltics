@@ -86,18 +86,9 @@ export const ClickableKPI: React.FC<ClickableKPIProps> = ({
         )}
 
         {/* KPI Content */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            {Icon && <Icon className="h-6 w-6" />}
-            <div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {displayValue}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {label}
-              </div>
-            </div>
-          </div>
+        <div className="text-center">
+          <div className="text-sm font-medium opacity-90">{label}</div>
+          <div className="text-2xl font-bold">{displayValue}</div>
         </div>
 
         {/* Hover Indicator */}

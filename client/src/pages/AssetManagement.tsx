@@ -653,61 +653,77 @@ export default function AssetManagement() {
 
   return (
     <div className="space-y-6">
-      {/* KPI Bar with Clickable Calculation Modals */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 fade-in card-hover">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold flex items-center text-gray-900 dark:text-white">
-            <Calculator className="h-5 w-5 mr-2 icon-bounce" />
-            Portfolio Performance
-          </h3>
+      {/* KPI Bar with Continuous Gradient Design */}
+      <div className="bg-gradient-to-r from-blue-600 via-blue-500 via-purple-500 to-purple-600 rounded-lg shadow-lg border border-blue-200 p-6 fade-in hover-glow transition-all-smooth">
+        <div className="flex items-center justify-between text-white">
+          <div className="flex items-center">
+            <Calculator className="h-6 w-6 mr-3 icon-bounce" />
+            <span className="text-lg font-semibold">Portfolio Performance</span>
+          </div>
         </div>
-        <ClickableKPIBar
-          metrics={[
-            {
-              label: 'Total Units',
-              value: metrics.totalUnits,
-              icon: Building,
-              kpiType: 'total_units',
-              formatter: (value) => Number(value).toLocaleString()
-            },
-            {
-              label: 'Total AUM',
-              value: metrics.totalAUM,
-              icon: DollarSign,
-              kpiType: 'portfolio_aum',
-              formatter: (value) => formatCurrency(Number(value))
-            },
-            {
-              label: 'Price/Unit',
-              value: metrics.pricePerUnit,
-              icon: Home,
-              kpiType: 'price_per_unit',
-              formatter: (value) => formatCurrency(Number(value))
-            },
-            {
-              label: 'Total Equity',
-              value: metrics.totalEquity,
-              icon: TrendingUp,
-              kpiType: 'total_equity',
-              formatter: (value) => formatCurrency(Number(value))
-            },
-            {
-              label: 'Monthly Cash Flow',
-              value: metrics.totalCashFlow,
-              icon: DollarSign,
-              kpiType: 'cash_flow',
-              formatter: (value) => formatCurrency(Number(value))
-            },
-            {
-              label: 'Avg CoC Return',
-              value: metrics.avgCoCReturn,
-              icon: Percent,
-              kpiType: 'cash_on_cash_return',
-              formatter: (value) => formatPercentage(Number(value))
-            }
-          ]}
-          properties={properties}
-        />
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mt-4 stagger-children">
+          <ClickableKPI
+            label="Total Units"
+            value={metrics.totalUnits}
+            kpiType="total_units"
+            properties={properties}
+            className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 hover-scale transition-transform-smooth cursor-pointer bg-transparent border-none text-white"
+            showCalculatorIcon={false}
+            formatter={(value) => Number(value).toLocaleString()}
+            currencySymbol=""
+          />
+          <ClickableKPI
+            label="Total AUM"
+            value={metrics.totalAUM}
+            kpiType="portfolio_aum"
+            properties={properties}
+            className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 hover-scale transition-transform-smooth cursor-pointer bg-transparent border-none text-white"
+            showCalculatorIcon={false}
+            formatter={(value) => formatCurrency(Number(value))}
+            currencySymbol="$"
+          />
+          <ClickableKPI
+            label="Price/Unit"
+            value={metrics.pricePerUnit}
+            kpiType="price_per_unit"
+            properties={properties}
+            className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 hover-scale transition-transform-smooth cursor-pointer bg-transparent border-none text-white"
+            showCalculatorIcon={false}
+            formatter={(value) => formatCurrency(Number(value))}
+            currencySymbol="$"
+          />
+          <ClickableKPI
+            label="Total Equity"
+            value={metrics.totalEquity}
+            kpiType="total_equity"
+            properties={properties}
+            className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 bg-transparent border-none text-white"
+            showCalculatorIcon={false}
+            formatter={(value) => formatCurrency(Number(value))}
+            currencySymbol="$"
+          />
+          <ClickableKPI
+            label="Monthly Cash Flow"
+            value={metrics.totalCashFlow}
+            kpiType="cash_flow"
+            properties={properties}
+            className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 bg-transparent border-none text-white"
+            showCalculatorIcon={false}
+            formatter={(value) => formatCurrency(Number(value))}
+            currencySymbol="$"
+          />
+          <ClickableKPI
+            label="Avg CoC Return"
+            value={metrics.avgCoCReturn}
+            kpiType="cash_on_cash_return"
+            properties={properties}
+            className="text-center bg-transparent border-none text-white"
+            showCalculatorIcon={false}
+            formatter={(value) => formatPercentage(Number(value))}
+            currencySymbol=""
+          />
+        </div>
       </div>
 
 
