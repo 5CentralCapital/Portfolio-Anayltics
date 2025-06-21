@@ -19,10 +19,19 @@ function authenticateUser(req: any, res: any, next: any) {
   }
 
   req.user = { id: session.userId };
+  req.userId = session.userId; // Add this for backward compatibility
   next();
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Force all API routes to use Express routing, not Vite middleware
+  app.use('/api/*', (req, res, next) => {
+    // Prevent Vite from handling API routes by setting explicit headers
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache');
+    next();
+  });
+
   // Auth endpoints
   app.post('/api/auth/login', async (req, res) => {
     try {
