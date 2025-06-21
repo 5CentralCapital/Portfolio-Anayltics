@@ -223,7 +223,7 @@ export default function DealAnalyzer() {
     const noi = netRevenue - totalExpenses;
     
     // ARV and refinance calculations
-    const arv = noi / assumptions.marketCapRate;
+    const arv = noi > 0 && assumptions.marketCapRate > 0 ? noi / assumptions.marketCapRate : assumptions.purchasePrice;
     const refinanceLoan = arv * assumptions.refinanceLTV;
     const refinanceClosingCosts = refinanceLoan * assumptions.refinanceClosingCostPercent;
     const cashOut = Math.max(0, refinanceLoan - initialLoan - refinanceClosingCosts);
@@ -236,11 +236,17 @@ export default function DealAnalyzer() {
     const netCashFlow = noi - annualDebtService;
     
     // Return calculations
-    const dscr = noi / annualDebtService;
-    const cashOnCashReturn = totalCashInvested > 0 ? netCashFlow / totalCashInvested : 0;
-    const equityMultiple = totalCashInvested > 0 ? (cashOut + netCashFlow) / totalCashInvested : 0;
-    const breakEvenOccupancy = annualDebtService / grossRent;
-    const totalProfit = arv - allInCost - totalHoldingCosts;
+    const dscr = annualDebtService > 0 ? noi / annualDebtService : 0;
+    const actualEquityInvested = totalCashInvested - cashOut; // Net equity after refinance cash-out
+    const cashOnCashReturn = actualEquityInvested > 0 ? netCashFlow / actualEquityInvested : 0;
+    
+    // Equity multiple: Total value returned divided by initial investment
+    const currentEquityValue = arv - refinanceLoan; // Current equity position
+    const totalValueReturned = cashOut + currentEquityValue;
+    const equityMultiple = totalCashInvested > 0 ? totalValueReturned / totalCashInvested : 0;
+    
+    const breakEvenOccupancy = grossRent > 0 ? (totalExpenses + annualDebtService) / grossRent : 1;
+    const totalProfit = arv - allInCost;
     const capitalRequired = downPayment + totalClosingCosts;
     
     // Exit analysis calculations
@@ -665,7 +671,7 @@ export default function DealAnalyzer() {
       const totalAnnualExpenses = Object.values(expenses || {}).reduce((sum, expense) => sum + (Number(expense) || 0), 0) + managementFee;
       const noi = netRevenue - totalAnnualExpenses;
       
-      // Calculate debt service
+      // Calculate debt service using initial loan terms (not refinance terms for import)
       const loanAmount = (assumptions.purchasePrice || 0) * (assumptions.loanPercentage || 0.8);
       const interestRate = assumptions.interestRate || 0.0875;
       const loanTermYears = assumptions.loanTermYears || 2;
@@ -680,7 +686,7 @@ export default function DealAnalyzer() {
       const annualDebtService = monthlyPayment * 12;
       const annualCashFlow = noi - annualDebtService;
 
-      // Calculate cash-on-cash return
+      // Calculate cash-on-cash return using actual initial capital
       const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) : 0;
 
       // Calculate ARV
