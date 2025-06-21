@@ -244,8 +244,15 @@ export default function AssetManagement() {
     mutationFn: async (data: { id: number; property: Partial<Property> }) => {
       return await apiService.updateProperty(data.id, data.property);
     },
-    onSuccess: () => {
+    onSuccess: (updatedProperty) => {
       queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
+      
+      // Update modal state with the updated property data
+      if (showPropertyDetailModal && updatedProperty.data && updatedProperty.data.id === showPropertyDetailModal.id) {
+        setShowPropertyDetailModal(updatedProperty.data);
+        setEditingModalProperty(updatedProperty.data);
+      }
+      
       setIsEditing(false);
       console.log('Property updated successfully');
     },
