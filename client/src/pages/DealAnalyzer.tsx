@@ -792,113 +792,7 @@ export default function DealAnalyzer() {
       const contingency = rehabSubtotal * 0.10; // 10% buffer
       const totalRehabCosts = rehabSubtotal + contingency;
 
-      // Calculate total closing costs and holding costs
-      const totalClosingCosts = Object.values(closingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
-      const totalHoldingCosts = Object.values(holdingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
-      const downPayment = (assumptions.purchasePrice || 0) * (1 - (assumptions.loanPercentage || 0.8));
-      const initialCapital = downPayment + totalRehabCosts + totalClosingCosts + totalHoldingCosts;
-
-      // Calculate cash flow (annual) with detailed calculations
-      const totalAnnualRent = rentRoll.reduce((sum, unit) => {
-        const unitType = unitTypes.find(ut => ut.id === unit.unitTypeId);
-        return sum + (unitType ? unitType.marketRent * 12 : unit.proFormaRent * 12);
-      }, 0);
-      
-      const vacancyLoss = totalAnnualRent * assumptions.vacancyRate;
-      const netRevenue = totalAnnualRent - vacancyLoss;
-      const managementFee = netRevenue * 0.08; // 8% management fee
-      const totalAnnualExpenses = Object.values(expenses || {}).reduce((sum, expense) => sum + (Number(expense) || 0), 0) + managementFee;
-      const noi = netRevenue - totalAnnualExpenses;
-      
-      // Calculate ARV first
-      const marketCapRate = assumptions.marketCapRate || 0.055;
-      const arv = noi > 0 && marketCapRate > 0 ? noi / marketCapRate : assumptions.purchasePrice || 0;
-      
-      // Calculate debt service using post-refinance terms (matching 12-month proforma)
-      const newLoanAmount = arv * (assumptions.refinanceLTV || 0.70);
-      const refinanceRate = assumptions.refinanceInterestRate || 0.065;
-      const refinanceTermYears = 30; // Standard term for stabilized properties
-      
-      let monthlyDebtService = 0;
-      if (newLoanAmount > 0 && refinanceRate > 0) {
-        const monthlyRate = refinanceRate / 12;
-        const numPayments = refinanceTermYears * 12;
-        monthlyDebtService = newLoanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-      }
-      
-      // Calculate monthly cash flow from 12-month proforma (NOI - debt service)
-      const monthlyCashFlow = (noi / 12) - monthlyDebtService;
-      const annualCashFlow = monthlyCashFlow * 12;
-
-      // Calculate cash-on-cash return using actual initial capital
-      const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) : 0;
-
-      const propertyData = {
-        status: 'Under Contract' as const,
-        apartments: Number(assumptions.unitCount) || 1,
-        address: propertyAddress.split(',')[0]?.trim() || propertyName,
-        city: city || 'Unknown',
-        state: state || 'CT',
-        zipCode: zipCode || null,
-        entity: importFormData.entity || '5Central Capital',
-        acquisitionDate: importFormData.acquisitionDate || new Date().toISOString().split('T')[0],
-        acquisitionPrice: Math.round(Number(assumptions.purchasePrice) || 0).toString(),
-        rehabCosts: Math.round(totalRehabCosts).toString(),
-        arvAtTimePurchased: Math.round(arv).toString(),
-        initialCapitalRequired: Math.round(initialCapital).toString(),
-        cashFlow: Math.round(monthlyCashFlow).toString(),
-        totalProfits: '0',
-        cashOnCashReturn: Number((cashOnCashReturn * 100).toFixed(2)).toString(),
-        annualizedReturn: Number((cashOnCashReturn * 100).toFixed(2)).toString(),
-        yearsHeld: '0',
-        // Include all deal analyzer data for comprehensive import
-        dealAnalyzerData: {
-          propertyName,
-          propertyAddress,
-          assumptions,
-          rehabBudgetSections,
-          closingCosts,
-          holdingCosts,
-          expenses: {
-            // Map Deal Analyzer expense keys to property modal keys
-            taxes: expenses.propertyTax || 0,
-            insurance: expenses.insurance || 0,
-            utilities: expenses.utilities || 0,
-            maintenance: expenses.maintenance || 0,
-            management: expenses.managementFee || 0,
-            vacancy: 0, // Will be calculated
-            capex: expenses.capitalReserves || 0,
-            landscaping: 0,
-            legalAccounting: expenses.other || 0
-          },
-          income: {
-            // Calculate income from rent roll
-            grossRentalIncome: rentRoll.reduce((sum, unit) => sum + unit.proFormaRent, 0) * 12,
-            otherIncome: 0,
-            laundryIncome: 0,
-            parkingIncome: 0,
-            storageIncome: 0,
-            petIncome: 0
-          },
-          rentRoll,
-          unitTypes,
-          exitAnalysis,
-          calculations: {
-            totalRehabCosts,
-            totalClosingCosts,
-            totalHoldingCosts,
-            initialCapital,
-            arv,
-            noi,
-            monthlyCashFlow,
-            annualCashFlow,
-            monthlyDebtService,
-            cashOnCashReturn
-          }
-        }
-      };
-
-      console.log('Importing property data:', propertyData);
+      console.log('Preparing Deal Analyzer data for import...');
 
       // Get authentication token
       const authToken = localStorage.getItem('authToken');
@@ -906,19 +800,49 @@ export default function DealAnalyzer() {
         throw new Error('Authentication required. Please log in first.');
       }
 
-      // Use unified property system for import with automatic synchronization
-      const propertyDataWithDealAnalyzer = {
-        ...propertyData,
-        dealAnalyzerData: JSON.stringify(propertyData.dealAnalyzerData)
+      // Prepare data for the new relational database structure
+      const dealAnalyzerImportData = {
+        propertyName,
+        propertyAddress,
+        assumptions,
+        rehabBudgetSections,
+        closingCosts: Object.entries(closingCosts || {}).map(([category, amount]) => ({
+          category,
+          amount: Number(amount) || 0
+        })),
+        holdingCosts: Object.entries(holdingCosts || {}).map(([category, amount]) => ({
+          category,
+          monthlyAmount: Number(amount) || 0,
+          totalAmount: (Number(amount) || 0) * 12
+        })),
+        rentRoll,
+        incomeAndExpenses: {
+          operatingExpenses: Object.entries(expenses || {}).map(([category, amount]) => ({
+            category,
+            annualAmount: Number(amount) || 0,
+            monthlyAmount: (Number(amount) || 0) / 12
+          }))
+        },
+        financing: {
+          loans: financing?.loans || []
+        },
+        exitAnalysis,
+        proforma: twelveMonthProforma
       };
 
-      const response = await fetch('/api/properties', {
+      const response = await fetch('/api/import-property', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
         },
-        body: JSON.stringify(propertyDataWithDealAnalyzer),
+        body: JSON.stringify({
+          dealAnalyzerData: dealAnalyzerImportData,
+          entity: importFormData.entity,
+          acquisitionDate: importFormData.acquisitionDate,
+          broker: importFormData.broker,
+          legalNotes: importFormData.legalNotes
+        }),
       });
 
       if (!response.ok) {
