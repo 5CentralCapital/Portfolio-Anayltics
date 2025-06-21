@@ -1,8 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
-import { runSimpleMigration } from "./simpleMigration";
-import { completeMigration } from "./completeMigration";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
@@ -58,14 +56,6 @@ app.use((req, res, next) => {
     
     if (!dbConnected) {
       log("Warning: Database connection failed, but continuing with server startup");
-    } else {
-      log("Database connection successful");
-      // Run complete data migration from JSON to normalized tables
-      completeMigration().then(result => {
-        log(`Data migration completed: ${JSON.stringify(result)}`);
-      }).catch(error => {
-        log(`Migration failed: ${error}`);
-      });
     }
 
     const server = await registerRoutes(app);

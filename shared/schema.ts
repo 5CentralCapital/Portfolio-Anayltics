@@ -74,7 +74,7 @@ export const properties = pgTable("properties", {
 // Property Assumptions - Core deal assumptions and market data
 export const propertyAssumptions = pgTable("property_assumptions", {
   id: serial("id").primaryKey(),
-  propertyId: integer("property_id").notNull().unique().references(() => properties.id, { onDelete: "cascade" }),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
   unitCount: integer("unit_count").default(1),
   purchasePrice: decimal("purchase_price", { precision: 15, scale: 2 }).default("0"),
   loanPercentage: decimal("loan_percentage", { precision: 5, scale: 4 }).default("0.8"),
@@ -114,7 +114,7 @@ export const propertyRentRoll = pgTable("property_rent_roll", {
   currentRent: decimal("current_rent", { precision: 10, scale: 2 }).default("0"),
   proFormaRent: decimal("pro_forma_rent", { precision: 10, scale: 2 }).default("0"),
   isVacant: boolean("is_vacant").default(false),
-  leaseEndDate: text("lease_end_date"), // Store as string for easier handling
+  leaseEndDate: date("lease_end_date"),
   tenantName: text("tenant_name"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -175,7 +175,7 @@ export const propertyHoldingCosts = pgTable("property_holding_costs", {
 // Property Exit Analysis - Hold vs sell scenarios
 export const propertyExitAnalysis = pgTable("property_exit_analysis", {
   id: serial("id").primaryKey(),
-  propertyId: integer("property_id").notNull().unique().references(() => properties.id, { onDelete: "cascade" }),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
   holdPeriodYears: decimal("hold_period_years", { precision: 5, scale: 1 }).default("3.0"),
   saleFactor: decimal("sale_factor", { precision: 5, scale: 2 }).default("1.0"),
   saleCostsPercent: decimal("sale_costs_percent", { precision: 5, scale: 4 }).default("0.06"),
