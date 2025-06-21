@@ -189,7 +189,7 @@ export default function AssetManagement() {
     ];
   };
 
-  const { data: properties = [], isLoading: propertiesLoading } = useQuery({
+  const { data: properties = [], isLoading: propertiesLoading } = useQuery<Property[]>({
     queryKey: ['/api/properties']
   });
 
@@ -268,29 +268,27 @@ export default function AssetManagement() {
 
   // Calculate portfolio metrics using authentic property data
   const portfolioMetrics = {
-    totalUnits: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0) : 0,
-    totalAUM: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => {
+    totalUnits: properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0),
+    totalAUM: properties.reduce((sum: number, prop: Property) => {
       const price = parseFloat(prop.acquisitionPrice?.replace(/[^0-9.-]/g, '') || '0');
       return sum + price;
-    }, 0) : 0,
-    totalEquity: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => {
+    }, 0),
+    totalEquity: properties.reduce((sum: number, prop: Property) => {
       const capital = parseFloat(prop.initialCapitalRequired?.replace(/[^0-9.-]/g, '') || '0');
       return sum + capital;
-    }, 0) : 0,
-    monthlyCashFlow: Array.isArray(properties) 
-      ? properties.reduce((sum: number, prop: Property) => {
-          if (prop.status !== 'Cashflowing') return sum;
-          const cashFlow = parseFloat(prop.cashFlow?.replace(/[^0-9.-]/g, '') || '0');
-          return sum + cashFlow;
-        }, 0)
-      : 0,
-    averageCOC: Array.isArray(properties) && properties.length > 0
+    }, 0),
+    monthlyCashFlow: properties.reduce((sum: number, prop: Property) => {
+      if (prop.status !== 'Cashflowing') return sum;
+      const cashFlow = parseFloat(prop.cashFlow?.replace(/[^0-9.-]/g, '') || '0');
+      return sum + cashFlow;
+    }, 0),
+    averageCOC: properties.length > 0
       ? properties.reduce((sum: number, prop: Property) => {
           const coc = parseFloat(prop.cashOnCashReturn?.replace(/[^0-9.-]/g, '') || '0');
           return sum + coc;
         }, 0) / properties.length
       : 0,
-    averageROI: Array.isArray(properties) && properties.length > 0 ? (() => {
+    averageROI: properties.length > 0 ? (() => {
       const totalValue = properties.reduce((sum: number, prop: Property) => {
         const price = parseFloat(prop.acquisitionPrice?.replace(/[^0-9.-]/g, '') || '0');
         return sum + price;
