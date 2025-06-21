@@ -245,6 +245,11 @@ export default function AssetManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
+      setIsEditing(false);
+    },
+    onError: (error) => {
+      console.error('Failed to update property:', error);
+      setIsEditing(false);
     }
   });
 
@@ -317,9 +322,16 @@ export default function AssetManagement() {
     if (editingModalProperty) {
       updatePropertyMutation.mutate({
         id: editingModalProperty.id,
-        property: editingModalProperty
+        property: {
+          dealAnalyzerData: editingModalProperty.dealAnalyzerData,
+          acquisitionPrice: editingModalProperty.acquisitionPrice,
+          rehabCosts: editingModalProperty.rehabCosts,
+          cashFlow: editingModalProperty.cashFlow,
+          cashOnCashReturn: editingModalProperty.cashOnCashReturn,
+          entity: editingModalProperty.entity,
+          status: editingModalProperty.status
+        }
       });
-      setIsEditing(false);
     }
   };
 
@@ -1499,13 +1511,27 @@ export default function AssetManagement() {
                   <>
                     <button
                       onClick={savePropertyChanges}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                      disabled={updatePropertyMutation.isPending}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Changes
+                      {updatePropertyMutation.isPending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
                     </button>
                     <button
-                      onClick={() => setIsEditing(false)}
+                      onClick={() => {
+                        setIsEditing(false);
+                        // Reset editing property to original values
+                        setEditingModalProperty({ ...showPropertyDetailModal });
+                      }}
                       className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                     >
                       Cancel
