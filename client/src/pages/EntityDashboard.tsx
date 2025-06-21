@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import apiService from '../services/api';
 import { 
   Building, 
@@ -141,6 +141,7 @@ const EditableValue = ({
 };
 
 export default function EntityDashboard() {
+  const queryClient = useQueryClient();
   const [userEntities, setUserEntities] = useState<string[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [selectedPropertyModal, setSelectedPropertyModal] = useState<Property | null>(null);
@@ -161,11 +162,14 @@ export default function EntityDashboard() {
     enabled: !!currentUserId
   });
 
-  // Fetch user's properties
-  const { data: allProperties = [], isLoading } = useQuery({
+  // Fetch user's properties with proper cache management
+  const { data: allProperties = [], isLoading, refetch: refetchProperties } = useQuery({
     queryKey: ['/api/properties'],
     queryFn: () => apiService.getProperties(),
-    enabled: !!currentUserId
+    enabled: !!currentUserId,
+    staleTime: 0, // Always consider data stale
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchOnMount: true // Always refetch on component mount
   });
 
   // Set user entities when data loads
@@ -175,10 +179,27 @@ export default function EntityDashboard() {
       setUserEntities(entityNames);
     }
   }, [userEntityData]);
+
+  // Add automatic data refreshing to keep KPIs updated
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (currentUserId) {
+        refetchProperties();
+        queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
+      }
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [currentUserId, refetchProperties, queryClient]);
   
   // All properties for collective KPIs (only user's properties)
-  const properties: Property[] = Array.isArray(allProperties?.data) ? allProperties.data : 
-    Array.isArray(allProperties) ? allProperties : [];
+  const properties: Property[] = (() => {
+    if (Array.isArray(allProperties)) return allProperties;
+    if (allProperties && typeof allProperties === 'object' && 'data' in allProperties) {
+      return Array.isArray(allProperties.data) ? allProperties.data : [];
+    }
+    return [];
+  })();
   
   // Properties grouped by user's entities only
   const propertiesByEntity = userEntities.reduce((acc, entity) => {
