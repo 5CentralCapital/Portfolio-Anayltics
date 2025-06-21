@@ -18,6 +18,7 @@ import {
   CheckSquare,
   RefreshCw
 } from 'lucide-react';
+import { ClickableKPI, ClickableKPIBar } from '../components/ClickableKPI';
 
 interface Property {
   id: number;
