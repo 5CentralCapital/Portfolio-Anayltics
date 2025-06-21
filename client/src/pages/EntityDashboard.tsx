@@ -15,7 +15,8 @@ import {
   Calculator,
   PieChart,
   Banknote,
-  CheckSquare
+  CheckSquare,
+  RefreshCw
 } from 'lucide-react';
 
 interface Property {
@@ -180,17 +181,24 @@ export default function EntityDashboard() {
     }
   }, [userEntityData]);
 
+  // Manual refresh function for KPIs
+  const refreshData = async () => {
+    if (currentUserId) {
+      await queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
+      await refetchProperties();
+    }
+  };
+
   // Add automatic data refreshing to keep KPIs updated
   useEffect(() => {
     const interval = setInterval(() => {
       if (currentUserId) {
-        refetchProperties();
-        queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
+        refreshData();
       }
     }, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
-  }, [currentUserId, refetchProperties, queryClient]);
+  }, [currentUserId, queryClient]);
   
   // All properties for collective KPIs (only user's properties)
   const properties: Property[] = (() => {
@@ -386,10 +394,20 @@ export default function EntityDashboard() {
 
       {/* Portfolio KPI Bar - Continuous Gradient Style */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 fade-in card-hover" data-tour="kpi-bar">
-        <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-900 dark:text-white">
-          <Calculator className="h-5 w-5 mr-2 icon-bounce" />
-          Portfolio Key Metrics
-        </h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold flex items-center text-gray-900 dark:text-white">
+            <Calculator className="h-5 w-5 mr-2 icon-bounce" />
+            Portfolio Key Metrics
+          </h3>
+          <button
+            onClick={refreshData}
+            className="flex items-center px-3 py-1.5 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors button-pulse"
+            title="Refresh KPIs"
+          >
+            <RefreshCw className="h-4 w-4 mr-1" />
+            Refresh
+          </button>
+        </div>
         <div className="bg-gradient-to-r from-blue-600 via-blue-500 via-purple-500 to-purple-600 rounded-lg p-6 hover-glow transition-all-smooth">
           <div className="flex justify-between items-center text-white">
             <div className="text-center flex-1">
