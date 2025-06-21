@@ -710,11 +710,15 @@ export default function EntityDashboard() {
                     ) : (
                       <div className="grid gap-3">
                         {entityProperties.map((property) => (
-                          <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                          <div 
+                            key={property.id} 
+                            className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-all-smooth hover-scale"
+                            onDoubleClick={() => setSelectedPropertyModal(property)}
+                          >
                             <div className="flex items-center justify-between mb-2">
                               <h5 className="font-semibold text-gray-900 dark:text-white">{property.address}</h5>
                               <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                property.status === 'Currently Own' 
+                                property.status === 'Cashflowing' 
                                   ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
                                   : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                               }`}>
