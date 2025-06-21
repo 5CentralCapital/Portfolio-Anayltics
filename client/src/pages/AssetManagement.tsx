@@ -1690,31 +1690,47 @@ export default function AssetManagement() {
                                   
                                   if (currentData?.rentRoll && Array.isArray(currentData.rentRoll)) {
                                     // Calculate from rent roll data
-                                    const grossRentalIncome = currentData.rentRoll.reduce((sum: number, unit: any) => 
-                                      sum + (parseFloat(unit.proFormaRent) || 0), 0) * 12;
+                                    const monthlyRentalIncome = currentData.rentRoll.reduce((sum: number, unit: any) => 
+                                      sum + (parseFloat(unit.proFormaRent) || 0), 0);
+                                    const grossRentalIncome = monthlyRentalIncome * 12;
                                     
-                                    // Calculate total expenses from income & expenses tab
-                                    const totalExpenses = currentData?.incomeAndExpenses?.operatingExpenses 
-                                      ? currentData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
-                                          sum + (parseFloat(expense.annualAmount) || 0), 0)
-                                      : grossRentalIncome * 0.4; // 40% expense ratio default
+                                    // Apply vacancy rate
+                                    const vacancyRate = currentData?.assumptions?.vacancyRate || 0.05;
+                                    const effectiveGrossIncome = grossRentalIncome * (1 - vacancyRate);
                                     
-                                    // Calculate debt service (if loan data exists)
-                                    let debtService = 0;
-                                    if (currentData?.assumptions) {
-                                      const loanAmount = (currentData.assumptions.purchasePrice || 0) * (currentData.assumptions.loanPercentage || 0.8);
-                                      const monthlyRate = (currentData.assumptions.interestRate || 0.07) / 12;
-                                      const numPayments = (currentData.assumptions.loanTermYears || 30) * 12;
-                                      
-                                      if (monthlyRate > 0) {
-                                        const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-                                        debtService = monthlyPayment * 12;
-                                      }
+                                    // Calculate total expenses
+                                    let totalExpenses = 0;
+                                    if (currentData?.incomeAndExpenses?.operatingExpenses) {
+                                      totalExpenses = currentData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
+                                        sum + (parseFloat(expense.annualAmount) || 0), 0);
                                     } else {
-                                      debtService = grossRentalIncome * 0.5; // 50% debt service default
+                                      // Use Deal Analyzer assumptions expense ratio if available
+                                      const expenseRatio = currentData?.assumptions?.expenseRatio || 0.45;
+                                      totalExpenses = effectiveGrossIncome * expenseRatio;
                                     }
                                     
-                                    annualCashFlow = grossRentalIncome - totalExpenses - debtService;
+                                    // Calculate NOI
+                                    const noi = effectiveGrossIncome - totalExpenses;
+                                    
+                                    // Calculate debt service
+                                    let annualDebtService = 0;
+                                    if (currentData?.assumptions) {
+                                      const purchasePrice = currentData.assumptions.purchasePrice || parseFloat(showPropertyDetailModal.acquisitionPrice || '0');
+                                      const loanPercentage = currentData.assumptions.loanPercentage || 0.8;
+                                      const interestRate = currentData.assumptions.interestRate || 0.07;
+                                      const loanTermYears = currentData.assumptions.loanTermYears || 30;
+                                      
+                                      const loanAmount = purchasePrice * loanPercentage;
+                                      const monthlyRate = interestRate / 12;
+                                      const numPayments = loanTermYears * 12;
+                                      
+                                      if (monthlyRate > 0 && loanAmount > 0) {
+                                        const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+                                        annualDebtService = monthlyPayment * 12;
+                                      }
+                                    }
+                                    
+                                    annualCashFlow = noi - annualDebtService;
                                   } else {
                                     // Use stored value as fallback
                                     annualCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
@@ -1740,31 +1756,47 @@ export default function AssetManagement() {
                                   
                                   if (currentData?.rentRoll && Array.isArray(currentData.rentRoll)) {
                                     // Calculate from rent roll data (same logic as annual cash flow)
-                                    const grossRentalIncome = currentData.rentRoll.reduce((sum: number, unit: any) => 
-                                      sum + (parseFloat(unit.proFormaRent) || 0), 0) * 12;
+                                    const monthlyRentalIncome = currentData.rentRoll.reduce((sum: number, unit: any) => 
+                                      sum + (parseFloat(unit.proFormaRent) || 0), 0);
+                                    const grossRentalIncome = monthlyRentalIncome * 12;
                                     
-                                    // Calculate total expenses from income & expenses tab
-                                    const totalExpenses = currentData?.incomeAndExpenses?.operatingExpenses 
-                                      ? currentData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
-                                          sum + (parseFloat(expense.annualAmount) || 0), 0)
-                                      : grossRentalIncome * 0.4; // 40% expense ratio default
+                                    // Apply vacancy rate
+                                    const vacancyRate = currentData?.assumptions?.vacancyRate || 0.05;
+                                    const effectiveGrossIncome = grossRentalIncome * (1 - vacancyRate);
                                     
-                                    // Calculate debt service (if loan data exists)
-                                    let debtService = 0;
-                                    if (currentData?.assumptions) {
-                                      const loanAmount = (currentData.assumptions.purchasePrice || 0) * (currentData.assumptions.loanPercentage || 0.8);
-                                      const monthlyRate = (currentData.assumptions.interestRate || 0.07) / 12;
-                                      const numPayments = (currentData.assumptions.loanTermYears || 30) * 12;
-                                      
-                                      if (monthlyRate > 0) {
-                                        const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-                                        debtService = monthlyPayment * 12;
-                                      }
+                                    // Calculate total expenses
+                                    let totalExpenses = 0;
+                                    if (currentData?.incomeAndExpenses?.operatingExpenses) {
+                                      totalExpenses = currentData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
+                                        sum + (parseFloat(expense.annualAmount) || 0), 0);
                                     } else {
-                                      debtService = grossRentalIncome * 0.5; // 50% debt service default
+                                      // Use Deal Analyzer assumptions expense ratio if available
+                                      const expenseRatio = currentData?.assumptions?.expenseRatio || 0.45;
+                                      totalExpenses = effectiveGrossIncome * expenseRatio;
                                     }
                                     
-                                    annualCashFlow = grossRentalIncome - totalExpenses - debtService;
+                                    // Calculate NOI
+                                    const noi = effectiveGrossIncome - totalExpenses;
+                                    
+                                    // Calculate debt service
+                                    let annualDebtService = 0;
+                                    if (currentData?.assumptions) {
+                                      const purchasePrice = currentData.assumptions.purchasePrice || parseFloat(showPropertyDetailModal.acquisitionPrice || '0');
+                                      const loanPercentage = currentData.assumptions.loanPercentage || 0.8;
+                                      const interestRate = currentData.assumptions.interestRate || 0.07;
+                                      const loanTermYears = currentData.assumptions.loanTermYears || 30;
+                                      
+                                      const loanAmount = purchasePrice * loanPercentage;
+                                      const monthlyRate = interestRate / 12;
+                                      const numPayments = loanTermYears * 12;
+                                      
+                                      if (monthlyRate > 0 && loanAmount > 0) {
+                                        const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+                                        annualDebtService = monthlyPayment * 12;
+                                      }
+                                    }
+                                    
+                                    annualCashFlow = noi - annualDebtService;
                                   } else {
                                     // Use stored value as fallback
                                     annualCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
