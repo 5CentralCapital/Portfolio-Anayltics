@@ -2564,6 +2564,7 @@ export default function AssetManagement() {
                                   <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Net Income</th>
                                   <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Expenses</th>
                                   <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">NOI</th>
+                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Debt Service</th>
                                   <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Cash Flow</th>
                                 </tr>
                               </thead>
@@ -2577,7 +2578,12 @@ export default function AssetManagement() {
                                   const netIncome = grossIncome - vacancy;
                                   const monthlyExpenses = (Object.values(dealAnalyzerData?.expenses || {}).reduce((sum: number, val: any) => sum + (val || 0), 0)) / 12;
                                   const noi = netIncome - monthlyExpenses;
-                                  const monthlyDebtService = (dealAnalyzerData?.calculations?.monthlyDebtService || 0);
+                                  
+                                  // Get active loan's monthly payment from financing tab
+                                  const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
+                                  const activeLoan = currentData?.loans?.find((l: any) => l.isActive);
+                                  const monthlyDebtService = activeLoan?.monthlyPayment || dealAnalyzerData?.calculations?.monthlyDebtService || 0;
+                                  
                                   const cashFlow = noi - monthlyDebtService;
                                   
                                   return (
@@ -2588,6 +2594,7 @@ export default function AssetManagement() {
                                       <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">{formatCurrency(netIncome)}</td>
                                       <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(monthlyExpenses)})</td>
                                       <td className="px-4 py-2 text-sm font-medium text-indigo-900 dark:text-indigo-200">{formatCurrency(noi)}</td>
+                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(monthlyDebtService)})</td>
                                       <td className={`px-4 py-2 text-sm font-medium ${cashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         {formatCurrency(cashFlow)}
                                       </td>
@@ -2616,12 +2623,28 @@ export default function AssetManagement() {
                                       Object.values(dealAnalyzerData?.expenses || {}).reduce((sum: number, val: any) => sum + (val || 0), 0)
                                     )}
                                   </td>
+                                  <td className="px-4 py-2 text-sm font-bold text-red-600">
+                                    {(() => {
+                                      // Get active loan's annual debt service
+                                      const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
+                                      const activeLoan = currentData?.loans?.find((l: any) => l.isActive);
+                                      const annualDebtService = (activeLoan?.monthlyPayment || dealAnalyzerData?.calculations?.monthlyDebtService || 0) * 12;
+                                      return `(${formatCurrency(annualDebtService)})`;
+                                    })()}
+                                  </td>
                                   <td className="px-4 py-2 text-sm font-bold text-green-600">
-                                    {formatCurrency(
-                                      ((((dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0) * 12) * (1 - (dealAnalyzerData?.assumptions?.vacancyRate || 0.05))) - 
-                                      Object.values(dealAnalyzerData?.expenses || {}).reduce((sum: number, val: any) => sum + (val || 0), 0)) - 
-                                      ((dealAnalyzerData?.calculations?.monthlyDebtService || 0) * 12)
-                                    )}
+                                    {(() => {
+                                      const noi = (((dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0) * 12) * (1 - (dealAnalyzerData?.assumptions?.vacancyRate || 0.05))) - 
+                                        Object.values(dealAnalyzerData?.expenses || {}).reduce((sum: number, val: any) => sum + (val || 0), 0);
+                                      
+                                      // Get active loan's annual debt service
+                                      const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
+                                      const activeLoan = currentData?.loans?.find((l: any) => l.isActive);
+                                      const annualDebtService = (activeLoan?.monthlyPayment || dealAnalyzerData?.calculations?.monthlyDebtService || 0) * 12;
+                                      
+                                      const annualCashFlow = noi - annualDebtService;
+                                      return formatCurrency(annualCashFlow);
+                                    })()}
                                   </td>
                                 </tr>
                               </tfoot>
