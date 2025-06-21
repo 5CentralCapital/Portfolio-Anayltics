@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { kpiService } from "./kpi.service";
 import { dealAnalyzerService } from "./dealAnalyzerService";
 import { migratePropertyData } from "./migration";
+import { completeMigration } from "./completeMigration";
 import { 
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
@@ -709,6 +710,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error saving deal data:', error);
       res.status(500).json({ error: 'Failed to save deal data' });
+    }
+  });
+
+  // Complete migration from JSON to normalized tables
+  app.post("/api/complete-migration", async (req, res) => {
+    try {
+      const result = await completeMigration();
+      res.json(result);
+    } catch (error) {
+      console.error("Complete migration error:", error);
+      res.status(500).json({ error: "Migration failed" });
     }
   });
   
