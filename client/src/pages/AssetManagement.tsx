@@ -1903,8 +1903,9 @@ export default function AssetManagement() {
                                     
                                     annualCashFlow = noi - annualDebtService;
                                   } else {
-                                    // Use stored value as fallback
-                                    annualCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
+                                    // Use stored monthly cash flow value and convert to annual
+                                    const monthlyCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
+                                    annualCashFlow = monthlyCashFlow * 12;
                                   }
                                   
                                   return (
@@ -1969,11 +1970,13 @@ export default function AssetManagement() {
                                     
                                     annualCashFlow = noi - annualDebtService;
                                   } else {
-                                    // Use stored value as fallback
-                                    annualCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
+                                    // Use stored monthly cash flow value and convert to annual
+                                    const monthlyCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
+                                    annualCashFlow = monthlyCashFlow * 12;
                                   }
                                   
-                                  const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) * 100 : 0;
+                                  // Use the correctly stored cash-on-cash return from database
+                                  const cashOnCashReturn = parseFloat(showPropertyDetailModal.cashOnCashReturn || '0');
                                   
                                   return (
                                     <p className={`font-medium ${cashOnCashReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
