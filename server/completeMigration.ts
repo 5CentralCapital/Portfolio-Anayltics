@@ -38,23 +38,33 @@ export async function completeMigration() {
         // Migrate assumptions
         if (dealData.assumptions) {
           console.log(`  - Migrating assumptions`);
-          await db.insert(propertyAssumptions).values({
-            propertyId: property.id,
-            unitCount: dealData.assumptions.unitCount || 1,
-            purchasePrice: dealData.assumptions.purchasePrice?.toString() || '0',
-            loanPercentage: dealData.assumptions.loanPercentage?.toString() || '0',
-            interestRate: dealData.assumptions.interestRate?.toString() || '0',
-            loanTermYears: dealData.assumptions.loanTermYears || 30,
-            vacancyRate: dealData.assumptions.vacancyRate?.toString() || '0.05',
-            expenseRatio: dealData.assumptions.expenseRatio?.toString() || '0.45',
-            marketCapRate: dealData.assumptions.marketCapRate?.toString() || '0.08',
-            refinanceLTV: dealData.assumptions.refinanceLTV?.toString() || '0.75',
-            refinanceInterestRate: dealData.assumptions.refinanceInterestRate?.toString() || '0.065',
-            refinanceClosingCostPercent: dealData.assumptions.refinanceClosingCostPercent?.toString() || '0.02',
-            dscrThreshold: dealData.assumptions.dscrThreshold?.toString() || '1.25'
-          }).onConflictDoUpdate({
-            target: propertyAssumptions.propertyId,
-            set: {
+          
+          // Check if assumptions already exist
+          const [existingAssumptions] = await db.select().from(propertyAssumptions).where(eq(propertyAssumptions.propertyId, property.id));
+          
+          if (existingAssumptions) {
+            // Update existing assumptions
+            await db.update(propertyAssumptions)
+              .set({
+                unitCount: dealData.assumptions.unitCount || 1,
+                purchasePrice: dealData.assumptions.purchasePrice?.toString() || '0',
+                loanPercentage: dealData.assumptions.loanPercentage?.toString() || '0',
+                interestRate: dealData.assumptions.interestRate?.toString() || '0',
+                loanTermYears: dealData.assumptions.loanTermYears || 30,
+                vacancyRate: dealData.assumptions.vacancyRate?.toString() || '0.05',
+                expenseRatio: dealData.assumptions.expenseRatio?.toString() || '0.45',
+                marketCapRate: dealData.assumptions.marketCapRate?.toString() || '0.08',
+                refinanceLTV: dealData.assumptions.refinanceLTV?.toString() || '0.75',
+                refinanceInterestRate: dealData.assumptions.refinanceInterestRate?.toString() || '0.065',
+                refinanceClosingCostPercent: dealData.assumptions.refinanceClosingCostPercent?.toString() || '0.02',
+                dscrThreshold: dealData.assumptions.dscrThreshold?.toString() || '1.25',
+                updatedAt: new Date()
+              })
+              .where(eq(propertyAssumptions.propertyId, property.id));
+          } else {
+            // Insert new assumptions
+            await db.insert(propertyAssumptions).values({
+              propertyId: property.id,
               unitCount: dealData.assumptions.unitCount || 1,
               purchasePrice: dealData.assumptions.purchasePrice?.toString() || '0',
               loanPercentage: dealData.assumptions.loanPercentage?.toString() || '0',
@@ -66,10 +76,9 @@ export async function completeMigration() {
               refinanceLTV: dealData.assumptions.refinanceLTV?.toString() || '0.75',
               refinanceInterestRate: dealData.assumptions.refinanceInterestRate?.toString() || '0.065',
               refinanceClosingCostPercent: dealData.assumptions.refinanceClosingCostPercent?.toString() || '0.02',
-              dscrThreshold: dealData.assumptions.dscrThreshold?.toString() || '1.25',
-              updatedAt: new Date()
-            }
-          });
+              dscrThreshold: dealData.assumptions.dscrThreshold?.toString() || '1.25'
+            });
+          }
         }
 
         // Migrate unit types
