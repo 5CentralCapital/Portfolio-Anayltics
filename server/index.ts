@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import { createServer } from "http";
 import session from "express-session";
 import { registerRoutes } from "./routes-new";
 import { setupVite, serveStatic, log } from "./vite";
@@ -58,8 +59,14 @@ app.use((req, res, next) => {
       log("Warning: Database connection failed, but continuing with server startup");
     }
 
-    // Register API routes before Vite middleware
-    const server = await registerRoutes(app);
+    // Import and use the new API router that bypasses Vite
+    const { apiRouter } = await import('./api-routes');
+    
+    // Mount API router with high priority before Vite middleware
+    app.use('/api', apiRouter);
+    
+    // Create HTTP server
+    const server = createServer(app);
 
     // importantly only setup vite in development and after
     // setting up all the other routes so the catch-all route

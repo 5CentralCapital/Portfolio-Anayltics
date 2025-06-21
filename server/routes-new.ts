@@ -24,17 +24,10 @@ function authenticateUser(req: any, res: any, next: any) {
   next();
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  
-  // Ensure API routes take priority over Vite middleware
-  app.use('/api/*', (req, res, next) => {
-    // Mark this as an API request to prevent Vite from intercepting
-    res.setHeader('X-API-Route', 'true');
-    next();
-  });
+export async function registerRoutes(router: any): Promise<Server> {
   
   // Auth endpoints
-  app.post('/api/auth/login', async (req, res) => {
+  router.post('/auth/login', async (req, res) => {
     try {
       const { email, password } = req.body;
       
