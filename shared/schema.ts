@@ -272,6 +272,8 @@ export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  dealAnalyzerData: z.union([z.string(), z.object({}).passthrough()]).optional()
 });
 
 export const insertCompanyMetricSchema = createInsertSchema(companyMetrics).omit({
