@@ -1674,15 +1674,71 @@ export default function AssetManagement() {
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <p className="text-sm text-green-700 dark:text-green-300">Annual Cash Flow</p>
-                                <p className={`font-medium ${parseFloat(showPropertyDetailModal.cashFlow) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {formatCurrency(showPropertyDetailModal.cashFlow)}
-                                </p>
+                                {(() => {
+                                  // Calculate annual cash flow from Deal Analyzer data
+                                  let annualCashFlow = 0;
+                                  
+                                  if (dealAnalyzerData?.calculations) {
+                                    // Use Deal Analyzer calculations if available
+                                    annualCashFlow = dealAnalyzerData.calculations.annualCashFlow || 0;
+                                  } else if (dealAnalyzerData?.rentRoll && dealAnalyzerData?.incomeAndExpenses) {
+                                    // Calculate from rent roll and expenses
+                                    const grossRentalIncome = dealAnalyzerData.rentRoll.reduce((sum: number, unit: any) => 
+                                      sum + (unit.proFormaRent || 0), 0) * 12;
+                                    
+                                    const totalExpenses = (dealAnalyzerData.incomeAndExpenses.operatingExpenses || [])
+                                      .reduce((sum: number, expense: any) => sum + (expense.annualAmount || 0), 0);
+                                    
+                                    const assumedDebtService = grossRentalIncome * 0.6; // Estimate if not available
+                                    annualCashFlow = grossRentalIncome - totalExpenses - assumedDebtService;
+                                  } else {
+                                    // Fallback to stored value
+                                    annualCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
+                                  }
+                                  
+                                  return (
+                                    <p className={`font-medium ${annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {formatCurrency(annualCashFlow)}
+                                    </p>
+                                  );
+                                })()}
                               </div>
                               <div>
                                 <p className="text-sm text-green-700 dark:text-green-300">Cash-on-Cash Return</p>
-                                <p className={`font-medium ${parseFloat(showPropertyDetailModal.cashOnCashReturn) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {formatPercentage(showPropertyDetailModal.cashOnCashReturn)}
-                                </p>
+                                {(() => {
+                                  // Calculate cash-on-cash return
+                                  let annualCashFlow = 0;
+                                  let cashOnCashReturn = 0;
+                                  const initialCapital = parseFloat(showPropertyDetailModal.initialCapitalRequired || '0');
+                                  
+                                  if (dealAnalyzerData?.calculations) {
+                                    // Use Deal Analyzer calculations if available
+                                    annualCashFlow = dealAnalyzerData.calculations.annualCashFlow || 0;
+                                    cashOnCashReturn = dealAnalyzerData.calculations.cashOnCashReturn || 0;
+                                  } else if (dealAnalyzerData?.rentRoll && dealAnalyzerData?.incomeAndExpenses) {
+                                    // Calculate from rent roll and expenses
+                                    const grossRentalIncome = dealAnalyzerData.rentRoll.reduce((sum: number, unit: any) => 
+                                      sum + (unit.proFormaRent || 0), 0) * 12;
+                                    
+                                    const totalExpenses = (dealAnalyzerData.incomeAndExpenses.operatingExpenses || [])
+                                      .reduce((sum: number, expense: any) => sum + (expense.annualAmount || 0), 0);
+                                    
+                                    const assumedDebtService = grossRentalIncome * 0.6; // Estimate if not available
+                                    annualCashFlow = grossRentalIncome - totalExpenses - assumedDebtService;
+                                    
+                                    cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) * 100 : 0;
+                                  } else {
+                                    // Calculate from stored cash flow
+                                    annualCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
+                                    cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) * 100 : 0;
+                                  }
+                                  
+                                  return (
+                                    <p className={`font-medium ${cashOnCashReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {formatPercentage(cashOnCashReturn)}
+                                    </p>
+                                  );
+                                })()}
                               </div>
                             </div>
                           </div>
@@ -1745,51 +1801,81 @@ export default function AssetManagement() {
                               </div>
                               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {dealAnalyzerData.unitTypes.map((unitType: any, index: number) => (
-                                  <div key={index} className="bg-white dark:bg-gray-700 rounded p-4">
+                                  <div key={index} className="bg-white dark:bg-gray-700 rounded p-4 relative">
                                     {isEditing ? (
                                       <div className="space-y-2">
-                                        <input
-                                          type="text"
-                                          value={unitType.name}
-                                          onChange={(e) => {
-                                            const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
-                                            dealData.unitTypes[index].name = e.target.value;
-                                            handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
-                                          }}
-                                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm font-medium"
-                                        />
+                                        <div className="flex justify-between items-start">
+                                          <input
+                                            type="text"
+                                            value={unitType.name}
+                                            onChange={(e) => {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              dealData.unitTypes[index].name = e.target.value;
+                                              handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                            }}
+                                            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm font-medium mr-2"
+                                          />
+                                          <button
+                                            onClick={() => {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              dealData.unitTypes.splice(index, 1);
+                                              // Also remove any rent roll entries that reference this unit type
+                                              if (dealData.rentRoll) {
+                                                dealData.rentRoll = dealData.rentRoll.filter((unit: any) => unit.unitTypeId !== unitType.id);
+                                              }
+                                              handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                            }}
+                                            className="text-red-600 hover:text-red-800 p-1"
+                                            title="Delete unit type"
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </button>
+                                        </div>
                                         <div>
                                           <label className="text-xs text-gray-600 dark:text-gray-400">Market Rent:</label>
                                           <input
                                             type="number"
-                                            value={unitType.marketRent}
+                                            value={unitType.marketRent || ''}
                                             onChange={(e) => {
                                               const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
-                                              dealData.unitTypes[index].marketRent = parseFloat(e.target.value) || 0;
+                                              const newMarketRent = parseFloat(e.target.value) || 0;
+                                              dealData.unitTypes[index].marketRent = newMarketRent;
+                                              
+                                              // Update market rent in rent roll for units of this type
+                                              if (dealData.rentRoll) {
+                                                dealData.rentRoll.forEach((unit: any) => {
+                                                  if (unit.unitTypeId === unitType.id) {
+                                                    // Update the market rent reference in rent roll if needed
+                                                  }
+                                                });
+                                              }
+                                              
                                               handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                             }}
                                             className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                                            placeholder="Enter market rent"
                                           />
                                         </div>
                                         <div>
                                           <label className="text-xs text-gray-600 dark:text-gray-400">Square Feet:</label>
                                           <input
                                             type="number"
-                                            value={unitType.sqft}
+                                            value={unitType.sqft || ''}
                                             onChange={(e) => {
                                               const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                                               dealData.unitTypes[index].sqft = parseFloat(e.target.value) || 0;
                                               handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                             }}
                                             className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                                            placeholder="Enter square feet"
                                           />
                                         </div>
                                       </div>
                                     ) : (
                                       <>
                                         <h4 className="font-medium text-gray-900 dark:text-white">{unitType.name}</h4>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">Market Rent: {formatCurrency(unitType.marketRent)}</p>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">Square Feet: {unitType.sqft}</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Market Rent: {formatCurrency(unitType.marketRent || 0)}</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Square Feet: {unitType.sqft || 0}</p>
                                       </>
                                     )}
                                   </div>
@@ -1835,8 +1921,13 @@ export default function AssetManagement() {
                                   </thead>
                                   <tbody className="divide-y divide-green-200 dark:divide-green-700">
                                     {dealAnalyzerData.rentRoll.map((unit: any, index: number) => {
-                                      const unitType = dealAnalyzerData.unitTypes.find((ut: any) => ut.id === unit.unitTypeId);
-                                      const upside = unitType ? unitType.marketRent - unit.proFormaRent : 0;
+                                      // Get the latest unit type data from the editing state
+                                      const currentDealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
+                                      const unitType = currentDealData.unitTypes.find((ut: any) => ut.id === unit.unitTypeId);
+                                      const marketRent = unitType?.marketRent || 0;
+                                      const currentRent = unit.proFormaRent || 0;
+                                      const upside = marketRent - currentRent;
+                                      
                                       return (
                                         <tr key={index}>
                                           <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
@@ -1850,6 +1941,7 @@ export default function AssetManagement() {
                                                   handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                                 }}
                                                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                                placeholder="Unit number"
                                               />
                                             ) : (
                                               `Unit ${unit.unitNumber}`
@@ -1858,7 +1950,7 @@ export default function AssetManagement() {
                                           <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
                                             {isEditing ? (
                                               <select
-                                                value={unit.unitTypeId}
+                                                value={unit.unitTypeId || ''}
                                                 onChange={(e) => {
                                                   const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                                                   dealData.rentRoll[index].unitTypeId = e.target.value;
@@ -1866,7 +1958,8 @@ export default function AssetManagement() {
                                                 }}
                                                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                                               >
-                                                {dealAnalyzerData.unitTypes.map((ut: any) => (
+                                                <option value="">Select unit type</option>
+                                                {currentDealData.unitTypes.map((ut: any) => (
                                                   <option key={ut.id} value={ut.id}>{ut.name}</option>
                                                 ))}
                                               </select>
@@ -1878,21 +1971,24 @@ export default function AssetManagement() {
                                             {isEditing ? (
                                               <input
                                                 type="number"
-                                                value={unit.proFormaRent}
+                                                value={unit.proFormaRent || ''}
                                                 onChange={(e) => {
                                                   const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                                                   dealData.rentRoll[index].proFormaRent = parseFloat(e.target.value) || 0;
                                                   handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                                 }}
                                                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                                placeholder="Current rent"
                                               />
                                             ) : (
-                                              formatCurrency(unit.proFormaRent)
+                                              formatCurrency(currentRent)
                                             )}
                                           </td>
-                                          <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">{formatCurrency(unitType?.marketRent || 0)}</td>
+                                          <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
+                                            {formatCurrency(marketRent)}
+                                          </td>
                                           <td className={`px-4 py-2 text-sm font-medium ${upside >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            {formatCurrency(upside)}
+                                            {upside >= 0 ? '+' : ''}{formatCurrency(upside)}
                                           </td>
                                           {isEditing && (
                                             <td className="px-4 py-2">
@@ -1903,6 +1999,7 @@ export default function AssetManagement() {
                                                   handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                                 }}
                                                 className="text-red-600 hover:text-red-800"
+                                                title="Delete unit"
                                               >
                                                 <Trash2 className="h-4 w-4" />
                                               </button>
@@ -2604,7 +2701,10 @@ export default function AssetManagement() {
                                       step="5"
                                       min="50"
                                       max="90"
-                                      value={(dealAnalyzerData?.refinanceAnalysis?.ltv || 0.75) * 100}
+                                      value={(() => {
+                                        const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
+                                        return (currentData?.refinanceAnalysis?.ltv || 0.75) * 100;
+                                      })()}
                                       onChange={(e) => {
                                         const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                                         if (!dealData.refinanceAnalysis) dealData.refinanceAnalysis = {};
@@ -2612,6 +2712,7 @@ export default function AssetManagement() {
                                         handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                       }}
                                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                      placeholder="Enter LTV percentage"
                                     />
                                   ) : (
                                     <p className="font-medium text-indigo-900 dark:text-indigo-200">
@@ -2627,7 +2728,10 @@ export default function AssetManagement() {
                                       step="0.25"
                                       min="3"
                                       max="12"
-                                      value={(dealAnalyzerData?.refinanceAnalysis?.interestRate || 0.065) * 100}
+                                      value={(() => {
+                                        const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
+                                        return (currentData?.refinanceAnalysis?.interestRate || 0.065) * 100;
+                                      })()}
                                       onChange={(e) => {
                                         const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                                         if (!dealData.refinanceAnalysis) dealData.refinanceAnalysis = {};
@@ -2635,6 +2739,7 @@ export default function AssetManagement() {
                                         handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                       }}
                                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                      placeholder="Enter interest rate"
                                     />
                                   ) : (
                                     <p className="font-medium text-indigo-900 dark:text-indigo-200">
@@ -2647,7 +2752,10 @@ export default function AssetManagement() {
                                   {isEditing ? (
                                     <input
                                       type="number"
-                                      value={dealAnalyzerData?.refinanceAnalysis?.closingCosts || 5000}
+                                      value={(() => {
+                                        const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
+                                        return currentData?.refinanceAnalysis?.closingCosts || 5000;
+                                      })()}
                                       onChange={(e) => {
                                         const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                                         if (!dealData.refinanceAnalysis) dealData.refinanceAnalysis = {};
@@ -2655,6 +2763,7 @@ export default function AssetManagement() {
                                         handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                       }}
                                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                      placeholder="Enter closing costs"
                                     />
                                   ) : (
                                     <p className="font-medium text-indigo-900 dark:text-indigo-200">
