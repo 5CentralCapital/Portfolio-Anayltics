@@ -53,18 +53,74 @@ export interface PropertyData {
 export function calculatePropertyMetrics(property: PropertyData): PropertyMetrics {
   const dealData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : null;
   
-  // Base values from database (these are the authoritative source)
-  const monthlyCashFlow = parseFloat(property.cashFlow || '0');
-  const annualCashFlow = monthlyCashFlow * 12;
-  const arv = parseFloat(property.arvAtTimePurchased || '0');
-  const initialCapitalRequired = parseFloat(property.initialCapitalRequired || '0');
+  // Base values from database
   const acquisitionPrice = parseFloat(property.acquisitionPrice || '0');
   const rehabCosts = parseFloat(property.rehabCosts || '0');
+  const arv = parseFloat(property.arvAtTimePurchased || '0');
+  const initialCapitalRequired = parseFloat(property.initialCapitalRequired || '0');
   
-  // Cash-on-Cash Return: Use stored value if available, otherwise calculate
+  // Calculate real-time cash flow from deal analyzer data if available
+  let monthlyCashFlow = parseFloat(property.cashFlow || '0');
+  let annualCashFlow = monthlyCashFlow * 12;
   let cashOnCashReturn = parseFloat(property.cashOnCashReturn || '0');
-  if (cashOnCashReturn === 0 && initialCapitalRequired > 0) {
-    cashOnCashReturn = (annualCashFlow / initialCapitalRequired) * 100;
+  
+  // If deal analyzer data exists, recalculate cash flow from current income/expenses
+  if (dealData) {
+    let grossRentalIncome = 0;
+    let effectiveGrossIncome = 0;
+    let totalExpenses = 0;
+    let debtService = 0;
+    
+    // Calculate income from rent roll
+    if (dealData.rentRoll && Array.isArray(dealData.rentRoll)) {
+      grossRentalIncome = dealData.rentRoll.reduce((sum: number, unit: any) => 
+        sum + (parseFloat(unit.proFormaRent) || 0), 0) * 12;
+    }
+    
+    const vacancyRate = dealData.assumptions?.vacancyRate || 0.05;
+    effectiveGrossIncome = grossRentalIncome * (1 - vacancyRate);
+    
+    // Calculate expenses from income and expenses data
+    if (dealData.incomeAndExpenses?.operatingExpenses) {
+      totalExpenses = dealData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
+        sum + (parseFloat(expense.annualAmount) || 0), 0);
+    } else if (dealData.expenses) {
+      totalExpenses = Object.values(dealData.expenses).reduce((sum: number, val: any) => 
+        sum + (parseFloat(val) || 0), 0);
+    }
+    
+    const noi = effectiveGrossIncome - totalExpenses;
+    
+    // Calculate debt service from active loan
+    if (dealData.financing?.loans) {
+      const activeLoan = dealData.financing.loans.find((loan: any) => loan.isActive);
+      if (activeLoan) {
+        const monthlyPayment = parseFloat(activeLoan.monthlyPayment || '0');
+        debtService = monthlyPayment * 12;
+      }
+    } else if (dealData.assumptions) {
+      // Fall back to assumptions if no active loan
+      const loanAmount = acquisitionPrice * (dealData.assumptions.loanPercentage || 0.8);
+      const interestRate = dealData.assumptions.interestRate || 0.07;
+      const loanTermYears = dealData.assumptions.loanTermYears || 30;
+      
+      if (loanAmount > 0 && interestRate > 0) {
+        const monthlyRate = interestRate / 12;
+        const numPayments = loanTermYears * 12;
+        const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+          (Math.pow(1 + monthlyRate, numPayments) - 1);
+        debtService = monthlyPayment * 12;
+      }
+    }
+    
+    // Recalculate cash flow from NOI minus debt service
+    annualCashFlow = noi - debtService;
+    monthlyCashFlow = annualCashFlow / 12;
+    
+    // Recalculate cash-on-cash return
+    if (initialCapitalRequired > 0) {
+      cashOnCashReturn = (annualCashFlow / initialCapitalRequired) * 100;
+    }
   }
   
   // Total Profit calculation
@@ -94,7 +150,7 @@ export function calculatePropertyMetrics(property: PropertyData): PropertyMetric
     }
   }
   
-  // Calculate income and expenses from deal analyzer data or estimates
+  // Calculate additional metrics for completeness
   let grossRentalIncome = 0;
   let effectiveGrossIncome = 0;
   let totalExpenses = 0;
@@ -111,8 +167,11 @@ export function calculatePropertyMetrics(property: PropertyData): PropertyMetric
     const vacancyRate = dealData.assumptions?.vacancyRate || 0.05;
     effectiveGrossIncome = grossRentalIncome * (1 - vacancyRate);
     
-    // Calculate expenses
-    if (dealData.expenses) {
+    // Calculate expenses from income and expenses data
+    if (dealData.incomeAndExpenses?.operatingExpenses) {
+      totalExpenses = dealData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
+        sum + (parseFloat(expense.annualAmount) || 0), 0);
+    } else if (dealData.expenses) {
       totalExpenses = Object.values(dealData.expenses).reduce((sum: number, val: any) => 
         sum + (parseFloat(val) || 0), 0);
     }

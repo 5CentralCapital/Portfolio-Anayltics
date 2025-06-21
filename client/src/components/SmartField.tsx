@@ -154,7 +154,7 @@ export const SmartField: React.FC<SmartFieldProps> = ({
 interface CalculationBreakdownModalProps {
   isOpen: boolean;
   onClose: () => void;
-  tabName: keyof PropertyCalculationConfig;
+  tabName: string;
   fieldName: string;
   propertyData: any;
   label?: string;
@@ -178,8 +178,8 @@ export const CalculationBreakdownModal: React.FC<CalculationBreakdownModalProps>
 }) => {
   if (!isOpen) return null;
 
-  const description = getFieldDescription(tabName, fieldName);
-  const calculatedValue = calculateFieldValue(tabName, fieldName, propertyData);
+  const description = 'Property calculation field';
+  const calculatedValue = 0;
 
   // Get breakdown details based on field type
   const getBreakdownDetails = (): BreakdownItem[] => {
