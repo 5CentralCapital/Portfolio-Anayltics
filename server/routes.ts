@@ -85,7 +85,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.updateUserLastLogin(user.id);
 
-      // Create session token
+      // Set up session data
+      (req as any).session.userId = user.id;
+      (req as any).session.userEmail = user.email;
+
+      // Also create session token for backward compatibility
       const sessionToken = `session_${user.id}_${Date.now()}_${Math.random().toString(36)}`;
       activeSessions.set(sessionToken, {
         userId: user.id,
@@ -111,12 +115,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/logout", async (req, res) => {
+  app.post("/api/auth/logout", async (req: any, res) => {
+    // Clear session data
+    if (req.session) {
+      req.session.destroy((err: any) => {
+        if (err) {
+          console.error('Session destruction error:', err);
+        }
+      });
+    }
+
+    // Also clean up token-based sessions for backward compatibility
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       activeSessions.delete(token);
     }
+    
     res.json({ message: "Logged out successfully" });
   });
 
