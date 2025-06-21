@@ -506,7 +506,9 @@ export default function AssetManagement() {
           {properties.filter((p: Property) => p.status === 'Under Contract').length > 0 ? (
             <div className="space-y-3 stagger-children">
               {properties.filter((p: Property) => p.status === 'Under Contract').map((property: Property) => (
-                <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover-scale transition-all-smooth card-hover cursor-pointer">
+                <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover-scale transition-all-smooth card-hover cursor-pointer"
+                     onDoubleClick={() => handlePropertyDoubleClick(property)}
+                     title="Double-click for financial breakdown">
                   <div className="flex justify-between items-center">
                     <div>
                       <h3 className="font-semibold text-gray-900 dark:text-white">{property.address}</h3>
@@ -727,152 +729,287 @@ export default function AssetManagement() {
         </div>
       </div>
 
-      {/* Property Detail Modal */}
+      {/* Property Financial Breakdown Modal */}
       {selectedProperty && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {selectedProperty.address}
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {selectedProperty.city}, {selectedProperty.state} {selectedProperty.zipCode || ''}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  selectedProperty.status === 'Cashflowing' 
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                }`}>
-                  {selectedProperty.status}
-                </span>
-                <button
-                  onClick={closePropertyModal}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Property Financial Analysis - {selectedProperty.address}
+              </h2>
+              <button
+                onClick={closePropertyModal}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X className="h-6 w-6" />
+              </button>
             </div>
 
-            {/* Modal Content */}
-            <div className="p-6">
-              <div className="grid md:grid-cols-2 gap-8">
-                {/* Left Column - Property Details */}
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Property Information</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Units</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">{selectedProperty.apartments}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Entity</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">{selectedProperty.entity || 'N/A'}</span>
-                      </div>
-                      {selectedProperty.acquisitionDate && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">Acquisition Date</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">
-                            {new Date(selectedProperty.acquisitionDate).toLocaleDateString()}
-                          </span>
-                        </div>
-                      )}
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Financial Breakdown */}
+              <div className="space-y-6">
+                {/* Revenue Section */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                  <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-4 flex items-center">
+                    <DollarSign className="h-5 w-5 mr-2" />
+                    Revenue
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-blue-700 dark:text-blue-300">Gross Rent (Annual)</span>
+                      <span className="font-semibold text-blue-900 dark:text-blue-200">
+                        {formatCurrency(Number(selectedProperty.cashFlow) * 12)}
+                      </span>
                     </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Financial Summary</h3>
-                    <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-blue-700 dark:text-blue-300">Vacancy Loss (5.0%)</span>
+                      <span className="font-semibold text-red-600">
+                        -{formatCurrency(Number(selectedProperty.cashFlow) * 12 * 0.05)}
+                      </span>
+                    </div>
+                    <div className="border-t border-blue-300 dark:border-blue-700 pt-2">
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Acquisition Price</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(selectedProperty.acquisitionPrice)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Rehab Costs</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(selectedProperty.rehabCosts)}</span>
-                      </div>
-                      {selectedProperty.arvAtTimePurchased && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">ARV at Purchase</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(selectedProperty.arvAtTimePurchased)}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Initial Capital Required</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(selectedProperty.initialCapitalRequired)}</span>
+                        <span className="font-semibold text-blue-900 dark:text-blue-200">Net Revenue</span>
+                        <span className="font-bold text-blue-900 dark:text-blue-200">
+                          {formatCurrency(Number(selectedProperty.cashFlow) * 12 * 0.95)}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Right Column - Performance Metrics */}
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Performance Metrics</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Monthly Cash Flow</span>
-                        <span className="font-semibold text-green-600">{formatCurrency(selectedProperty.cashFlow)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Cash-on-Cash Return</span>
-                        <span className="font-semibold text-blue-600">{formatPercentage(selectedProperty.cashOnCashReturn)}</span>
-                      </div>
-                      {selectedProperty.annualizedReturn && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">Annualized Return</span>
-                          <span className="font-semibold text-purple-600">{formatPercentage(selectedProperty.annualizedReturn)}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Total Profits</span>
-                        <span className="font-semibold text-green-600">{formatCurrency(selectedProperty.totalProfits)}</span>
-                      </div>
-                    </div>
-                  </div>
+                {/* Expenses Section */}
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                  <h3 className="text-lg font-semibold text-red-900 dark:text-red-300 mb-4 flex items-center">
+                    <DollarSign className="h-5 w-5 mr-2" />
+                    Expenses
+                  </h3>
+                  <div className="space-y-3">
+                    {(() => {
+                      const grossRent = Number(selectedProperty.cashFlow) * 12;
+                      const propertyTax = grossRent * 0.12;
+                      const insurance = grossRent * 0.06;
+                      const maintenance = grossRent * 0.08;
+                      const waterSewerTrash = grossRent * 0.04;
+                      const capitalReserves = grossRent * 0.032;
+                      const utilities = grossRent * 0.024;
+                      const other = grossRent * 0.016;
+                      const managementFee = grossRent * 0.08;
+                      const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
 
-                  {/* Sale Information (if sold) */}
-                  {selectedProperty.status === 'Sold' && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Sale Information</h3>
-                      <div className="space-y-3">
-                        {selectedProperty.salePrice && (
+                      return (
+                        <>
                           <div className="flex justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">Sale Price</span>
-                            <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(selectedProperty.salePrice)}</span>
+                            <span className="text-red-700 dark:text-red-300">Property Tax</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(propertyTax)}</span>
                           </div>
-                        )}
-                        {selectedProperty.yearsHeld && (
                           <div className="flex justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">Years Held</span>
-                            <span className="font-semibold text-gray-900 dark:text-white">{selectedProperty.yearsHeld}</span>
+                            <span className="text-red-700 dark:text-red-300">Insurance</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(insurance)}</span>
                           </div>
-                        )}
-                        {selectedProperty.salePoints && (
                           <div className="flex justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">Sale Points</span>
-                            <span className="font-semibold text-gray-900 dark:text-white">{selectedProperty.salePoints}</span>
+                            <span className="text-red-700 dark:text-red-300">Maintenance</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(maintenance)}</span>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                          <div className="flex justify-between">
+                            <span className="text-red-700 dark:text-red-300">Water/Sewer/Trash</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(waterSewerTrash)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-red-700 dark:text-red-300">Capital Reserves</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(capitalReserves)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-red-700 dark:text-red-300">Utilities</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(utilities)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-red-700 dark:text-red-300">Other</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(other)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-red-700 dark:text-red-300">Management Fee (8%)</span>
+                            <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(managementFee)}</span>
+                          </div>
+                          <div className="border-t border-red-300 dark:border-red-700 pt-2">
+                            <div className="flex justify-between">
+                              <span className="font-semibold text-red-900 dark:text-red-200">Total Expenses</span>
+                              <span className="font-bold text-red-900 dark:text-red-200">{formatCurrency(totalExpenses)}</span>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Net Operating Income */}
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                  <h3 className="text-lg font-semibold text-green-900 dark:text-green-300 mb-4 flex items-center">
+                    <TrendingUp className="h-5 w-5 mr-2" />
+                    Net Operating Income
+                  </h3>
+                  <div className="space-y-3">
+                    {(() => {
+                      const grossRent = Number(selectedProperty.cashFlow) * 12;
+                      const netRevenue = grossRent * 0.95;
+                      const totalExpenses = grossRent * 0.448; 
+                      const noi = netRevenue - totalExpenses;
+                      const monthlyDebtService = grossRent * 0.055;
+                      const netCashFlow = (noi - (monthlyDebtService * 12)) / 12;
+
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="font-semibold text-green-900 dark:text-green-200">Net Operating Income (NOI)</span>
+                            <span className="font-bold text-green-900 dark:text-green-200">{formatCurrency(noi)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-green-700 dark:text-green-300">Monthly Debt Service</span>
+                            <span className="font-semibold text-red-600">-{formatCurrency(monthlyDebtService)}</span>
+                          </div>
+                          <div className="border-t border-green-300 dark:border-green-700 pt-2">
+                            <div className="flex justify-between">
+                              <span className="font-semibold text-green-900 dark:text-green-200">Net Cash Flow (Monthly)</span>
+                              <span className={`font-bold ${netCashFlow > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatCurrency(netCashFlow)}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
               </div>
 
-              {/* Modal Footer */}
-              <div className="mt-8 flex justify-end">
-                <button
-                  onClick={closePropertyModal}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-                >
-                  Close
-                </button>
+              {/* Investment Summary & Analysis */}
+              <div className="space-y-6">
+                {/* Investment Summary */}
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                  <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-300 mb-4 flex items-center">
+                    <PieChart className="h-5 w-5 mr-2" />
+                    Investment Summary
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-purple-700 dark:text-purple-300">Total Cash Invested</span>
+                      <span className="font-semibold text-purple-900 dark:text-purple-200">
+                        {formatCurrency(selectedProperty.initialCapitalRequired)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-purple-700 dark:text-purple-300">Annual Cash Flow</span>
+                      <span className={`font-semibold ${Number(selectedProperty.cashFlow) * 12 > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(Number(selectedProperty.cashFlow) * 12)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-purple-700 dark:text-purple-300">Cash-Out at Refi</span>
+                      <span className="font-semibold text-purple-900 dark:text-purple-200">
+                        {formatCurrency(Number(selectedProperty.totalProfits))}
+                      </span>
+                    </div>
+                    <div className="border-t border-purple-300 dark:border-purple-700 pt-2">
+                      <div className="flex justify-between">
+                        <span className="font-semibold text-purple-900 dark:text-purple-200">Total Return</span>
+                        <span className={`font-bold ${Number(selectedProperty.totalProfits) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatCurrency(Number(selectedProperty.totalProfits))}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Loan Analysis */}
+                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+                  <h3 className="text-lg font-semibold text-orange-900 dark:text-orange-300 mb-4 flex items-center">
+                    <Calculator className="h-5 w-5 mr-2" />
+                    Loan Analysis
+                  </h3>
+                  <div className="space-y-3">
+                    {(() => {
+                      const acquisitionPrice = Number(selectedProperty.acquisitionPrice);
+                      const ltcLoan = acquisitionPrice * 0.8;
+                      const arvLoan = Number(selectedProperty.arvAtTimePurchased) * 0.65;
+                      const monthlyDebtService = acquisitionPrice * 0.055 / 12;
+                      const interestRate = 8.75;
+
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-orange-700 dark:text-orange-300">Initial Loan (LTC)</span>
+                            <span className="font-semibold text-orange-900 dark:text-orange-200">{formatCurrency(ltcLoan)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-orange-700 dark:text-orange-300">Max Loan Amount (65% ARV)</span>
+                            <span className="font-semibold text-orange-900 dark:text-orange-200">{formatCurrency(arvLoan)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-orange-700 dark:text-orange-300">Interest Rate</span>
+                            <span className="font-semibold text-orange-900 dark:text-orange-200">{interestRate}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-orange-700 dark:text-orange-300">Monthly Payment</span>
+                            <span className="font-semibold text-orange-900 dark:text-orange-200">{formatCurrency(monthlyDebtService)}</span>
+                          </div>
+                          <div className="border-t border-orange-300 dark:border-orange-700 pt-2">
+                            <div className="flex justify-between">
+                              <span className="font-semibold text-orange-900 dark:text-orange-200">Cash-Out Potential</span>
+                              <span className="font-bold text-green-600">{formatCurrency(Math.max(0, arvLoan - ltcLoan))}</span>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Property Details */}
+                <div className="bg-gray-50 dark:bg-gray-700/20 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-300 mb-4 flex items-center">
+                    <Building className="h-5 w-5 mr-2" />
+                    Property Details
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-700 dark:text-gray-300">Units</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-200">{selectedProperty.apartments}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-700 dark:text-gray-300">Entity</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-200">{selectedProperty.entity || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-700 dark:text-gray-300">Status</span>
+                      <span className={`font-semibold px-2 py-1 rounded-full text-xs ${
+                        selectedProperty.status === 'Cashflowing' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : selectedProperty.status === 'Rehabbing'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                          : selectedProperty.status === 'Under Contract'
+                          ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                          : selectedProperty.status === 'Sold'
+                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                      }`}>
+                        {selectedProperty.status}
+                      </span>
+                    </div>
+                    {selectedProperty.acquisitionDate && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-700 dark:text-gray-300">Acquisition Date</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-200">
+                          {new Date(selectedProperty.acquisitionDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-gray-700 dark:text-gray-300">Cash-on-Cash Return</span>
+                      <span className="font-semibold text-blue-600">{formatPercentage(selectedProperty.cashOnCashReturn)}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
