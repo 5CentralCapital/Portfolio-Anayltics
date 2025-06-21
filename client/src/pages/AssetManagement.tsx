@@ -2907,6 +2907,34 @@ export default function AssetManagement() {
 
                                     <div className="space-y-3">
                                       <div>
+                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">Loan Type</p>
+                                        {isEditing ? (
+                                          <select
+                                            value={loan.loanType || 'acquisition'}
+                                            onChange={(e) => {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              if (!dealData.loans) dealData.loans = [];
+                                              const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
+                                              if (loanIndex >= 0) {
+                                                dealData.loans[loanIndex].loanType = e.target.value;
+                                                handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                              }
+                                            }}
+                                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                          >
+                                            <option value="acquisition">Acquisition</option>
+                                            <option value="refinance">Refinance</option>
+                                            <option value="construction">Construction</option>
+                                            <option value="bridge">Bridge</option>
+                                          </select>
+                                        ) : (
+                                          <p className="font-medium text-indigo-900 dark:text-indigo-200 capitalize">
+                                            {loan.loanType}
+                                          </p>
+                                        )}
+                                      </div>
+
+                                      <div>
                                         <p className="text-sm text-indigo-700 dark:text-indigo-300">Monthly Payment</p>
                                         <p className="font-medium text-indigo-900 dark:text-indigo-200">
                                           {formatCurrency(loan.monthlyPayment || 0)}
