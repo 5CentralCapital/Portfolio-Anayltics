@@ -187,6 +187,23 @@ const formatPercentage = (value: string | number) => {
   return `${num.toFixed(1)}%`;
 };
 
+// Loan payment calculation function
+const calculateLoanPayment = (amount: number, interestRate: number, termYears: number, paymentType: string) => {
+  if (amount <= 0 || interestRate <= 0) return 0;
+  
+  const monthlyRate = interestRate / 12;
+  
+  if (paymentType === 'interest-only') {
+    return amount * monthlyRate;
+  } else {
+    // Full amortization
+    const numPayments = termYears * 12;
+    if (numPayments <= 0) return 0;
+    
+    return amount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+  }
+};
+
 export default function AssetManagement() {
   const queryClient = useQueryClient();
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -2636,7 +2653,8 @@ export default function AssetManagement() {
                                       termYears: 30,
                                       monthlyPayment: 0,
                                       isActive: dealData.loans.length === 0, // First loan is active by default
-                                      loanType: 'acquisition',
+                                      loanType: 'refinance',
+                                      paymentType: 'amortizing', // 'amortizing' or 'interest-only'
                                       startDate: new Date().toISOString().split('T')[0],
                                       remainingBalance: 0
                                     };
@@ -2659,17 +2677,19 @@ export default function AssetManagement() {
                               
                               // If no loans exist, create the original acquisition loan
                               if (loans.length === 0) {
+                                const loanAmount = parseFloat(showPropertyDetailModal.acquisitionPrice) * dealAnalyzerData.assumptions.loanPercentage;
                                 const originalLoan = {
                                   id: 1,
                                   name: 'Acquisition Loan',
-                                  amount: parseFloat(showPropertyDetailModal.acquisitionPrice) * dealAnalyzerData.assumptions.loanPercentage,
+                                  amount: loanAmount,
                                   interestRate: dealAnalyzerData.assumptions.interestRate,
                                   termYears: dealAnalyzerData.assumptions.loanTermYears,
                                   monthlyPayment: dealAnalyzerData.calculations?.monthlyDebtService || 0,
                                   isActive: true,
                                   loanType: 'acquisition',
+                                  paymentType: dealAnalyzerData.assumptions.loanTermYears <= 3 ? 'interest-only' : 'amortizing',
                                   startDate: showPropertyDetailModal.acquisitionDate || new Date().toISOString().split('T')[0],
-                                  remainingBalance: parseFloat(showPropertyDetailModal.acquisitionPrice) * dealAnalyzerData.assumptions.loanPercentage
+                                  remainingBalance: loanAmount
                                 };
                                 loans.push(originalLoan);
                               }
@@ -2763,12 +2783,15 @@ export default function AssetManagement() {
                                               if (!dealData.loans) dealData.loans = [];
                                               const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
                                               if (loanIndex >= 0) {
-                                                dealData.loans[loanIndex].amount = parseFloat(e.target.value) || 0;
-                                                // Recalculate monthly payment
                                                 const amount = parseFloat(e.target.value) || 0;
-                                                const rate = dealData.loans[loanIndex].interestRate / 12;
-                                                const payments = dealData.loans[loanIndex].termYears * 12;
-                                                dealData.loans[loanIndex].monthlyPayment = amount * (rate * Math.pow(1 + rate, payments)) / (Math.pow(1 + rate, payments) - 1);
+                                                dealData.loans[loanIndex].amount = amount;
+                                                // Recalculate monthly payment using new function
+                                                dealData.loans[loanIndex].monthlyPayment = calculateLoanPayment(
+                                                  amount,
+                                                  dealData.loans[loanIndex].interestRate,
+                                                  dealData.loans[loanIndex].termYears,
+                                                  dealData.loans[loanIndex].paymentType || 'amortizing'
+                                                );
                                                 handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                               }
                                             }}
@@ -2793,12 +2816,15 @@ export default function AssetManagement() {
                                               if (!dealData.loans) dealData.loans = [];
                                               const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
                                               if (loanIndex >= 0) {
-                                                dealData.loans[loanIndex].interestRate = (parseFloat(e.target.value) || 0) / 100;
-                                                // Recalculate monthly payment
-                                                const amount = dealData.loans[loanIndex].amount;
-                                                const rate = ((parseFloat(e.target.value) || 0) / 100) / 12;
-                                                const payments = dealData.loans[loanIndex].termYears * 12;
-                                                dealData.loans[loanIndex].monthlyPayment = amount * (rate * Math.pow(1 + rate, payments)) / (Math.pow(1 + rate, payments) - 1);
+                                                const interestRate = (parseFloat(e.target.value) || 0) / 100;
+                                                dealData.loans[loanIndex].interestRate = interestRate;
+                                                // Recalculate monthly payment using new function
+                                                dealData.loans[loanIndex].monthlyPayment = calculateLoanPayment(
+                                                  dealData.loans[loanIndex].amount,
+                                                  interestRate,
+                                                  dealData.loans[loanIndex].termYears,
+                                                  dealData.loans[loanIndex].paymentType || 'amortizing'
+                                                );
                                                 handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                               }
                                             }}
@@ -2824,12 +2850,15 @@ export default function AssetManagement() {
                                               if (!dealData.loans) dealData.loans = [];
                                               const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
                                               if (loanIndex >= 0) {
-                                                dealData.loans[loanIndex].termYears = parseInt(e.target.value) || 30;
-                                                // Recalculate monthly payment
-                                                const amount = dealData.loans[loanIndex].amount;
-                                                const rate = dealData.loans[loanIndex].interestRate / 12;
-                                                const payments = (parseInt(e.target.value) || 30) * 12;
-                                                dealData.loans[loanIndex].monthlyPayment = amount * (rate * Math.pow(1 + rate, payments)) / (Math.pow(1 + rate, payments) - 1);
+                                                const termYears = parseInt(e.target.value) || 30;
+                                                dealData.loans[loanIndex].termYears = termYears;
+                                                // Recalculate monthly payment using new function
+                                                dealData.loans[loanIndex].monthlyPayment = calculateLoanPayment(
+                                                  dealData.loans[loanIndex].amount,
+                                                  dealData.loans[loanIndex].interestRate,
+                                                  termYears,
+                                                  dealData.loans[loanIndex].paymentType || 'amortizing'
+                                                );
                                                 handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                               }
                                             }}
@@ -2843,29 +2872,34 @@ export default function AssetManagement() {
                                       </div>
                                       
                                       <div>
-                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">Loan Type</p>
+                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">Payment Type</p>
                                         {isEditing ? (
                                           <select
-                                            value={loan.loanType}
+                                            value={loan.paymentType || 'amortizing'}
                                             onChange={(e) => {
                                               const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                                               if (!dealData.loans) dealData.loans = [];
                                               const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
                                               if (loanIndex >= 0) {
-                                                dealData.loans[loanIndex].loanType = e.target.value;
+                                                dealData.loans[loanIndex].paymentType = e.target.value;
+                                                // Recalculate monthly payment with new payment type
+                                                dealData.loans[loanIndex].monthlyPayment = calculateLoanPayment(
+                                                  dealData.loans[loanIndex].amount,
+                                                  dealData.loans[loanIndex].interestRate,
+                                                  dealData.loans[loanIndex].termYears,
+                                                  e.target.value
+                                                );
                                                 handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                               }
                                             }}
                                             className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
                                           >
-                                            <option value="acquisition">Acquisition</option>
-                                            <option value="refinance">Refinance</option>
-                                            <option value="construction">Construction</option>
-                                            <option value="bridge">Bridge</option>
+                                            <option value="amortizing">Full Amortization</option>
+                                            <option value="interest-only">Interest Only</option>
                                           </select>
                                         ) : (
                                           <p className="font-medium text-indigo-900 dark:text-indigo-200 capitalize">
-                                            {loan.loanType}
+                                            {loan.paymentType === 'interest-only' ? 'Interest Only' : 'Full Amortization'}
                                           </p>
                                         )}
                                       </div>
