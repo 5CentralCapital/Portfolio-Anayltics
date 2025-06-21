@@ -3500,6 +3500,16 @@ export default function AssetManagement() {
           </div>
         </div>
       )}
+
+      {/* Calculation Breakdown Modal */}
+      <CalculationBreakdownModal
+        isOpen={calculationBreakdown.isOpen}
+        onClose={closeCalculationBreakdown}
+        tabName={calculationBreakdown.tabName}
+        fieldName={calculationBreakdown.fieldName}
+        propertyData={calculationBreakdown.propertyData}
+        label={calculationBreakdown.label}
+      />
     </div>
   );
 }
