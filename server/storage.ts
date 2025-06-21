@@ -1,358 +1,225 @@
-import { 
-  properties, 
-  propertyAssumptions,
-  unitTypes,
-  rentRoll,
-  rehabSections,
-  closingCosts,
-  holdingCosts,
-  propertyExpenses,
-  propertyIncome,
-  loans,
-  exitAnalysis,
-  monthlyProforma,
-  entities,
-  entityMemberships,
-  users,
-  complianceRequirements,
-  type Property,
-  type InsertProperty,
-  type PropertyAssumptions,
-  type InsertPropertyAssumptions,
-  type UnitType,
-  type InsertUnitType,
-  type RentRoll,
-  type InsertRentRoll,
-  type RehabSection,
-  type InsertRehabSection,
-  type ClosingCost,
-  type InsertClosingCost,
-  type HoldingCost,
-  type InsertHoldingCost,
-  type PropertyExpense,
-  type InsertPropertyExpense,
-  type PropertyIncome,
-  type InsertPropertyIncome,
-  type Loan,
-  type InsertLoan,
-  type ExitAnalysis,
-  type InsertExitAnalysis,
-  type MonthlyProforma,
-  type InsertMonthlyProforma,
-  type Entity,
-  type InsertEntity,
-  type EntityMembership,
-  type InsertEntityMembership,
-  type User,
-  type UpsertUser,
-  type ComplianceRequirement,
-  type InsertComplianceRequirement
-} from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, asc, inArray } from "drizzle-orm";
-
-export interface PropertyWithRelations extends Property {
-  assumptions?: PropertyAssumptions;
-  unitTypes?: UnitType[];
-  rentRoll?: RentRoll[];
-  rehabSections?: RehabSection[];
-  closingCosts?: ClosingCost[];
-  holdingCosts?: HoldingCost[];
-  expenses?: PropertyExpense[];
-  income?: PropertyIncome[];
-  loans?: Loan[];
-  exitAnalysis?: ExitAnalysis;
-  proforma?: MonthlyProforma[];
-}
-
-export interface DealAnalyzerImportData {
-  propertyName: string;
-  propertyAddress: string;
-  assumptions: {
-    unitCount: number;
-    purchasePrice: number;
-    loanPercentage: number;
-    interestRate: number;
-    loanTermYears: number;
-    vacancyRate: number;
-    expenseRatio: number;
-    marketCapRate: number;
-    refinanceLTV: number;
-    refinanceInterestRate: number;
-    refinanceClosingCostPercent: number;
-    dscrThreshold: number;
-  };
-  rehabBudgetSections: {
-    [sectionName: string]: Array<{
-      id: number;
-      category: string;
-      perUnitCost: string;
-      quantity: string;
-      totalCost: number;
-      spentAmount?: number;
-    }>;
-  };
-  closingCosts?: Array<{
-    category: string;
-    amount: number;
-    percentage?: number;
-  }>;
-  holdingCosts?: Array<{
-    category: string;
-    monthlyAmount: number;
-    totalAmount: number;
-  }>;
-  rentRoll?: Array<{
-    unit: string;
-    unitType: string;
-    currentRent: number;
-    proFormaRent: number;
-    squareFootage?: number;
-  }>;
-  incomeAndExpenses?: {
-    operatingExpenses: Array<{
-      category: string;
-      annualAmount: number;
-      monthlyAmount: number;
-    }>;
-    otherIncome?: Array<{
-      category: string;
-      annualAmount: number;
-      monthlyAmount: number;
-    }>;
-  };
-  financing?: {
-    loans: Array<{
-      id: number;
-      name: string;
-      amount: number;
-      interestRate: number;
-      termYears: number;
-      monthlyPayment: number;
-      loanType: string;
-      paymentType: string;
-      isActive: boolean;
-    }>;
-  };
-  exitAnalysis?: {
-    salesCapRate: number;
-    saleFactor: number;
-    saleCostsPercent: number;
-    holdPeriodYears: number;
-  };
-  proforma?: Array<{
-    month: number;
-    grossRent: number;
-    vacancy: number;
-    effectiveIncome: number;
-    operatingExpenses: number;
-    noi: number;
-    debtService: number;
-    cashFlow: number;
-  }>;
-}
+import { 
+  users, properties, companyMetrics, investorLeads, sessions, entityOwnership,
+  deals, dealRehab, dealUnits, dealExpenses, dealClosingCosts, 
+  dealHoldingCosts, dealLoans, dealOtherIncome, dealComps,
+  propertyAssumptions, propertyUnitTypes, propertyRentRoll, propertyExpenses,
+  propertyRehabBudget, propertyClosingCosts, propertyHoldingCosts,
+  propertyExitAnalysis, propertyIncomeOther
+} from "@shared/schema";
+import type { 
+  User, 
+  InsertUser, 
+  Property, 
+  InsertProperty, 
+  CompanyMetric, 
+  InsertCompanyMetric,
+  InvestorLead,
+  InsertInvestorLead,
+  EntityOwnership,
+  InsertEntityOwnership,
+  Deal,
+  InsertDeal,
+  DealRehab,
+  InsertDealRehab,
+  DealUnits,
+  InsertDealUnits,
+  DealExpenses,
+  InsertDealExpenses,
+  DealClosingCosts,
+  InsertDealClosingCosts,
+  DealHoldingCosts,
+  InsertDealHoldingCosts,
+  DealLoans,
+  InsertDealLoans,
+  DealOtherIncome,
+  InsertDealOtherIncome,
+  DealComps,
+  InsertDealComps,
+  PropertyAssumptions,
+  InsertPropertyAssumptions,
+  PropertyUnitTypes,
+  InsertPropertyUnitTypes,
+  PropertyRentRoll,
+  InsertPropertyRentRoll,
+  PropertyExpenses,
+  InsertPropertyExpenses,
+  PropertyRehabBudget,
+  InsertPropertyRehabBudget,
+  PropertyClosingCosts,
+  InsertPropertyClosingCosts,
+  PropertyHoldingCosts,
+  InsertPropertyHoldingCosts,
+  PropertyExitAnalysis,
+  InsertPropertyExitAnalysis,
+  PropertyIncomeOther,
+  InsertPropertyIncomeOther
+} from "@shared/schema";
+import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
 export interface IStorage {
   // User operations
-  getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
-
-  // Entity operations
-  getEntities(): Promise<Entity[]>;
-  getEntity(id: number): Promise<Entity | undefined>;
-  createEntity(entity: InsertEntity): Promise<Entity>;
-  updateEntity(id: number, entity: Partial<InsertEntity>): Promise<Entity | undefined>;
-  deleteEntity(id: number): Promise<void>;
-
-  // Entity membership operations
-  getEntityMemberships(entityId: number): Promise<EntityMembership[]>;
-  getUserEntityMemberships(userId: string): Promise<EntityMembership[]>;
-  createEntityMembership(membership: InsertEntityMembership): Promise<EntityMembership>;
-  updateEntityMembership(id: number, membership: Partial<InsertEntityMembership>): Promise<EntityMembership | undefined>;
-  deleteEntityMembership(id: number): Promise<void>;
-
-  // Compliance operations
-  getComplianceRequirements(entityId: number): Promise<ComplianceRequirement[]>;
-  createComplianceRequirement(requirement: InsertComplianceRequirement): Promise<ComplianceRequirement>;
-  updateComplianceRequirement(id: number, requirement: Partial<InsertComplianceRequirement>): Promise<ComplianceRequirement | undefined>;
-  deleteComplianceRequirement(id: number): Promise<void>;
-
+  getUser(id: number): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUserLastLogin(id: number): Promise<void>;
+  
   // Property operations
   getProperties(): Promise<Property[]>;
-  getPropertiesForUser(userId: string): Promise<Property[]>;
-  getProperty(id: number): Promise<PropertyWithRelations | undefined>;
+  getPropertiesForUser(userId: number): Promise<Property[]>;
+  getProperty(id: number): Promise<Property | undefined>;
   createProperty(property: InsertProperty): Promise<Property>;
   updateProperty(id: number, property: Partial<InsertProperty>): Promise<Property | undefined>;
-  deleteProperty(id: number): Promise<void>;
-
-  // Property component operations
+  deleteProperty(id: number): Promise<boolean>;
+  
+  // Company metrics operations
+  getCompanyMetrics(startDate?: string, endDate?: string): Promise<CompanyMetric[]>;
+  getLatestCompanyMetrics(): Promise<CompanyMetric | undefined>;
+  createCompanyMetric(metric: InsertCompanyMetric): Promise<CompanyMetric>;
+  
+  // Investor leads operations
+  getInvestorLeads(status?: string, limit?: number): Promise<InvestorLead[]>;
+  createInvestorLead(lead: InsertInvestorLead): Promise<InvestorLead>;
+  updateInvestorLead(id: number, lead: Partial<InsertInvestorLead>): Promise<InvestorLead | undefined>;
+  
+  // Authentication helpers
+  validatePassword(plainPassword: string, hashedPassword: string): Promise<boolean>;
+  hashPassword(password: string): Promise<string>;
+  
+  // Deal analysis operations
+  getDeals(): Promise<Deal[]>;
+  getDeal(id: number): Promise<Deal | undefined>;
+  createDeal(deal: InsertDeal): Promise<Deal>;
+  updateDeal(id: number, deal: Partial<InsertDeal>): Promise<Deal | undefined>;
+  deleteDeal(id: number): Promise<boolean>;
+  
+  // Deal rehab operations
+  getDealRehab(dealId: number): Promise<DealRehab[]>;
+  createDealRehab(rehab: InsertDealRehab): Promise<DealRehab>;
+  updateDealRehab(id: number, rehab: Partial<InsertDealRehab>): Promise<DealRehab | undefined>;
+  deleteDealRehab(id: number): Promise<boolean>;
+  
+  // Deal units operations
+  getDealUnits(dealId: number): Promise<DealUnits[]>;
+  createDealUnits(unit: InsertDealUnits): Promise<DealUnits>;
+  updateDealUnits(id: number, unit: Partial<InsertDealUnits>): Promise<DealUnits | undefined>;
+  deleteDealUnits(id: number): Promise<boolean>;
+  
+  // Deal expenses operations
+  getDealExpenses(dealId: number): Promise<DealExpenses[]>;
+  createDealExpenses(expense: InsertDealExpenses): Promise<DealExpenses>;
+  updateDealExpenses(id: number, expense: Partial<InsertDealExpenses>): Promise<DealExpenses | undefined>;
+  deleteDealExpenses(id: number): Promise<boolean>;
+  
+  // Deal closing costs operations
+  getDealClosingCosts(dealId: number): Promise<DealClosingCosts[]>;
+  createDealClosingCosts(cost: InsertDealClosingCosts): Promise<DealClosingCosts>;
+  updateDealClosingCosts(id: number, cost: Partial<InsertDealClosingCosts>): Promise<DealClosingCosts | undefined>;
+  deleteDealClosingCosts(id: number): Promise<boolean>;
+  
+  // Deal holding costs operations
+  getDealHoldingCosts(dealId: number): Promise<DealHoldingCosts[]>;
+  createDealHoldingCosts(cost: InsertDealHoldingCosts): Promise<DealHoldingCosts>;
+  updateDealHoldingCosts(id: number, cost: Partial<InsertDealHoldingCosts>): Promise<DealHoldingCosts | undefined>;
+  deleteDealHoldingCosts(id: number): Promise<boolean>;
+  
+  // Deal loans operations
+  getDealLoans(dealId: number): Promise<DealLoans[]>;
+  createDealLoans(loan: InsertDealLoans): Promise<DealLoans>;
+  updateDealLoans(id: number, loan: Partial<InsertDealLoans>): Promise<DealLoans | undefined>;
+  deleteDealLoans(id: number): Promise<boolean>;
+  
+  // Deal other income operations
+  getDealOtherIncome(dealId: number): Promise<DealOtherIncome[]>;
+  createDealOtherIncome(income: InsertDealOtherIncome): Promise<DealOtherIncome>;
+  updateDealOtherIncome(id: number, income: Partial<InsertDealOtherIncome>): Promise<DealOtherIncome | undefined>;
+  deleteDealOtherIncome(id: number): Promise<boolean>;
+  
+  // Deal comps operations
+  getDealComps(dealId: number): Promise<DealComps[]>;
+  createDealComps(comp: InsertDealComps): Promise<DealComps>;
+  updateDealComps(id: number, comp: Partial<InsertDealComps>): Promise<DealComps | undefined>;
+  deleteDealComps(id: number): Promise<boolean>;
+  
+  // Entity ownership operations
+  getUserEntityOwnership(userId: number): Promise<EntityOwnership[]>;
+  createEntityOwnership(ownership: InsertEntityOwnership): Promise<EntityOwnership>;
+  updateEntityOwnership(id: number, ownership: Partial<InsertEntityOwnership>): Promise<EntityOwnership | undefined>;
+  deleteEntityOwnership(id: number): Promise<boolean>;
+  
+  // Property Deal Analyzer normalized data operations
+  getPropertyAssumptions(propertyId: number): Promise<PropertyAssumptions | undefined>;
   createPropertyAssumptions(assumptions: InsertPropertyAssumptions): Promise<PropertyAssumptions>;
   updatePropertyAssumptions(propertyId: number, assumptions: Partial<InsertPropertyAssumptions>): Promise<PropertyAssumptions | undefined>;
   
-  createUnitType(unitType: InsertUnitType): Promise<UnitType>;
-  getUnitTypes(propertyId: number): Promise<UnitType[]>;
-  updateUnitType(id: number, unitType: Partial<InsertUnitType>): Promise<UnitType | undefined>;
-  deleteUnitType(id: number): Promise<void>;
-
-  createRentRoll(rentRoll: InsertRentRoll): Promise<RentRoll>;
-  getRentRoll(propertyId: number): Promise<RentRoll[]>;
-  updateRentRoll(id: number, rentRoll: Partial<InsertRentRoll>): Promise<RentRoll | undefined>;
-  deleteRentRoll(id: number): Promise<void>;
-
-  createRehabSection(rehabSection: InsertRehabSection): Promise<RehabSection>;
-  getRehabSections(propertyId: number): Promise<RehabSection[]>;
-  updateRehabSection(id: number, rehabSection: Partial<InsertRehabSection>): Promise<RehabSection | undefined>;
-  deleteRehabSection(id: number): Promise<void>;
-
-  createClosingCost(closingCost: InsertClosingCost): Promise<ClosingCost>;
-  getClosingCosts(propertyId: number): Promise<ClosingCost[]>;
-  updateClosingCost(id: number, closingCost: Partial<InsertClosingCost>): Promise<ClosingCost | undefined>;
-  deleteClosingCost(id: number): Promise<void>;
-
-  createHoldingCost(holdingCost: InsertHoldingCost): Promise<HoldingCost>;
-  getHoldingCosts(propertyId: number): Promise<HoldingCost[]>;
-  updateHoldingCost(id: number, holdingCost: Partial<InsertHoldingCost>): Promise<HoldingCost | undefined>;
-  deleteHoldingCost(id: number): Promise<void>;
-
-  createPropertyExpense(expense: InsertPropertyExpense): Promise<PropertyExpense>;
-  getPropertyExpenses(propertyId: number): Promise<PropertyExpense[]>;
-  updatePropertyExpense(id: number, expense: Partial<InsertPropertyExpense>): Promise<PropertyExpense | undefined>;
-  deletePropertyExpense(id: number): Promise<void>;
-
-  createPropertyIncome(income: InsertPropertyIncome): Promise<PropertyIncome>;
-  getPropertyIncome(propertyId: number): Promise<PropertyIncome[]>;
-  updatePropertyIncome(id: number, income: Partial<InsertPropertyIncome>): Promise<PropertyIncome | undefined>;
-  deletePropertyIncome(id: number): Promise<void>;
-
-  createLoan(loan: InsertLoan): Promise<Loan>;
-  getLoans(propertyId: number): Promise<Loan[]>;
-  updateLoan(id: number, loan: Partial<InsertLoan>): Promise<Loan | undefined>;
-  deleteLoan(id: number): Promise<void>;
-
-  createExitAnalysis(exitAnalysis: InsertExitAnalysis): Promise<ExitAnalysis>;
-  updateExitAnalysis(propertyId: number, exitAnalysis: Partial<InsertExitAnalysis>): Promise<ExitAnalysis | undefined>;
-
-  createMonthlyProforma(proforma: InsertMonthlyProforma): Promise<MonthlyProforma>;
-  getMonthlyProforma(propertyId: number): Promise<MonthlyProforma[]>;
-  updateMonthlyProforma(id: number, proforma: Partial<InsertMonthlyProforma>): Promise<MonthlyProforma | undefined>;
-  deleteMonthlyProforma(id: number): Promise<void>;
-
-  // Deal Analyzer import
-  importFromDealAnalyzer(dealData: DealAnalyzerImportData, entityId: number, additionalData?: {
-    acquisitionDate?: Date;
-    broker?: string;
-    legalNotes?: string;
-  }): Promise<PropertyWithRelations>;
+  getPropertyUnitTypes(propertyId: number): Promise<PropertyUnitTypes[]>;
+  createPropertyUnitTypes(unitType: InsertPropertyUnitTypes): Promise<PropertyUnitTypes>;
+  updatePropertyUnitTypes(id: number, unitType: Partial<InsertPropertyUnitTypes>): Promise<PropertyUnitTypes | undefined>;
+  deletePropertyUnitTypes(id: number): Promise<boolean>;
+  
+  getPropertyRentRoll(propertyId: number): Promise<PropertyRentRoll[]>;
+  createPropertyRentRoll(rentRoll: InsertPropertyRentRoll): Promise<PropertyRentRoll>;
+  updatePropertyRentRoll(id: number, rentRoll: Partial<InsertPropertyRentRoll>): Promise<PropertyRentRoll | undefined>;
+  deletePropertyRentRoll(id: number): Promise<boolean>;
+  
+  getPropertyExpenses(propertyId: number): Promise<PropertyExpenses[]>;
+  createPropertyExpenses(expense: InsertPropertyExpenses): Promise<PropertyExpenses>;
+  updatePropertyExpenses(id: number, expense: Partial<InsertPropertyExpenses>): Promise<PropertyExpenses | undefined>;
+  deletePropertyExpenses(id: number): Promise<boolean>;
+  
+  getPropertyRehabBudget(propertyId: number): Promise<PropertyRehabBudget[]>;
+  createPropertyRehabBudget(rehabItem: InsertPropertyRehabBudget): Promise<PropertyRehabBudget>;
+  updatePropertyRehabBudget(id: number, rehabItem: Partial<InsertPropertyRehabBudget>): Promise<PropertyRehabBudget | undefined>;
+  deletePropertyRehabBudget(id: number): Promise<boolean>;
+  
+  getPropertyClosingCosts(propertyId: number): Promise<PropertyClosingCosts[]>;
+  createPropertyClosingCosts(closingCost: InsertPropertyClosingCosts): Promise<PropertyClosingCosts>;
+  updatePropertyClosingCosts(id: number, closingCost: Partial<InsertPropertyClosingCosts>): Promise<PropertyClosingCosts | undefined>;
+  deletePropertyClosingCosts(id: number): Promise<boolean>;
+  
+  getPropertyHoldingCosts(propertyId: number): Promise<PropertyHoldingCosts[]>;
+  createPropertyHoldingCosts(holdingCost: InsertPropertyHoldingCosts): Promise<PropertyHoldingCosts>;
+  updatePropertyHoldingCosts(id: number, holdingCost: Partial<InsertPropertyHoldingCosts>): Promise<PropertyHoldingCosts | undefined>;
+  deletePropertyHoldingCosts(id: number): Promise<boolean>;
+  
+  getPropertyExitAnalysis(propertyId: number): Promise<PropertyExitAnalysis | undefined>;
+  createPropertyExitAnalysis(exitAnalysis: InsertPropertyExitAnalysis): Promise<PropertyExitAnalysis>;
+  updatePropertyExitAnalysis(propertyId: number, exitAnalysis: Partial<InsertPropertyExitAnalysis>): Promise<PropertyExitAnalysis | undefined>;
+  
+  getPropertyIncomeOther(propertyId: number): Promise<PropertyIncomeOther[]>;
+  createPropertyIncomeOther(income: InsertPropertyIncomeOther): Promise<PropertyIncomeOther>;
+  updatePropertyIncomeOther(id: number, income: Partial<InsertPropertyIncomeOther>): Promise<PropertyIncomeOther | undefined>;
+  deletePropertyIncomeOther(id: number): Promise<boolean>;
+  
+  // Helper method to sync JSON data to normalized tables
+  syncDealAnalyzerDataToTables(propertyId: number, dealAnalyzerData: string): Promise<void>;
+  
+  // Helper method to build JSON from normalized tables
+  buildDealAnalyzerDataFromTables(propertyId: number): Promise<string | null>;
 }
 
 export class DatabaseStorage implements IStorage {
   // User operations
-  async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+  async getUser(id: number): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    return result[0];
   }
 
-  // Entity operations
-  async getEntities(): Promise<Entity[]> {
-    return await db.select().from(entities).orderBy(asc(entities.name));
+  async createUser(user: InsertUser): Promise<User> {
+    const result = await db.insert(users).values(user).returning();
+    return result[0];
   }
 
-  async getEntitiesForUser(userId: number): Promise<Entity[]> {
-    const userEntities = await db
-      .select({ entity: entities })
-      .from(entityMemberships)
-      .innerJoin(entities, eq(entityMemberships.entityId, entities.id))
-      .where(eq(entityMemberships.userId, userId));
-    
-    return userEntities.map(result => result.entity);
-  }
-
-  async getEntity(id: number): Promise<Entity | undefined> {
-    const [entity] = await db.select().from(entities).where(eq(entities.id, id));
-    return entity;
-  }
-
-  async createEntity(entity: InsertEntity): Promise<Entity> {
-    const [newEntity] = await db.insert(entities).values(entity).returning();
-    return newEntity;
-  }
-
-  async updateEntity(id: number, entity: Partial<InsertEntity>): Promise<Entity | undefined> {
-    const [updatedEntity] = await db
-      .update(entities)
-      .set({ ...entity, updatedAt: new Date() })
-      .where(eq(entities.id, id))
-      .returning();
-    return updatedEntity;
-  }
-
-  async deleteEntity(id: number): Promise<void> {
-    await db.delete(entities).where(eq(entities.id, id));
-  }
-
-  // Entity membership operations
-  async getEntityMemberships(entityId: number): Promise<EntityMembership[]> {
-    return await db.select().from(entityMemberships).where(eq(entityMemberships.entityId, entityId));
-  }
-
-  async getUserEntityMemberships(userId: string): Promise<EntityMembership[]> {
-    return await db.select().from(entityMemberships).where(eq(entityMemberships.userId, userId));
-  }
-
-  async createEntityMembership(membership: InsertEntityMembership): Promise<EntityMembership> {
-    const [newMembership] = await db.insert(entityMemberships).values(membership).returning();
-    return newMembership;
-  }
-
-  async updateEntityMembership(id: number, membership: Partial<InsertEntityMembership>): Promise<EntityMembership | undefined> {
-    const [updatedMembership] = await db
-      .update(entityMemberships)
-      .set(membership)
-      .where(eq(entityMemberships.id, id))
-      .returning();
-    return updatedMembership;
-  }
-
-  async deleteEntityMembership(id: number): Promise<void> {
-    await db.delete(entityMemberships).where(eq(entityMemberships.id, id));
-  }
-
-  // Compliance operations
-  async getComplianceRequirements(entityId: number): Promise<ComplianceRequirement[]> {
-    return await db.select().from(complianceRequirements).where(eq(complianceRequirements.entityId, entityId));
-  }
-
-  async createComplianceRequirement(requirement: InsertComplianceRequirement): Promise<ComplianceRequirement> {
-    const [newRequirement] = await db.insert(complianceRequirements).values(requirement).returning();
-    return newRequirement;
-  }
-
-  async updateComplianceRequirement(id: number, requirement: Partial<InsertComplianceRequirement>): Promise<ComplianceRequirement | undefined> {
-    const [updatedRequirement] = await db
-      .update(complianceRequirements)
-      .set({ ...requirement, updatedAt: new Date() })
-      .where(eq(complianceRequirements.id, id))
-      .returning();
-    return updatedRequirement;
-  }
-
-  async deleteComplianceRequirement(id: number): Promise<void> {
-    await db.delete(complianceRequirements).where(eq(complianceRequirements.id, id));
+  async updateUserLastLogin(id: number): Promise<void> {
+    await db.update(users)
+      .set({ lastLogin: new Date(), updatedAt: new Date() })
+      .where(eq(users.id, id));
   }
 
   // Property operations
@@ -360,554 +227,687 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(properties).orderBy(desc(properties.createdAt));
   }
 
-  async getPropertiesForUser(userId: string): Promise<Property[]> {
-    // Get user's entity memberships first
-    const memberships = await this.getUserEntityMemberships(userId);
-    const entityIds = memberships.map(m => m.entityId).filter(Boolean) as number[];
+  async getPropertiesForUser(userId: number): Promise<Property[]> {
+    // Get user's entity ownerships
+    const userEntities = await this.getUserEntityOwnership(userId);
+    const userEntityNames = userEntities.map(e => e.entityName);
     
-    if (entityIds.length === 0) {
+    if (userEntityNames.length === 0) {
       return [];
     }
-
-    // Get properties for user's entities
-    return await db.select()
-      .from(properties)
-      .where(inArray(properties.entityId, entityIds))
-      .orderBy(desc(properties.createdAt));
+    
+    // Get all properties and filter by user's entities
+    const allProperties = await db.select().from(properties).orderBy(desc(properties.createdAt));
+    return allProperties.filter(property => userEntityNames.includes(property.entity || ''));
   }
 
-  async getProperty(id: number): Promise<PropertyWithRelations | undefined> {
-    const [property] = await db.select().from(properties).where(eq(properties.id, id));
-    if (!property) return undefined;
-
-    // Load all related data
-    const [assumptions] = await db.select().from(propertyAssumptions).where(eq(propertyAssumptions.propertyId, id));
-    const unitTypesData = await db.select().from(unitTypes).where(eq(unitTypes.propertyId, id));
-    const rentRollData = await db.select().from(rentRoll).where(eq(rentRoll.propertyId, id));
-    const rehabSectionsData = await db.select().from(rehabSections).where(eq(rehabSections.propertyId, id));
-    const closingCostsData = await db.select().from(closingCosts).where(eq(closingCosts.propertyId, id));
-    const holdingCostsData = await db.select().from(holdingCosts).where(eq(holdingCosts.propertyId, id));
-    const expensesData = await db.select().from(propertyExpenses).where(eq(propertyExpenses.propertyId, id));
-    const incomeData = await db.select().from(propertyIncome).where(eq(propertyIncome.propertyId, id));
-    const loansData = await db.select().from(loans).where(eq(loans.propertyId, id));
-    const [exitAnalysisData] = await db.select().from(exitAnalysis).where(eq(exitAnalysis.propertyId, id));
-    const proformaData = await db.select().from(monthlyProforma).where(eq(monthlyProforma.propertyId, id)).orderBy(asc(monthlyProforma.month));
-
-    return {
-      ...property,
-      assumptions,
-      unitTypes: unitTypesData,
-      rentRoll: rentRollData,
-      rehabSections: rehabSectionsData,
-      closingCosts: closingCostsData,
-      holdingCosts: holdingCostsData,
-      expenses: expensesData,
-      income: incomeData,
-      loans: loansData,
-      exitAnalysis: exitAnalysisData,
-      proforma: proformaData,
-    };
+  async getProperty(id: number): Promise<Property | undefined> {
+    const result = await db.select().from(properties).where(eq(properties.id, id)).limit(1);
+    return result[0];
   }
 
   async createProperty(property: InsertProperty): Promise<Property> {
-    const [newProperty] = await db.insert(properties).values(property).returning();
-    return newProperty;
+    // Handle dealAnalyzerData serialization if it exists
+    const propertyData = { ...property };
+    if (propertyData.dealAnalyzerData && typeof propertyData.dealAnalyzerData === 'object') {
+      propertyData.dealAnalyzerData = JSON.stringify(propertyData.dealAnalyzerData);
+    }
+    
+    const result = await db.insert(properties).values(propertyData).returning();
+    return result[0];
   }
 
   async updateProperty(id: number, property: Partial<InsertProperty>): Promise<Property | undefined> {
+    // Clean the update data and handle date conversion
     const updateData = { ...property };
+    
+    // Remove fields that shouldn't be updated
     delete (updateData as any).createdAt;
     delete (updateData as any).id;
-
-    const [updatedProperty] = await db
-      .update(properties)
+    
+    const result = await db.update(properties)
       .set({ ...updateData, updatedAt: new Date() })
       .where(eq(properties.id, id))
       .returning();
-    return updatedProperty;
+    return result[0];
   }
 
-  async deleteProperty(id: number): Promise<void> {
-    // Delete all related data first
-    await db.delete(propertyAssumptions).where(eq(propertyAssumptions.propertyId, id));
-    await db.delete(unitTypes).where(eq(unitTypes.propertyId, id));
-    await db.delete(rentRoll).where(eq(rentRoll.propertyId, id));
-    await db.delete(rehabSections).where(eq(rehabSections.propertyId, id));
-    await db.delete(closingCosts).where(eq(closingCosts.propertyId, id));
-    await db.delete(holdingCosts).where(eq(holdingCosts.propertyId, id));
-    await db.delete(propertyExpenses).where(eq(propertyExpenses.propertyId, id));
-    await db.delete(propertyIncome).where(eq(propertyIncome.propertyId, id));
-    await db.delete(loans).where(eq(loans.propertyId, id));
-    await db.delete(exitAnalysis).where(eq(exitAnalysis.propertyId, id));
-    await db.delete(monthlyProforma).where(eq(monthlyProforma.propertyId, id));
+  async deleteProperty(id: number): Promise<boolean> {
+    const result = await db.delete(properties).where(eq(properties.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Company metrics operations
+  async getCompanyMetrics(startDate?: string, endDate?: string): Promise<CompanyMetric[]> {
+    if (startDate && endDate) {
+      return await db.select().from(companyMetrics)
+        .where(
+          and(
+            gte(companyMetrics.metricDate, startDate),
+            lte(companyMetrics.metricDate, endDate)
+          )
+        )
+        .orderBy(desc(companyMetrics.metricDate));
+    }
     
-    // Finally delete the property
-    await db.delete(properties).where(eq(properties.id, id));
+    return await db.select().from(companyMetrics).orderBy(desc(companyMetrics.metricDate));
   }
 
-  // Property assumptions
+  async getLatestCompanyMetrics(): Promise<CompanyMetric | undefined> {
+    const result = await db.select()
+      .from(companyMetrics)
+      .orderBy(desc(companyMetrics.metricDate))
+      .limit(1);
+    return result[0];
+  }
+
+  async createCompanyMetric(metric: InsertCompanyMetric): Promise<CompanyMetric> {
+    const result = await db.insert(companyMetrics).values(metric).returning();
+    return result[0];
+  }
+
+  // Investor leads operations
+  async getInvestorLeads(status?: string, limit: number = 50): Promise<InvestorLead[]> {
+    if (status) {
+      return await db.select().from(investorLeads)
+        .where(eq(investorLeads.status, status as any))
+        .orderBy(desc(investorLeads.createdAt))
+        .limit(limit);
+    }
+    
+    return await db.select().from(investorLeads)
+      .orderBy(desc(investorLeads.createdAt))
+      .limit(limit);
+  }
+
+  async createInvestorLead(lead: InsertInvestorLead): Promise<InvestorLead> {
+    const result = await db.insert(investorLeads).values(lead).returning();
+    return result[0];
+  }
+
+  async updateInvestorLead(id: number, lead: Partial<InsertInvestorLead>): Promise<InvestorLead | undefined> {
+    const result = await db.update(investorLeads)
+      .set({ ...lead, updatedAt: new Date() })
+      .where(eq(investorLeads.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // Authentication helpers
+  async validatePassword(plainPassword: string, hashedPassword: string): Promise<boolean> {
+    return await bcrypt.compare(plainPassword, hashedPassword);
+  }
+
+  async hashPassword(password: string): Promise<string> {
+    return await bcrypt.hash(password, 12);
+  }
+
+  // Deal analysis operations
+  async getDeals(): Promise<Deal[]> {
+    return await db.select().from(deals).orderBy(desc(deals.createdAt));
+  }
+
+  async getDeal(id: number): Promise<Deal | undefined> {
+    const [deal] = await db.select().from(deals).where(eq(deals.id, id));
+    return deal || undefined;
+  }
+
+  async createDeal(deal: InsertDeal): Promise<Deal> {
+    const [result] = await db.insert(deals).values(deal).returning();
+    return result;
+  }
+
+  async updateDeal(id: number, deal: Partial<InsertDeal>): Promise<Deal | undefined> {
+    const [result] = await db.update(deals)
+      .set({ ...deal, updatedAt: new Date() })
+      .where(eq(deals.id, id))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteDeal(id: number): Promise<boolean> {
+    const result = await db.delete(deals).where(eq(deals.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Deal rehab operations
+  async getDealRehab(dealId: number): Promise<DealRehab[]> {
+    return await db.select().from(dealRehab).where(eq(dealRehab.dealId, dealId));
+  }
+
+  async createDealRehab(rehab: InsertDealRehab): Promise<DealRehab> {
+    const [result] = await db.insert(dealRehab).values(rehab).returning();
+    return result;
+  }
+
+  async updateDealRehab(id: number, rehab: Partial<InsertDealRehab>): Promise<DealRehab | undefined> {
+    const [result] = await db.update(dealRehab)
+      .set(rehab)
+      .where(eq(dealRehab.id, id))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteDealRehab(id: number): Promise<boolean> {
+    const result = await db.delete(dealRehab).where(eq(dealRehab.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Deal units operations
+  async getDealUnits(dealId: number): Promise<DealUnits[]> {
+    return await db.select().from(dealUnits).where(eq(dealUnits.dealId, dealId));
+  }
+
+  async createDealUnits(unit: InsertDealUnits): Promise<DealUnits> {
+    const [result] = await db.insert(dealUnits).values(unit).returning();
+    return result;
+  }
+
+  async updateDealUnits(id: number, unit: Partial<InsertDealUnits>): Promise<DealUnits | undefined> {
+    const [result] = await db.update(dealUnits)
+      .set(unit)
+      .where(eq(dealUnits.id, id))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteDealUnits(id: number): Promise<boolean> {
+    const result = await db.delete(dealUnits).where(eq(dealUnits.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Deal expenses operations
+  async getDealExpenses(dealId: number): Promise<DealExpenses[]> {
+    return await db.select().from(dealExpenses).where(eq(dealExpenses.dealId, dealId));
+  }
+
+  async createDealExpenses(expense: InsertDealExpenses): Promise<DealExpenses> {
+    const [result] = await db.insert(dealExpenses).values(expense).returning();
+    return result;
+  }
+
+  async updateDealExpenses(id: number, expense: Partial<InsertDealExpenses>): Promise<DealExpenses | undefined> {
+    const [result] = await db.update(dealExpenses)
+      .set(expense)
+      .where(eq(dealExpenses.id, id))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteDealExpenses(id: number): Promise<boolean> {
+    const result = await db.delete(dealExpenses).where(eq(dealExpenses.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Deal closing costs operations
+  async getDealClosingCosts(dealId: number): Promise<DealClosingCosts[]> {
+    return await db.select().from(dealClosingCosts).where(eq(dealClosingCosts.dealId, dealId));
+  }
+
+  async createDealClosingCosts(cost: InsertDealClosingCosts): Promise<DealClosingCosts> {
+    const [result] = await db.insert(dealClosingCosts).values(cost).returning();
+    return result;
+  }
+
+  async updateDealClosingCosts(id: number, cost: Partial<InsertDealClosingCosts>): Promise<DealClosingCosts | undefined> {
+    const [result] = await db.update(dealClosingCosts)
+      .set(cost)
+      .where(eq(dealClosingCosts.id, id))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteDealClosingCosts(id: number): Promise<boolean> {
+    const result = await db.delete(dealClosingCosts).where(eq(dealClosingCosts.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Deal holding costs operations
+  async getDealHoldingCosts(dealId: number): Promise<DealHoldingCosts[]> {
+    return await db.select().from(dealHoldingCosts).where(eq(dealHoldingCosts.dealId, dealId));
+  }
+
+  async createDealHoldingCosts(cost: InsertDealHoldingCosts): Promise<DealHoldingCosts> {
+    const [result] = await db.insert(dealHoldingCosts).values(cost).returning();
+    return result;
+  }
+
+  async updateDealHoldingCosts(id: number, cost: Partial<InsertDealHoldingCosts>): Promise<DealHoldingCosts | undefined> {
+    const [result] = await db.update(dealHoldingCosts)
+      .set(cost)
+      .where(eq(dealHoldingCosts.id, id))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteDealHoldingCosts(id: number): Promise<boolean> {
+    const result = await db.delete(dealHoldingCosts).where(eq(dealHoldingCosts.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Deal loans operations
+  async getDealLoans(dealId: number): Promise<DealLoans[]> {
+    return await db.select().from(dealLoans).where(eq(dealLoans.dealId, dealId));
+  }
+
+  async createDealLoans(loan: InsertDealLoans): Promise<DealLoans> {
+    const [result] = await db.insert(dealLoans).values(loan).returning();
+    return result;
+  }
+
+  async updateDealLoans(id: number, loan: Partial<InsertDealLoans>): Promise<DealLoans | undefined> {
+    const [result] = await db.update(dealLoans)
+      .set(loan)
+      .where(eq(dealLoans.id, id))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteDealLoans(id: number): Promise<boolean> {
+    const result = await db.delete(dealLoans).where(eq(dealLoans.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Deal other income operations
+  async getDealOtherIncome(dealId: number): Promise<DealOtherIncome[]> {
+    return await db.select().from(dealOtherIncome).where(eq(dealOtherIncome.dealId, dealId));
+  }
+
+  async createDealOtherIncome(income: InsertDealOtherIncome): Promise<DealOtherIncome> {
+    const [result] = await db.insert(dealOtherIncome).values(income).returning();
+    return result;
+  }
+
+  async updateDealOtherIncome(id: number, income: Partial<InsertDealOtherIncome>): Promise<DealOtherIncome | undefined> {
+    const [result] = await db.update(dealOtherIncome)
+      .set(income)
+      .where(eq(dealOtherIncome.id, id))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteDealOtherIncome(id: number): Promise<boolean> {
+    const result = await db.delete(dealOtherIncome).where(eq(dealOtherIncome.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Deal comps operations
+  async getDealComps(dealId: number): Promise<DealComps[]> {
+    return await db.select().from(dealComps).where(eq(dealComps.dealId, dealId));
+  }
+
+  async createDealComps(comp: InsertDealComps): Promise<DealComps> {
+    const [result] = await db.insert(dealComps).values(comp).returning();
+    return result;
+  }
+
+  async updateDealComps(id: number, comp: Partial<InsertDealComps>): Promise<DealComps | undefined> {
+    const [result] = await db.update(dealComps)
+      .set(comp)
+      .where(eq(dealComps.id, id))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteDealComps(id: number): Promise<boolean> {
+    const result = await db.delete(dealComps).where(eq(dealComps.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Entity ownership operations
+  async getUserEntityOwnership(userId: number): Promise<EntityOwnership[]> {
+    return await db.select().from(entityOwnership).where(eq(entityOwnership.userId, userId));
+  }
+
+  async createEntityOwnership(ownership: InsertEntityOwnership): Promise<EntityOwnership> {
+    const [newOwnership] = await db
+      .insert(entityOwnership)
+      .values(ownership)
+      .returning();
+    return newOwnership;
+  }
+
+  async updateEntityOwnership(id: number, ownership: Partial<InsertEntityOwnership>): Promise<EntityOwnership | undefined> {
+    const [updated] = await db
+      .update(entityOwnership)
+      .set(ownership)
+      .where(eq(entityOwnership.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteEntityOwnership(id: number): Promise<boolean> {
+    const result = await db.delete(entityOwnership).where(eq(entityOwnership.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Property Deal Analyzer normalized data operations
+  async getPropertyAssumptions(propertyId: number): Promise<PropertyAssumptions | undefined> {
+    const [assumptions] = await db.select().from(propertyAssumptions).where(eq(propertyAssumptions.propertyId, propertyId));
+    return assumptions;
+  }
+
   async createPropertyAssumptions(assumptions: InsertPropertyAssumptions): Promise<PropertyAssumptions> {
-    const [newAssumptions] = await db.insert(propertyAssumptions).values(assumptions).returning();
-    return newAssumptions;
+    const [created] = await db.insert(propertyAssumptions).values(assumptions).returning();
+    return created;
   }
 
   async updatePropertyAssumptions(propertyId: number, assumptions: Partial<InsertPropertyAssumptions>): Promise<PropertyAssumptions | undefined> {
-    const [updatedAssumptions] = await db
-      .update(propertyAssumptions)
+    const [updated] = await db.update(propertyAssumptions)
       .set({ ...assumptions, updatedAt: new Date() })
       .where(eq(propertyAssumptions.propertyId, propertyId))
       .returning();
-    return updatedAssumptions;
+    return updated;
   }
 
-  // Unit types
-  async createUnitType(unitType: InsertUnitType): Promise<UnitType> {
-    const [newUnitType] = await db.insert(unitTypes).values(unitType).returning();
-    return newUnitType;
+  async getPropertyUnitTypes(propertyId: number): Promise<PropertyUnitTypes[]> {
+    return await db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, propertyId));
   }
 
-  async getUnitTypes(propertyId: number): Promise<UnitType[]> {
-    return await db.select().from(unitTypes).where(eq(unitTypes.propertyId, propertyId));
+  async createPropertyUnitTypes(unitType: InsertPropertyUnitTypes): Promise<PropertyUnitTypes> {
+    const [created] = await db.insert(propertyUnitTypes).values(unitType).returning();
+    return created;
   }
 
-  async updateUnitType(id: number, unitType: Partial<InsertUnitType>): Promise<UnitType | undefined> {
-    const [updatedUnitType] = await db
-      .update(unitTypes)
-      .set(unitType)
-      .where(eq(unitTypes.id, id))
+  async updatePropertyUnitTypes(id: number, unitType: Partial<InsertPropertyUnitTypes>): Promise<PropertyUnitTypes | undefined> {
+    const [updated] = await db.update(propertyUnitTypes)
+      .set({ ...unitType, updatedAt: new Date() })
+      .where(eq(propertyUnitTypes.id, id))
       .returning();
-    return updatedUnitType;
+    return updated;
   }
 
-  async deleteUnitType(id: number): Promise<void> {
-    await db.delete(unitTypes).where(eq(unitTypes.id, id));
+  async deletePropertyUnitTypes(id: number): Promise<boolean> {
+    const result = await db.delete(propertyUnitTypes).where(eq(propertyUnitTypes.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
-  // Rent roll
-  async createRentRoll(rentRollData: InsertRentRoll): Promise<RentRoll> {
-    const [newRentRoll] = await db.insert(rentRoll).values(rentRollData).returning();
-    return newRentRoll;
+  async getPropertyRentRoll(propertyId: number): Promise<PropertyRentRoll[]> {
+    return await db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, propertyId));
   }
 
-  async getRentRoll(propertyId: number): Promise<RentRoll[]> {
-    return await db.select().from(rentRoll).where(eq(rentRoll.propertyId, propertyId));
+  async createPropertyRentRoll(rentRoll: InsertPropertyRentRoll): Promise<PropertyRentRoll> {
+    const [created] = await db.insert(propertyRentRoll).values(rentRoll).returning();
+    return created;
   }
 
-  async updateRentRoll(id: number, rentRollData: Partial<InsertRentRoll>): Promise<RentRoll | undefined> {
-    const [updatedRentRoll] = await db
-      .update(rentRoll)
-      .set({ ...rentRollData, updatedAt: new Date() })
-      .where(eq(rentRoll.id, id))
+  async updatePropertyRentRoll(id: number, rentRoll: Partial<InsertPropertyRentRoll>): Promise<PropertyRentRoll | undefined> {
+    const [updated] = await db.update(propertyRentRoll)
+      .set({ ...rentRoll, updatedAt: new Date() })
+      .where(eq(propertyRentRoll.id, id))
       .returning();
-    return updatedRentRoll;
+    return updated;
   }
 
-  async deleteRentRoll(id: number): Promise<void> {
-    await db.delete(rentRoll).where(eq(rentRoll.id, id));
+  async deletePropertyRentRoll(id: number): Promise<boolean> {
+    const result = await db.delete(propertyRentRoll).where(eq(propertyRentRoll.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
-  // Rehab sections
-  async createRehabSection(rehabSection: InsertRehabSection): Promise<RehabSection> {
-    const [newRehabSection] = await db.insert(rehabSections).values(rehabSection).returning();
-    return newRehabSection;
-  }
-
-  async getRehabSections(propertyId: number): Promise<RehabSection[]> {
-    return await db.select().from(rehabSections).where(eq(rehabSections.propertyId, propertyId));
-  }
-
-  async updateRehabSection(id: number, rehabSection: Partial<InsertRehabSection>): Promise<RehabSection | undefined> {
-    const [updatedRehabSection] = await db
-      .update(rehabSections)
-      .set({ ...rehabSection, updatedAt: new Date() })
-      .where(eq(rehabSections.id, id))
-      .returning();
-    return updatedRehabSection;
-  }
-
-  async deleteRehabSection(id: number): Promise<void> {
-    await db.delete(rehabSections).where(eq(rehabSections.id, id));
-  }
-
-  // Closing costs
-  async createClosingCost(closingCost: InsertClosingCost): Promise<ClosingCost> {
-    const [newClosingCost] = await db.insert(closingCosts).values(closingCost).returning();
-    return newClosingCost;
-  }
-
-  async getClosingCosts(propertyId: number): Promise<ClosingCost[]> {
-    return await db.select().from(closingCosts).where(eq(closingCosts.propertyId, propertyId));
-  }
-
-  async updateClosingCost(id: number, closingCost: Partial<InsertClosingCost>): Promise<ClosingCost | undefined> {
-    const [updatedClosingCost] = await db
-      .update(closingCosts)
-      .set(closingCost)
-      .where(eq(closingCosts.id, id))
-      .returning();
-    return updatedClosingCost;
-  }
-
-  async deleteClosingCost(id: number): Promise<void> {
-    await db.delete(closingCosts).where(eq(closingCosts.id, id));
-  }
-
-  // Holding costs
-  async createHoldingCost(holdingCost: InsertHoldingCost): Promise<HoldingCost> {
-    const [newHoldingCost] = await db.insert(holdingCosts).values(holdingCost).returning();
-    return newHoldingCost;
-  }
-
-  async getHoldingCosts(propertyId: number): Promise<HoldingCost[]> {
-    return await db.select().from(holdingCosts).where(eq(holdingCosts.propertyId, propertyId));
-  }
-
-  async updateHoldingCost(id: number, holdingCost: Partial<InsertHoldingCost>): Promise<HoldingCost | undefined> {
-    const [updatedHoldingCost] = await db
-      .update(holdingCosts)
-      .set(holdingCost)
-      .where(eq(holdingCosts.id, id))
-      .returning();
-    return updatedHoldingCost;
-  }
-
-  async deleteHoldingCost(id: number): Promise<void> {
-    await db.delete(holdingCosts).where(eq(holdingCosts.id, id));
-  }
-
-  // Property expenses
-  async createPropertyExpense(expense: InsertPropertyExpense): Promise<PropertyExpense> {
-    const [newExpense] = await db.insert(propertyExpenses).values(expense).returning();
-    return newExpense;
-  }
-
-  async getPropertyExpenses(propertyId: number): Promise<PropertyExpense[]> {
+  async getPropertyExpenses(propertyId: number): Promise<PropertyExpenses[]> {
     return await db.select().from(propertyExpenses).where(eq(propertyExpenses.propertyId, propertyId));
   }
 
-  async updatePropertyExpense(id: number, expense: Partial<InsertPropertyExpense>): Promise<PropertyExpense | undefined> {
-    const [updatedExpense] = await db
-      .update(propertyExpenses)
+  async createPropertyExpenses(expense: InsertPropertyExpenses): Promise<PropertyExpenses> {
+    const [created] = await db.insert(propertyExpenses).values(expense).returning();
+    return created;
+  }
+
+  async updatePropertyExpenses(id: number, expense: Partial<InsertPropertyExpenses>): Promise<PropertyExpenses | undefined> {
+    const [updated] = await db.update(propertyExpenses)
       .set({ ...expense, updatedAt: new Date() })
       .where(eq(propertyExpenses.id, id))
       .returning();
-    return updatedExpense;
+    return updated;
   }
 
-  async deletePropertyExpense(id: number): Promise<void> {
-    await db.delete(propertyExpenses).where(eq(propertyExpenses.id, id));
+  async deletePropertyExpenses(id: number): Promise<boolean> {
+    const result = await db.delete(propertyExpenses).where(eq(propertyExpenses.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
-  // Property income
-  async createPropertyIncome(income: InsertPropertyIncome): Promise<PropertyIncome> {
-    const [newIncome] = await db.insert(propertyIncome).values(income).returning();
-    return newIncome;
+  async getPropertyRehabBudget(propertyId: number): Promise<PropertyRehabBudget[]> {
+    return await db.select().from(propertyRehabBudget).where(eq(propertyRehabBudget.propertyId, propertyId));
   }
 
-  async getPropertyIncome(propertyId: number): Promise<PropertyIncome[]> {
-    return await db.select().from(propertyIncome).where(eq(propertyIncome.propertyId, propertyId));
+  async createPropertyRehabBudget(rehabItem: InsertPropertyRehabBudget): Promise<PropertyRehabBudget> {
+    const [created] = await db.insert(propertyRehabBudget).values(rehabItem).returning();
+    return created;
   }
 
-  async updatePropertyIncome(id: number, income: Partial<InsertPropertyIncome>): Promise<PropertyIncome | undefined> {
-    const [updatedIncome] = await db
-      .update(propertyIncome)
+  async updatePropertyRehabBudget(id: number, rehabItem: Partial<InsertPropertyRehabBudget>): Promise<PropertyRehabBudget | undefined> {
+    const [updated] = await db.update(propertyRehabBudget)
+      .set({ ...rehabItem, updatedAt: new Date() })
+      .where(eq(propertyRehabBudget.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePropertyRehabBudget(id: number): Promise<boolean> {
+    const result = await db.delete(propertyRehabBudget).where(eq(propertyRehabBudget.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getPropertyClosingCosts(propertyId: number): Promise<PropertyClosingCosts[]> {
+    return await db.select().from(propertyClosingCosts).where(eq(propertyClosingCosts.propertyId, propertyId));
+  }
+
+  async createPropertyClosingCosts(closingCost: InsertPropertyClosingCosts): Promise<PropertyClosingCosts> {
+    const [created] = await db.insert(propertyClosingCosts).values(closingCost).returning();
+    return created;
+  }
+
+  async updatePropertyClosingCosts(id: number, closingCost: Partial<InsertPropertyClosingCosts>): Promise<PropertyClosingCosts | undefined> {
+    const [updated] = await db.update(propertyClosingCosts)
+      .set({ ...closingCost, updatedAt: new Date() })
+      .where(eq(propertyClosingCosts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePropertyClosingCosts(id: number): Promise<boolean> {
+    const result = await db.delete(propertyClosingCosts).where(eq(propertyClosingCosts.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getPropertyHoldingCosts(propertyId: number): Promise<PropertyHoldingCosts[]> {
+    return await db.select().from(propertyHoldingCosts).where(eq(propertyHoldingCosts.propertyId, propertyId));
+  }
+
+  async createPropertyHoldingCosts(holdingCost: InsertPropertyHoldingCosts): Promise<PropertyHoldingCosts> {
+    const [created] = await db.insert(propertyHoldingCosts).values(holdingCost).returning();
+    return created;
+  }
+
+  async updatePropertyHoldingCosts(id: number, holdingCost: Partial<InsertPropertyHoldingCosts>): Promise<PropertyHoldingCosts | undefined> {
+    const [updated] = await db.update(propertyHoldingCosts)
+      .set({ ...holdingCost, updatedAt: new Date() })
+      .where(eq(propertyHoldingCosts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePropertyHoldingCosts(id: number): Promise<boolean> {
+    const result = await db.delete(propertyHoldingCosts).where(eq(propertyHoldingCosts.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getPropertyExitAnalysis(propertyId: number): Promise<PropertyExitAnalysis | undefined> {
+    const [analysis] = await db.select().from(propertyExitAnalysis).where(eq(propertyExitAnalysis.propertyId, propertyId));
+    return analysis;
+  }
+
+  async createPropertyExitAnalysis(exitAnalysis: InsertPropertyExitAnalysis): Promise<PropertyExitAnalysis> {
+    const [created] = await db.insert(propertyExitAnalysis).values(exitAnalysis).returning();
+    return created;
+  }
+
+  async updatePropertyExitAnalysis(propertyId: number, exitAnalysis: Partial<InsertPropertyExitAnalysis>): Promise<PropertyExitAnalysis | undefined> {
+    const [updated] = await db.update(propertyExitAnalysis)
+      .set({ ...exitAnalysis, updatedAt: new Date() })
+      .where(eq(propertyExitAnalysis.propertyId, propertyId))
+      .returning();
+    return updated;
+  }
+
+  async getPropertyIncomeOther(propertyId: number): Promise<PropertyIncomeOther[]> {
+    return await db.select().from(propertyIncomeOther).where(eq(propertyIncomeOther.propertyId, propertyId));
+  }
+
+  async createPropertyIncomeOther(income: InsertPropertyIncomeOther): Promise<PropertyIncomeOther> {
+    const [created] = await db.insert(propertyIncomeOther).values(income).returning();
+    return created;
+  }
+
+  async updatePropertyIncomeOther(id: number, income: Partial<InsertPropertyIncomeOther>): Promise<PropertyIncomeOther | undefined> {
+    const [updated] = await db.update(propertyIncomeOther)
       .set({ ...income, updatedAt: new Date() })
-      .where(eq(propertyIncome.id, id))
+      .where(eq(propertyIncomeOther.id, id))
       .returning();
-    return updatedIncome;
+    return updated;
   }
 
-  async deletePropertyIncome(id: number): Promise<void> {
-    await db.delete(propertyIncome).where(eq(propertyIncome.id, id));
+  async deletePropertyIncomeOther(id: number): Promise<boolean> {
+    const result = await db.delete(propertyIncomeOther).where(eq(propertyIncomeOther.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
-  // Loans
-  async createLoan(loan: InsertLoan): Promise<Loan> {
-    const [newLoan] = await db.insert(loans).values(loan).returning();
-    return newLoan;
-  }
-
-  async getLoans(propertyId: number): Promise<Loan[]> {
-    return await db.select().from(loans).where(eq(loans.propertyId, propertyId));
-  }
-
-  async updateLoan(id: number, loan: Partial<InsertLoan>): Promise<Loan | undefined> {
-    const [updatedLoan] = await db
-      .update(loans)
-      .set({ ...loan, updatedAt: new Date() })
-      .where(eq(loans.id, id))
-      .returning();
-    return updatedLoan;
-  }
-
-  async deleteLoan(id: number): Promise<void> {
-    await db.delete(loans).where(eq(loans.id, id));
-  }
-
-  // Exit analysis
-  async createExitAnalysis(exitAnalysisData: InsertExitAnalysis): Promise<ExitAnalysis> {
-    const [newExitAnalysis] = await db.insert(exitAnalysis).values(exitAnalysisData).returning();
-    return newExitAnalysis;
-  }
-
-  async updateExitAnalysis(propertyId: number, exitAnalysisData: Partial<InsertExitAnalysis>): Promise<ExitAnalysis | undefined> {
-    const [updatedExitAnalysis] = await db
-      .update(exitAnalysis)
-      .set({ ...exitAnalysisData, updatedAt: new Date() })
-      .where(eq(exitAnalysis.propertyId, propertyId))
-      .returning();
-    return updatedExitAnalysis;
-  }
-
-  // Monthly proforma
-  async createMonthlyProforma(proforma: InsertMonthlyProforma): Promise<MonthlyProforma> {
-    const [newProforma] = await db.insert(monthlyProforma).values(proforma).returning();
-    return newProforma;
-  }
-
-  async getMonthlyProforma(propertyId: number): Promise<MonthlyProforma[]> {
-    return await db.select().from(monthlyProforma).where(eq(monthlyProforma.propertyId, propertyId)).orderBy(asc(monthlyProforma.month));
-  }
-
-  async updateMonthlyProforma(id: number, proforma: Partial<InsertMonthlyProforma>): Promise<MonthlyProforma | undefined> {
-    const [updatedProforma] = await db
-      .update(monthlyProforma)
-      .set({ ...proforma, updatedAt: new Date() })
-      .where(eq(monthlyProforma.id, id))
-      .returning();
-    return updatedProforma;
-  }
-
-  async deleteMonthlyProforma(id: number): Promise<void> {
-    await db.delete(monthlyProforma).where(eq(monthlyProforma.id, id));
-  }
-
-  // Deal Analyzer import
-  async importFromDealAnalyzer(
-    dealData: DealAnalyzerImportData, 
-    entityId: number, 
-    additionalData?: {
-      acquisitionDate?: Date;
-      broker?: string;
-      legalNotes?: string;
-    }
-  ): Promise<PropertyWithRelations> {
-    // Calculate financial metrics from deal data
-    const totalRehabCost = Object.values(dealData.rehabBudgetSections || {})
-      .flat()
-      .reduce((sum, item) => sum + (item.totalCost || 0), 0);
-
-    const totalClosingCosts = (dealData.closingCosts || [])
-      .reduce((sum, cost) => sum + (cost.amount || 0), 0);
-
-    const initialCapital = dealData.assumptions.purchasePrice + totalRehabCost + totalClosingCosts;
-
-    // Calculate ARV from exit analysis or use default
-    let arv = dealData.assumptions.purchasePrice * 1.3; // Default 30% uplift
-    if (dealData.exitAnalysis?.salesCapRate) {
-      // Calculate NOI from proforma or rent roll
-      let annualNOI = 0;
-      if (dealData.proforma && dealData.proforma.length > 0) {
-        annualNOI = dealData.proforma.reduce((sum, month) => sum + (month.noi || 0), 0);
-      }
-      if (annualNOI > 0) {
-        arv = annualNOI / (dealData.exitAnalysis.salesCapRate / 100);
-      }
-    }
-
-    // Calculate cash flow from proforma
-    let monthlyCashFlow = 0;
-    let annualCashFlow = 0;
-    if (dealData.proforma && dealData.proforma.length > 0) {
-      annualCashFlow = dealData.proforma.reduce((sum, month) => sum + (month.cashFlow || 0), 0);
-      monthlyCashFlow = annualCashFlow / 12;
-    }
-
-    // Calculate cash-on-cash return
-    const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) * 100 : 0;
-
-    // Create the main property record
-    const propertyData: InsertProperty = {
-      entityId,
-      name: dealData.propertyName,
-      address: dealData.propertyAddress,
-      city: dealData.propertyAddress.split(' ').slice(-2, -1)[0] || '',
-      state: dealData.propertyAddress.split(' ').slice(-1)[0] || '',
-      unitCount: dealData.assumptions.unitCount,
-      purchasePrice: dealData.assumptions.purchasePrice.toString(),
-      arv: arv.toString(),
-      rehabBudget: totalRehabCost.toString(),
-      initialCapital: initialCapital.toString(),
-      monthlyCashFlow: monthlyCashFlow.toString(),
-      annualCashFlow: annualCashFlow.toString(),
-      cashOnCashReturn: cashOnCashReturn.toString(),
-      status: 'Under Contract',
-      acquisitionDate: additionalData?.acquisitionDate,
-      broker: additionalData?.broker,
-      legalNotes: additionalData?.legalNotes,
-    };
-
-    const property = await this.createProperty(propertyData);
-
-    // Create assumptions
-    await this.createPropertyAssumptions({
-      propertyId: property.id,
-      loanPercentage: dealData.assumptions.loanPercentage.toString(),
-      interestRate: dealData.assumptions.interestRate.toString(),
-      termYears: dealData.assumptions.loanTermYears,
-      vacancyRate: dealData.assumptions.vacancyRate.toString(),
-      expenseRatio: dealData.assumptions.expenseRatio.toString(),
-      marketCapRate: dealData.assumptions.marketCapRate.toString(),
-      refinanceLTV: dealData.assumptions.refinanceLTV.toString(),
-      refinanceInterestRate: dealData.assumptions.refinanceInterestRate.toString(),
-      refinanceClosingCostPercent: dealData.assumptions.refinanceClosingCostPercent.toString(),
-      dscrThreshold: dealData.assumptions.dscrThreshold.toString(),
-    });
-
-    // Create unit types and rent roll
-    if (dealData.rentRoll && dealData.rentRoll.length > 0) {
-      const unitTypeMap = new Map<string, number>();
+  // Helper method to sync JSON data to normalized tables
+  async syncDealAnalyzerDataToTables(propertyId: number, dealAnalyzerData: string): Promise<void> {
+    try {
+      const data = JSON.parse(dealAnalyzerData);
       
-      // Create unique unit types
-      const uniqueUnitTypes = Array.from(new Set(dealData.rentRoll.map(unit => unit.unitType)));
-      for (const unitTypeName of uniqueUnitTypes) {
-        const sampleUnit = dealData.rentRoll.find(unit => unit.unitType === unitTypeName);
-        const unitType = await this.createUnitType({
-          propertyId: property.id,
-          name: unitTypeName,
-          marketRent: sampleUnit?.proFormaRent?.toString() || '0',
-        });
-        unitTypeMap.set(unitTypeName, unitType.id);
-      }
-
-      // Create rent roll entries
-      for (const unit of dealData.rentRoll) {
-        const unitTypeId = unitTypeMap.get(unit.unitType);
-        await this.createRentRoll({
-          propertyId: property.id,
-          unitTypeId,
-          unit: unit.unit,
-          currentRent: unit.currentRent.toString(),
-          proFormaRent: unit.proFormaRent.toString(),
-          squareFootage: unit.squareFootage,
-        });
-      }
-    }
-
-    // Create rehab sections
-    if (dealData.rehabBudgetSections) {
-      for (const [sectionName, items] of Object.entries(dealData.rehabBudgetSections)) {
-        for (const item of items) {
-          await this.createRehabSection({
-            propertyId: property.id,
-            section: sectionName,
-            category: item.category,
-            perUnitCost: item.perUnitCost,
-            quantity: parseInt(item.quantity),
-            totalCost: item.totalCost.toString(),
-            spentAmount: (item.spentAmount || 0).toString(),
-            completed: (item.spentAmount || 0) >= item.totalCost,
-          });
+      // Sync assumptions
+      if (data.assumptions) {
+        const existingAssumptions = await this.getPropertyAssumptions(propertyId);
+        if (existingAssumptions) {
+          await this.updatePropertyAssumptions(propertyId, { ...data.assumptions, propertyId });
+        } else {
+          await this.createPropertyAssumptions({ ...data.assumptions, propertyId });
         }
       }
-    }
 
-    // Create closing costs
-    if (dealData.closingCosts) {
-      for (const cost of dealData.closingCosts) {
-        await this.createClosingCost({
-          propertyId: property.id,
-          category: cost.category,
-          amount: cost.amount.toString(),
-          percentage: cost.percentage?.toString(),
-        });
+      // Sync unit types
+      if (data.unitTypes && Array.isArray(data.unitTypes)) {
+        const existing = await this.getPropertyUnitTypes(propertyId);
+        for (const unit of existing) {
+          await this.deletePropertyUnitTypes(unit.id);
+        }
+        for (const unitType of data.unitTypes) {
+          await this.createPropertyUnitTypes({ ...unitType, propertyId });
+        }
       }
-    }
 
-    // Create holding costs
-    if (dealData.holdingCosts) {
-      for (const cost of dealData.holdingCosts) {
-        await this.createHoldingCost({
-          propertyId: property.id,
-          category: cost.category,
-          monthlyAmount: cost.monthlyAmount.toString(),
-          totalAmount: cost.totalAmount.toString(),
-        });
+      // Sync rent roll
+      if (data.rentRoll && Array.isArray(data.rentRoll)) {
+        const existing = await this.getPropertyRentRoll(propertyId);
+        for (const rent of existing) {
+          await this.deletePropertyRentRoll(rent.id);
+        }
+        for (const rentItem of data.rentRoll) {
+          await this.createPropertyRentRoll({ ...rentItem, propertyId });
+        }
       }
-    }
 
-    // Create expenses
-    if (dealData.incomeAndExpenses?.operatingExpenses) {
-      for (const expense of dealData.incomeAndExpenses.operatingExpenses) {
-        await this.createPropertyExpense({
-          propertyId: property.id,
-          category: expense.category,
-          annualAmount: expense.annualAmount.toString(),
-          monthlyAmount: expense.monthlyAmount.toString(),
-        });
+      // Sync expenses
+      if (data.expenses && Array.isArray(data.expenses)) {
+        const existing = await this.getPropertyExpenses(propertyId);
+        for (const expense of existing) {
+          await this.deletePropertyExpenses(expense.id);
+        }
+        for (const expenseItem of data.expenses) {
+          await this.createPropertyExpenses({ ...expenseItem, propertyId });
+        }
       }
-    }
 
-    // Create other income
-    if (dealData.incomeAndExpenses?.otherIncome) {
-      for (const income of dealData.incomeAndExpenses.otherIncome) {
-        await this.createPropertyIncome({
-          propertyId: property.id,
-          category: income.category,
-          annualAmount: income.annualAmount.toString(),
-          monthlyAmount: income.monthlyAmount.toString(),
-        });
+      // Sync rehab budget
+      if (data.rehabBudget) {
+        const existing = await this.getPropertyRehabBudget(propertyId);
+        for (const item of existing) {
+          await this.deletePropertyRehabBudget(item.id);
+        }
+        
+        const sections = ['exterior', 'kitchens', 'bathrooms', 'generalInterior', 'finishings'];
+        for (const section of sections) {
+          if (data.rehabBudget[section] && Array.isArray(data.rehabBudget[section])) {
+            for (const item of data.rehabBudget[section]) {
+              await this.createPropertyRehabBudget({ 
+                ...item, 
+                propertyId, 
+                section: section 
+              });
+            }
+          }
+        }
       }
-    }
 
-    // Create loans
-    if (dealData.financing?.loans) {
-      for (const loan of dealData.financing.loans) {
-        await this.createLoan({
-          propertyId: property.id,
-          name: loan.name,
-          amount: loan.amount.toString(),
-          interestRate: loan.interestRate.toString(),
-          termYears: loan.termYears,
-          monthlyPayment: loan.monthlyPayment.toString(),
-          loanType: loan.loanType,
-          paymentType: loan.paymentType,
-          isActive: loan.isActive,
-        });
+      // Sync exit analysis
+      if (data.exitAnalysis) {
+        const existing = await this.getPropertyExitAnalysis(propertyId);
+        if (existing) {
+          await this.updatePropertyExitAnalysis(propertyId, { ...data.exitAnalysis, propertyId });
+        } else {
+          await this.createPropertyExitAnalysis({ ...data.exitAnalysis, propertyId });
+        }
       }
-    }
 
-    // Create exit analysis
-    if (dealData.exitAnalysis) {
-      await this.createExitAnalysis({
-        propertyId: property.id,
-        salesCapRate: dealData.exitAnalysis.salesCapRate.toString(),
-        saleFactor: dealData.exitAnalysis.saleFactor.toString(),
-        saleCostsPercent: dealData.exitAnalysis.saleCostsPercent.toString(),
-        holdPeriodYears: dealData.exitAnalysis.holdPeriodYears,
-        projectedSalePrice: arv.toString(),
-      });
+    } catch (error) {
+      console.error('Error syncing deal analyzer data to tables:', error);
     }
+  }
 
-    // Create 12-month proforma
-    if (dealData.proforma) {
-      for (const monthData of dealData.proforma) {
-        await this.createMonthlyProforma({
-          propertyId: property.id,
-          month: monthData.month,
-          grossRent: monthData.grossRent.toString(),
-          vacancy: monthData.vacancy.toString(),
-          effectiveIncome: monthData.effectiveIncome.toString(),
-          operatingExpenses: monthData.operatingExpenses.toString(),
-          noi: monthData.noi.toString(),
-          debtService: monthData.debtService.toString(),
-          cashFlow: monthData.cashFlow.toString(),
-        });
+  // Helper method to build JSON from normalized tables
+  async buildDealAnalyzerDataFromTables(propertyId: number): Promise<string | null> {
+    try {
+      const data: any = {};
+
+      // Get assumptions
+      const assumptions = await this.getPropertyAssumptions(propertyId);
+      if (assumptions) {
+        data.assumptions = assumptions;
       }
-    }
 
-    // Return the complete property with relations
-    return this.getProperty(property.id) as Promise<PropertyWithRelations>;
+      // Get unit types
+      const unitTypes = await this.getPropertyUnitTypes(propertyId);
+      if (unitTypes.length > 0) {
+        data.unitTypes = unitTypes;
+      }
+
+      // Get rent roll
+      const rentRoll = await this.getPropertyRentRoll(propertyId);
+      if (rentRoll.length > 0) {
+        data.rentRoll = rentRoll;
+      }
+
+      // Get expenses
+      const expenses = await this.getPropertyExpenses(propertyId);
+      if (expenses.length > 0) {
+        data.expenses = expenses;
+      }
+
+      // Get rehab budget organized by section
+      const rehabItems = await this.getPropertyRehabBudget(propertyId);
+      if (rehabItems.length > 0) {
+        data.rehabBudget = {
+          exterior: rehabItems.filter(item => item.section === 'exterior'),
+          kitchens: rehabItems.filter(item => item.section === 'kitchens'),
+          bathrooms: rehabItems.filter(item => item.section === 'bathrooms'),
+          generalInterior: rehabItems.filter(item => item.section === 'generalInterior'),
+          finishings: rehabItems.filter(item => item.section === 'finishings')
+        };
+      }
+
+      // Get exit analysis
+      const exitAnalysis = await this.getPropertyExitAnalysis(propertyId);
+      if (exitAnalysis) {
+        data.exitAnalysis = exitAnalysis;
+      }
+
+      return Object.keys(data).length > 0 ? JSON.stringify(data) : null;
+    } catch (error) {
+      console.error('Error building deal analyzer data from tables:', error);
+      return null;
+    }
   }
 }
 

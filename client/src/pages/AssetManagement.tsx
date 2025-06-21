@@ -19,26 +19,11 @@ import {
   CheckCircle,
   PieChart,
   Plus,
-  Trash2,
-  RefreshCw,
-  Keyboard
+  Trash2
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+// Remove toast for now and focus on fixing the save functionality
 import apiService from '../services/api';
-import { useRealtimeUpdates } from '../hooks/useRealtimeUpdates';
-import LoadingState from '../components/LoadingState';
-import { ErrorHandler, useErrorHandler } from '../components/ErrorHandler';
-import { Pagination, usePagination } from '../components/Pagination';
-import { useKeyboardShortcuts, KeyboardShortcutsHelp, createDashboardShortcuts } from '../components/KeyboardShortcuts';
-import { SmartField, CalculationBreakdownModal } from '../components/SmartField';
-import { 
-  calculatePropertyMetrics,
-  formatCurrency as formatCurrencyUtil,
-  formatPercentage as formatPercentageUtil,
-  PropertyData
-} from '../utils/propertyCalculations';
-import { unifiedPropertyManager, useUnifiedProperty, useUnifiedPropertyUpdate } from '../utils/unifiedPropertySystem';
-import { ClickableKPI, ClickableKPIBar } from '../components/ClickableKPI';
 
 interface Property {
   id: number;
@@ -233,22 +218,6 @@ export default function AssetManagement() {
   const [propertyDetailTab, setPropertyDetailTab] = useState('overview');
   const [editingModalProperty, setEditingModalProperty] = useState<Property | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [calculationRefreshKey, setCalculationRefreshKey] = useState(0);
-  
-  // Calculation breakdown modal state
-  const [calculationBreakdown, setCalculationBreakdown] = useState<{
-    isOpen: boolean;
-    tabName: string;
-    fieldName: string;
-    propertyData: any;
-    label?: string;
-  }>({
-    isOpen: false,
-    tabName: 'overview',
-    fieldName: '',
-    propertyData: {},
-    label: ''
-  });
 
   // Initialize default rehab line items for a property
   const initializeRehabItems = (property: Property): RehabLineItem[] => {
@@ -280,50 +249,13 @@ export default function AssetManagement() {
     queryFn: () => apiService.getProperties()
   });
 
-  // Ensure properties is always an array with proper error handling
-  const properties = React.useMemo(() => {
-    if (isLoading || error) return [];
+  // Ensure properties is always an array
+  const properties = (() => {
     if (!propertiesResponse) return [];
     if (Array.isArray(propertiesResponse)) return propertiesResponse;
     if (propertiesResponse.data && Array.isArray(propertiesResponse.data)) return propertiesResponse.data;
     return [];
-  }, [propertiesResponse, isLoading, error]);
-
-  // Real-time updates
-  const { forceUpdate } = useRealtimeUpdates({
-    enabled: !isLoading,
-    queryKeys: ['/api/properties']
-  });
-
-  // Error handling
-  const { handleError } = useErrorHandler();
-
-  // Pagination for performance optimization
-  const {
-    currentPage,
-    totalPages,
-    totalItems,
-    itemsPerPage,
-    paginatedData: paginatedProperties,
-    handlePageChange,
-    handleItemsPerPageChange
-  } = usePagination(properties, 20);
-
-  // Keyboard shortcuts
-  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
-  const keyboardShortcuts = createDashboardShortcuts({
-    goToDashboard: () => window.location.href = '#dashboard',
-    goToProperties: () => {},
-    goToDealAnalyzer: () => window.location.href = '#deal-analyzer',
-    goToNetWorth: () => window.location.href = '#net-worth',
-    refresh: () => forceUpdate(),
-    search: () => {},
-    save: () => {},
-    newProperty: () => {},
-    showHelp: () => setShowKeyboardHelp(true)
-  });
-
-  useKeyboardShortcuts(keyboardShortcuts, true);
+  })();
 
   const updatePropertyMutation = useMutation({
     mutationFn: async (data: { id: number; property: Partial<Property> }) => {
@@ -445,24 +377,6 @@ export default function AssetManagement() {
       };
       console.log('Updated property:', updatedProperty);
       setEditingModalProperty(updatedProperty);
-      
-      // Force refresh overview calculations when financial data changes
-      if (field === 'dealAnalyzerData') {
-        try {
-          const dealData = JSON.parse(value);
-          // Check if the change affects financial calculations
-          if (dealData.incomeAndExpenses || 
-              dealData.proforma || 
-              dealData.financing || 
-              dealData.rentRoll || 
-              dealData.assumptions) {
-            setCalculationRefreshKey(prev => prev + 1);
-          }
-        } catch (e) {
-          // If parsing fails, still trigger refresh to be safe
-          setCalculationRefreshKey(prev => prev + 1);
-        }
-      }
     }
   };
 
@@ -474,50 +388,6 @@ export default function AssetManagement() {
     setShowPropertyDetailModal(null);
     setEditingModalProperty(null);
     setIsEditing(false);
-  };
-
-  // Calculation breakdown modal functions
-  const openCalculationBreakdown = (
-    tabName: string,
-    fieldName: string,
-    propertyData: any,
-    label?: string
-  ) => {
-    setCalculationBreakdown({
-      isOpen: true,
-      tabName,
-      fieldName,
-      propertyData,
-      label
-    });
-  };
-
-  const closeCalculationBreakdown = () => {
-    setCalculationBreakdown(prev => ({ ...prev, isOpen: false }));
-  };
-
-  // Smart field change handler with centralized calculations
-  const handleSmartFieldChange = (
-    tabName: string,
-    fieldName: string,
-    value: number | string
-  ) => {
-    if (!editingModalProperty) return;
-
-    // Update the field value and recalculate using centralized system
-    const updatedProperty = { ...editingModalProperty, [fieldName]: value };
-    const metrics = calculatePropertyMetrics(updatedProperty as PropertyData);
-    
-    // Update calculated fields based on centralized metrics
-    const recalculatedProperty = {
-      ...updatedProperty,
-      cashFlow: metrics.monthlyCashFlow.toString(),
-      cashOnCashReturn: metrics.cashOnCashReturn.toString(),
-      totalProfits: metrics.totalProfit.toString(),
-      arvAtTimePurchased: metrics.arv.toString()
-    };
-    
-    setEditingModalProperty(recalculatedProperty);
   };
 
   // Update rehab line item
@@ -690,66 +560,30 @@ export default function AssetManagement() {
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mt-4 stagger-children">
-          <ClickableKPI
-            label="Total Units"
-            value={metrics.totalUnits}
-            kpiType="total_units"
-            properties={properties}
-            className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 hover-scale transition-transform-smooth cursor-pointer bg-transparent border-none text-white"
-            showCalculatorIcon={false}
-            formatter={(value) => Number(value).toLocaleString()}
-            currencySymbol=""
-          />
-          <ClickableKPI
-            label="Total AUM"
-            value={metrics.totalAUM}
-            kpiType="portfolio_aum"
-            properties={properties}
-            className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 hover-scale transition-transform-smooth cursor-pointer bg-transparent border-none text-white"
-            showCalculatorIcon={false}
-            formatter={(value) => formatCurrency(Number(value))}
-            currencySymbol="$"
-          />
-          <ClickableKPI
-            label="Price/Unit"
-            value={metrics.pricePerUnit}
-            kpiType="price_per_unit"
-            properties={properties}
-            className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 hover-scale transition-transform-smooth cursor-pointer bg-transparent border-none text-white"
-            showCalculatorIcon={false}
-            formatter={(value) => formatCurrency(Number(value))}
-            currencySymbol="$"
-          />
-          <ClickableKPI
-            label="Total Equity"
-            value={metrics.totalEquity}
-            kpiType="total_equity"
-            properties={properties}
-            className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 bg-transparent border-none text-white"
-            showCalculatorIcon={false}
-            formatter={(value) => formatCurrency(Number(value))}
-            currencySymbol="$"
-          />
-          <ClickableKPI
-            label="Monthly Cash Flow"
-            value={metrics.totalCashFlow}
-            kpiType="cash_flow"
-            properties={properties}
-            className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 bg-transparent border-none text-white"
-            showCalculatorIcon={false}
-            formatter={(value) => formatCurrency(Number(value))}
-            currencySymbol="$"
-          />
-          <ClickableKPI
-            label="Avg CoC Return"
-            value={metrics.avgCoCReturn}
-            kpiType="cash_on_cash_return"
-            properties={properties}
-            className="text-center bg-transparent border-none text-white"
-            showCalculatorIcon={false}
-            formatter={(value) => formatPercentage(Number(value))}
-            currencySymbol=""
-          />
+          <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
+            <div className="text-2xl font-bold text-white">{metrics.totalUnits}</div>
+            <div className="text-sm text-white/80">Total Units</div>
+          </div>
+          <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
+            <div className="text-2xl font-bold text-white">{formatCurrency(metrics.totalAUM)}</div>
+            <div className="text-sm text-white/80">Total AUM</div>
+          </div>
+          <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
+            <div className="text-2xl font-bold text-white">{formatCurrency(metrics.pricePerUnit)}</div>
+            <div className="text-sm text-white/80">Price/Unit</div>
+          </div>
+          <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+            <div className="text-2xl font-bold text-white">{formatCurrency(metrics.totalEquity)}</div>
+            <div className="text-sm text-white/80">Total Equity</div>
+          </div>
+          <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+            <div className="text-2xl font-bold text-white">{formatCurrency(metrics.totalCashFlow)}</div>
+            <div className="text-sm text-white/80">Monthly Cash Flow</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-white">{formatPercentage(metrics.avgCoCReturn)}</div>
+            <div className="text-sm text-white/80">Avg CoC Return</div>
+          </div>
         </div>
       </div>
 
@@ -1872,24 +1706,71 @@ export default function AssetManagement() {
                               <div>
                                 <p className="text-sm text-green-700 dark:text-green-300">Annual Cash Flow</p>
 {(() => {
-                                  // Force fresh calculation using current property data
-                                  const currentProperty = isEditing && editingModalProperty ? editingModalProperty : showPropertyDetailModal;
+                                  // Get current data for calculations
+                                  const currentData = isEditing && editingModalProperty?.dealAnalyzerData 
+                                    ? JSON.parse(editingModalProperty.dealAnalyzerData) 
+                                    : dealAnalyzerData;
                                   
-                                  // Use the calculationRefreshKey to force re-render when financial data changes
-                                  const refreshDependency = calculationRefreshKey;
+                                  let annualCashFlow = 0;
                                   
-                                  // Create a fresh property data object with current dealAnalyzerData
-                                  const freshPropertyData = {
-                                    ...currentProperty,
-                                    dealAnalyzerData: currentProperty?.dealAnalyzerData,
-                                    _refreshKey: refreshDependency // Force calculation refresh
-                                  };
-                                  
-                                  const metrics = calculatePropertyMetrics(freshPropertyData as PropertyData);
+                                  if (currentData?.rentRoll && Array.isArray(currentData.rentRoll)) {
+                                    // Calculate from rent roll data
+                                    const monthlyRentalIncome = currentData.rentRoll.reduce((sum: number, unit: any) => 
+                                      sum + (parseFloat(unit.proFormaRent) || 0), 0);
+                                    const grossRentalIncome = monthlyRentalIncome * 12;
+                                    
+                                    // Apply vacancy rate
+                                    const vacancyRate = currentData?.assumptions?.vacancyRate || 0.05;
+                                    const effectiveGrossIncome = grossRentalIncome * (1 - vacancyRate);
+                                    
+                                    // Calculate total expenses including management fee
+                                    let totalExpenses = 0;
+                                    if (currentData?.incomeAndExpenses?.operatingExpenses) {
+                                      totalExpenses = currentData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
+                                        sum + (parseFloat(expense.annualAmount) || 0), 0);
+                                    } else if (currentData?.expenses) {
+                                      // Use Deal Analyzer expenses object
+                                      totalExpenses = Object.values(currentData.expenses).reduce((sum: number, expense: any) => 
+                                        sum + (parseFloat(expense) || 0), 0);
+                                      // Add management fee (8% of effective gross income)
+                                      const managementFee = effectiveGrossIncome * 0.08;
+                                      totalExpenses += managementFee;
+                                    } else {
+                                      // Use expense ratio fallback
+                                      const expenseRatio = currentData?.assumptions?.expenseRatio || 0.45;
+                                      totalExpenses = effectiveGrossIncome * expenseRatio;
+                                    }
+                                    
+                                    // Calculate NOI
+                                    const noi = effectiveGrossIncome - totalExpenses;
+                                    
+                                    // Calculate debt service
+                                    let annualDebtService = 0;
+                                    if (currentData?.assumptions) {
+                                      const purchasePrice = currentData.assumptions.purchasePrice || parseFloat(showPropertyDetailModal.acquisitionPrice || '0');
+                                      const loanPercentage = currentData.assumptions.loanPercentage || 0.8;
+                                      const interestRate = currentData.assumptions.interestRate || 0.07;
+                                      const loanTermYears = currentData.assumptions.loanTermYears || 30;
+                                      
+                                      const loanAmount = purchasePrice * loanPercentage;
+                                      const monthlyRate = interestRate / 12;
+                                      const numPayments = loanTermYears * 12;
+                                      
+                                      if (monthlyRate > 0 && loanAmount > 0) {
+                                        const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+                                        annualDebtService = monthlyPayment * 12;
+                                      }
+                                    }
+                                    
+                                    annualCashFlow = noi - annualDebtService;
+                                  } else {
+                                    // Use stored value as fallback
+                                    annualCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
+                                  }
                                   
                                   return (
-                                    <p className={`font-medium ${metrics.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                      {formatCurrencyUtil(metrics.annualCashFlow)}
+                                    <p className={`font-medium ${annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {formatCurrency(annualCashFlow)}
                                     </p>
                                   );
                                 })()}
@@ -1897,24 +1778,67 @@ export default function AssetManagement() {
                               <div>
                                 <p className="text-sm text-green-700 dark:text-green-300">Cash-on-Cash Return</p>
 {(() => {
-                                  // Force fresh calculation using current property data
-                                  const currentProperty = isEditing && editingModalProperty ? editingModalProperty : showPropertyDetailModal;
+                                  // Get current data for calculations
+                                  const currentData = isEditing && editingModalProperty?.dealAnalyzerData 
+                                    ? JSON.parse(editingModalProperty.dealAnalyzerData) 
+                                    : dealAnalyzerData;
                                   
-                                  // Use the calculationRefreshKey to force re-render when financial data changes
-                                  const refreshDependency = calculationRefreshKey;
+                                  let annualCashFlow = 0;
+                                  const initialCapital = parseFloat(showPropertyDetailModal.initialCapitalRequired || '0');
                                   
-                                  // Create a fresh property data object with current dealAnalyzerData
-                                  const freshPropertyData = {
-                                    ...currentProperty,
-                                    dealAnalyzerData: currentProperty?.dealAnalyzerData,
-                                    _refreshKey: refreshDependency // Force calculation refresh
-                                  };
+                                  if (currentData?.rentRoll && Array.isArray(currentData.rentRoll)) {
+                                    // Calculate from rent roll data (same logic as annual cash flow)
+                                    const monthlyRentalIncome = currentData.rentRoll.reduce((sum: number, unit: any) => 
+                                      sum + (parseFloat(unit.proFormaRent) || 0), 0);
+                                    const grossRentalIncome = monthlyRentalIncome * 12;
+                                    
+                                    // Apply vacancy rate
+                                    const vacancyRate = currentData?.assumptions?.vacancyRate || 0.05;
+                                    const effectiveGrossIncome = grossRentalIncome * (1 - vacancyRate);
+                                    
+                                    // Calculate total expenses
+                                    let totalExpenses = 0;
+                                    if (currentData?.incomeAndExpenses?.operatingExpenses) {
+                                      totalExpenses = currentData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
+                                        sum + (parseFloat(expense.annualAmount) || 0), 0);
+                                    } else {
+                                      // Use Deal Analyzer assumptions expense ratio if available
+                                      const expenseRatio = currentData?.assumptions?.expenseRatio || 0.45;
+                                      totalExpenses = effectiveGrossIncome * expenseRatio;
+                                    }
+                                    
+                                    // Calculate NOI
+                                    const noi = effectiveGrossIncome - totalExpenses;
+                                    
+                                    // Calculate debt service
+                                    let annualDebtService = 0;
+                                    if (currentData?.assumptions) {
+                                      const purchasePrice = currentData.assumptions.purchasePrice || parseFloat(showPropertyDetailModal.acquisitionPrice || '0');
+                                      const loanPercentage = currentData.assumptions.loanPercentage || 0.8;
+                                      const interestRate = currentData.assumptions.interestRate || 0.07;
+                                      const loanTermYears = currentData.assumptions.loanTermYears || 30;
+                                      
+                                      const loanAmount = purchasePrice * loanPercentage;
+                                      const monthlyRate = interestRate / 12;
+                                      const numPayments = loanTermYears * 12;
+                                      
+                                      if (monthlyRate > 0 && loanAmount > 0) {
+                                        const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+                                        annualDebtService = monthlyPayment * 12;
+                                      }
+                                    }
+                                    
+                                    annualCashFlow = noi - annualDebtService;
+                                  } else {
+                                    // Use stored value as fallback
+                                    annualCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
+                                  }
                                   
-                                  const metrics = calculatePropertyMetrics(freshPropertyData as PropertyData);
+                                  const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) * 100 : 0;
                                   
                                   return (
-                                    <p className={`font-medium ${metrics.cashOnCashReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                      {formatPercentageUtil(metrics.cashOnCashReturn)}
+                                    <p className={`font-medium ${cashOnCashReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {formatPercentage(cashOnCashReturn)}
                                     </p>
                                   );
                                 })()}
@@ -3514,39 +3438,6 @@ export default function AssetManagement() {
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Calculation Breakdown Modal */}
-      <CalculationBreakdownModal
-        isOpen={calculationBreakdown.isOpen}
-        onClose={closeCalculationBreakdown}
-        tabName={calculationBreakdown.tabName}
-        fieldName={calculationBreakdown.fieldName}
-        propertyData={calculationBreakdown.propertyData}
-        label={calculationBreakdown.label}
-      />
-
-      {/* Keyboard Shortcuts Help */}
-      <KeyboardShortcutsHelp
-        isOpen={showKeyboardHelp}
-        onClose={() => setShowKeyboardHelp(false)}
-        shortcuts={keyboardShortcuts}
-      />
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-8">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPageChange={handlePageChange}
-            onItemsPerPageChange={handleItemsPerPageChange}
-            showItemsPerPage={true}
-            itemsPerPageOptions={[10, 20, 50]}
-          />
         </div>
       )}
     </div>

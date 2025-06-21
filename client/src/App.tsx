@@ -25,12 +25,7 @@ const queryClient = new QueryClient({
       staleTime: 1000 * 60 * 5, // 5 minutes
       retry: 1,
       queryFn: async ({ queryKey }) => {
-        const response = await fetch(queryKey[0] as string, {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await fetch(queryKey[0] as string);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }

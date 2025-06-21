@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import apiService from '../services/api';
 import { 
   Building, 
@@ -15,12 +15,8 @@ import {
   Calculator,
   PieChart,
   Banknote,
-  CheckSquare,
-  RefreshCw
+  CheckSquare
 } from 'lucide-react';
-import { ClickableKPI, ClickableKPIBar } from '../components/ClickableKPI';
-import { KPICalculationModal } from '../components/KPICalculationModal';
-import { getKPICalculationBreakdown } from '../utils/kpiCalculations';
 
 interface Property {
   id: number;
@@ -145,7 +141,6 @@ const EditableValue = ({
 };
 
 export default function EntityDashboard() {
-  const queryClient = useQueryClient();
   const [userEntities, setUserEntities] = useState<string[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [selectedPropertyModal, setSelectedPropertyModal] = useState<Property | null>(null);
@@ -166,14 +161,11 @@ export default function EntityDashboard() {
     enabled: !!currentUserId
   });
 
-  // Fetch user's properties with proper cache management
-  const { data: allProperties = [], isLoading, refetch: refetchProperties } = useQuery({
+  // Fetch user's properties
+  const { data: allProperties = [], isLoading } = useQuery({
     queryKey: ['/api/properties'],
     queryFn: () => apiService.getProperties(),
-    enabled: !!currentUserId,
-    staleTime: 0, // Always consider data stale
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchOnMount: true // Always refetch on component mount
+    enabled: !!currentUserId
   });
 
   // Set user entities when data loads
@@ -183,34 +175,10 @@ export default function EntityDashboard() {
       setUserEntities(entityNames);
     }
   }, [userEntityData]);
-
-  // Manual refresh function for KPIs
-  const refreshData = async () => {
-    if (currentUserId) {
-      await queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
-      await refetchProperties();
-    }
-  };
-
-  // Add automatic data refreshing to keep KPIs updated
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (currentUserId) {
-        refreshData();
-      }
-    }, 30000); // Refresh every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [currentUserId, queryClient]);
   
   // All properties for collective KPIs (only user's properties)
-  const properties: Property[] = (() => {
-    if (Array.isArray(allProperties)) return allProperties;
-    if (allProperties && typeof allProperties === 'object' && 'data' in allProperties) {
-      return Array.isArray(allProperties.data) ? allProperties.data : [];
-    }
-    return [];
-  })();
+  const properties: Property[] = Array.isArray(allProperties?.data) ? allProperties.data : 
+    Array.isArray(allProperties) ? allProperties : [];
   
   // Properties grouped by user's entities only
   const propertiesByEntity = userEntities.reduce((acc, entity) => {
@@ -280,21 +248,6 @@ export default function EntityDashboard() {
     { id: 3, task: 'Schedule property inspections', completed: false, priority: 'Medium' },
     { id: 4, task: 'File quarterly tax returns', completed: false, priority: 'High' }
   ]);
-
-  // KPI calculation modal state
-  const [showModal, setShowModal] = useState<{
-    isOpen: boolean;
-    title: string;
-    formula: string;
-    breakdown: any[];
-    value: number;
-  }>({
-    isOpen: false,
-    title: '',
-    formula: '',
-    breakdown: [],
-    value: 0
-  });
 
   const [cashBalance, setCashBalance] = useState(450000);
 
@@ -410,95 +363,39 @@ export default function EntityDashboard() {
     <div className="space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       
 
-      {/* Portfolio KPI Bar - Clickable with Calculation Modals */}
+      {/* Portfolio KPI Bar - Continuous Gradient Style */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 fade-in card-hover" data-tour="kpi-bar">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold flex items-center text-gray-900 dark:text-white">
-            <Calculator className="h-5 w-5 mr-2 icon-bounce" />
-            Portfolio Key Metrics
-          </h3>
-          <button
-            onClick={refreshData}
-            className="flex items-center px-3 py-1.5 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors button-pulse"
-            title="Refresh KPIs"
-          >
-            <RefreshCw className="h-4 w-4 mr-1" />
-            Refresh
-          </button>
-        </div>
+        <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-900 dark:text-white">
+          <Calculator className="h-5 w-5 mr-2 icon-bounce" />
+          Portfolio Key Metrics
+        </h3>
         <div className="bg-gradient-to-r from-blue-600 via-blue-500 via-purple-500 to-purple-600 rounded-lg p-6 hover-glow transition-all-smooth">
           <div className="flex justify-between items-center text-white">
-            <ClickableKPI
-              label="Total AUM"
-              value={collectiveMetrics.totalAUM}
-              kpiType="portfolio_aum"
-              properties={properties}
-              className="text-center flex-1 bg-transparent border-none text-white hover:bg-white/20 transition-all cursor-pointer"
-              showCalculatorIcon={false}
-              formatter={(value) => formatCurrency(Number(value))}
-              currencySymbol="$"
-            />
-            <div className="text-center flex-1 border-l border-white/20 pl-4">
-              <ClickableKPI
-                label="Price/Unit"
-                value={pricePerUnit}
-                kpiType="price_per_unit"
-                properties={properties}
-                className="bg-transparent border-none text-white hover:bg-white/20 transition-all cursor-pointer"
-                showCalculatorIcon={false}
-                formatter={(value) => formatCurrency(Number(value))}
-                currencySymbol="$"
-              />
+            <div className="text-center flex-1">
+              <div className="text-sm font-medium opacity-90">Total AUM</div>
+              <div className="text-2xl font-bold">{formatCurrency(collectiveMetrics.totalAUM)}</div>
             </div>
             <div className="text-center flex-1 border-l border-white/20 pl-4">
-              <ClickableKPI
-                label="Total Units"
-                value={collectiveMetrics.totalUnits}
-                kpiType="total_units"
-                properties={properties}
-                className="bg-transparent border-none text-white hover:bg-white/20 transition-all cursor-pointer"
-                showCalculatorIcon={false}
-                formatter={(value) => Number(value).toLocaleString()}
-                currencySymbol=""
-              />
+              <div className="text-sm font-medium opacity-90">Price/Unit</div>
+              <div className="text-2xl font-bold">{formatCurrency(pricePerUnit)}</div>
             </div>
             <div className="text-center flex-1 border-l border-white/20 pl-4">
-              <ClickableKPI
-                label="Properties"
-                value={collectiveMetrics.totalProperties}
-                kpiType="total_properties"
-                properties={properties}
-                className="bg-transparent border-none text-white hover:bg-white/20 transition-all cursor-pointer"
-                showCalculatorIcon={false}
-                formatter={(value) => Number(value).toLocaleString()}
-                currencySymbol=""
-              />
+              <div className="text-sm font-medium opacity-90">Total Units</div>
+              <div className="text-2xl font-bold">{collectiveMetrics.totalUnits}</div>
             </div>
             <div className="text-center flex-1 border-l border-white/20 pl-4">
-              <ClickableKPI
-                label="Equity Multiple"
-                value={equityMultiple}
-                kpiType="equity_multiple"
-                properties={properties}
-                className="bg-transparent border-none text-white hover:bg-white/20 transition-all cursor-pointer"
-                showCalculatorIcon={false}
-                formatter={(value) => `${Number(value).toFixed(2)}x`}
-                currencySymbol=""
-              />
+              <div className="text-sm font-medium opacity-90">Properties</div>
+              <div className="text-2xl font-bold">{collectiveMetrics.totalProperties}</div>
             </div>
             <div className="text-center flex-1 border-l border-white/20 pl-4">
-              <ClickableKPI
-                label="Monthly Cash Flow"
-                value={collectiveMetrics.totalCashFlow}
-                kpiType="cash_flow"
-                properties={properties}
-                className={`bg-transparent border-none hover:bg-white/20 transition-all cursor-pointer ${
-                  collectiveMetrics.totalCashFlow > 0 ? "text-white" : "text-red-200"
-                }`}
-                showCalculatorIcon={false}
-                formatter={(value) => formatCurrency(Number(value))}
-                currencySymbol="$"
-              />
+              <div className="text-sm font-medium opacity-90">Equity Multiple</div>
+              <div className="text-2xl font-bold">{equityMultiple.toFixed(2)}x</div>
+            </div>
+            <div className="text-center flex-1 border-l border-white/20 pl-4">
+              <div className="text-sm font-medium opacity-90">Monthly Cash Flow</div>
+              <div className={`text-2xl font-bold ${
+                collectiveMetrics.totalCashFlow > 0 ? "" : "text-red-200"
+              }`}>{formatCurrency(collectiveMetrics.totalCashFlow)}</div>
             </div>
           </div>
         </div>
@@ -664,45 +561,21 @@ export default function EntityDashboard() {
                   Entity Metrics
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
-                  <div 
-                    className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg hover-scale transition-all-smooth cursor-pointer"
-                    onDoubleClick={() => {
-                      const { title, formula, breakdown } = getKPICalculationBreakdown('portfolio_aum', entityMetrics.totalAUM, entityProperties);
-                      setShowModal({ isOpen: true, title, formula, breakdown, value: entityMetrics.totalAUM });
-                    }}
-                  >
+                  <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg hover-scale transition-all-smooth cursor-pointer">
                     <label className="text-sm text-blue-900 dark:text-blue-100 font-medium">AUM</label>
                     <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">{formatCurrency(entityMetrics.totalAUM)}</p>
                   </div>
-                  <div 
-                    className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg hover-scale transition-all-smooth cursor-pointer"
-                    onDoubleClick={() => {
-                      const { title, formula, breakdown } = getKPICalculationBreakdown('total_properties', entityMetrics.totalProperties, entityProperties);
-                      setShowModal({ isOpen: true, title, formula, breakdown, value: entityMetrics.totalProperties });
-                    }}
-                  >
+                  <div className="bg-orange-50 dark:bg-orange-900 p-4 rounded-lg hover-scale transition-all-smooth cursor-pointer">
                     <label className="text-sm text-orange-900 dark:text-orange-100 font-medium">Properties</label>
                     <p className="text-lg font-semibold text-orange-900 dark:text-orange-100">{entityMetrics.totalProperties}</p>
                   </div>
-                  <div 
-                    className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg hover-scale transition-all-smooth cursor-pointer"
-                    onDoubleClick={() => {
-                      const { title, formula, breakdown } = getKPICalculationBreakdown('total_units', entityMetrics.totalUnits, entityProperties);
-                      setShowModal({ isOpen: true, title, formula, breakdown, value: entityMetrics.totalUnits });
-                    }}
-                  >
+                  <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg hover-scale transition-all-smooth cursor-pointer">
                     <label className="text-sm text-purple-900 dark:text-purple-100 font-medium">Units</label>
                     <p className="text-lg font-semibold text-purple-900 dark:text-purple-100">{entityMetrics.totalUnits}</p>
                   </div>
-                  <div 
-                    className={`p-4 rounded-lg hover-scale transition-all-smooth cursor-pointer ${
-                      entityMetrics.totalProfits > 0 ? "bg-green-50 dark:bg-green-900" : "bg-red-50 dark:bg-red-900"
-                    }`}
-                    onDoubleClick={() => {
-                      const { title, formula, breakdown } = getKPICalculationBreakdown('total_profits', entityMetrics.totalProfits, entityProperties);
-                      setShowModal({ isOpen: true, title, formula, breakdown, value: entityMetrics.totalProfits });
-                    }}
-                  >
+                  <div className={`p-4 rounded-lg hover-scale transition-all-smooth cursor-pointer ${
+                    entityMetrics.totalProfits > 0 ? "bg-green-50 dark:bg-green-900" : "bg-red-50 dark:bg-red-900"
+                  }`}>
                     <label className={`text-sm font-medium ${
                       entityMetrics.totalProfits > 0 ? "text-green-900 dark:text-green-100" : "text-red-900 dark:text-red-100"
                     }`}>Total Profits</label>
@@ -1405,17 +1278,6 @@ export default function EntityDashboard() {
           </div>
         </div>
       )}
-
-      {/* KPI Calculation Modal */}
-      <KPICalculationModal
-        isOpen={showModal.isOpen}
-        onClose={() => setShowModal({ ...showModal, isOpen: false })}
-        title={showModal.title}
-        finalResult={showModal.value}
-        formula={showModal.formula}
-        breakdown={showModal.breakdown}
-        currencySymbol="$"
-      />
     </div>
   );
 }

@@ -31,19 +31,6 @@ export default function DealAnalyzer() {
     generalInterior: false,
     finishings: false
   });
-
-  // Calculation breakdown modal state
-  const [showCalculationModal, setShowCalculationModal] = useState(false);
-  const [calculationDetails, setCalculationDetails] = useState<{
-    title: string;
-    value: number;
-    formula: string;
-    breakdown: Array<{
-      label: string;
-      value: number;
-      source: string;
-    }>;
-  } | null>(null);
   
   // Exit analysis state
   const [exitAnalysis, setExitAnalysis] = useState({
@@ -643,132 +630,6 @@ export default function DealAnalyzer() {
     setSavedDeals(updatedDeals);
   };
 
-  // Show calculation breakdown
-  const showCalculationBreakdown = (metric: string) => {
-    const metrics = calculateMetrics();
-    
-    switch (metric) {
-      case 'totalRehabCost':
-        const exteriorTotal = rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
-        const kitchensTotal = rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
-        const bathroomsTotal = rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
-        const generalInteriorTotal = rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
-        const finishingsTotal = rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
-        const subtotal = exteriorTotal + kitchensTotal + bathroomsTotal + generalInteriorTotal + finishingsTotal;
-        const buffer = subtotal * 0.10;
-        
-        setCalculationDetails({
-          title: 'Total Rehab Cost',
-          value: subtotal + buffer,
-          formula: 'Sum of all rehab sections + 10% buffer',
-          breakdown: [
-            { label: 'Exterior Work', value: exteriorTotal, source: 'Rehab Budget → Exterior' },
-            { label: 'Kitchen Renovations', value: kitchensTotal, source: 'Rehab Budget → Kitchens' },
-            { label: 'Bathroom Renovations', value: bathroomsTotal, source: 'Rehab Budget → Bathrooms' },
-            { label: 'General Interior', value: generalInteriorTotal, source: 'Rehab Budget → General Interior' },
-            { label: 'Finishings', value: finishingsTotal, source: 'Rehab Budget → Finishings' },
-            { label: 'Buffer (10%)', value: buffer, source: 'Calculated: 10% of subtotal' }
-          ]
-        });
-        break;
-      
-      case 'allInCost':
-        setCalculationDetails({
-          title: 'All-In Cost',
-          value: metrics.allInCost,
-          formula: 'Purchase Price + Rehab Cost + Closing Costs + Holding Costs',
-          breakdown: [
-            { label: 'Purchase Price', value: assumptions.purchasePrice, source: 'Deal Assumptions → Purchase Price' },
-            { label: 'Total Rehab Cost', value: metrics.totalRehab, source: 'Calculated from rehab sections' },
-            { label: 'Closing Costs', value: metrics.totalClosingCosts, source: 'Closing Costs section' },
-            { label: 'Holding Costs', value: metrics.totalHoldingCosts, source: 'Holding Costs section' }
-          ]
-        });
-        break;
-      
-      case 'cashOnCashReturn':
-        setCalculationDetails({
-          title: 'Cash-on-Cash Return',
-          value: metrics.cashOnCashReturn * 100,
-          formula: 'Annual Cash Flow ÷ Total Cash Invested × 100',
-          breakdown: [
-            { label: 'Annual Cash Flow', value: metrics.netCashFlow, source: 'NOI - Debt Service' },
-            { label: 'Total Cash Invested', value: metrics.totalCashInvested - metrics.cashOut, source: 'Cash invested after refinance' },
-            { label: 'CoC Return (%)', value: metrics.cashOnCashReturn * 100, source: 'Cash Flow ÷ Cash Invested × 100' }
-          ]
-        });
-        break;
-      
-      case 'dscr':
-        setCalculationDetails({
-          title: 'Debt Service Coverage Ratio',
-          value: metrics.dscr,
-          formula: 'Net Operating Income ÷ Annual Debt Service',
-          breakdown: [
-            { label: 'Net Operating Income', value: metrics.noi, source: 'Gross Income - Operating Expenses' },
-            { label: 'Annual Debt Service', value: metrics.annualDebtService, source: 'Monthly payment × 12' },
-            { label: 'DSCR Ratio', value: metrics.dscr, source: 'NOI ÷ Annual Debt Service' }
-          ]
-        });
-        break;
-      
-      case 'breakEvenOccupancy':
-        setCalculationDetails({
-          title: 'Break-Even Occupancy',
-          value: metrics.breakEvenOccupancy * 100,
-          formula: '(Operating Expenses + Debt Service) ÷ Gross Rental Income × 100',
-          breakdown: [
-            { label: 'Operating Expenses', value: metrics.totalExpenses, source: 'Sum of all operating expenses' },
-            { label: 'Annual Debt Service', value: metrics.annualDebtService, source: 'Monthly payment × 12' },
-            { label: 'Gross Rental Income', value: metrics.grossRent, source: 'Sum of all unit rents × 12' },
-            { label: 'Break-Even %', value: metrics.breakEvenOccupancy * 100, source: '(Expenses + Debt) ÷ Gross Income × 100' }
-          ]
-        });
-        break;
-      
-      case 'totalCashInvested':
-        setCalculationDetails({
-          title: 'Total Cash Invested',
-          value: metrics.totalCashInvested,
-          formula: 'Down Payment + Closing Costs + Holding Costs + Rehab Costs',
-          breakdown: [
-            { label: 'Down Payment', value: metrics.downPayment, source: 'Purchase Price - Initial Loan' },
-            { label: 'Closing Costs', value: metrics.totalClosingCosts, source: 'Sum of all closing costs' },
-            { label: 'Holding Costs', value: metrics.totalHoldingCosts, source: 'Sum of all holding costs' },
-            { label: 'Rehab Costs', value: metrics.totalRehab, source: 'Sum of all rehab sections + buffer' }
-          ]
-        });
-        break;
-      
-      case 'arv':
-        setCalculationDetails({
-          title: 'After Repair Value (ARV)',
-          value: metrics.arv,
-          formula: 'Net Operating Income ÷ Market Cap Rate',
-          breakdown: [
-            { label: 'Net Operating Income', value: metrics.noi, source: 'Gross Income - Operating Expenses' },
-            { label: 'Market Cap Rate', value: assumptions.marketCapRate * 100, source: 'Market Assumptions → Cap Rate' },
-            { label: 'ARV', value: metrics.arv, source: 'NOI ÷ Cap Rate' }
-          ]
-        });
-        break;
-      
-      default:
-        // For any metric not specifically handled, show basic info
-        setCalculationDetails({
-          title: metric.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-          value: 0,
-          formula: 'Calculation details not available for this metric',
-          breakdown: [
-            { label: 'Value', value: 0, source: 'Calculated from various inputs' }
-          ]
-        });
-        break;
-    }
-    
-    setShowCalculationModal(true);
-  };
-
   // Import deal to Properties database
   const importToProperties = async () => {
     setImportingToProperties(true);
@@ -792,7 +653,90 @@ export default function DealAnalyzer() {
       const contingency = rehabSubtotal * 0.10; // 10% buffer
       const totalRehabCosts = rehabSubtotal + contingency;
 
-      console.log('Preparing Deal Analyzer data for import...');
+      // Calculate total closing costs and holding costs
+      const totalClosingCosts = Object.values(closingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
+      const totalHoldingCosts = Object.values(holdingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
+      const downPayment = (assumptions.purchasePrice || 0) * (1 - (assumptions.loanPercentage || 0.8));
+      const initialCapital = downPayment + totalRehabCosts + totalClosingCosts + totalHoldingCosts;
+
+      // Calculate cash flow (annual) with detailed calculations
+      const totalAnnualRent = rentRoll.reduce((sum, unit) => {
+        const unitType = unitTypes.find(ut => ut.id === unit.unitTypeId);
+        return sum + (unitType ? unitType.marketRent * 12 : unit.proFormaRent * 12);
+      }, 0);
+      
+      const vacancyLoss = totalAnnualRent * assumptions.vacancyRate;
+      const netRevenue = totalAnnualRent - vacancyLoss;
+      const managementFee = netRevenue * 0.08; // 8% management fee
+      const totalAnnualExpenses = Object.values(expenses || {}).reduce((sum, expense) => sum + (Number(expense) || 0), 0) + managementFee;
+      const noi = netRevenue - totalAnnualExpenses;
+      
+      // Calculate debt service using initial loan terms (not refinance terms for import)
+      const loanAmount = (assumptions.purchasePrice || 0) * (assumptions.loanPercentage || 0.8);
+      const interestRate = assumptions.interestRate || 0.0875;
+      const loanTermYears = assumptions.loanTermYears || 2;
+      
+      let monthlyPayment = 0;
+      if (loanAmount > 0 && interestRate > 0) {
+        const monthlyRate = interestRate / 12;
+        const numPayments = loanTermYears * 12;
+        monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+      }
+      
+      const annualDebtService = monthlyPayment * 12;
+      const annualCashFlow = noi - annualDebtService;
+
+      // Calculate cash-on-cash return using actual initial capital
+      const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) : 0;
+
+      // Calculate ARV
+      const marketCapRate = assumptions.marketCapRate || 0.055;
+      const arv = noi > 0 && marketCapRate > 0 ? noi / marketCapRate : assumptions.purchasePrice || 0;
+
+      const propertyData = {
+        status: 'Under Contract' as const,
+        apartments: Number(assumptions.unitCount) || 1,
+        address: propertyAddress.split(',')[0]?.trim() || propertyName,
+        city: city || 'Unknown',
+        state: state || 'CT',
+        zipCode: zipCode || null,
+        entity: importFormData.entity || '5Central Capital',
+        acquisitionDate: importFormData.acquisitionDate || new Date().toISOString().split('T')[0],
+        acquisitionPrice: Math.round(Number(assumptions.purchasePrice) || 0).toString(),
+        rehabCosts: Math.round(totalRehabCosts).toString(),
+        arvAtTimePurchased: Math.round(arv).toString(),
+        initialCapitalRequired: Math.round(initialCapital).toString(),
+        cashFlow: Math.round(annualCashFlow).toString(),
+        totalProfits: '0',
+        cashOnCashReturn: Number((cashOnCashReturn * 100).toFixed(2)).toString(),
+        annualizedReturn: Number((cashOnCashReturn * 100).toFixed(2)).toString(),
+        yearsHeld: '0',
+        // Include all deal analyzer data for comprehensive import
+        dealAnalyzerData: {
+          propertyName,
+          propertyAddress,
+          assumptions,
+          rehabBudgetSections,
+          closingCosts,
+          holdingCosts,
+          expenses,
+          rentRoll,
+          unitTypes,
+          exitAnalysis,
+          calculations: {
+            totalRehabCosts,
+            totalClosingCosts,
+            totalHoldingCosts,
+            initialCapital,
+            arv,
+            noi,
+            annualCashFlow,
+            cashOnCashReturn
+          }
+        }
+      };
+
+      console.log('Importing property data:', propertyData);
 
       // Get authentication token
       const authToken = localStorage.getItem('authToken');
@@ -800,49 +744,13 @@ export default function DealAnalyzer() {
         throw new Error('Authentication required. Please log in first.');
       }
 
-      // Prepare data for the new relational database structure
-      const dealAnalyzerImportData = {
-        propertyName,
-        propertyAddress,
-        assumptions,
-        rehabBudgetSections,
-        closingCosts: Object.entries(closingCosts || {}).map(([category, amount]) => ({
-          category,
-          amount: Number(amount) || 0
-        })),
-        holdingCosts: Object.entries(holdingCosts || {}).map(([category, amount]) => ({
-          category,
-          monthlyAmount: Number(amount) || 0,
-          totalAmount: (Number(amount) || 0) * 12
-        })),
-        rentRoll,
-        incomeAndExpenses: {
-          operatingExpenses: Object.entries(expenses || {}).map(([category, amount]) => ({
-            category,
-            annualAmount: Number(amount) || 0,
-            monthlyAmount: (Number(amount) || 0) / 12
-          }))
-        },
-        financing: {
-          loans: [] // Will be populated from loan analysis if available
-        },
-        exitAnalysis,
-        proforma: [] // Will be calculated from rent roll and expenses
-      };
-
-      const response = await fetch('/api/import-property', {
+      const response = await fetch('/api/properties', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
         },
-        body: JSON.stringify({
-          dealAnalyzerData: dealAnalyzerImportData,
-          entity: importFormData.entity,
-          acquisitionDate: importFormData.acquisitionDate,
-          broker: importFormData.broker,
-          legalNotes: importFormData.legalNotes
-        }),
+        body: JSON.stringify(propertyData),
       });
 
       if (!response.ok) {
@@ -853,6 +761,11 @@ export default function DealAnalyzer() {
 
       const result = await response.json();
       console.log('Import successful:', result);
+
+      // After successful property creation, import the rehab line items
+      if (result.id) {
+        await importRehabLineItems(result.id);
+      }
 
       // Close modal and reset form
       setShowImportModal(false);
@@ -1681,7 +1594,7 @@ export default function DealAnalyzer() {
                 Refinance Analysis
               </h3>
               <div className="space-y-4">
-                <div className="bg-blue-50 rounded-lg p-4 cursor-pointer hover:bg-blue-100 transition-colors" onDoubleClick={() => showCalculationBreakdown('dscr')}>
+                <div className="bg-blue-50 rounded-lg p-4">
                   <div className="text-center">
                     <p className="text-sm text-blue-600 font-medium">DSCR</p>
                     <p className={`text-2xl font-bold ${metrics.dscr >= assumptions.dscrThreshold ? 'text-green-600' : 'text-red-600'}`}>
@@ -1690,7 +1603,6 @@ export default function DealAnalyzer() {
                     {metrics.dscr < assumptions.dscrThreshold && (
                       <p className="text-xs text-red-600 mt-1">Below {assumptions.dscrThreshold} threshold</p>
                     )}
-                    <p className="text-xs text-gray-500 mt-1">Double-click for breakdown</p>
                   </div>
                 </div>
                 
@@ -1707,12 +1619,9 @@ export default function DealAnalyzer() {
                     <span className="text-sm text-gray-600">Monthly Debt Service (Post-Refi)</span>
                     <span className="font-medium">{formatCurrency(metrics.monthlyDebtService)}</span>
                   </div>
-                  <div className="flex justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors" onDoubleClick={() => showCalculationBreakdown('breakEvenOccupancy')}>
+                  <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Break-Even Occupancy</span>
-                    <div className="text-right">
-                      <span className="font-medium">{formatPercent(metrics.breakEvenOccupancy)}</span>
-                      <p className="text-xs text-gray-400">Double-click for breakdown</p>
-                    </div>
+                    <span className="font-medium">{formatPercent(metrics.breakEvenOccupancy)}</span>
                   </div>
                 </div>
               </div>
@@ -1726,19 +1635,13 @@ export default function DealAnalyzer() {
               </h3>
               <div className="space-y-4">
                 <div className="space-y-3">
-                  <div className="flex justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors" onDoubleClick={() => showCalculationBreakdown('totalCashInvested')}>
+                  <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Total Cash Invested</span>
-                    <div className="text-right">
-                      <span className="font-medium">{formatCurrency(metrics.totalCashInvested)}</span>
-                      <p className="text-xs text-gray-400">Double-click for breakdown</p>
-                    </div>
+                    <span className="font-medium">{formatCurrency(metrics.totalCashInvested)}</span>
                   </div>
-                  <div className="flex justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors" onDoubleClick={() => showCalculationBreakdown('cashOnCashReturn')}>
+                  <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Annual Cash Flow</span>
-                    <div className="text-right">
-                      <span className="font-medium text-green-600">{formatCurrency(metrics.netCashFlow)}</span>
-                      <p className="text-xs text-gray-400">Double-click for breakdown</p>
-                    </div>
+                    <span className="font-medium text-green-600">{formatCurrency(metrics.netCashFlow)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Cash-Out at Refi</span>
@@ -2945,72 +2848,6 @@ export default function DealAnalyzer() {
                 className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
               >
                 {importingToProperties ? 'Importing...' : 'Import Property'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Calculation Breakdown Modal */}
-      {showCalculationModal && calculationDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
-                <Calculator className="h-5 w-5 mr-2 text-blue-500" />
-                {calculationDetails.title} Breakdown
-              </h3>
-              <button
-                onClick={() => setShowCalculationModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="mb-6">
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
-                <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Formula</h4>
-                <p className="text-blue-700 dark:text-blue-300 font-mono text-sm">{calculationDetails.formula}</p>
-              </div>
-
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mb-4">
-                <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2">Final Result</h4>
-                <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-                  {calculationDetails.title.includes('Return') || calculationDetails.title.includes('Rate') || calculationDetails.title.includes('Occupancy') || calculationDetails.title.includes('DSCR') 
-                    ? `${calculationDetails.value.toFixed(2)}${calculationDetails.title.includes('DSCR') ? 'x' : '%'}`
-                    : `$${calculationDetails.value.toLocaleString()}`
-                  }
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">Components Breakdown</h4>
-              {calculationDetails.breakdown.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900 dark:text-white">{item.label}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{item.source}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-gray-900 dark:text-white">
-                      {item.label.includes('Rate') || item.label.includes('%') || item.label.includes('Return') || item.label.includes('DSCR')
-                        ? `${item.value.toFixed(2)}${item.label.includes('DSCR') ? 'x' : '%'}`
-                        : `$${item.value.toLocaleString()}`
-                      }
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setShowCalculationModal(false)}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-              >
-                Close
               </button>
             </div>
           </div>

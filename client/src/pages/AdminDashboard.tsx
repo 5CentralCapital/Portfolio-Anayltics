@@ -26,8 +26,7 @@ import {
   ArrowUp,
   ArrowDown,
   Calculator,
-  MapPin,
-  Keyboard
+  MapPin
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
@@ -39,12 +38,6 @@ import FinancialDashboard from './FinancialDashboard';
 import AssetManagement from './AssetManagement';
 import NetWorthTracker from './NetWorthTracker';
 import OnboardingTour from '../components/OnboardingTour';
-import { useRealtimeUpdates, useSmartCacheInvalidation } from '../hooks/useRealtimeUpdates';
-import LoadingState from '../components/LoadingState';
-import { ErrorHandler, useErrorHandler } from '../components/ErrorHandler';
-import { Breadcrumb } from '../components/Breadcrumb';
-import { useKeyboardShortcuts, KeyboardShortcutsHelp, createDashboardShortcuts } from '../components/KeyboardShortcuts';
-import { Tooltip, HelpTooltip, InfoTooltip } from '../components/Tooltip';
 
 interface DashboardData {
   financial: {
@@ -87,20 +80,6 @@ const AdminDashboard: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
-  const [currentSection, setCurrentSection] = useState<string[]>([]);
-
-  // Enhanced error handling
-  const { handleError } = useErrorHandler();
-  
-  // Smart cache invalidation
-  const { invalidateRelatedQueries } = useSmartCacheInvalidation();
-
-  // Real-time updates
-  const { forceUpdate } = useRealtimeUpdates({
-    enabled: !loading,
-    queryKeys: ['/api/dashboard', '/api/properties', '/api/user/entities']
-  });
 
   useEffect(() => {
     if (!apiService.isAuthenticated()) {
@@ -143,8 +122,7 @@ const AdminDashboard: React.FC = () => {
       setInvestorLeads(leadsRes.data || []);
       setRetryCount(0);
     } catch (err) {
-      handleError(err, 'Dashboard Data Loading');
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard data. Please check your connection and try again.');
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
       setRetryCount(prev => prev + 1);
     } finally {
       setLoading(false);
@@ -153,33 +131,9 @@ const AdminDashboard: React.FC = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    try {
-      // Use both force update and reload data for comprehensive refresh
-      forceUpdate();
-      await loadDashboardData();
-      invalidateRelatedQueries('financial');
-    } catch (err) {
-      handleError(err, 'Dashboard Refresh');
-    } finally {
-      setRefreshing(false);
-    }
+    await loadDashboardData();
+    setRefreshing(false);
   };
-
-  // Keyboard shortcuts configuration
-  const keyboardShortcuts = createDashboardShortcuts({
-    goToDashboard: () => setActiveTab('dashboard'),
-    goToProperties: () => setActiveTab('properties'),
-    goToDealAnalyzer: () => setActiveTab('deal-analyzer'),
-    goToNetWorth: () => setActiveTab('net-worth'),
-    refresh: handleRefresh,
-    search: () => {}, // Placeholder for future search functionality
-    save: () => {}, // Placeholder for future save functionality
-    newProperty: () => setActiveTab('deal-analyzer'),
-    showHelp: () => setShowKeyboardHelp(true)
-  });
-
-  // Enable keyboard shortcuts
-  useKeyboardShortcuts(keyboardShortcuts, true);
 
   const handleLogout = async () => {
     try {
@@ -255,26 +209,28 @@ const AdminDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <LoadingState 
-          type="dashboard" 
-          size="lg" 
-          message="Loading dashboard analytics and portfolio data..." 
-        />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <ErrorHandler
-          error={error}
-          onRetry={loadDashboardData}
-          onNavigateHome={() => navigate('/')}
-          showDetails={retryCount > 2}
-          size="lg"
-        />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={loadDashboardData}
+            className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -297,8 +253,8 @@ const AdminDashboard: React.FC = () => {
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="p-2 text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
-                title="Refresh Data (Ctrl+R)"
+                className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                title="Refresh Data"
               >
                 <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
               </button>
@@ -306,17 +262,9 @@ const AdminDashboard: React.FC = () => {
               <button
                 onClick={() => setShowOnboarding(true)}
                 className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                title="Interactive Dashboard Tour"
+                title="Restart Onboarding Tour"
               >
-                <Target className="h-5 w-5" />
-              </button>
-
-              <button
-                onClick={() => setShowKeyboardHelp(true)}
-                className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                title="Keyboard Shortcuts (?)"
-              >
-                <Keyboard className="h-5 w-5" />
+                <Users className="h-5 w-5" />
               </button>
               
               <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -342,23 +290,6 @@ const AdminDashboard: React.FC = () => {
                 <LogOut className="h-5 w-5" />
               </button>
             </div>
-          </div>
-
-          {/* Breadcrumb Navigation */}
-          <div className="px-4 sm:px-6 lg:px-8 pb-4 border-t border-gray-200 mt-4">
-            <Breadcrumb
-              items={[
-                { label: 'Dashboard', path: '#', onClick: () => setActiveTab('dashboard') },
-                { 
-                  label: activeTab === 'dashboard' ? 'Entity Overview' :
-                         activeTab === 'properties' ? 'Asset Management' :
-                         activeTab === 'deal-analyzer' ? 'Deal Analyzer' :
-                         activeTab === 'net-worth' ? 'Net Worth Tracker' :
-                         activeTab === 'reports' ? 'Reports' : 'Dashboard'
-                }
-              ]}
-              className="text-sm"
-            />
           </div>
         </div>
       </header>
@@ -517,13 +448,6 @@ const AdminDashboard: React.FC = () => {
         isOpen={showOnboarding}
         onComplete={() => setShowOnboarding(false)}
         onSkip={() => setShowOnboarding(false)}
-      />
-
-      {/* Keyboard Shortcuts Help */}
-      <KeyboardShortcutsHelp
-        isOpen={showKeyboardHelp}
-        onClose={() => setShowKeyboardHelp(false)}
-        shortcuts={keyboardShortcuts}
       />
     </div>
   );

@@ -1,7 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { createServer } from "http";
 import session from "express-session";
-import { registerRoutes } from "./simple-routes";
+import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
@@ -59,8 +58,15 @@ app.use((req, res, next) => {
       log("Warning: Database connection failed, but continuing with server startup");
     }
 
-    // Register API routes before Vite middleware
     const server = await registerRoutes(app);
+
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      
+      log(`Error ${status}: ${message}`);
+      res.status(status).json({ message });
+    });
 
     // importantly only setup vite in development and after
     // setting up all the other routes so the catch-all route
@@ -70,14 +76,6 @@ app.use((req, res, next) => {
     } else {
       serveStatic(app);
     }
-
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      
-      log(`Error ${status}: ${message}`);
-      res.status(status).json({ message });
-    });
 
     // ALWAYS serve the app on port 5000
     // this serves both the API and the client.

@@ -3,9 +3,6 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { kpiService } from "./kpi.service";
-import { dataMigrationService } from "./data-migration";
-import { dataSyncManager } from "./dataSync";
-import { unifiedDataMigrationManager } from "./unifiedDataMigration";
 import { 
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
@@ -372,20 +369,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/properties", authenticateUser, async (req: any, res) => {
     try {
       const propertyData = insertPropertySchema.parse(req.body);
-      const userId = req.user.id;
-      
-      // Create property through storage
       const property = await storage.createProperty(propertyData);
-      
-      // Immediately sync the new property to ensure consistent calculations
-      const result = await dataSyncManager.updatePropertyWithSync(property.id, {}, userId);
-      
-      // Log any warnings from initial data sync
-      if (result.warnings.length > 0) {
-        console.warn(`New property ${property.id} sync warnings:`, result.warnings);
-      }
-      
-      res.status(201).json(result.property);
+      res.status(201).json(property);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid property data", details: error.errors });
@@ -400,13 +385,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const updateData = req.body;
       
-      // Use unified data sync system for consistent calculations
-      const result = await dataSyncManager.updatePropertyWithSync(id, updateData);
+      const property = await storage.updateProperty(id, updateData);
+      if (!property) {
+        return res.status(404).json({ error: "Property not found" });
+      }
       
-      // Broadcast KPI update to connected clients
-      await broadcastKPIUpdate(id);
-      
-      res.json(result.property);
+      res.json(property);
     } catch (error) {
       console.error("Update property error:", error);
       res.status(500).json({ error: "Failed to update property" });
@@ -417,101 +401,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updateData = req.body;
-      const userId = req.user.id;
       
-      // Use unified data sync system for consistent calculations
-      const result = await dataSyncManager.updatePropertyWithSync(id, updateData, userId);
-      
-      // Log any warnings from data validation
-      if (result.warnings.length > 0) {
-        console.warn(`Property ${id} sync warnings:`, result.warnings);
+      const property = await storage.updateProperty(id, updateData);
+      if (!property) {
+        return res.status(404).json({ error: "Property not found" });
       }
       
-      // Broadcast KPI update to connected clients
-      await broadcastKPIUpdate(id);
-      
-      res.json(result.property);
+      res.json(property);
     } catch (error) {
       console.error("Update property error:", error);
       res.status(500).json({ error: "Failed to update property" });
-    }
-  });
-
-  // Data synchronization routes
-  app.post("/api/properties/:id/sync", authenticateUser, async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const userId = req.user.id;
-      
-      const result = await dataSyncManager.updatePropertyWithSync(id, {}, userId);
-      
-      res.json({
-        property: result.property,
-        calculations: result.calculationResults,
-        syncedFields: result.syncedFields,
-        warnings: result.warnings
-      });
-    } catch (error) {
-      console.error("Property sync error:", error);
-      res.status(500).json({ error: "Failed to sync property data" });
-    }
-  });
-
-  app.post("/api/data/sync-all", authenticateUser, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const result = await dataSyncManager.syncAllProperties(userId);
-      
-      res.json({
-        message: `Synchronized ${result.updated} properties`,
-        updated: result.updated,
-        warnings: result.warnings
-      });
-    } catch (error) {
-      console.error("Full sync error:", error);
-      res.status(500).json({ error: "Failed to synchronize all properties" });
-    }
-  });
-
-  app.get("/api/properties/:id/calculations", authenticateUser, async (req: any, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      
-      const propertyWithCalculations = await dataSyncManager.getPropertyWithCalculations(id);
-      
-      res.json(propertyWithCalculations);
-    } catch (error) {
-      console.error("Property calculations error:", error);
-      res.status(500).json({ error: "Failed to get property calculations" });
-    }
-  });
-
-  // Unified migration routes
-  app.post("/api/data/migrate-all", authenticateUser, async (req: any, res) => {
-    try {
-      const result = await unifiedDataMigrationManager.migrateAllProperties();
-      
-      res.json({
-        message: 'Migration completed',
-        ...result
-      });
-    } catch (error) {
-      console.error("Migration error:", error);
-      res.status(500).json({ error: "Failed to migrate properties" });
-    }
-  });
-
-  app.post("/api/data/migrate-deal-analyzer", authenticateUser, async (req: any, res) => {
-    try {
-      const result = await unifiedDataMigrationManager.migrateDealAnalyzerImports();
-      
-      res.json({
-        message: 'Deal Analyzer imports migrated',
-        ...result
-      });
-    } catch (error) {
-      console.error("Deal Analyzer migration error:", error);
-      res.status(500).json({ error: "Failed to migrate Deal Analyzer imports" });
     }
   });
 
@@ -764,27 +663,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       console.log('WebSocket client disconnected');
     });
-  });
-
-  // Data Migration and Fix Endpoints
-  app.post("/api/admin/fix-property-dataset", authenticateUser, async (req, res) => {
-    try {
-      const result = await dataMigrationService.fixPropertyDataset();
-      res.json(result);
-    } catch (error) {
-      console.error('Property dataset fix error:', error);
-      res.status(500).json({ error: 'Failed to fix property dataset' });
-    }
-  });
-
-  app.get("/api/admin/migration-status", authenticateUser, async (req, res) => {
-    try {
-      const status = await dataMigrationService.getMigrationStatus();
-      res.json(status);
-    } catch (error) {
-      console.error('Migration status error:', error);
-      res.status(500).json({ error: 'Failed to get migration status' });
-    }
   });
   
   return httpServer;
