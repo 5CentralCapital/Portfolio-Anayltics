@@ -2,7 +2,10 @@ import { db } from "./db";
 import { 
   users, properties, companyMetrics, investorLeads, sessions, entityOwnership,
   deals, dealRehab, dealUnits, dealExpenses, dealClosingCosts, 
-  dealHoldingCosts, dealLoans, dealOtherIncome, dealComps
+  dealHoldingCosts, dealLoans, dealOtherIncome, dealComps,
+  propertyAssumptions, propertyUnitTypes, propertyRentRoll, propertyExpenses,
+  propertyRehabBudget, propertyClosingCosts, propertyHoldingCosts,
+  propertyExitAnalysis, propertyIncomeOther
 } from "@shared/schema";
 import type { 
   User, 
@@ -32,7 +35,25 @@ import type {
   DealOtherIncome,
   InsertDealOtherIncome,
   DealComps,
-  InsertDealComps
+  InsertDealComps,
+  PropertyAssumptions,
+  InsertPropertyAssumptions,
+  PropertyUnitTypes,
+  InsertPropertyUnitTypes,
+  PropertyRentRoll,
+  InsertPropertyRentRoll,
+  PropertyExpenses,
+  InsertPropertyExpenses,
+  PropertyRehabBudget,
+  InsertPropertyRehabBudget,
+  PropertyClosingCosts,
+  InsertPropertyClosingCosts,
+  PropertyHoldingCosts,
+  InsertPropertyHoldingCosts,
+  PropertyExitAnalysis,
+  InsertPropertyExitAnalysis,
+  PropertyIncomeOther,
+  InsertPropertyIncomeOther
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -558,6 +579,335 @@ export class DatabaseStorage implements IStorage {
   async deleteEntityOwnership(id: number): Promise<boolean> {
     const result = await db.delete(entityOwnership).where(eq(entityOwnership.id, id));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Property Deal Analyzer normalized data operations
+  async getPropertyAssumptions(propertyId: number): Promise<PropertyAssumptions | undefined> {
+    const [assumptions] = await db.select().from(propertyAssumptions).where(eq(propertyAssumptions.propertyId, propertyId));
+    return assumptions;
+  }
+
+  async createPropertyAssumptions(assumptions: InsertPropertyAssumptions): Promise<PropertyAssumptions> {
+    const [created] = await db.insert(propertyAssumptions).values(assumptions).returning();
+    return created;
+  }
+
+  async updatePropertyAssumptions(propertyId: number, assumptions: Partial<InsertPropertyAssumptions>): Promise<PropertyAssumptions | undefined> {
+    const [updated] = await db.update(propertyAssumptions)
+      .set({ ...assumptions, updatedAt: new Date() })
+      .where(eq(propertyAssumptions.propertyId, propertyId))
+      .returning();
+    return updated;
+  }
+
+  async getPropertyUnitTypes(propertyId: number): Promise<PropertyUnitTypes[]> {
+    return await db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, propertyId));
+  }
+
+  async createPropertyUnitTypes(unitType: InsertPropertyUnitTypes): Promise<PropertyUnitTypes> {
+    const [created] = await db.insert(propertyUnitTypes).values(unitType).returning();
+    return created;
+  }
+
+  async updatePropertyUnitTypes(id: number, unitType: Partial<InsertPropertyUnitTypes>): Promise<PropertyUnitTypes | undefined> {
+    const [updated] = await db.update(propertyUnitTypes)
+      .set({ ...unitType, updatedAt: new Date() })
+      .where(eq(propertyUnitTypes.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePropertyUnitTypes(id: number): Promise<boolean> {
+    const result = await db.delete(propertyUnitTypes).where(eq(propertyUnitTypes.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getPropertyRentRoll(propertyId: number): Promise<PropertyRentRoll[]> {
+    return await db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, propertyId));
+  }
+
+  async createPropertyRentRoll(rentRoll: InsertPropertyRentRoll): Promise<PropertyRentRoll> {
+    const [created] = await db.insert(propertyRentRoll).values(rentRoll).returning();
+    return created;
+  }
+
+  async updatePropertyRentRoll(id: number, rentRoll: Partial<InsertPropertyRentRoll>): Promise<PropertyRentRoll | undefined> {
+    const [updated] = await db.update(propertyRentRoll)
+      .set({ ...rentRoll, updatedAt: new Date() })
+      .where(eq(propertyRentRoll.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePropertyRentRoll(id: number): Promise<boolean> {
+    const result = await db.delete(propertyRentRoll).where(eq(propertyRentRoll.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getPropertyExpenses(propertyId: number): Promise<PropertyExpenses[]> {
+    return await db.select().from(propertyExpenses).where(eq(propertyExpenses.propertyId, propertyId));
+  }
+
+  async createPropertyExpenses(expense: InsertPropertyExpenses): Promise<PropertyExpenses> {
+    const [created] = await db.insert(propertyExpenses).values(expense).returning();
+    return created;
+  }
+
+  async updatePropertyExpenses(id: number, expense: Partial<InsertPropertyExpenses>): Promise<PropertyExpenses | undefined> {
+    const [updated] = await db.update(propertyExpenses)
+      .set({ ...expense, updatedAt: new Date() })
+      .where(eq(propertyExpenses.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePropertyExpenses(id: number): Promise<boolean> {
+    const result = await db.delete(propertyExpenses).where(eq(propertyExpenses.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getPropertyRehabBudget(propertyId: number): Promise<PropertyRehabBudget[]> {
+    return await db.select().from(propertyRehabBudget).where(eq(propertyRehabBudget.propertyId, propertyId));
+  }
+
+  async createPropertyRehabBudget(rehabItem: InsertPropertyRehabBudget): Promise<PropertyRehabBudget> {
+    const [created] = await db.insert(propertyRehabBudget).values(rehabItem).returning();
+    return created;
+  }
+
+  async updatePropertyRehabBudget(id: number, rehabItem: Partial<InsertPropertyRehabBudget>): Promise<PropertyRehabBudget | undefined> {
+    const [updated] = await db.update(propertyRehabBudget)
+      .set({ ...rehabItem, updatedAt: new Date() })
+      .where(eq(propertyRehabBudget.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePropertyRehabBudget(id: number): Promise<boolean> {
+    const result = await db.delete(propertyRehabBudget).where(eq(propertyRehabBudget.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getPropertyClosingCosts(propertyId: number): Promise<PropertyClosingCosts[]> {
+    return await db.select().from(propertyClosingCosts).where(eq(propertyClosingCosts.propertyId, propertyId));
+  }
+
+  async createPropertyClosingCosts(closingCost: InsertPropertyClosingCosts): Promise<PropertyClosingCosts> {
+    const [created] = await db.insert(propertyClosingCosts).values(closingCost).returning();
+    return created;
+  }
+
+  async updatePropertyClosingCosts(id: number, closingCost: Partial<InsertPropertyClosingCosts>): Promise<PropertyClosingCosts | undefined> {
+    const [updated] = await db.update(propertyClosingCosts)
+      .set({ ...closingCost, updatedAt: new Date() })
+      .where(eq(propertyClosingCosts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePropertyClosingCosts(id: number): Promise<boolean> {
+    const result = await db.delete(propertyClosingCosts).where(eq(propertyClosingCosts.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getPropertyHoldingCosts(propertyId: number): Promise<PropertyHoldingCosts[]> {
+    return await db.select().from(propertyHoldingCosts).where(eq(propertyHoldingCosts.propertyId, propertyId));
+  }
+
+  async createPropertyHoldingCosts(holdingCost: InsertPropertyHoldingCosts): Promise<PropertyHoldingCosts> {
+    const [created] = await db.insert(propertyHoldingCosts).values(holdingCost).returning();
+    return created;
+  }
+
+  async updatePropertyHoldingCosts(id: number, holdingCost: Partial<InsertPropertyHoldingCosts>): Promise<PropertyHoldingCosts | undefined> {
+    const [updated] = await db.update(propertyHoldingCosts)
+      .set({ ...holdingCost, updatedAt: new Date() })
+      .where(eq(propertyHoldingCosts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePropertyHoldingCosts(id: number): Promise<boolean> {
+    const result = await db.delete(propertyHoldingCosts).where(eq(propertyHoldingCosts.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getPropertyExitAnalysis(propertyId: number): Promise<PropertyExitAnalysis | undefined> {
+    const [analysis] = await db.select().from(propertyExitAnalysis).where(eq(propertyExitAnalysis.propertyId, propertyId));
+    return analysis;
+  }
+
+  async createPropertyExitAnalysis(exitAnalysis: InsertPropertyExitAnalysis): Promise<PropertyExitAnalysis> {
+    const [created] = await db.insert(propertyExitAnalysis).values(exitAnalysis).returning();
+    return created;
+  }
+
+  async updatePropertyExitAnalysis(propertyId: number, exitAnalysis: Partial<InsertPropertyExitAnalysis>): Promise<PropertyExitAnalysis | undefined> {
+    const [updated] = await db.update(propertyExitAnalysis)
+      .set({ ...exitAnalysis, updatedAt: new Date() })
+      .where(eq(propertyExitAnalysis.propertyId, propertyId))
+      .returning();
+    return updated;
+  }
+
+  async getPropertyIncomeOther(propertyId: number): Promise<PropertyIncomeOther[]> {
+    return await db.select().from(propertyIncomeOther).where(eq(propertyIncomeOther.propertyId, propertyId));
+  }
+
+  async createPropertyIncomeOther(income: InsertPropertyIncomeOther): Promise<PropertyIncomeOther> {
+    const [created] = await db.insert(propertyIncomeOther).values(income).returning();
+    return created;
+  }
+
+  async updatePropertyIncomeOther(id: number, income: Partial<InsertPropertyIncomeOther>): Promise<PropertyIncomeOther | undefined> {
+    const [updated] = await db.update(propertyIncomeOther)
+      .set({ ...income, updatedAt: new Date() })
+      .where(eq(propertyIncomeOther.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePropertyIncomeOther(id: number): Promise<boolean> {
+    const result = await db.delete(propertyIncomeOther).where(eq(propertyIncomeOther.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Helper method to sync JSON data to normalized tables
+  async syncDealAnalyzerDataToTables(propertyId: number, dealAnalyzerData: string): Promise<void> {
+    try {
+      const data = JSON.parse(dealAnalyzerData);
+      
+      // Sync assumptions
+      if (data.assumptions) {
+        const existingAssumptions = await this.getPropertyAssumptions(propertyId);
+        if (existingAssumptions) {
+          await this.updatePropertyAssumptions(propertyId, { ...data.assumptions, propertyId });
+        } else {
+          await this.createPropertyAssumptions({ ...data.assumptions, propertyId });
+        }
+      }
+
+      // Sync unit types
+      if (data.unitTypes && Array.isArray(data.unitTypes)) {
+        const existing = await this.getPropertyUnitTypes(propertyId);
+        for (const unit of existing) {
+          await this.deletePropertyUnitTypes(unit.id);
+        }
+        for (const unitType of data.unitTypes) {
+          await this.createPropertyUnitTypes({ ...unitType, propertyId });
+        }
+      }
+
+      // Sync rent roll
+      if (data.rentRoll && Array.isArray(data.rentRoll)) {
+        const existing = await this.getPropertyRentRoll(propertyId);
+        for (const rent of existing) {
+          await this.deletePropertyRentRoll(rent.id);
+        }
+        for (const rentItem of data.rentRoll) {
+          await this.createPropertyRentRoll({ ...rentItem, propertyId });
+        }
+      }
+
+      // Sync expenses
+      if (data.expenses && Array.isArray(data.expenses)) {
+        const existing = await this.getPropertyExpenses(propertyId);
+        for (const expense of existing) {
+          await this.deletePropertyExpenses(expense.id);
+        }
+        for (const expenseItem of data.expenses) {
+          await this.createPropertyExpenses({ ...expenseItem, propertyId });
+        }
+      }
+
+      // Sync rehab budget
+      if (data.rehabBudget) {
+        const existing = await this.getPropertyRehabBudget(propertyId);
+        for (const item of existing) {
+          await this.deletePropertyRehabBudget(item.id);
+        }
+        
+        const sections = ['exterior', 'kitchens', 'bathrooms', 'generalInterior', 'finishings'];
+        for (const section of sections) {
+          if (data.rehabBudget[section] && Array.isArray(data.rehabBudget[section])) {
+            for (const item of data.rehabBudget[section]) {
+              await this.createPropertyRehabBudget({ 
+                ...item, 
+                propertyId, 
+                section: section 
+              });
+            }
+          }
+        }
+      }
+
+      // Sync exit analysis
+      if (data.exitAnalysis) {
+        const existing = await this.getPropertyExitAnalysis(propertyId);
+        if (existing) {
+          await this.updatePropertyExitAnalysis(propertyId, { ...data.exitAnalysis, propertyId });
+        } else {
+          await this.createPropertyExitAnalysis({ ...data.exitAnalysis, propertyId });
+        }
+      }
+
+    } catch (error) {
+      console.error('Error syncing deal analyzer data to tables:', error);
+    }
+  }
+
+  // Helper method to build JSON from normalized tables
+  async buildDealAnalyzerDataFromTables(propertyId: number): Promise<string | null> {
+    try {
+      const data: any = {};
+
+      // Get assumptions
+      const assumptions = await this.getPropertyAssumptions(propertyId);
+      if (assumptions) {
+        data.assumptions = assumptions;
+      }
+
+      // Get unit types
+      const unitTypes = await this.getPropertyUnitTypes(propertyId);
+      if (unitTypes.length > 0) {
+        data.unitTypes = unitTypes;
+      }
+
+      // Get rent roll
+      const rentRoll = await this.getPropertyRentRoll(propertyId);
+      if (rentRoll.length > 0) {
+        data.rentRoll = rentRoll;
+      }
+
+      // Get expenses
+      const expenses = await this.getPropertyExpenses(propertyId);
+      if (expenses.length > 0) {
+        data.expenses = expenses;
+      }
+
+      // Get rehab budget organized by section
+      const rehabItems = await this.getPropertyRehabBudget(propertyId);
+      if (rehabItems.length > 0) {
+        data.rehabBudget = {
+          exterior: rehabItems.filter(item => item.section === 'exterior'),
+          kitchens: rehabItems.filter(item => item.section === 'kitchens'),
+          bathrooms: rehabItems.filter(item => item.section === 'bathrooms'),
+          generalInterior: rehabItems.filter(item => item.section === 'generalInterior'),
+          finishings: rehabItems.filter(item => item.section === 'finishings')
+        };
+      }
+
+      // Get exit analysis
+      const exitAnalysis = await this.getPropertyExitAnalysis(propertyId);
+      if (exitAnalysis) {
+        data.exitAnalysis = exitAnalysis;
+      }
+
+      return Object.keys(data).length > 0 ? JSON.stringify(data) : null;
+    } catch (error) {
+      console.error('Error building deal analyzer data from tables:', error);
+      return null;
+    }
   }
 }
 
