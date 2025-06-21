@@ -726,6 +726,33 @@ export default function DealAnalyzer() {
         });
         break;
       
+      case 'totalCashInvested':
+        setCalculationDetails({
+          title: 'Total Cash Invested',
+          value: metrics.totalCashInvested,
+          formula: 'Down Payment + Closing Costs + Holding Costs + Rehab Costs',
+          breakdown: [
+            { label: 'Down Payment', value: metrics.downPayment, source: 'Purchase Price - Initial Loan' },
+            { label: 'Closing Costs', value: metrics.totalClosingCosts, source: 'Sum of all closing costs' },
+            { label: 'Holding Costs', value: metrics.totalHoldingCosts, source: 'Sum of all holding costs' },
+            { label: 'Rehab Costs', value: metrics.totalRehab, source: 'Sum of all rehab sections + buffer' }
+          ]
+        });
+        break;
+      
+      case 'arv':
+        setCalculationDetails({
+          title: 'After Repair Value (ARV)',
+          value: metrics.arv,
+          formula: 'Net Operating Income ÷ Market Cap Rate',
+          breakdown: [
+            { label: 'Net Operating Income', value: metrics.noi, source: 'Gross Income - Operating Expenses' },
+            { label: 'Market Cap Rate', value: assumptions.marketCapRate * 100, source: 'Market Assumptions → Cap Rate' },
+            { label: 'ARV', value: metrics.arv, source: 'NOI ÷ Cap Rate' }
+          ]
+        });
+        break;
+      
       default:
         // For any metric not specifically handled, show basic info
         setCalculationDetails({
