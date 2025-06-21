@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { kpiService } from "./kpi.service";
 import { dataMigrationService } from "./data-migration";
+import { dataSyncManager } from "./dataSync";
 import { 
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
@@ -386,12 +387,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const updateData = req.body;
       
-      const property = await storage.updateProperty(id, updateData);
-      if (!property) {
-        return res.status(404).json({ error: "Property not found" });
-      }
+      // Use unified data sync system for consistent calculations
+      const result = await dataSyncManager.updatePropertyWithSync(id, updateData);
       
-      res.json(property);
+      // Broadcast KPI update to connected clients
+      await broadcastKPIUpdate(id);
+      
+      res.json(result.property);
     } catch (error) {
       console.error("Update property error:", error);
       res.status(500).json({ error: "Failed to update property" });
@@ -402,16 +404,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updateData = req.body;
+      const userId = req.user.id;
       
-      const property = await storage.updateProperty(id, updateData);
-      if (!property) {
-        return res.status(404).json({ error: "Property not found" });
+      // Use unified data sync system for consistent calculations
+      const result = await dataSyncManager.updatePropertyWithSync(id, updateData, userId);
+      
+      // Log any warnings from data validation
+      if (result.warnings.length > 0) {
+        console.warn(`Property ${id} sync warnings:`, result.warnings);
       }
       
-      res.json(property);
+      // Broadcast KPI update to connected clients
+      await broadcastKPIUpdate(id);
+      
+      res.json(result.property);
     } catch (error) {
       console.error("Update property error:", error);
       res.status(500).json({ error: "Failed to update property" });
+    }
+  });
+
+  // Data synchronization routes
+  app.post("/api/properties/:id/sync", authenticateUser, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.id;
+      
+      const result = await dataSyncManager.updatePropertyWithSync(id, {}, userId);
+      
+      res.json({
+        property: result.property,
+        calculations: result.calculationResults,
+        syncedFields: result.syncedFields,
+        warnings: result.warnings
+      });
+    } catch (error) {
+      console.error("Property sync error:", error);
+      res.status(500).json({ error: "Failed to sync property data" });
+    }
+  });
+
+  app.post("/api/data/sync-all", authenticateUser, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const result = await dataSyncManager.syncAllProperties(userId);
+      
+      res.json({
+        message: `Synchronized ${result.updated} properties`,
+        updated: result.updated,
+        warnings: result.warnings
+      });
+    } catch (error) {
+      console.error("Full sync error:", error);
+      res.status(500).json({ error: "Failed to synchronize all properties" });
+    }
+  });
+
+  app.get("/api/properties/:id/calculations", authenticateUser, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      const propertyWithCalculations = await dataSyncManager.getPropertyWithCalculations(id);
+      
+      res.json(propertyWithCalculations);
+    } catch (error) {
+      console.error("Property calculations error:", error);
+      res.status(500).json({ error: "Failed to get property calculations" });
     }
   });
 
