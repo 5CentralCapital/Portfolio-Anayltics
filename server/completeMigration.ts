@@ -88,9 +88,9 @@ export async function completeMigration() {
             await db.insert(propertyUnitTypes).values({
               propertyId: property.id,
               unitTypeId: unitType.id || 'default',
-              unitTypeName: unitType.name || 'Standard Unit',
+              name: unitType.name || 'Standard Unit',
               marketRent: parseFloat(unitType.marketRent?.toString() || '0'),
-              sqft: parseFloat(unitType.sqft?.toString() || '0')
+              squareFeet: parseFloat(unitType.sqft?.toString() || '0')
             }).onConflictDoNothing();
           }
         }
