@@ -208,3 +208,128 @@ export function parseNumber(value: string | number | undefined | null): number {
   }
   return 0;
 }
+
+/**
+ * Property calculation configuration for SmartField compatibility
+ */
+export interface PropertyCalculationConfig {
+  overview: {
+    [key: string]: {
+      editable: boolean;
+      description: string;
+    };
+  };
+  rentRoll: {
+    [key: string]: {
+      editable: boolean;
+      description: string;
+    };
+  };
+  expenses: {
+    [key: string]: {
+      editable: boolean;
+      description: string;
+    };
+  };
+  financing: {
+    [key: string]: {
+      editable: boolean;
+      description: string;
+    };
+  };
+}
+
+/**
+ * Field editability configuration
+ */
+const fieldConfig: PropertyCalculationConfig = {
+  overview: {
+    acquisitionPrice: { editable: true, description: 'Property purchase price' },
+    rehabCosts: { editable: true, description: 'Total rehabilitation costs' },
+    arvAtTimePurchased: { editable: false, description: 'After repair value calculated from NOI and cap rate' },
+    initialCapitalRequired: { editable: false, description: 'Total cash required: down payment + closing costs + rehab' },
+    cashFlow: { editable: false, description: 'Monthly net cash flow after all expenses and debt service' },
+    cashOnCashReturn: { editable: false, description: 'Annual cash flow divided by initial capital invested' },
+    totalProfits: { editable: false, description: 'Total unrealized or realized profit from property' }
+  },
+  rentRoll: {
+    proFormaRent: { editable: true, description: 'Expected market rent for unit' },
+    currentRent: { editable: true, description: 'Current rent being charged' }
+  },
+  expenses: {
+    taxes: { editable: true, description: 'Annual property taxes' },
+    insurance: { editable: true, description: 'Annual property insurance' },
+    maintenance: { editable: true, description: 'Annual maintenance and repairs' },
+    utilities: { editable: true, description: 'Annual utility costs' }
+  },
+  financing: {
+    loanAmount: { editable: true, description: 'Principal loan amount' },
+    interestRate: { editable: true, description: 'Annual interest rate' },
+    loanTermYears: { editable: true, description: 'Loan term in years' }
+  }
+};
+
+/**
+ * Check if a field is editable
+ */
+export function isFieldEditable(tabName: keyof PropertyCalculationConfig, fieldName: string): boolean {
+  return fieldConfig[tabName]?.[fieldName]?.editable ?? true;
+}
+
+/**
+ * Get field description
+ */
+export function getFieldDescription(tabName: keyof PropertyCalculationConfig, fieldName: string): string {
+  return fieldConfig[tabName]?.[fieldName]?.description ?? 'Property calculation field';
+}
+
+/**
+ * Calculate field value based on property data
+ */
+export function calculateFieldValue(tabName: keyof PropertyCalculationConfig, fieldName: string, propertyData: any): number {
+  const metrics = calculatePropertyMetrics(propertyData);
+  
+  switch (fieldName) {
+    case 'arvAtTimePurchased':
+      return metrics.arv;
+    case 'initialCapitalRequired':
+      return metrics.initialCapitalRequired;
+    case 'cashFlow':
+      return metrics.monthlyCashFlow;
+    case 'cashOnCashReturn':
+      return metrics.cashOnCashReturn;
+    case 'totalProfits':
+      return metrics.totalProfit;
+    case 'annualCashFlow':
+      return metrics.annualCashFlow;
+    case 'noi':
+      return metrics.noi;
+    case 'capRate':
+      return metrics.capRate;
+    case 'equityMultiple':
+      return metrics.equityMultiple;
+    case 'dscr':
+      return metrics.dscr;
+    case 'ltv':
+      return metrics.ltv;
+    case 'breakEvenOccupancy':
+      return metrics.breakEvenOccupancy;
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Recalculate fields based on property changes (legacy compatibility)
+ */
+export function recalculateFields(tabName: keyof PropertyCalculationConfig, propertyData: any): any {
+  const metrics = calculatePropertyMetrics(propertyData);
+  
+  return {
+    arvAtTimePurchased: metrics.arv.toString(),
+    initialCapitalRequired: metrics.initialCapitalRequired.toString(),
+    cashFlow: metrics.monthlyCashFlow.toString(),
+    cashOnCashReturn: metrics.cashOnCashReturn.toString(),
+    totalProfits: metrics.totalProfit.toString()
+  };
+}

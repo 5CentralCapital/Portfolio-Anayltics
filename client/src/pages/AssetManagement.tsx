@@ -236,7 +236,7 @@ export default function AssetManagement() {
   // Calculation breakdown modal state
   const [calculationBreakdown, setCalculationBreakdown] = useState<{
     isOpen: boolean;
-    tabName: keyof PropertyCalculationConfig;
+    tabName: string;
     fieldName: string;
     propertyData: any;
     label?: string;
@@ -458,7 +458,7 @@ export default function AssetManagement() {
 
   // Calculation breakdown modal functions
   const openCalculationBreakdown = (
-    tabName: keyof PropertyCalculationConfig,
+    tabName: string,
     fieldName: string,
     propertyData: any,
     label?: string
@@ -476,22 +476,28 @@ export default function AssetManagement() {
     setCalculationBreakdown(prev => ({ ...prev, isOpen: false }));
   };
 
-  // Smart field change handler with auto-calculation
+  // Smart field change handler with centralized calculations
   const handleSmartFieldChange = (
-    tabName: keyof PropertyCalculationConfig,
+    tabName: string,
     fieldName: string,
     value: number | string
   ) => {
     if (!editingModalProperty) return;
 
-    // Update the field value
+    // Update the field value and recalculate using centralized system
     const updatedProperty = { ...editingModalProperty, [fieldName]: value };
+    const metrics = calculatePropertyMetrics(updatedProperty as PropertyData);
     
-    // Recalculate dependent fields
-    const recalculatedData = recalculateFields(tabName, updatedProperty);
+    // Update calculated fields based on centralized metrics
+    const recalculatedProperty = {
+      ...updatedProperty,
+      cashFlow: metrics.monthlyCashFlow.toString(),
+      cashOnCashReturn: metrics.cashOnCashReturn.toString(),
+      totalProfits: metrics.totalProfit.toString(),
+      arvAtTimePurchased: metrics.arv.toString()
+    };
     
-    // Update the editing property with new calculated values
-    setEditingModalProperty({ ...updatedProperty, ...recalculatedData });
+    setEditingModalProperty(recalculatedProperty);
   };
 
   // Update rehab line item
@@ -1863,55 +1869,7 @@ export default function AssetManagement() {
                                   // Use centralized calculation system
                                   const propertyData = isEditing && editingModalProperty ? editingModalProperty : showPropertyDetailModal;
                                   const metrics = calculatePropertyMetrics(propertyData as PropertyData);
-                                  
-                                  if (currentData?.rentRoll && Array.isArray(currentData.rentRoll)) {
-                                    // Calculate from rent roll data (same logic as annual cash flow)
-                                    const monthlyRentalIncome = currentData.rentRoll.reduce((sum: number, unit: any) => 
-                                      sum + (parseFloat(unit.proFormaRent) || 0), 0);
-                                    const grossRentalIncome = monthlyRentalIncome * 12;
-                                    
-                                    // Apply vacancy rate
-                                    const vacancyRate = currentData?.assumptions?.vacancyRate || 0.05;
-                                    const effectiveGrossIncome = grossRentalIncome * (1 - vacancyRate);
-                                    
-                                    // Calculate total expenses
-                                    let totalExpenses = 0;
-                                    if (currentData?.incomeAndExpenses?.operatingExpenses) {
-                                      totalExpenses = currentData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
-                                        sum + (parseFloat(expense.annualAmount) || 0), 0);
-                                    } else {
-                                      // Use Deal Analyzer assumptions expense ratio if available
-                                      const expenseRatio = currentData?.assumptions?.expenseRatio || 0.45;
-                                      totalExpenses = effectiveGrossIncome * expenseRatio;
-                                    }
-                                    
-                                    // Calculate NOI
-                                    const noi = effectiveGrossIncome - totalExpenses;
-                                    
-                                    // Calculate debt service
-                                    let annualDebtService = 0;
-                                    if (currentData?.assumptions) {
-                                      const purchasePrice = currentData.assumptions.purchasePrice || parseFloat(showPropertyDetailModal.acquisitionPrice || '0');
-                                      const loanPercentage = currentData.assumptions.loanPercentage || 0.8;
-                                      const interestRate = currentData.assumptions.interestRate || 0.07;
-                                      const loanTermYears = currentData.assumptions.loanTermYears || 30;
-                                      
-                                      const loanAmount = purchasePrice * loanPercentage;
-                                      const monthlyRate = interestRate / 12;
-                                      const numPayments = loanTermYears * 12;
-                                      
-                                      if (monthlyRate > 0 && loanAmount > 0) {
-                                        const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-                                        annualDebtService = monthlyPayment * 12;
-                                      }
-                                    }
-                                    
-                                    annualCashFlow = noi - annualDebtService;
-                                  } else {
-                                    // Use stored monthly cash flow value and convert to annual
-                                    const monthlyCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
-                                    annualCashFlow = monthlyCashFlow * 12;
-                                  }
+
                                   
                                   return (
                                     <p className={`font-medium ${metrics.cashOnCashReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
