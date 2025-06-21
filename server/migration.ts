@@ -18,13 +18,14 @@ export async function migratePropertyData() {
   
   try {
     // Get all properties with dealAnalyzerData
-    const propertiesWithData = await db.select().from(properties).where(eq(properties.dealAnalyzerData, ''));
+    const propertiesWithData = await db.select().from(properties);
     
     for (const property of propertiesWithData) {
       if (!property.dealAnalyzerData) continue;
       
       try {
         const dealData = JSON.parse(property.dealAnalyzerData);
+        console.log(`Processing property ${property.id}: ${property.address} with data:`, Object.keys(dealData));
         console.log(`Migrating property ${property.id}: ${property.address}`);
         
         // 1. Migrate assumptions

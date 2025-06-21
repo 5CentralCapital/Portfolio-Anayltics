@@ -73,7 +73,7 @@ export class DealAnalyzerService {
           currentRent: unit.currentRent || 0,
           proFormaRent: unit.proFormaRent || 0,
           isVacant: unit.isVacant || false,
-          leaseEndDate: unit.leaseEndDate ? new Date(unit.leaseEndDate) : null,
+          leaseEndDate: unit.leaseEndDate ? unit.leaseEndDate.toString() : null,
           tenantName: unit.tenantName
         }))
       );
