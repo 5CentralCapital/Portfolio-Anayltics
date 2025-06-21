@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 
 // Simple session storage for development
-const activeSessions = new Map<string, { userId: string; email: string; createdAt: Date }>();
+const activeSessions = new Map<string, { userId: number; email: string; createdAt: Date }>();
 
 // Authentication middleware
 function authenticateUser(req: any, res: any, next: any) {
@@ -28,11 +28,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email, password } = req.body;
       
-      // Test user credentials
-      const testUsers = {
-        'michael@5central.capital': 'michael-id',
-        'sarah@housedoctors.com': 'sarah-id', 
-        'tom@arcadiavision.com': 'tom-id'
+      // Test user credentials with numeric IDs
+      const testUsers: Record<string, number> = {
+        'michael@5central.capital': 1,
+        'sarah@housedoctors.com': 2, 
+        'tom@arcadiavision.com': 3
       };
 
       const userId = testUsers[email as keyof typeof testUsers];
@@ -74,7 +74,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/user', authenticateUser, async (req, res) => {
     try {
       const userId = req.user.id;
-      res.json({ id: userId, email: `${userId}@example.com` });
+      const session = Array.from(activeSessions.values()).find(s => s.userId === userId);
+      res.json({ id: userId, email: session?.email || `user${userId}@example.com` });
     } catch (error) {
       console.error('Get user error:', error);
       res.status(500).json({ message: 'Failed to fetch user' });
