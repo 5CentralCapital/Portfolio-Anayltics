@@ -189,9 +189,12 @@ export default function AssetManagement() {
     ];
   };
 
-  const { data: properties = [], isLoading: propertiesLoading } = useQuery<Property[]>({
+  const { data: propertiesData, isLoading: propertiesLoading } = useQuery<Property[]>({
     queryKey: ['/api/properties']
   });
+
+  // Ensure properties is always an array
+  const properties = Array.isArray(propertiesData) ? propertiesData : [];
 
   const handlePropertyDoubleClick = (property: Property) => {
     setShowPropertyDetailModal(property);
@@ -262,7 +265,7 @@ export default function AssetManagement() {
     }));
   };
 
-  if (propertiesLoading) {
+  if (propertiesLoading || !propertiesData) {
     return <div className="p-8">Loading properties...</div>;
   }
 
