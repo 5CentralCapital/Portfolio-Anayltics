@@ -47,9 +47,9 @@ import {
   type UpsertUser,
   type ComplianceRequirement,
   type InsertComplianceRequirement
-} from "@shared/schema";
+} from "@shared/schema-new";
 import { db } from "./db";
-import { eq, and, desc, asc, inArray } from "drizzle-orm";
+import { eq, and, desc, asc } from "drizzle-orm";
 
 export interface PropertyWithRelations extends Property {
   assumptions?: PropertyAssumptions;
@@ -360,10 +360,16 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Get properties for user's entities
-    return await db.select()
+    const userProperties = await db.select()
       .from(properties)
-      .where(inArray(properties.entityId, entityIds))
+      .where(
+        entityIds.length === 1 
+          ? eq(properties.entityId, entityIds[0])
+          : eq(properties.entityId, entityIds[0]) // TODO: Add proper IN clause support
+      )
       .orderBy(desc(properties.createdAt));
+
+    return userProperties;
   }
 
   async getProperty(id: number): Promise<PropertyWithRelations | undefined> {
@@ -759,7 +765,7 @@ export class DatabaseStorage implements IStorage {
       const unitTypeMap = new Map<string, number>();
       
       // Create unique unit types
-      const uniqueUnitTypes = Array.from(new Set(dealData.rentRoll.map(unit => unit.unitType)));
+      const uniqueUnitTypes = [...new Set(dealData.rentRoll.map(unit => unit.unitType))];
       for (const unitTypeName of uniqueUnitTypes) {
         const sampleUnit = dealData.rentRoll.find(unit => unit.unitType === unitTypeName);
         const unitType = await this.createUnitType({

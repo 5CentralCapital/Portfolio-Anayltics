@@ -257,16 +257,6 @@ export const monthlyProforma = pgTable("monthly_proforma", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Company performance tracking
-export const companyMetrics = pgTable("company_metrics", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 100 }).notNull(),
-  value: varchar("value", { length: 50 }).notNull(),
-  category: varchar("category", { length: 50 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 // RELATIONS
 export const propertiesRelations = relations(properties, ({ one, many }) => ({
   entity: one(entities, {
@@ -374,31 +364,6 @@ export const monthlyProformaRelations = relations(monthlyProforma, ({ one }) => 
   }),
 }));
 
-// Entity relations (keep existing)
-export const entitiesRelations = relations(entities, ({ many }) => ({
-  memberships: many(entityMemberships),
-  complianceRequirements: many(complianceRequirements),
-  properties: many(properties),
-}));
-
-export const entityMembershipsRelations = relations(entityMemberships, ({ one }) => ({
-  entity: one(entities, {
-    fields: [entityMemberships.entityId],
-    references: [entities.id],
-  }),
-  user: one(users, {
-    fields: [entityMemberships.userId],
-    references: [users.id],
-  }),
-}));
-
-export const complianceRequirementsRelations = relations(complianceRequirements, ({ one }) => ({
-  entity: one(entities, {
-    fields: [complianceRequirements.entityId],
-    references: [entities.id],
-  }),
-}));
-
 // Export types
 export type Property = typeof properties.$inferSelect;
 export type InsertProperty = typeof properties.$inferInsert;
@@ -425,16 +390,6 @@ export type InsertExitAnalysis = typeof exitAnalysis.$inferInsert;
 export type MonthlyProforma = typeof monthlyProforma.$inferSelect;
 export type InsertMonthlyProforma = typeof monthlyProforma.$inferInsert;
 
-// Entity-related exports (keep existing)
-export type Entity = typeof entities.$inferSelect;
-export type InsertEntity = typeof entities.$inferInsert;
-export type EntityMembership = typeof entityMemberships.$inferSelect;
-export type InsertEntityMembership = typeof entityMemberships.$inferInsert;
-export type ComplianceRequirement = typeof complianceRequirements.$inferSelect;
-export type InsertComplianceRequirement = typeof complianceRequirements.$inferInsert;
-export type CompanyMetric = typeof companyMetrics.$inferSelect;
-export type InsertCompanyMetric = typeof companyMetrics.$inferInsert;
-
 // Zod schemas for validation
 export const insertPropertySchema = createInsertSchema(properties);
 export const selectPropertySchema = createSelectSchema(properties);
@@ -450,7 +405,14 @@ export const insertLoanSchema = createInsertSchema(loans);
 export const insertExitAnalysisSchema = createInsertSchema(exitAnalysis);
 export const insertMonthlyProformaSchema = createInsertSchema(monthlyProforma);
 
+// Entity-related exports (keep existing)
+export type Entity = typeof entities.$inferSelect;
+export type InsertEntity = typeof entities.$inferInsert;
+export type EntityMembership = typeof entityMemberships.$inferSelect;
+export type InsertEntityMembership = typeof entityMemberships.$inferInsert;
+export type ComplianceRequirement = typeof complianceRequirements.$inferSelect;
+export type InsertComplianceRequirement = typeof complianceRequirements.$inferInsert;
+
 export const insertEntitySchema = createInsertSchema(entities);
 export const insertEntityMembershipSchema = createInsertSchema(entityMemberships);
 export const insertComplianceRequirementSchema = createInsertSchema(complianceRequirements);
-export const insertCompanyMetricSchema = createInsertSchema(companyMetrics);
