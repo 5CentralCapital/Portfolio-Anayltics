@@ -824,10 +824,10 @@ export default function DealAnalyzer() {
           }))
         },
         financing: {
-          loans: financing?.loans || []
+          loans: [] // Will be populated from loan analysis if available
         },
         exitAnalysis,
-        proforma: twelveMonthProforma
+        proforma: [] // Will be calculated from rent roll and expenses
       };
 
       const response = await fetch('/api/import-property', {
@@ -853,26 +853,6 @@ export default function DealAnalyzer() {
 
       const result = await response.json();
       console.log('Import successful:', result);
-
-      // Automatically sync the newly created property to ensure calculations are consistent
-      if (result.id) {
-        try {
-          await fetch(`/api/properties/${result.id}/sync`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authToken}`,
-            }
-          });
-        } catch (syncError) {
-          console.warn('Property sync after import failed:', syncError);
-        }
-      }
-
-      // After successful property creation, import the rehab line items
-      if (result.id) {
-        await importRehabLineItems(result.id);
-      }
 
       // Close modal and reset form
       setShowImportModal(false);
