@@ -859,7 +859,27 @@ export default function DealAnalyzer() {
           rehabBudgetSections,
           closingCosts,
           holdingCosts,
-          expenses,
+          expenses: {
+            // Map Deal Analyzer expense keys to property modal keys
+            taxes: expenses.propertyTax || 0,
+            insurance: expenses.insurance || 0,
+            utilities: expenses.utilities || 0,
+            maintenance: expenses.maintenance || 0,
+            management: expenses.managementFee || 0,
+            vacancy: 0, // Will be calculated
+            capex: expenses.capitalReserves || 0,
+            landscaping: 0,
+            legalAccounting: expenses.other || 0
+          },
+          income: {
+            // Calculate income from rent roll
+            grossRentalIncome: rentRoll.reduce((sum, unit) => sum + unit.proFormaRent, 0) * 12,
+            otherIncome: 0,
+            laundryIncome: 0,
+            parkingIncome: 0,
+            storageIncome: 0,
+            petIncome: 0
+          },
           rentRoll,
           unitTypes,
           exitAnalysis,
