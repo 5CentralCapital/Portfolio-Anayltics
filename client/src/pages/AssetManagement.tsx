@@ -198,7 +198,7 @@ export default function AssetManagement() {
   const [showRehabModal, setShowRehabModal] = useState<Property | null>(null);
   const [showPropertyDetailModal, setShowPropertyDetailModal] = useState<Property | null>(null);
   const [propertyDetailTab, setPropertyDetailTab] = useState('overview');
-  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [editingModalProperty, setEditingModalProperty] = useState<Property | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
   // Initialize default rehab line items for a property
@@ -309,24 +309,24 @@ export default function AssetManagement() {
     
     // Show comprehensive property detail modal with all Deal Analyzer tabs
     setShowPropertyDetailModal(property);
-    setEditingProperty({ ...property });
+    setEditingModalProperty({ ...property });
     setPropertyDetailTab('overview');
   };
 
   const savePropertyChanges = () => {
-    if (editingProperty) {
+    if (editingModalProperty) {
       updatePropertyMutation.mutate({
-        id: editingProperty.id,
-        property: editingProperty
+        id: editingModalProperty.id,
+        property: editingModalProperty
       });
       setIsEditing(false);
     }
   };
 
   const handlePropertyFieldChange = (field: string, value: any) => {
-    if (editingProperty) {
-      setEditingProperty({
-        ...editingProperty,
+    if (editingModalProperty) {
+      setEditingModalProperty({
+        ...editingModalProperty,
         [field]: value
       });
     }
@@ -334,6 +334,12 @@ export default function AssetManagement() {
 
   const closePropertyModal = () => {
     setSelectedProperty(null);
+  };
+
+  const closeDetailModal = () => {
+    setShowPropertyDetailModal(null);
+    setEditingModalProperty(null);
+    setIsEditing(false);
   };
 
   // Update rehab line item
@@ -1488,12 +1494,39 @@ export default function AssetManagement() {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Property Analysis - {showPropertyDetailModal.address}
               </h2>
-              <button
-                onClick={() => setShowPropertyDetailModal(null)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-              >
-                <X className="h-6 w-6" />
-              </button>
+              <div className="flex items-center space-x-3">
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={savePropertyChanges}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </button>
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                  >
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    Edit Property
+                  </button>
+                )}
+                <button
+                  onClick={closeDetailModal}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
             </div>
 
             {/* Tab Navigation */}
@@ -1843,28 +1876,268 @@ export default function AssetManagement() {
                       </div>
                     );
 
-                  case 'expenses':
+                  case 'income-expenses':
                     return (
                       <div className="space-y-6">
-                        {dealAnalyzerData?.expenses ? (
-                          <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-6 border border-red-200 dark:border-red-800">
-                            <h3 className="text-lg font-semibold text-red-900 dark:text-red-300 mb-4">Operating Expenses</h3>
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {Object.entries(dealAnalyzerData.expenses).map(([key, value]: [string, any]) => (
-                                <div key={key} className="bg-white dark:bg-gray-700 rounded p-4">
-                                  <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</p>
-                                  <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(value)}</p>
-                                </div>
-                              ))}
+                        {/* Income Section */}
+                        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">
+                          <h3 className="text-lg font-semibold text-green-900 dark:text-green-300 mb-4">Annual Income</h3>
+                          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {[
+                              { key: 'grossRentalIncome', label: 'Gross Rental Income', value: dealAnalyzerData?.income?.grossRentalIncome || (dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) * 12) || 0 },
+                              { key: 'otherIncome', label: 'Other Income', value: dealAnalyzerData?.income?.otherIncome || 0 },
+                              { key: 'laundryIncome', label: 'Laundry Income', value: dealAnalyzerData?.income?.laundryIncome || 0 },
+                              { key: 'parkingIncome', label: 'Parking Income', value: dealAnalyzerData?.income?.parkingIncome || 0 },
+                              { key: 'storageIncome', label: 'Storage Income', value: dealAnalyzerData?.income?.storageIncome || 0 },
+                              { key: 'petIncome', label: 'Pet Fees', value: dealAnalyzerData?.income?.petIncome || 0 }
+                            ].map((item) => (
+                              <div key={item.key} className="bg-white dark:bg-gray-700 rounded p-4">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{item.label}</p>
+                                {isEditing ? (
+                                  <input
+                                    type="number"
+                                    value={item.value}
+                                    onChange={(e) => {
+                                      const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                      if (!dealData.income) dealData.income = {};
+                                      dealData.income[item.key] = parseFloat(e.target.value) || 0;
+                                      handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                    }}
+                                    className="w-full mt-1 px-3 py-1 border border-gray-300 rounded text-sm"
+                                  />
+                                ) : (
+                                  <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(item.value)}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Expenses Section */}
+                        <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-6 border border-red-200 dark:border-red-800">
+                          <h3 className="text-lg font-semibold text-red-900 dark:text-red-300 mb-4">Annual Operating Expenses</h3>
+                          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {[
+                              { key: 'taxes', label: 'Property Taxes', value: dealAnalyzerData?.expenses?.taxes || 0 },
+                              { key: 'insurance', label: 'Insurance', value: dealAnalyzerData?.expenses?.insurance || 0 },
+                              { key: 'utilities', label: 'Utilities', value: dealAnalyzerData?.expenses?.utilities || 0 },
+                              { key: 'maintenance', label: 'Maintenance', value: dealAnalyzerData?.expenses?.maintenance || 0 },
+                              { key: 'management', label: 'Property Management', value: dealAnalyzerData?.expenses?.management || 0 },
+                              { key: 'vacancy', label: 'Vacancy Allowance', value: dealAnalyzerData?.expenses?.vacancy || 0 },
+                              { key: 'capex', label: 'Capital Expenditures', value: dealAnalyzerData?.expenses?.capex || 0 },
+                              { key: 'landscaping', label: 'Landscaping', value: dealAnalyzerData?.expenses?.landscaping || 0 },
+                              { key: 'legalAccounting', label: 'Legal & Accounting', value: dealAnalyzerData?.expenses?.legalAccounting || 0 }
+                            ].map((item) => (
+                              <div key={item.key} className="bg-white dark:bg-gray-700 rounded p-4">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{item.label}</p>
+                                {isEditing ? (
+                                  <input
+                                    type="number"
+                                    value={item.value}
+                                    onChange={(e) => {
+                                      const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                      if (!dealData.expenses) dealData.expenses = {};
+                                      dealData.expenses[item.key] = parseFloat(e.target.value) || 0;
+                                      handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                    }}
+                                    className="w-full mt-1 px-3 py-1 border border-gray-300 rounded text-sm"
+                                  />
+                                ) : (
+                                  <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(item.value)}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* NOI Summary */}
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+                          <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-4">Net Operating Income Summary</h3>
+                          <div className="grid md:grid-cols-3 gap-6">
+                            {(() => {
+                              const income = dealAnalyzerData?.income || {};
+                              const expenses = dealAnalyzerData?.expenses || {};
+                              const totalIncome = Object.values(income).reduce((sum: number, val: any) => sum + (val || 0), 0);
+                              const totalExpenses = Object.values(expenses).reduce((sum: number, val: any) => sum + (val || 0), 0);
+                              const noi = totalIncome - totalExpenses;
+                              
+                              return (
+                                <>
+                                  <div className="text-center">
+                                    <p className="text-sm text-blue-700 dark:text-blue-300">Total Income</p>
+                                    <p className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="text-sm text-blue-700 dark:text-blue-300">Total Expenses</p>
+                                    <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="text-sm text-blue-700 dark:text-blue-300">Net Operating Income</p>
+                                    <p className={`text-2xl font-bold ${noi >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(noi)}</p>
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                    );
+
+                  case 'sensitivity':
+                    return (
+                      <div className="space-y-6">
+                        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-6 border border-purple-200 dark:border-purple-800">
+                          <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-300 mb-4">Sensitivity Analysis</h3>
+                          <div className="grid md:grid-cols-2 gap-6">
+                            {/* Key Variables */}
+                            <div>
+                              <h4 className="font-medium text-purple-900 dark:text-purple-300 mb-3">Key Variables</h4>
+                              <div className="space-y-3">
+                                {[
+                                  { key: 'rentIncrease', label: 'Annual Rent Increase %', value: dealAnalyzerData?.sensitivity?.rentIncrease || 3, min: 0, max: 10, step: 0.5 },
+                                  { key: 'expenseIncrease', label: 'Annual Expense Increase %', value: dealAnalyzerData?.sensitivity?.expenseIncrease || 3, min: 0, max: 10, step: 0.5 },
+                                  { key: 'vacancyRate', label: 'Vacancy Rate %', value: dealAnalyzerData?.sensitivity?.vacancyRate || 5, min: 0, max: 20, step: 1 },
+                                  { key: 'exitCapRate', label: 'Exit Cap Rate %', value: dealAnalyzerData?.sensitivity?.exitCapRate || 6, min: 3, max: 12, step: 0.25 }
+                                ].map((item) => (
+                                  <div key={item.key} className="flex justify-between items-center">
+                                    <span className="text-sm text-purple-700 dark:text-purple-300">{item.label}</span>
+                                    {isEditing ? (
+                                      <input
+                                        type="number"
+                                        min={item.min}
+                                        max={item.max}
+                                        step={item.step}
+                                        value={item.value}
+                                        onChange={(e) => {
+                                          const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                          if (!dealData.sensitivity) dealData.sensitivity = {};
+                                          dealData.sensitivity[item.key] = parseFloat(e.target.value) || 0;
+                                          handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                        }}
+                                        className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                      />
+                                    ) : (
+                                      <span className="font-medium text-purple-900 dark:text-purple-200">{item.value}%</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Scenario Analysis */}
+                            <div>
+                              <h4 className="font-medium text-purple-900 dark:text-purple-300 mb-3">Scenario Analysis</h4>
+                              <div className="space-y-3">
+                                {[
+                                  { scenario: 'Conservative', rentIncrease: 2, expenseIncrease: 4, vacancy: 8 },
+                                  { scenario: 'Base Case', rentIncrease: 3, expenseIncrease: 3, vacancy: 5 },
+                                  { scenario: 'Optimistic', rentIncrease: 4, expenseIncrease: 2, vacancy: 3 }
+                                ].map((scenario) => {
+                                  const currentRent = dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) * 12 || 0;
+                                  const currentExpenses = Object.values(dealAnalyzerData?.expenses || {}).reduce((sum: number, val: any) => sum + (val || 0), 0);
+                                  const adjustedRent = currentRent * (1 + scenario.rentIncrease / 100);
+                                  const adjustedExpenses = currentExpenses * (1 + scenario.expenseIncrease / 100);
+                                  const vacancyLoss = adjustedRent * (scenario.vacancy / 100);
+                                  const netIncome = adjustedRent - vacancyLoss - adjustedExpenses;
+                                  
+                                  return (
+                                    <div key={scenario.scenario} className="bg-white dark:bg-gray-700 rounded p-3">
+                                      <h5 className="font-medium text-gray-900 dark:text-white">{scenario.scenario}</h5>
+                                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                        <p>Rent: +{scenario.rentIncrease}% | Expenses: +{scenario.expenseIncrease}% | Vacancy: {scenario.vacancy}%</p>
+                                        <p className={`font-medium ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                          Net Income: {formatCurrency(netIncome)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           </div>
-                        ) : (
-                          <div className="text-center py-12">
-                            <Calculator className="mx-auto h-12 w-12 text-gray-400" />
-                            <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">No Expense Data</h3>
-                            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Operating expense information was not imported with this property</p>
+                        </div>
+                      </div>
+                    );
+
+                  case 'proforma':
+                    return (
+                      <div className="space-y-6">
+                        <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-6 border border-indigo-200 dark:border-indigo-800">
+                          <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-300 mb-4">12-Month Pro Forma</h3>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-indigo-200 dark:divide-indigo-700">
+                              <thead>
+                                <tr>
+                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Month</th>
+                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Gross Income</th>
+                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Vacancy</th>
+                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Net Income</th>
+                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Expenses</th>
+                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">NOI</th>
+                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Cash Flow</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-indigo-200 dark:divide-indigo-700">
+                                {Array.from({ length: 12 }, (_, index) => {
+                                  const month = index + 1;
+                                  const monthlyRent = (dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0);
+                                  const vacancyRate = (dealAnalyzerData?.assumptions?.vacancyRate || 0.05);
+                                  const grossIncome = monthlyRent;
+                                  const vacancy = grossIncome * vacancyRate;
+                                  const netIncome = grossIncome - vacancy;
+                                  const monthlyExpenses = (Object.values(dealAnalyzerData?.expenses || {}).reduce((sum: number, val: any) => sum + (val || 0), 0)) / 12;
+                                  const noi = netIncome - monthlyExpenses;
+                                  const monthlyDebtService = (dealAnalyzerData?.calculations?.monthlyDebtService || 0);
+                                  const cashFlow = noi - monthlyDebtService;
+                                  
+                                  return (
+                                    <tr key={month} className={month % 2 === 0 ? 'bg-indigo-25 dark:bg-indigo-900/10' : ''}>
+                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">Month {month}</td>
+                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">{formatCurrency(grossIncome)}</td>
+                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(vacancy)})</td>
+                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">{formatCurrency(netIncome)}</td>
+                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(monthlyExpenses)})</td>
+                                      <td className="px-4 py-2 text-sm font-medium text-indigo-900 dark:text-indigo-200">{formatCurrency(noi)}</td>
+                                      <td className={`px-4 py-2 text-sm font-medium ${cashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {formatCurrency(cashFlow)}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                              <tfoot className="bg-indigo-100 dark:bg-indigo-900/30">
+                                <tr>
+                                  <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">Annual Total</td>
+                                  <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
+                                    {formatCurrency((dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0) * 12)}
+                                  </td>
+                                  <td className="px-4 py-2 text-sm font-bold text-red-600">
+                                    ({formatCurrency(((dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0) * 12) * (dealAnalyzerData?.assumptions?.vacancyRate || 0.05))})
+                                  </td>
+                                  <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
+                                    {formatCurrency(((dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0) * 12) * (1 - (dealAnalyzerData?.assumptions?.vacancyRate || 0.05)))}
+                                  </td>
+                                  <td className="px-4 py-2 text-sm font-bold text-red-600">
+                                    ({formatCurrency(Object.values(dealAnalyzerData?.expenses || {}).reduce((sum: number, val: any) => sum + (val || 0), 0))})
+                                  </td>
+                                  <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
+                                    {formatCurrency(
+                                      (((dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0) * 12) * (1 - (dealAnalyzerData?.assumptions?.vacancyRate || 0.05))) - 
+                                      Object.values(dealAnalyzerData?.expenses || {}).reduce((sum: number, val: any) => sum + (val || 0), 0)
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-2 text-sm font-bold text-green-600">
+                                    {formatCurrency(
+                                      ((((dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0) * 12) * (1 - (dealAnalyzerData?.assumptions?.vacancyRate || 0.05))) - 
+                                      Object.values(dealAnalyzerData?.expenses || {}).reduce((sum: number, val: any) => sum + (val || 0), 0)) - 
+                                      ((dealAnalyzerData?.calculations?.monthlyDebtService || 0) * 12)
+                                    )}
+                                  </td>
+                                </tr>
+                              </tfoot>
+                            </table>
                           </div>
-                        )}
+                        </div>
                       </div>
                     );
 
@@ -2032,7 +2305,7 @@ export default function AssetManagement() {
 
             <div className="flex justify-end mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
-                onClick={() => setShowPropertyDetailModal(null)}
+                onClick={closeDetailModal}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Close
