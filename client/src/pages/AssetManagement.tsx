@@ -244,13 +244,14 @@ export default function AssetManagement() {
     mutationFn: async (data: { id: number; property: Partial<Property> }) => {
       return await apiService.updateProperty(data.id, data.property);
     },
-    onSuccess: (updatedProperty) => {
+    onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
       
       // Update modal state with the updated property data
-      if (showPropertyDetailModal && updatedProperty.data && updatedProperty.data.id === showPropertyDetailModal.id) {
-        setShowPropertyDetailModal(updatedProperty.data);
-        setEditingModalProperty(updatedProperty.data);
+      const updatedProperty = response?.data || response;
+      if (showPropertyDetailModal && updatedProperty && updatedProperty.id === showPropertyDetailModal.id) {
+        setShowPropertyDetailModal(updatedProperty as Property);
+        setEditingModalProperty(updatedProperty as Property);
       }
       
       setIsEditing(false);
@@ -2618,40 +2619,327 @@ export default function AssetManagement() {
                       <div className="space-y-6">
                         {dealAnalyzerData?.assumptions ? (
                           <>
-                            <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-6 border border-indigo-200 dark:border-indigo-800">
-                              <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-300 mb-4">Loan Details</h3>
-                              <div className="grid md:grid-cols-2 gap-6">
-                                <div className="space-y-3">
-                                  <div>
-                                    <p className="text-sm text-indigo-700 dark:text-indigo-300">Loan Amount</p>
-                                    <p className="font-medium text-indigo-900 dark:text-indigo-200">
-                                      {formatCurrency(parseFloat(showPropertyDetailModal.acquisitionPrice) * dealAnalyzerData.assumptions.loanPercentage)}
-                                    </p>
+                            {/* Loan Management Header */}
+                            <div className="flex justify-between items-center">
+                              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Property Financing</h2>
+                              {isEditing && (
+                                <button
+                                  onClick={() => {
+                                    const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                    if (!dealData.loans) dealData.loans = [];
+                                    
+                                    const newLoan = {
+                                      id: Date.now(),
+                                      name: `Loan ${dealData.loans.length + 1}`,
+                                      amount: 0,
+                                      interestRate: 0.065,
+                                      termYears: 30,
+                                      monthlyPayment: 0,
+                                      isActive: dealData.loans.length === 0, // First loan is active by default
+                                      loanType: 'acquisition',
+                                      startDate: new Date().toISOString().split('T')[0],
+                                      remainingBalance: 0
+                                    };
+                                    
+                                    dealData.loans.push(newLoan);
+                                    handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                  }}
+                                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add Loan
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Existing Loans */}
+                            {(() => {
+                              const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
+                              const loans = currentData.loans || [];
+                              
+                              // If no loans exist, create the original acquisition loan
+                              if (loans.length === 0) {
+                                const originalLoan = {
+                                  id: 1,
+                                  name: 'Acquisition Loan',
+                                  amount: parseFloat(showPropertyDetailModal.acquisitionPrice) * dealAnalyzerData.assumptions.loanPercentage,
+                                  interestRate: dealAnalyzerData.assumptions.interestRate,
+                                  termYears: dealAnalyzerData.assumptions.loanTermYears,
+                                  monthlyPayment: dealAnalyzerData.calculations?.monthlyDebtService || 0,
+                                  isActive: true,
+                                  loanType: 'acquisition',
+                                  startDate: showPropertyDetailModal.acquisitionDate || new Date().toISOString().split('T')[0],
+                                  remainingBalance: parseFloat(showPropertyDetailModal.acquisitionPrice) * dealAnalyzerData.assumptions.loanPercentage
+                                };
+                                loans.push(originalLoan);
+                              }
+
+                              return loans.map((loan: any) => (
+                                <div key={loan.id} className={`bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-6 border-2 ${loan.isActive ? 'border-indigo-500' : 'border-indigo-200 dark:border-indigo-800'}`}>
+                                  <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center space-x-3">
+                                      <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-300">
+                                        {isEditing ? (
+                                          <input
+                                            type="text"
+                                            value={loan.name}
+                                            onChange={(e) => {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              if (!dealData.loans) dealData.loans = [];
+                                              const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
+                                              if (loanIndex >= 0) {
+                                                dealData.loans[loanIndex].name = e.target.value;
+                                                handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                              }
+                                            }}
+                                            className="bg-transparent border-b border-indigo-300 text-indigo-900 dark:text-indigo-300 font-semibold"
+                                          />
+                                        ) : (
+                                          loan.name
+                                        )}
+                                      </h3>
+                                      {loan.isActive && (
+                                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                                          Active
+                                        </span>
+                                      )}
+                                    </div>
+                                    
+                                    {isEditing && (
+                                      <div className="flex items-center space-x-2">
+                                        <button
+                                          onClick={() => {
+                                            const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                            if (!dealData.loans) dealData.loans = [];
+                                            
+                                            // Set all loans to inactive, then activate this one
+                                            dealData.loans.forEach((l: any) => { l.isActive = false; });
+                                            const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
+                                            if (loanIndex >= 0) {
+                                              dealData.loans[loanIndex].isActive = true;
+                                            }
+                                            handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                          }}
+                                          className={`px-3 py-1 text-xs rounded ${loan.isActive ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-green-100'}`}
+                                          title="Set as active loan for debt service calculations"
+                                        >
+                                          {loan.isActive ? 'Active' : 'Set Active'}
+                                        </button>
+                                        
+                                        {loans.length > 1 && (
+                                          <button
+                                            onClick={() => {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              if (!dealData.loans) dealData.loans = [];
+                                              dealData.loans = dealData.loans.filter((l: any) => l.id !== loan.id);
+                                              
+                                              // If we deleted the active loan, make the first remaining loan active
+                                              if (loan.isActive && dealData.loans.length > 0) {
+                                                dealData.loans[0].isActive = true;
+                                              }
+                                              
+                                              handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                            }}
+                                            className="text-red-600 hover:text-red-800"
+                                            title="Delete loan"
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
-                                  <div>
-                                    <p className="text-sm text-indigo-700 dark:text-indigo-300">Down Payment</p>
-                                    <p className="font-medium text-indigo-900 dark:text-indigo-200">
-                                      {formatCurrency(parseFloat(showPropertyDetailModal.acquisitionPrice) * (1 - dealAnalyzerData.assumptions.loanPercentage))}
-                                    </p>
+
+                                  <div className="grid md:grid-cols-3 gap-6">
+                                    <div className="space-y-3">
+                                      <div>
+                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">Loan Amount</p>
+                                        {isEditing ? (
+                                          <input
+                                            type="number"
+                                            value={loan.amount}
+                                            onChange={(e) => {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              if (!dealData.loans) dealData.loans = [];
+                                              const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
+                                              if (loanIndex >= 0) {
+                                                dealData.loans[loanIndex].amount = parseFloat(e.target.value) || 0;
+                                                // Recalculate monthly payment
+                                                const amount = parseFloat(e.target.value) || 0;
+                                                const rate = dealData.loans[loanIndex].interestRate / 12;
+                                                const payments = dealData.loans[loanIndex].termYears * 12;
+                                                dealData.loans[loanIndex].monthlyPayment = amount * (rate * Math.pow(1 + rate, payments)) / (Math.pow(1 + rate, payments) - 1);
+                                                handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                              }
+                                            }}
+                                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                          />
+                                        ) : (
+                                          <p className="font-medium text-indigo-900 dark:text-indigo-200">
+                                            {formatCurrency(loan.amount)}
+                                          </p>
+                                        )}
+                                      </div>
+                                      
+                                      <div>
+                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">Interest Rate</p>
+                                        {isEditing ? (
+                                          <input
+                                            type="number"
+                                            step="0.01"
+                                            value={(loan.interestRate * 100).toFixed(2)}
+                                            onChange={(e) => {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              if (!dealData.loans) dealData.loans = [];
+                                              const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
+                                              if (loanIndex >= 0) {
+                                                dealData.loans[loanIndex].interestRate = (parseFloat(e.target.value) || 0) / 100;
+                                                // Recalculate monthly payment
+                                                const amount = dealData.loans[loanIndex].amount;
+                                                const rate = ((parseFloat(e.target.value) || 0) / 100) / 12;
+                                                const payments = dealData.loans[loanIndex].termYears * 12;
+                                                dealData.loans[loanIndex].monthlyPayment = amount * (rate * Math.pow(1 + rate, payments)) / (Math.pow(1 + rate, payments) - 1);
+                                                handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                              }
+                                            }}
+                                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                          />
+                                        ) : (
+                                          <p className="font-medium text-indigo-900 dark:text-indigo-200">
+                                            {formatPercentage(loan.interestRate * 100)}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                      <div>
+                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">Loan Term</p>
+                                        {isEditing ? (
+                                          <input
+                                            type="number"
+                                            value={loan.termYears}
+                                            onChange={(e) => {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              if (!dealData.loans) dealData.loans = [];
+                                              const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
+                                              if (loanIndex >= 0) {
+                                                dealData.loans[loanIndex].termYears = parseInt(e.target.value) || 30;
+                                                // Recalculate monthly payment
+                                                const amount = dealData.loans[loanIndex].amount;
+                                                const rate = dealData.loans[loanIndex].interestRate / 12;
+                                                const payments = (parseInt(e.target.value) || 30) * 12;
+                                                dealData.loans[loanIndex].monthlyPayment = amount * (rate * Math.pow(1 + rate, payments)) / (Math.pow(1 + rate, payments) - 1);
+                                                handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                              }
+                                            }}
+                                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                          />
+                                        ) : (
+                                          <p className="font-medium text-indigo-900 dark:text-indigo-200">
+                                            {loan.termYears} years
+                                          </p>
+                                        )}
+                                      </div>
+                                      
+                                      <div>
+                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">Loan Type</p>
+                                        {isEditing ? (
+                                          <select
+                                            value={loan.loanType}
+                                            onChange={(e) => {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              if (!dealData.loans) dealData.loans = [];
+                                              const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
+                                              if (loanIndex >= 0) {
+                                                dealData.loans[loanIndex].loanType = e.target.value;
+                                                handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                              }
+                                            }}
+                                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                          >
+                                            <option value="acquisition">Acquisition</option>
+                                            <option value="refinance">Refinance</option>
+                                            <option value="construction">Construction</option>
+                                            <option value="bridge">Bridge</option>
+                                          </select>
+                                        ) : (
+                                          <p className="font-medium text-indigo-900 dark:text-indigo-200 capitalize">
+                                            {loan.loanType}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                      <div>
+                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">Monthly Payment</p>
+                                        <p className="font-medium text-indigo-900 dark:text-indigo-200">
+                                          {formatCurrency(loan.monthlyPayment || 0)}
+                                        </p>
+                                      </div>
+                                      
+                                      <div>
+                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">Start Date</p>
+                                        {isEditing ? (
+                                          <input
+                                            type="date"
+                                            value={loan.startDate}
+                                            onChange={(e) => {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              if (!dealData.loans) dealData.loans = [];
+                                              const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
+                                              if (loanIndex >= 0) {
+                                                dealData.loans[loanIndex].startDate = e.target.value;
+                                                handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                              }
+                                            }}
+                                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                          />
+                                        ) : (
+                                          <p className="font-medium text-indigo-900 dark:text-indigo-200">
+                                            {new Date(loan.startDate).toLocaleDateString()}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <p className="text-sm text-indigo-700 dark:text-indigo-300">Interest Rate</p>
-                                    <p className="font-medium text-indigo-900 dark:text-indigo-200">{formatPercentage(dealAnalyzerData.assumptions.interestRate * 100)}</p>
-                                  </div>
+
+                                  {loan.isActive && (
+                                    <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                                      <p className="text-sm text-green-800 dark:text-green-300 font-medium">
+                                        This loan is used for debt service calculations in cash flow analysis
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
-                                <div className="space-y-3">
-                                  <div>
-                                    <p className="text-sm text-indigo-700 dark:text-indigo-300">Loan Term</p>
-                                    <p className="font-medium text-indigo-900 dark:text-indigo-200">{dealAnalyzerData.assumptions.loanTermYears} years</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-indigo-700 dark:text-indigo-300">Refinance LTV</p>
-                                    <p className="font-medium text-indigo-900 dark:text-indigo-200">{formatPercentage(dealAnalyzerData.assumptions.refinanceLTV * 100)}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-indigo-700 dark:text-indigo-300">Refinance Rate</p>
-                                    <p className="font-medium text-indigo-900 dark:text-indigo-200">{formatPercentage(dealAnalyzerData.assumptions.refinanceInterestRate * 100)}</p>
-                                  </div>
+                              ));
+                            })()}
+
+                            {/* Debt Service Summary */}
+                            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Debt Service Summary</h3>
+                              <div className="grid md:grid-cols-2 gap-6">
+                                <div>
+                                  <p className="text-sm text-gray-600 dark:text-gray-400">Active Loan Monthly Payment</p>
+                                  <p className="font-medium text-gray-900 dark:text-white text-lg">
+                                    {(() => {
+                                      const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
+                                      const activeLoan = currentData.loans?.find((l: any) => l.isActive);
+                                      return formatCurrency(activeLoan?.monthlyPayment || dealAnalyzerData.calculations?.monthlyDebtService || 0);
+                                    })()}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-gray-600 dark:text-gray-400">Annual Debt Service</p>
+                                  <p className="font-medium text-gray-900 dark:text-white text-lg">
+                                    {(() => {
+                                      const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
+                                      const activeLoan = currentData.loans?.find((l: any) => l.isActive);
+                                      const monthlyPayment = activeLoan?.monthlyPayment || dealAnalyzerData.calculations?.monthlyDebtService || 0;
+                                      return formatCurrency(monthlyPayment * 12);
+                                    })()}
+                                  </p>
                                 </div>
                               </div>
                             </div>
