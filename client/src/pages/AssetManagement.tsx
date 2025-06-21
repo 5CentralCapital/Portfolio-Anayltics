@@ -111,18 +111,24 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
 );
 
 const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => (
-  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 aspect-square flex flex-col cursor-pointer card-hover transition-all-smooth"
+  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-5 aspect-square flex flex-col cursor-pointer card-hover transition-all-smooth hover:shadow-md bg-white dark:bg-gray-800"
        onDoubleClick={() => onDoubleClick(property)}
        title="Double-click for financial breakdown">
-    <div className="flex items-center justify-between mb-3">
+    {/* Header with property info and status */}
+    <div className="flex items-start justify-between mb-4">
       <div className="flex-1 min-w-0">
-        <h3 className="text-md font-semibold text-gray-900 dark:text-white truncate">{property.address}</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{property.city}, {property.state}</p>
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate leading-tight">{property.address}</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 truncate mt-1">{property.city}, {property.state}</p>
+        <div className="mt-2">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+            Sold
+          </span>
+        </div>
       </div>
       <select 
         value={property.status} 
         onChange={(e) => onStatusChange(property.id, e.target.value)}
-        className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors-smooth hover:border-blue-400"
+        className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all-smooth hover:border-purple-400"
       >
         <option value="Under Contract">Under Contract</option>
         <option value="Rehabbing">Rehabbing</option>
@@ -131,22 +137,23 @@ const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { propert
       </select>
     </div>
 
-    <div className="flex-1 grid grid-cols-2 gap-3 text-xs">
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Capital Invested</p>
-        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.initialCapitalRequired)}</p>
+    {/* Financial metrics grid */}
+    <div className="flex-1 grid grid-cols-2 gap-4 text-xs">
+      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+        <p className="text-gray-600 dark:text-gray-400 mb-1">Capital Invested</p>
+        <p className="font-bold text-gray-900 dark:text-white text-sm">{formatCurrency(property.initialCapitalRequired)}</p>
       </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Total Profit</p>
-        <p className="font-semibold text-green-600">{formatCurrency(property.totalProfits)}</p>
+      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+        <p className="text-green-700 dark:text-green-400 mb-1">Total Profit</p>
+        <p className="font-bold text-green-700 dark:text-green-400 text-sm">{formatCurrency(property.totalProfits)}</p>
       </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Equity Multiple</p>
-        <p className="font-semibold text-blue-600">{(Number(property.totalProfits) / Number(property.initialCapitalRequired)).toFixed(2)}x</p>
+      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+        <p className="text-blue-700 dark:text-blue-400 mb-1">Equity Multiple</p>
+        <p className="font-bold text-blue-700 dark:text-blue-400 text-sm">{(Number(property.totalProfits) / Number(property.initialCapitalRequired)).toFixed(2)}x</p>
       </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Sale Price</p>
-        <p className="font-semibold text-purple-600">{formatCurrency(property.salePrice || '0')}</p>
+      <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
+        <p className="text-purple-700 dark:text-purple-400 mb-1">Sale Price</p>
+        <p className="font-bold text-purple-700 dark:text-purple-400 text-sm">{formatCurrency(property.salePrice || '0')}</p>
       </div>
     </div>
   </div>
