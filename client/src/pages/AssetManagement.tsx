@@ -133,20 +133,20 @@ const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { propert
 
     <div className="flex-1 grid grid-cols-2 gap-3 text-xs">
       <div>
-        <p className="text-gray-600 dark:text-gray-400">Units</p>
-        <p className="font-semibold text-gray-900 dark:text-white">{property.apartments}</p>
-      </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Purchase</p>
-        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
-      </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Sale Price</p>
-        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.salePrice || '0')}</p>
+        <p className="text-gray-600 dark:text-gray-400">Capital Invested</p>
+        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.initialCapitalRequired)}</p>
       </div>
       <div>
         <p className="text-gray-600 dark:text-gray-400">Total Profit</p>
         <p className="font-semibold text-green-600">{formatCurrency(property.totalProfits)}</p>
+      </div>
+      <div>
+        <p className="text-gray-600 dark:text-gray-400">Equity Multiple</p>
+        <p className="font-semibold text-blue-600">{(Number(property.totalProfits) / Number(property.initialCapitalRequired)).toFixed(2)}x</p>
+      </div>
+      <div>
+        <p className="text-gray-600 dark:text-gray-400">Sale Price</p>
+        <p className="font-semibold text-purple-600">{formatCurrency(property.salePrice || '0')}</p>
       </div>
     </div>
   </div>
