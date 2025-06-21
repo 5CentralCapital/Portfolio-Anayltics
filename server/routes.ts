@@ -693,7 +693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Save deal analyzer data to normalized tables
-  app.post('/api/properties/:id/deal-data', authenticateUser, async (req, res) => {
+  app.put('/api/properties/:id/deal-data', authenticateUser, async (req, res) => {
     try {
       const propertyId = parseInt(req.params.id);
       const dealData = req.body;
