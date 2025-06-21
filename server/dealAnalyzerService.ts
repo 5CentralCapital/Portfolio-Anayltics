@@ -15,9 +15,10 @@ import { eq } from 'drizzle-orm';
 
 export class DealAnalyzerService {
   
-  // Get all Deal Analyzer data for a property from normalized tables
+  // Get all Deal Analyzer data for a property with hybrid normalized/JSON approach
   async getPropertyDealData(propertyId: number) {
     try {
+      // Try normalized tables first
       const [assumptions] = await db.select().from(propertyAssumptions).where(eq(propertyAssumptions.propertyId, propertyId));
       const unitTypes = await db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, propertyId));
       const rentRoll = await db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, propertyId));
@@ -28,21 +29,87 @@ export class DealAnalyzerService {
       const [exitAnalysis] = await db.select().from(propertyExitAnalysis).where(eq(propertyExitAnalysis.propertyId, propertyId));
       const otherIncome = await db.select().from(propertyIncomeOther).where(eq(propertyIncomeOther.propertyId, propertyId));
       
+      // If normalized data exists, use it
+      if (assumptions || rentRoll.length > 0 || expenses.length > 0) {
+        return {
+          assumptions: assumptions || null,
+          unitTypes: unitTypes || [],
+          rentRoll: rentRoll || [],
+          expenses: expenses || [],
+          rehabBudget: rehabBudget || [],
+          closingCosts: closingCosts || [],
+          holdingCosts: holdingCosts || [],
+          exitAnalysis: exitAnalysis || null,
+          otherIncome: otherIncome || []
+        };
+      }
+      
+      // Fallback to JSON data if no normalized data exists
+      const [property] = await db.select().from(properties).where(eq(properties.id, propertyId));
+      if (property?.dealAnalyzerData) {
+        const jsonData = JSON.parse(property.dealAnalyzerData);
+        
+        // Return the JSON data in the expected format
+        return this.formatJSONAsNormalized(jsonData);
+      }
+      
+      // Return empty structure if no data exists
       return {
-        assumptions: assumptions || null,
-        unitTypes: unitTypes || [],
-        rentRoll: rentRoll || [],
-        expenses: expenses || [],
-        rehabBudget: rehabBudget || [],
-        closingCosts: closingCosts || [],
-        holdingCosts: holdingCosts || [],
-        exitAnalysis: exitAnalysis || null,
-        otherIncome: otherIncome || []
+        assumptions: null,
+        unitTypes: [],
+        rentRoll: [],
+        expenses: [],
+        rehabBudget: [],
+        closingCosts: [],
+        holdingCosts: [],
+        exitAnalysis: null,
+        otherIncome: []
       };
     } catch (error) {
       console.error(`Error fetching deal data for property ${propertyId}:`, error);
       throw error;
     }
+  }
+
+  // Helper method to format JSON data as normalized structure
+  formatJSONAsNormalized(jsonData: any) {
+    return {
+      assumptions: jsonData.assumptions || null,
+      unitTypes: jsonData.unitTypes || [],
+      rentRoll: jsonData.rentRoll || [],
+      expenses: jsonData.expenses ? Object.entries(jsonData.expenses).map(([key, value]: [string, any]) => ({
+        expenseType: 'Operating',
+        expenseName: key,
+        amount: parseFloat(value?.amount?.toString() || '0'),
+        isPercentage: value?.isPercentage || false,
+        percentageBase: value?.percentageBase || null,
+        notes: value?.notes || null
+      })) : [],
+      rehabBudget: jsonData.rehabBudgetSections ? this.flattenRehabBudget(jsonData.rehabBudgetSections) : [],
+      closingCosts: jsonData.closingCosts || [],
+      holdingCosts: jsonData.holdingCosts || [],
+      exitAnalysis: jsonData.exitAnalysis || null,
+      otherIncome: []
+    };
+  }
+
+  // Helper to flatten rehab budget sections
+  flattenRehabBudget(sections: any) {
+    const items: any[] = [];
+    Object.entries(sections).forEach(([sectionName, sectionData]: [string, any]) => {
+      if (sectionData?.items) {
+        sectionData.items.forEach((item: any) => {
+          items.push({
+            category: sectionName,
+            itemName: item.name || '',
+            budgetAmount: parseFloat(item.budget?.toString() || '0'),
+            actualAmount: parseFloat(item.actual?.toString() || '0'),
+            notes: item.notes || null
+          });
+        });
+      }
+    });
+    return items;
   }
   
   // Save assumptions data
