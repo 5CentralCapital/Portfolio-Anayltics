@@ -16,21 +16,25 @@ const activeSessions = new Map<string, { userId: number; email: string; createdA
 
 // Middleware to authenticate users
 function authenticateUser(req: any, res: any, next: any) {
+  // First try session-based authentication
+  if (req.session && req.session.userId) {
+    req.user = { id: req.session.userId, email: req.session.userEmail };
+    return next();
+  }
+
+  // Fallback to token-based authentication
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Authentication required' });
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    const session = activeSessions.get(token);
+    
+    if (session) {
+      req.user = { id: session.userId, email: session.email };
+      return next();
+    }
   }
 
-  const token = authHeader.substring(7);
-  const session = activeSessions.get(token);
-  
-  if (!session) {
-    return res.status(401).json({ error: 'Invalid or expired session' });
-  }
-
-  // Add user info to request
-  req.user = { id: session.userId, email: session.email };
-  next();
+  return res.status(401).json({ error: 'Authentication required' });
 }
 
 // WebSocket connections for real-time KPI updates

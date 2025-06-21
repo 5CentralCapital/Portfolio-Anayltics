@@ -23,6 +23,7 @@ class ApiService {
     
     const config: RequestInit = {
       mode: 'cors',
+      credentials: 'include', // Include cookies for session-based auth
       headers: {
         'Content-Type': 'application/json',
         ...(this.token && { Authorization: `Bearer ${this.token}` }),
