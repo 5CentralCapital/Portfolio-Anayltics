@@ -2688,7 +2688,7 @@ export default function AssetManagement() {
                           <h3 className="text-lg font-semibold text-emerald-900 dark:text-emerald-300 mb-4">Sale Assumptions</h3>
                           <div className="grid md:grid-cols-3 gap-6">
                             <div>
-                              <p className="text-sm text-emerald-700 dark:text-emerald-300">Sale Factor</p>
+                              <p className="text-sm text-emerald-700 dark:text-emerald-300">Sales Cap Rate</p>
                               {isEditing ? (
                                 <input
                                   type="number"
