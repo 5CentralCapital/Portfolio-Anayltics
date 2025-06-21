@@ -723,6 +723,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Migration failed" });
     }
   });
+
+  // Get accurate property financial calculations
+  app.get('/api/properties/:id/financials', authenticateUser, async (req, res) => {
+    try {
+      const propertyId = parseInt(req.params.id);
+      const { propertyCalculationService } = await import('./propertyCalculations');
+      
+      const financials = await propertyCalculationService.calculatePropertyFinancials(propertyId);
+      res.json(financials);
+    } catch (error) {
+      console.error('Error calculating property financials:', error);
+      res.status(500).json({ error: 'Failed to calculate property financials' });
+    }
+  });
   
   return httpServer;
 }
