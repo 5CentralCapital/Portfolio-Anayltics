@@ -34,7 +34,7 @@ export default function DealAnalyzer() {
   
   // Exit analysis state
   const [exitAnalysis, setExitAnalysis] = useState({
-    saleFactor: 1.0, // Multiplier for ARV to get sale price
+    saleFactor: 0.055, // Sales cap rate (5.5%) for NOI / Cap Rate calculation
     saleCostsPercent: 0.06, // 6% for broker, legal, closing fees
     holdPeriodYears: 2
   });
@@ -249,8 +249,8 @@ export default function DealAnalyzer() {
     const totalProfit = arv - allInCost;
     const capitalRequired = downPayment + totalClosingCosts;
     
-    // Exit analysis calculations
-    const salePrice = arv * exitAnalysis.saleFactor;
+    // Exit analysis calculations - Sales Cap Rate approach
+    const salePrice = noi > 0 && exitAnalysis.saleFactor > 0 ? noi / exitAnalysis.saleFactor : arv;
     const saleCosts = salePrice * exitAnalysis.saleCostsPercent;
     const debtPayoff = refinanceLoan; // Simplified - assumes no amortization
     const netProceeds = salePrice - saleCosts - debtPayoff;
@@ -1751,15 +1751,15 @@ export default function DealAnalyzer() {
                 <h4 className="text-lg font-semibold mb-4 text-green-600">Sell Strategy</h4>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span>Sale Price Factor</span>
+                    <span>Sales Cap Rate (%)</span>
                     <input
                       type="number"
-                      value={exitAnalysis.saleFactor}
-                      onChange={(e) => setExitAnalysis({...exitAnalysis, saleFactor: parseFloat(e.target.value) || 1})}
+                      value={(exitAnalysis.saleFactor * 100).toFixed(2)}
+                      onChange={(e) => setExitAnalysis({...exitAnalysis, saleFactor: (parseFloat(e.target.value) || 5.5) / 100})}
                       className="w-20 px-2 py-1 border rounded text-right"
-                      step="0.01"
-                      min="0.5"
-                      max="1.5"
+                      step="0.1"
+                      min="3.0"
+                      max="10.0"
                     />
                   </div>
                   <div className="flex justify-between">
