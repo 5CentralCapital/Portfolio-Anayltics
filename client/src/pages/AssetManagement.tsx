@@ -1721,20 +1721,106 @@ export default function AssetManagement() {
                         {dealAnalyzerData?.unitTypes && dealAnalyzerData?.rentRoll ? (
                           <>
                             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
-                              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-4">Unit Types</h3>
+                              <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300">Unit Types</h3>
+                                {isEditing && (
+                                  <button
+                                    onClick={() => {
+                                      const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                      if (!dealData.unitTypes) dealData.unitTypes = [];
+                                      dealData.unitTypes.push({
+                                        id: Date.now().toString(),
+                                        name: 'New Unit Type',
+                                        marketRent: 0,
+                                        sqft: 0
+                                      });
+                                      handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                    }}
+                                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                                  >
+                                    <Plus className="h-4 w-4 inline mr-1" />
+                                    Add Unit Type
+                                  </button>
+                                )}
+                              </div>
                               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {dealAnalyzerData.unitTypes.map((unitType: any, index: number) => (
                                   <div key={index} className="bg-white dark:bg-gray-700 rounded p-4">
-                                    <h4 className="font-medium text-gray-900 dark:text-white">{unitType.name}</h4>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Market Rent: {formatCurrency(unitType.marketRent)}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Square Feet: {unitType.sqft}</p>
+                                    {isEditing ? (
+                                      <div className="space-y-2">
+                                        <input
+                                          type="text"
+                                          value={unitType.name}
+                                          onChange={(e) => {
+                                            const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                            dealData.unitTypes[index].name = e.target.value;
+                                            handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                          }}
+                                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm font-medium"
+                                        />
+                                        <div>
+                                          <label className="text-xs text-gray-600 dark:text-gray-400">Market Rent:</label>
+                                          <input
+                                            type="number"
+                                            value={unitType.marketRent}
+                                            onChange={(e) => {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              dealData.unitTypes[index].marketRent = parseFloat(e.target.value) || 0;
+                                              handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                            }}
+                                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="text-xs text-gray-600 dark:text-gray-400">Square Feet:</label>
+                                          <input
+                                            type="number"
+                                            value={unitType.sqft}
+                                            onChange={(e) => {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              dealData.unitTypes[index].sqft = parseFloat(e.target.value) || 0;
+                                              handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                            }}
+                                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                                          />
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <h4 className="font-medium text-gray-900 dark:text-white">{unitType.name}</h4>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Market Rent: {formatCurrency(unitType.marketRent)}</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Square Feet: {unitType.sqft}</p>
+                                      </>
+                                    )}
                                   </div>
                                 ))}
                               </div>
                             </div>
 
                             <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">
-                              <h3 className="text-lg font-semibold text-green-900 dark:text-green-300 mb-4">Current Rent Roll</h3>
+                              <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-semibold text-green-900 dark:text-green-300">Current Rent Roll</h3>
+                                {isEditing && (
+                                  <button
+                                    onClick={() => {
+                                      const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                      if (!dealData.rentRoll) dealData.rentRoll = [];
+                                      dealData.rentRoll.push({
+                                        unitNumber: `${dealData.rentRoll.length + 1}`,
+                                        unitTypeId: dealData.unitTypes[0]?.id || '',
+                                        proFormaRent: 0,
+                                        currentTenant: '',
+                                        leaseEnd: ''
+                                      });
+                                      handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                    }}
+                                    className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                                  >
+                                    <Plus className="h-4 w-4 inline mr-1" />
+                                    Add Unit
+                                  </button>
+                                )}
+                              </div>
                               <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-green-200 dark:divide-green-700">
                                   <thead>
@@ -1744,6 +1830,7 @@ export default function AssetManagement() {
                                       <th className="px-4 py-2 text-left text-sm font-medium text-green-700 dark:text-green-300">Current Rent</th>
                                       <th className="px-4 py-2 text-left text-sm font-medium text-green-700 dark:text-green-300">Market Rent</th>
                                       <th className="px-4 py-2 text-left text-sm font-medium text-green-700 dark:text-green-300">Upside</th>
+                                      {isEditing && <th className="px-4 py-2 text-left text-sm font-medium text-green-700 dark:text-green-300">Actions</th>}
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-green-200 dark:divide-green-700">
@@ -1752,13 +1839,75 @@ export default function AssetManagement() {
                                       const upside = unitType ? unitType.marketRent - unit.proFormaRent : 0;
                                       return (
                                         <tr key={index}>
-                                          <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">Unit {unit.unitNumber}</td>
-                                          <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">{unitType?.name || 'Unknown'}</td>
-                                          <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">{formatCurrency(unit.proFormaRent)}</td>
+                                          <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
+                                            {isEditing ? (
+                                              <input
+                                                type="text"
+                                                value={unit.unitNumber}
+                                                onChange={(e) => {
+                                                  const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                                  dealData.rentRoll[index].unitNumber = e.target.value;
+                                                  handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                }}
+                                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                              />
+                                            ) : (
+                                              `Unit ${unit.unitNumber}`
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
+                                            {isEditing ? (
+                                              <select
+                                                value={unit.unitTypeId}
+                                                onChange={(e) => {
+                                                  const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                                  dealData.rentRoll[index].unitTypeId = e.target.value;
+                                                  handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                }}
+                                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                              >
+                                                {dealAnalyzerData.unitTypes.map((ut: any) => (
+                                                  <option key={ut.id} value={ut.id}>{ut.name}</option>
+                                                ))}
+                                              </select>
+                                            ) : (
+                                              unitType?.name || 'Unknown'
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
+                                            {isEditing ? (
+                                              <input
+                                                type="number"
+                                                value={unit.proFormaRent}
+                                                onChange={(e) => {
+                                                  const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                                  dealData.rentRoll[index].proFormaRent = parseFloat(e.target.value) || 0;
+                                                  handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                }}
+                                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                              />
+                                            ) : (
+                                              formatCurrency(unit.proFormaRent)
+                                            )}
+                                          </td>
                                           <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">{formatCurrency(unitType?.marketRent || 0)}</td>
                                           <td className={`px-4 py-2 text-sm font-medium ${upside >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                             {formatCurrency(upside)}
                                           </td>
+                                          {isEditing && (
+                                            <td className="px-4 py-2">
+                                              <button
+                                                onClick={() => {
+                                                  const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                                  dealData.rentRoll.splice(index, 1);
+                                                  handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                }}
+                                                className="text-red-600 hover:text-red-800"
+                                              >
+                                                <Trash2 className="h-4 w-4" />
+                                              </button>
+                                            </td>
+                                          )}
                                         </tr>
                                       );
                                     })}
@@ -1796,26 +1945,145 @@ export default function AssetManagement() {
                               
                               return (
                                 <div key={sectionKey} className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-6 border border-orange-200 dark:border-orange-800">
-                                  <h3 className="text-lg font-semibold text-orange-900 dark:text-orange-300 mb-4">{sectionNames[sectionKey]}</h3>
+                                  <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-semibold text-orange-900 dark:text-orange-300">{sectionNames[sectionKey]}</h3>
+                                    {isEditing && (
+                                      <button
+                                        onClick={() => {
+                                          const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                          if (!dealData.rehabBudgetSections) dealData.rehabBudgetSections = {};
+                                          if (!dealData.rehabBudgetSections[sectionKey]) dealData.rehabBudgetSections[sectionKey] = [];
+                                          dealData.rehabBudgetSections[sectionKey].push({
+                                            category: 'New Item',
+                                            perUnitCost: 0,
+                                            quantity: 1,
+                                            totalCost: 0,
+                                            spentAmount: 0,
+                                            completed: false
+                                          });
+                                          handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                        }}
+                                        className="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700"
+                                      >
+                                        <Plus className="h-4 w-4 inline mr-1" />
+                                        Add Item
+                                      </button>
+                                    )}
+                                  </div>
                                   <div className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-orange-200 dark:divide-orange-700">
                                       <thead>
                                         <tr>
                                           <th className="px-4 py-2 text-left text-sm font-medium text-orange-700 dark:text-orange-300">Item</th>
-                                          <th className="px-4 py-2 text-left text-sm font-medium text-orange-700 dark:text-orange-300">Per Unit Cost</th>
-                                          <th className="px-4 py-2 text-left text-sm font-medium text-orange-700 dark:text-orange-300">Quantity</th>
-                                          <th className="px-4 py-2 text-left text-sm font-medium text-orange-700 dark:text-orange-300">Total Cost</th>
+                                          <th className="px-4 py-2 text-left text-sm font-medium text-orange-700 dark:text-orange-300">Budget</th>
+                                          <th className="px-4 py-2 text-left text-sm font-medium text-orange-700 dark:text-orange-300">Spent</th>
+                                          <th className="px-4 py-2 text-left text-sm font-medium text-orange-700 dark:text-orange-300">Remaining</th>
+                                          <th className="px-4 py-2 text-left text-sm font-medium text-orange-700 dark:text-orange-300">Status</th>
+                                          {isEditing && <th className="px-4 py-2 text-left text-sm font-medium text-orange-700 dark:text-orange-300">Actions</th>}
                                         </tr>
                                       </thead>
                                       <tbody className="divide-y divide-orange-200 dark:divide-orange-700">
-                                        {section.map((item: any, index: number) => (
-                                          <tr key={index}>
-                                            <td className="px-4 py-2 text-sm text-orange-900 dark:text-orange-200">{item.category}</td>
-                                            <td className="px-4 py-2 text-sm text-orange-900 dark:text-orange-200">{formatCurrency(item.perUnitCost)}</td>
-                                            <td className="px-4 py-2 text-sm text-orange-900 dark:text-orange-200">{item.quantity}</td>
-                                            <td className="px-4 py-2 text-sm font-medium text-orange-900 dark:text-orange-200">{formatCurrency(item.totalCost)}</td>
-                                          </tr>
-                                        ))}
+                                        {section.map((item: any, index: number) => {
+                                          const totalBudget = item.totalCost || (item.perUnitCost * item.quantity);
+                                          const spentAmount = item.spentAmount || 0;
+                                          const remaining = totalBudget - spentAmount;
+                                          return (
+                                            <tr key={index}>
+                                              <td className="px-4 py-2 text-sm text-orange-900 dark:text-orange-200">
+                                                {isEditing ? (
+                                                  <input
+                                                    type="text"
+                                                    value={item.category}
+                                                    onChange={(e) => {
+                                                      const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                                      dealData.rehabBudgetSections[sectionKey][index].category = e.target.value;
+                                                      handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                    }}
+                                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                                  />
+                                                ) : (
+                                                  item.category
+                                                )}
+                                              </td>
+                                              <td className="px-4 py-2 text-sm text-orange-900 dark:text-orange-200">
+                                                {isEditing ? (
+                                                  <input
+                                                    type="number"
+                                                    value={totalBudget}
+                                                    onChange={(e) => {
+                                                      const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                                      const newBudget = parseFloat(e.target.value) || 0;
+                                                      dealData.rehabBudgetSections[sectionKey][index].totalCost = newBudget;
+                                                      dealData.rehabBudgetSections[sectionKey][index].perUnitCost = newBudget;
+                                                      dealData.rehabBudgetSections[sectionKey][index].quantity = 1;
+                                                      handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                    }}
+                                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                                  />
+                                                ) : (
+                                                  formatCurrency(totalBudget)
+                                                )}
+                                              </td>
+                                              <td className="px-4 py-2 text-sm text-orange-900 dark:text-orange-200">
+                                                {isEditing ? (
+                                                  <input
+                                                    type="number"
+                                                    value={spentAmount}
+                                                    onChange={(e) => {
+                                                      const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                                      dealData.rehabBudgetSections[sectionKey][index].spentAmount = parseFloat(e.target.value) || 0;
+                                                      handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                    }}
+                                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                                  />
+                                                ) : (
+                                                  formatCurrency(spentAmount)
+                                                )}
+                                              </td>
+                                              <td className={`px-4 py-2 text-sm font-medium ${remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                {formatCurrency(remaining)}
+                                              </td>
+                                              <td className="px-4 py-2">
+                                                {isEditing ? (
+                                                  <select
+                                                    value={item.completed ? 'completed' : 'in-progress'}
+                                                    onChange={(e) => {
+                                                      const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                                      dealData.rehabBudgetSections[sectionKey][index].completed = e.target.value === 'completed';
+                                                      handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                    }}
+                                                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                                                  >
+                                                    <option value="in-progress">In Progress</option>
+                                                    <option value="completed">Completed</option>
+                                                  </select>
+                                                ) : (
+                                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                    item.completed 
+                                                      ? 'bg-green-100 text-green-800' 
+                                                      : 'bg-yellow-100 text-yellow-800'
+                                                  }`}>
+                                                    {item.completed ? 'Completed' : 'In Progress'}
+                                                  </span>
+                                                )}
+                                              </td>
+                                              {isEditing && (
+                                                <td className="px-4 py-2">
+                                                  <button
+                                                    onClick={() => {
+                                                      const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                                      dealData.rehabBudgetSections[sectionKey].splice(index, 1);
+                                                      handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                    }}
+                                                    className="text-red-600 hover:text-red-800"
+                                                  >
+                                                    <Trash2 className="h-4 w-4" />
+                                                  </button>
+                                                </td>
+                                              )}
+                                            </tr>
+                                          );
+                                        })}
                                       </tbody>
                                     </table>
                                   </div>
@@ -1823,35 +2091,69 @@ export default function AssetManagement() {
                               );
                             })}
                             
-                            {/* Rehab Summary */}
+                            {/* Enhanced Rehab Summary with Progress Tracking */}
                             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Rehab Budget Summary</h3>
-                              <div className="grid md:grid-cols-3 gap-4">
-                                <div>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">Subtotal</p>
-                                  <p className="font-medium text-gray-900 dark:text-white">
-                                    {formatCurrency(
-                                      Object.values(dealAnalyzerData.rehabBudgetSections).reduce((total: number, section: any) => 
-                                        total + section.reduce((sum: number, item: any) => sum + (item.perUnitCost * item.quantity), 0), 0
-                                      )
-                                    )}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">10% Contingency</p>
-                                  <p className="font-medium text-gray-900 dark:text-white">
-                                    {formatCurrency(
-                                      Object.values(dealAnalyzerData.rehabBudgetSections).reduce((total: number, section: any) => 
-                                        total + section.reduce((sum: number, item: any) => sum + (item.perUnitCost * item.quantity), 0), 0
-                                      ) * 0.1
-                                    )}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Budget</p>
-                                  <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(showPropertyDetailModal.rehabCosts)}</p>
-                                </div>
-                              </div>
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Rehab Budget Summary & Progress</h3>
+                              {(() => {
+                                const allItems = Object.values(dealAnalyzerData.rehabBudgetSections).flat();
+                                const totalBudget = allItems.reduce((sum: number, item: any) => sum + (item.totalCost || (item.perUnitCost * item.quantity)), 0);
+                                const totalSpent = allItems.reduce((sum: number, item: any) => sum + (item.spentAmount || 0), 0);
+                                const completedItems = allItems.filter((item: any) => item.completed).length;
+                                const completionPercentage = allItems.length > 0 ? (completedItems / allItems.length) * 100 : 0;
+                                const spentPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+                                
+                                return (
+                                  <>
+                                    <div className="grid md:grid-cols-4 gap-4 mb-6">
+                                      <div>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Total Budget</p>
+                                        <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(totalBudget)}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Total Spent</p>
+                                        <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(totalSpent)}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Remaining</p>
+                                        <p className={`font-medium ${(totalBudget - totalSpent) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                          {formatCurrency(totalBudget - totalSpent)}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Items Completed</p>
+                                        <p className="font-medium text-gray-900 dark:text-white">{completedItems}/{allItems.length}</p>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                      <div>
+                                        <div className="flex justify-between text-sm mb-1">
+                                          <span className="text-gray-600 dark:text-gray-400">Project Completion</span>
+                                          <span className="font-semibold text-gray-900 dark:text-white">{completionPercentage.toFixed(1)}%</span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
+                                          <div className="bg-blue-600 h-3 rounded-full" style={{ width: `${completionPercentage}%` }}></div>
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <div className="flex justify-between text-sm mb-1">
+                                          <span className="text-gray-600 dark:text-gray-400">Budget Utilized</span>
+                                          <span className="font-semibold text-gray-900 dark:text-white">{spentPercentage.toFixed(1)}%</span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
+                                          <div 
+                                            className={`h-3 rounded-full ${
+                                              spentPercentage > 100 ? 'bg-red-600' :
+                                              spentPercentage > 90 ? 'bg-yellow-600' : 'bg-green-600'
+                                            }`}
+                                            style={{ width: `${Math.min(spentPercentage, 100)}%` }}
+                                          ></div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </>
+                                );
+                              })()}
                             </div>
                           </>
                         ) : (
@@ -1859,52 +2161,6 @@ export default function AssetManagement() {
                             <Wrench className="mx-auto h-12 w-12 text-gray-400" />
                             <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">No Rehab Budget Data</h3>
                             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Detailed rehab budget was not imported with this property</p>
-                          </div>
-                        )}
-                        
-                        {/* Show editable line items for rehabbing properties */}
-                        {showPropertyDetailModal.status === 'Rehabbing' && (
-                          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
-                            <div className="flex justify-between items-center mb-4">
-                              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300">Current Progress</h3>
-                              <button
-                                onClick={() => setShowRehabModal(showPropertyDetailModal)}
-                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                              >
-                                Edit Line Items
-                              </button>
-                            </div>
-                            {(() => {
-                              const progress = calculateRehabProgress(showPropertyDetailModal.id);
-                              return (
-                                <div className="grid md:grid-cols-2 gap-4">
-                                  <div>
-                                    <div className="flex justify-between text-sm mb-1">
-                                      <span className="text-blue-700 dark:text-blue-300">Completion</span>
-                                      <span className="font-semibold text-blue-900 dark:text-blue-200">{progress.completionPercentage.toFixed(1)}%</span>
-                                    </div>
-                                    <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
-                                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${progress.completionPercentage}%` }}></div>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <div className="flex justify-between text-sm mb-1">
-                                      <span className="text-blue-700 dark:text-blue-300">Budget Spent</span>
-                                      <span className="font-semibold text-blue-900 dark:text-blue-200">{progress.spentPercentage.toFixed(1)}%</span>
-                                    </div>
-                                    <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
-                                      <div 
-                                        className={`h-2 rounded-full ${
-                                          progress.spentPercentage > 100 ? 'bg-red-600' :
-                                          progress.spentPercentage > 90 ? 'bg-yellow-600' : 'bg-green-600'
-                                        }`}
-                                        style={{ width: `${Math.min(progress.spentPercentage, 100)}%` }}
-                                      ></div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
                           </div>
                         )}
                       </div>
@@ -2259,75 +2515,344 @@ export default function AssetManagement() {
                   case 'exit':
                     return (
                       <div className="space-y-6">
-                        {dealAnalyzerData?.exitAnalysis ? (
-                          <>
-                            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-6 border border-emerald-200 dark:border-emerald-800">
-                              <h3 className="text-lg font-semibold text-emerald-900 dark:text-emerald-300 mb-4">Exit Strategy</h3>
-                              <div className="grid md:grid-cols-3 gap-6">
+                        {/* Sale Assumptions */}
+                        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-6 border border-emerald-200 dark:border-emerald-800">
+                          <h3 className="text-lg font-semibold text-emerald-900 dark:text-emerald-300 mb-4">Sale Assumptions</h3>
+                          <div className="grid md:grid-cols-3 gap-6">
+                            <div>
+                              <p className="text-sm text-emerald-700 dark:text-emerald-300">Sale Factor</p>
+                              {isEditing ? (
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  value={dealAnalyzerData?.exitAnalysis?.saleFactor || 1.0}
+                                  onChange={(e) => {
+                                    const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                    if (!dealData.exitAnalysis) dealData.exitAnalysis = {};
+                                    dealData.exitAnalysis.saleFactor = parseFloat(e.target.value) || 1.0;
+                                    handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                  }}
+                                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                />
+                              ) : (
+                                <p className="font-medium text-emerald-900 dark:text-emerald-200">
+                                  {dealAnalyzerData?.exitAnalysis?.saleFactor || 1.0}x ARV
+                                </p>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm text-emerald-700 dark:text-emerald-300">Sale Costs %</p>
+                              {isEditing ? (
+                                <input
+                                  type="number"
+                                  step="0.5"
+                                  min="0"
+                                  max="15"
+                                  value={(dealAnalyzerData?.exitAnalysis?.saleCostsPercent || 0.06) * 100}
+                                  onChange={(e) => {
+                                    const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                    if (!dealData.exitAnalysis) dealData.exitAnalysis = {};
+                                    dealData.exitAnalysis.saleCostsPercent = (parseFloat(e.target.value) || 6) / 100;
+                                    handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                  }}
+                                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                />
+                              ) : (
+                                <p className="font-medium text-emerald-900 dark:text-emerald-200">
+                                  {formatPercentage((dealAnalyzerData?.exitAnalysis?.saleCostsPercent || 0.06) * 100)}
+                                </p>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm text-emerald-700 dark:text-emerald-300">Hold Period (Years)</p>
+                              {isEditing ? (
+                                <input
+                                  type="number"
+                                  step="0.5"
+                                  min="0.5"
+                                  max="10"
+                                  value={dealAnalyzerData?.exitAnalysis?.holdPeriodYears || 3}
+                                  onChange={(e) => {
+                                    const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                    if (!dealData.exitAnalysis) dealData.exitAnalysis = {};
+                                    dealData.exitAnalysis.holdPeriodYears = parseFloat(e.target.value) || 3;
+                                    handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                  }}
+                                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                />
+                              ) : (
+                                <p className="font-medium text-emerald-900 dark:text-emerald-200">
+                                  {dealAnalyzerData?.exitAnalysis?.holdPeriodYears || 3} years
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Refinance Section */}
+                        <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-6 border border-indigo-200 dark:border-indigo-800">
+                          <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-300 mb-4">Refinance Analysis</h3>
+                          <div className="grid md:grid-cols-2 gap-6">
+                            <div>
+                              <h4 className="font-medium text-indigo-900 dark:text-indigo-300 mb-3">Refinance Assumptions</h4>
+                              <div className="space-y-3">
                                 <div>
-                                  <p className="text-sm text-emerald-700 dark:text-emerald-300">Sale Factor</p>
-                                  <p className="font-medium text-emerald-900 dark:text-emerald-200">{dealAnalyzerData.exitAnalysis.saleFactor}x ARV</p>
+                                  <label className="text-sm text-indigo-700 dark:text-indigo-300">Refinance LTV %</label>
+                                  {isEditing ? (
+                                    <input
+                                      type="number"
+                                      step="5"
+                                      min="50"
+                                      max="90"
+                                      value={(dealAnalyzerData?.refinanceAnalysis?.ltv || 0.75) * 100}
+                                      onChange={(e) => {
+                                        const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                        if (!dealData.refinanceAnalysis) dealData.refinanceAnalysis = {};
+                                        dealData.refinanceAnalysis.ltv = (parseFloat(e.target.value) || 75) / 100;
+                                        handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                      }}
+                                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                    />
+                                  ) : (
+                                    <p className="font-medium text-indigo-900 dark:text-indigo-200">
+                                      {formatPercentage((dealAnalyzerData?.refinanceAnalysis?.ltv || 0.75) * 100)}
+                                    </p>
+                                  )}
                                 </div>
                                 <div>
-                                  <p className="text-sm text-emerald-700 dark:text-emerald-300">Sale Costs</p>
-                                  <p className="font-medium text-emerald-900 dark:text-emerald-200">{formatPercentage(dealAnalyzerData.exitAnalysis.saleCostsPercent * 100)}</p>
+                                  <label className="text-sm text-indigo-700 dark:text-indigo-300">Refinance Rate %</label>
+                                  {isEditing ? (
+                                    <input
+                                      type="number"
+                                      step="0.25"
+                                      min="3"
+                                      max="12"
+                                      value={(dealAnalyzerData?.refinanceAnalysis?.interestRate || 0.065) * 100}
+                                      onChange={(e) => {
+                                        const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                        if (!dealData.refinanceAnalysis) dealData.refinanceAnalysis = {};
+                                        dealData.refinanceAnalysis.interestRate = (parseFloat(e.target.value) || 6.5) / 100;
+                                        handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                      }}
+                                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                    />
+                                  ) : (
+                                    <p className="font-medium text-indigo-900 dark:text-indigo-200">
+                                      {formatPercentage((dealAnalyzerData?.refinanceAnalysis?.interestRate || 0.065) * 100)}
+                                    </p>
+                                  )}
                                 </div>
                                 <div>
-                                  <p className="text-sm text-emerald-700 dark:text-emerald-300">Hold Period</p>
-                                  <p className="font-medium text-emerald-900 dark:text-emerald-200">{dealAnalyzerData.exitAnalysis.holdPeriodYears} years</p>
+                                  <label className="text-sm text-indigo-700 dark:text-indigo-300">Refinance Costs</label>
+                                  {isEditing ? (
+                                    <input
+                                      type="number"
+                                      value={dealAnalyzerData?.refinanceAnalysis?.closingCosts || 5000}
+                                      onChange={(e) => {
+                                        const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                        if (!dealData.refinanceAnalysis) dealData.refinanceAnalysis = {};
+                                        dealData.refinanceAnalysis.closingCosts = parseFloat(e.target.value) || 5000;
+                                        handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                      }}
+                                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded"
+                                    />
+                                  ) : (
+                                    <p className="font-medium text-indigo-900 dark:text-indigo-200">
+                                      {formatCurrency(dealAnalyzerData?.refinanceAnalysis?.closingCosts || 5000)}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                             </div>
-
-                            {dealAnalyzerData.calculations && (
-                              <div className="bg-teal-50 dark:bg-teal-900/20 rounded-lg p-6 border border-teal-200 dark:border-teal-800">
-                                <h3 className="text-lg font-semibold text-teal-900 dark:text-teal-300 mb-4">Exit Projections</h3>
-                                <div className="grid md:grid-cols-2 gap-6">
-                                  <div className="space-y-3">
-                                    <div>
-                                      <p className="text-sm text-teal-700 dark:text-teal-300">Projected Sale Price</p>
-                                      <p className="font-medium text-teal-900 dark:text-teal-200">
-                                        {formatCurrency((dealAnalyzerData.calculations.arv || 0) * dealAnalyzerData.exitAnalysis.saleFactor)}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-sm text-teal-700 dark:text-teal-300">Sale Costs</p>
-                                      <p className="font-medium text-teal-900 dark:text-teal-200">
-                                        {formatCurrency(((dealAnalyzerData.calculations.arv || 0) * dealAnalyzerData.exitAnalysis.saleFactor) * dealAnalyzerData.exitAnalysis.saleCostsPercent)}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="space-y-3">
-                                    <div>
-                                      <p className="text-sm text-teal-700 dark:text-teal-300">Net Proceeds</p>
-                                      <p className="font-medium text-teal-900 dark:text-teal-200">
-                                        {formatCurrency(
-                                          ((dealAnalyzerData.calculations.arv || 0) * dealAnalyzerData.exitAnalysis.saleFactor) - 
-                                          (((dealAnalyzerData.calculations.arv || 0) * dealAnalyzerData.exitAnalysis.saleFactor) * dealAnalyzerData.exitAnalysis.saleCostsPercent)
-                                        )}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-sm text-teal-700 dark:text-teal-300">Total Return</p>
-                                      <p className="font-medium text-teal-900 dark:text-teal-200">
-                                        {formatCurrency(
-                                          ((dealAnalyzerData.calculations.arv || 0) * dealAnalyzerData.exitAnalysis.saleFactor) - 
-                                          (dealAnalyzerData.calculations.initialCapital || 0)
-                                        )}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
+                            
+                            <div>
+                              <h4 className="font-medium text-indigo-900 dark:text-indigo-300 mb-3">Refinance Projections</h4>
+                              <div className="space-y-3">
+                                {(() => {
+                                  const arv = dealAnalyzerData?.calculations?.arv || parseFloat(showPropertyDetailModal.arvAtTimePurchased || '0');
+                                  const ltv = dealAnalyzerData?.refinanceAnalysis?.ltv || 0.75;
+                                  const rate = dealAnalyzerData?.refinanceAnalysis?.interestRate || 0.065;
+                                  const closingCosts = dealAnalyzerData?.refinanceAnalysis?.closingCosts || 5000;
+                                  const initialCapital = parseFloat(showPropertyDetailModal.initialCapitalRequired || '0');
+                                  
+                                  const newLoanAmount = arv * ltv;
+                                  const cashOut = newLoanAmount - closingCosts;
+                                  const capitalRecovered = Math.min(cashOut, initialCapital);
+                                  const additionalCash = Math.max(0, cashOut - initialCapital);
+                                  const monthlyPayment = newLoanAmount * (rate / 12 * Math.pow(1 + rate / 12, 360)) / (Math.pow(1 + rate / 12, 360) - 1);
+                                  
+                                  return (
+                                    <>
+                                      <div>
+                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">New Loan Amount</p>
+                                        <p className="font-medium text-indigo-900 dark:text-indigo-200">{formatCurrency(newLoanAmount)}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">Cash Out (After Costs)</p>
+                                        <p className="font-medium text-green-600">{formatCurrency(cashOut)}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">Capital Recovered</p>
+                                        <p className="font-medium text-green-600">{formatCurrency(capitalRecovered)}</p>
+                                      </div>
+                                      {additionalCash > 0 && (
+                                        <div>
+                                          <p className="text-sm text-indigo-700 dark:text-indigo-300">Additional Cash</p>
+                                          <p className="font-medium text-green-600">{formatCurrency(additionalCash)}</p>
+                                        </div>
+                                      )}
+                                      <div>
+                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">New Monthly Payment</p>
+                                        <p className="font-medium text-indigo-900 dark:text-indigo-200">{formatCurrency(monthlyPayment)}</p>
+                                      </div>
+                                    </>
+                                  );
+                                })()}
                               </div>
-                            )}
-                          </>
-                        ) : (
-                          <div className="text-center py-12">
-                            <TrendingUp className="mx-auto h-12 w-12 text-gray-400" />
-                            <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">No Exit Analysis Data</h3>
-                            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Exit strategy information was not imported with this property</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Sale Projections */}
+                        {dealAnalyzerData?.exitAnalysis && (
+                          <div className="bg-teal-50 dark:bg-teal-900/20 rounded-lg p-6 border border-teal-200 dark:border-teal-800">
+                            <h3 className="text-lg font-semibold text-teal-900 dark:text-teal-300 mb-4">Sale Projections</h3>
+                            <div className="grid md:grid-cols-2 gap-6">
+                              <div className="space-y-3">
+                                {(() => {
+                                  const arv = dealAnalyzerData?.calculations?.arv || parseFloat(showPropertyDetailModal.arvAtTimePurchased || '0');
+                                  const saleFactor = dealAnalyzerData.exitAnalysis.saleFactor || 1.0;
+                                  const saleCostsPercent = dealAnalyzerData.exitAnalysis.saleCostsPercent || 0.06;
+                                  
+                                  const projectedSalePrice = arv * saleFactor;
+                                  const saleCosts = projectedSalePrice * saleCostsPercent;
+                                  const netProceeds = projectedSalePrice - saleCosts;
+                                  
+                                  return (
+                                    <>
+                                      <div>
+                                        <p className="text-sm text-teal-700 dark:text-teal-300">Current ARV</p>
+                                        <p className="font-medium text-teal-900 dark:text-teal-200">{formatCurrency(arv)}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm text-teal-700 dark:text-teal-300">Projected Sale Price</p>
+                                        <p className="font-medium text-teal-900 dark:text-teal-200">{formatCurrency(projectedSalePrice)}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm text-teal-700 dark:text-teal-300">Sale Costs</p>
+                                        <p className="font-medium text-red-600">({formatCurrency(saleCosts)})</p>
+                                      </div>
+                                    </>
+                                  );
+                                })()}
+                              </div>
+                              <div className="space-y-3">
+                                {(() => {
+                                  const arv = dealAnalyzerData?.calculations?.arv || parseFloat(showPropertyDetailModal.arvAtTimePurchased || '0');
+                                  const saleFactor = dealAnalyzerData.exitAnalysis.saleFactor || 1.0;
+                                  const saleCostsPercent = dealAnalyzerData.exitAnalysis.saleCostsPercent || 0.06;
+                                  const initialCapital = parseFloat(showPropertyDetailModal.initialCapitalRequired || '0');
+                                  
+                                  const projectedSalePrice = arv * saleFactor;
+                                  const saleCosts = projectedSalePrice * saleCostsPercent;
+                                  const netProceeds = projectedSalePrice - saleCosts;
+                                  const totalReturn = netProceeds - initialCapital;
+                                  const holdPeriod = dealAnalyzerData.exitAnalysis.holdPeriodYears || 3;
+                                  const annualizedReturn = initialCapital > 0 ? (Math.pow(netProceeds / initialCapital, 1 / holdPeriod) - 1) * 100 : 0;
+                                  
+                                  return (
+                                    <>
+                                      <div>
+                                        <p className="text-sm text-teal-700 dark:text-teal-300">Net Proceeds</p>
+                                        <p className="font-medium text-green-600">{formatCurrency(netProceeds)}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm text-teal-700 dark:text-teal-300">Total Return</p>
+                                        <p className={`font-medium ${totalReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                          {formatCurrency(totalReturn)}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm text-teal-700 dark:text-teal-300">Annualized Return</p>
+                                        <p className={`font-medium ${annualizedReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                          {formatPercentage(annualizedReturn)}
+                                        </p>
+                                      </div>
+                                    </>
+                                  );
+                                })()}
+                              </div>
+                            </div>
                           </div>
                         )}
+
+                        {/* Strategy Comparison */}
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Exit Strategy Comparison</h3>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                              <thead>
+                                <tr>
+                                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Strategy</th>
+                                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Cash Received</th>
+                                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Remaining Equity</th>
+                                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Annual Cash Flow</th>
+                                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Total Return</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+                                {(() => {
+                                  const arv = dealAnalyzerData?.calculations?.arv || parseFloat(showPropertyDetailModal.arvAtTimePurchased || '0');
+                                  const currentCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
+                                  const initialCapital = parseFloat(showPropertyDetailModal.initialCapitalRequired || '0');
+                                  
+                                  // Refinance scenario
+                                  const refinanceLtv = dealAnalyzerData?.refinanceAnalysis?.ltv || 0.75;
+                                  const refinanceRate = dealAnalyzerData?.refinanceAnalysis?.interestRate || 0.065;
+                                  const refinanceCosts = dealAnalyzerData?.refinanceAnalysis?.closingCosts || 5000;
+                                  const newLoanAmount = arv * refinanceLtv;
+                                  const refinanceCashOut = newLoanAmount - refinanceCosts;
+                                  const newMonthlyPayment = newLoanAmount * (refinanceRate / 12 * Math.pow(1 + refinanceRate / 12, 360)) / (Math.pow(1 + refinanceRate / 12, 360) - 1);
+                                  const refinanceNewCashFlow = currentCashFlow - (newMonthlyPayment * 12);
+                                  const refinanceEquity = arv - newLoanAmount;
+                                  
+                                  // Sale scenario
+                                  const saleFactor = dealAnalyzerData?.exitAnalysis?.saleFactor || 1.0;
+                                  const saleCostsPercent = dealAnalyzerData?.exitAnalysis?.saleCostsPercent || 0.06;
+                                  const salePrice = arv * saleFactor;
+                                  const saleCosts = salePrice * saleCostsPercent;
+                                  const saleNetProceeds = salePrice - saleCosts;
+                                  
+                                  return (
+                                    <>
+                                      <tr>
+                                        <td className="px-4 py-2 text-sm font-medium text-gray-900 dark:text-white">Hold & Cash Flow</td>
+                                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">$0</td>
+                                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">{formatCurrency(arv)}</td>
+                                        <td className="px-4 py-2 text-sm text-green-600">{formatCurrency(currentCashFlow)}</td>
+                                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">Equity + Cash Flow</td>
+                                      </tr>
+                                      <tr>
+                                        <td className="px-4 py-2 text-sm font-medium text-gray-900 dark:text-white">Refinance</td>
+                                        <td className="px-4 py-2 text-sm text-green-600">{formatCurrency(refinanceCashOut)}</td>
+                                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">{formatCurrency(refinanceEquity)}</td>
+                                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">{formatCurrency(refinanceNewCashFlow)}</td>
+                                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">Cash + Equity + CF</td>
+                                      </tr>
+                                      <tr>
+                                        <td className="px-4 py-2 text-sm font-medium text-gray-900 dark:text-white">Sale</td>
+                                        <td className="px-4 py-2 text-sm text-green-600">{formatCurrency(saleNetProceeds)}</td>
+                                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">$0</td>
+                                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">$0</td>
+                                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300">{formatCurrency(saleNetProceeds - initialCapital)}</td>
+                                      </tr>
+                                    </>
+                                  );
+                                })()}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
                       </div>
                     );
 
