@@ -675,13 +675,13 @@ export default function DealAnalyzer() {
       case 'allInCost':
         setCalculationDetails({
           title: 'All-In Cost',
-          value: calculations.allInCost,
+          value: metrics.allInCost,
           formula: 'Purchase Price + Rehab Cost + Closing Costs + Holding Costs',
           breakdown: [
             { label: 'Purchase Price', value: assumptions.purchasePrice, source: 'Deal Assumptions → Purchase Price' },
-            { label: 'Total Rehab Cost', value: calculations.totalRehabCost, source: 'Calculated from rehab sections' },
-            { label: 'Closing Costs', value: calculations.totalClosingCosts, source: 'Closing Costs section' },
-            { label: 'Holding Costs', value: calculations.totalHoldingCosts, source: 'Holding Costs section' }
+            { label: 'Total Rehab Cost', value: metrics.totalRehab, source: 'Calculated from rehab sections' },
+            { label: 'Closing Costs', value: metrics.totalClosingCosts, source: 'Closing Costs section' },
+            { label: 'Holding Costs', value: metrics.totalHoldingCosts, source: 'Holding Costs section' }
           ]
         });
         break;
@@ -689,25 +689,12 @@ export default function DealAnalyzer() {
       case 'cashOnCashReturn':
         setCalculationDetails({
           title: 'Cash-on-Cash Return',
-          value: calculations.cashOnCashReturn,
+          value: metrics.cashOnCashReturn * 100,
           formula: 'Annual Cash Flow ÷ Total Cash Invested × 100',
           breakdown: [
-            { label: 'Annual Cash Flow', value: calculations.annualCashFlow, source: 'Monthly cash flow × 12' },
-            { label: 'Total Cash Invested', value: calculations.totalCashInvested, source: 'Down payment + rehab + closing + holding costs' },
-            { label: 'CoC Return (%)', value: calculations.cashOnCashReturn, source: 'Cash Flow ÷ Cash Invested × 100' }
-          ]
-        });
-        break;
-      
-      case 'capRate':
-        setCalculationDetails({
-          title: 'Cap Rate',
-          value: calculations.capRate,
-          formula: 'Net Operating Income ÷ All-In Cost × 100',
-          breakdown: [
-            { label: 'Net Operating Income', value: calculations.noi, source: 'Gross Income - Operating Expenses' },
-            { label: 'All-In Cost', value: calculations.allInCost, source: 'Purchase + Rehab + Closing + Holding' },
-            { label: 'Cap Rate (%)', value: calculations.capRate, source: 'NOI ÷ All-In Cost × 100' }
+            { label: 'Annual Cash Flow', value: metrics.netCashFlow, source: 'NOI - Debt Service' },
+            { label: 'Total Cash Invested', value: metrics.totalCashInvested - metrics.cashOut, source: 'Cash invested after refinance' },
+            { label: 'CoC Return (%)', value: metrics.cashOnCashReturn * 100, source: 'Cash Flow ÷ Cash Invested × 100' }
           ]
         });
         break;
@@ -715,12 +702,12 @@ export default function DealAnalyzer() {
       case 'dscr':
         setCalculationDetails({
           title: 'Debt Service Coverage Ratio',
-          value: calculations.dscr,
+          value: metrics.dscr,
           formula: 'Net Operating Income ÷ Annual Debt Service',
           breakdown: [
-            { label: 'Net Operating Income', value: calculations.noi, source: 'Gross Income - Operating Expenses' },
-            { label: 'Annual Debt Service', value: calculations.annualDebtService, source: 'Monthly payment × 12' },
-            { label: 'DSCR Ratio', value: calculations.dscr, source: 'NOI ÷ Annual Debt Service' }
+            { label: 'Net Operating Income', value: metrics.noi, source: 'Gross Income - Operating Expenses' },
+            { label: 'Annual Debt Service', value: metrics.annualDebtService, source: 'Monthly payment × 12' },
+            { label: 'DSCR Ratio', value: metrics.dscr, source: 'NOI ÷ Annual Debt Service' }
           ]
         });
         break;
@@ -728,32 +715,28 @@ export default function DealAnalyzer() {
       case 'breakEvenOccupancy':
         setCalculationDetails({
           title: 'Break-Even Occupancy',
-          value: calculations.breakEvenOccupancy,
+          value: metrics.breakEvenOccupancy * 100,
           formula: '(Operating Expenses + Debt Service) ÷ Gross Rental Income × 100',
           breakdown: [
-            { label: 'Operating Expenses', value: calculations.totalOperatingExpenses, source: 'Sum of all operating expenses' },
-            { label: 'Annual Debt Service', value: calculations.annualDebtService, source: 'Monthly payment × 12' },
-            { label: 'Gross Rental Income', value: calculations.grossRentalIncome, source: 'Sum of all unit rents × 12' },
-            { label: 'Break-Even %', value: calculations.breakEvenOccupancy, source: '(Expenses + Debt) ÷ Gross Income × 100' }
-          ]
-        });
-        break;
-      
-      case 'projectedSalesPrice':
-        setCalculationDetails({
-          title: 'Projected Sales Price',
-          value: calculations.projectedSalesPrice,
-          formula: 'Net Operating Income ÷ Sales Cap Rate',
-          breakdown: [
-            { label: 'Net Operating Income', value: calculations.noi, source: 'Gross Income - Operating Expenses' },
-            { label: 'Sales Cap Rate', value: exitAnalysis.saleFactor * 100, source: 'Exit Analysis → Sales Cap Rate' },
-            { label: 'Sales Price', value: calculations.projectedSalesPrice, source: 'NOI ÷ Cap Rate' }
+            { label: 'Operating Expenses', value: metrics.totalExpenses, source: 'Sum of all operating expenses' },
+            { label: 'Annual Debt Service', value: metrics.annualDebtService, source: 'Monthly payment × 12' },
+            { label: 'Gross Rental Income', value: metrics.grossRent, source: 'Sum of all unit rents × 12' },
+            { label: 'Break-Even %', value: metrics.breakEvenOccupancy * 100, source: '(Expenses + Debt) ÷ Gross Income × 100' }
           ]
         });
         break;
       
       default:
-        return;
+        // For any metric not specifically handled, show basic info
+        setCalculationDetails({
+          title: metric.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+          value: 0,
+          formula: 'Calculation details not available for this metric',
+          breakdown: [
+            { label: 'Value', value: 0, source: 'Calculated from various inputs' }
+          ]
+        });
+        break;
     }
     
     setShowCalculationModal(true);
@@ -1723,7 +1706,7 @@ export default function DealAnalyzer() {
                 Refinance Analysis
               </h3>
               <div className="space-y-4">
-                <div className="bg-blue-50 rounded-lg p-4">
+                <div className="bg-blue-50 rounded-lg p-4 cursor-pointer hover:bg-blue-100 transition-colors" onDoubleClick={() => showCalculationBreakdown('dscr')}>
                   <div className="text-center">
                     <p className="text-sm text-blue-600 font-medium">DSCR</p>
                     <p className={`text-2xl font-bold ${metrics.dscr >= assumptions.dscrThreshold ? 'text-green-600' : 'text-red-600'}`}>
@@ -1732,6 +1715,7 @@ export default function DealAnalyzer() {
                     {metrics.dscr < assumptions.dscrThreshold && (
                       <p className="text-xs text-red-600 mt-1">Below {assumptions.dscrThreshold} threshold</p>
                     )}
+                    <p className="text-xs text-gray-500 mt-1">Double-click for breakdown</p>
                   </div>
                 </div>
                 
@@ -1748,9 +1732,12 @@ export default function DealAnalyzer() {
                     <span className="text-sm text-gray-600">Monthly Debt Service (Post-Refi)</span>
                     <span className="font-medium">{formatCurrency(metrics.monthlyDebtService)}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors" onDoubleClick={() => showCalculationBreakdown('breakEvenOccupancy')}>
                     <span className="text-sm text-gray-600">Break-Even Occupancy</span>
-                    <span className="font-medium">{formatPercent(metrics.breakEvenOccupancy)}</span>
+                    <div className="text-right">
+                      <span className="font-medium">{formatPercent(metrics.breakEvenOccupancy)}</span>
+                      <p className="text-xs text-gray-400">Double-click for breakdown</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1764,13 +1751,19 @@ export default function DealAnalyzer() {
               </h3>
               <div className="space-y-4">
                 <div className="space-y-3">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors" onDoubleClick={() => showCalculationBreakdown('totalCashInvested')}>
                     <span className="text-sm text-gray-600">Total Cash Invested</span>
-                    <span className="font-medium">{formatCurrency(metrics.totalCashInvested)}</span>
+                    <div className="text-right">
+                      <span className="font-medium">{formatCurrency(metrics.totalCashInvested)}</span>
+                      <p className="text-xs text-gray-400">Double-click for breakdown</p>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors" onDoubleClick={() => showCalculationBreakdown('cashOnCashReturn')}>
                     <span className="text-sm text-gray-600">Annual Cash Flow</span>
-                    <span className="font-medium text-green-600">{formatCurrency(metrics.netCashFlow)}</span>
+                    <div className="text-right">
+                      <span className="font-medium text-green-600">{formatCurrency(metrics.netCashFlow)}</span>
+                      <p className="text-xs text-gray-400">Double-click for breakdown</p>
+                    </div>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Cash-Out at Refi</span>
