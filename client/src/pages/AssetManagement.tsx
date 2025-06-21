@@ -24,6 +24,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 // Remove toast for now and focus on fixing the save functionality
 import apiService from '../services/api';
+import EnhancedPropertyCard from '../components/EnhancedPropertyCard';
 
 interface Property {
   id: number;
@@ -65,64 +66,46 @@ const entities = [
   'Arcadia Vision Group'
 ];
 
-const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => (
-  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 w-full cursor-pointer hover:shadow-lg transition-shadow card-hover"
-       onDoubleClick={() => onDoubleClick(property)}
-       title="Double-click for financial breakdown">
-    <div className="flex items-center justify-between mb-4">
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{property.address}</h3>
-        <p className="text-gray-600 dark:text-gray-400">{property.city}, {property.state} {property.zipCode || ''}</p>
-      </div>
-      <div className="flex items-center gap-4">
-        <select 
-          value={property.status} 
-          onChange={(e) => onStatusChange(property.id, e.target.value)}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-        >
-          <option value="Under Contract">Under Contract</option>
-          <option value="Rehabbing">Rehabbing</option>
-          <option value="Cashflowing">Cashflowing</option>
-          <option value="Sold">Sold</option>
-        </select>
-      </div>
-    </div>
+const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
+  // Convert the Asset Management Property to Enhanced Property Card format
+  const handleDoubleClick = (enhancedProperty: any) => {
+    onDoubleClick(property); // Pass the original property
+  };
+  
+  return (
+    <EnhancedPropertyCard 
+      property={{
+        id: property.id,
+        address: property.address,
+        city: property.city,
+        state: property.state,
+        status: property.status,
+        entity: property.entity || '5Central Capital',
+        apartments: property.apartments,
+        acquisitionDate: property.acquisitionDate || new Date().toISOString()
+      }}
+      onStatusChange={onStatusChange}
+      onDoubleClick={handleDoubleClick}
+      variant="standard"
+    />
+  );
+};
 
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Units</p>
-        <p className="font-semibold text-gray-900 dark:text-white">{property.apartments}</p>
-      </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Acquisition Price</p>
-        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
-      </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Rehab Costs</p>
-        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.rehabCosts)}</p>
-      </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">ARV</p>
-        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.arvAtTimePurchased || 0)}</p>
-      </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Monthly Cash Flow</p>
-        <p className="font-semibold text-green-600">{formatCurrency(property.cashFlow)}</p>
-      </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
-        <p className="font-semibold text-blue-600">{formatPercentage(property.cashOnCashReturn)}</p>
-      </div>
-    </div>
+// Helper functions for formatting
+const formatCurrency = (amount: string | number) => {
+  const num = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.-]/g, '')) : amount;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(num);
+};
 
-    {property.acquisitionDate && (
-      <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-        <MapPin className="w-4 h-4 inline mr-1" />
-        Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
-      </div>
-    )}
-  </div>
-);
+const formatPercentage = (value: string | number) => {
+  const num = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]/g, '')) : value;
+  return `${num.toFixed(1)}%`;
+};
 
 const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => (
   <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 aspect-square flex flex-col cursor-pointer card-hover transition-all-smooth hover:shadow-md bg-white dark:bg-gray-800"
