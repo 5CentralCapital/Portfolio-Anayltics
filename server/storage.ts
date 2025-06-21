@@ -272,6 +272,16 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(entities).orderBy(asc(entities.name));
   }
 
+  async getEntitiesForUser(userId: number): Promise<Entity[]> {
+    const userEntities = await db
+      .select({ entity: entities })
+      .from(entityMemberships)
+      .innerJoin(entities, eq(entityMemberships.entityId, entities.id))
+      .where(eq(entityMemberships.userId, userId));
+    
+    return userEntities.map(result => result.entity);
+  }
+
   async getEntity(id: number): Promise<Entity | undefined> {
     const [entity] = await db.select().from(entities).where(eq(entities.id, id));
     return entity;

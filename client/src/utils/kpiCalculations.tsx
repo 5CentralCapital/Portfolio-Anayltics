@@ -36,8 +36,9 @@ export const getKPICalculationBreakdown = (
   formula: string;
   breakdown: KPIBreakdownItem[];
 } => {
-  const parseNumber = (str: string | number): number => {
+  const parseNumber = (str: string | number | null | undefined): number => {
     if (typeof str === 'number') return str;
+    if (!str) return 0; // Handle null, undefined, or empty string
     return parseFloat(str.toString().replace(/[^0-9.-]/g, '')) || 0;
   };
 

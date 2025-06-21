@@ -29,6 +29,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Prevent Vite from handling API routes by setting explicit headers
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('X-Powered-By', 'Express');
     next();
   });
 
@@ -272,6 +273,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Investor leads error:', error);
       res.status(500).json({ message: 'Failed to fetch investor leads' });
     }
+  });
+
+  // User entities endpoint
+  app.get('/api/user/:userId/entities', authenticateUser, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const entities = await storage.getEntitiesForUser(userId);
+      res.json(entities);
+    } catch (error) {
+      console.error('User entities error:', error);
+      res.status(500).json({ message: 'Failed to fetch user entities' });
+    }
+  });
+
+  // Catch-all API route to ensure no API endpoints are missed by Vite (must be last)
+  app.all('/api/*', (req, res) => {
+    // If we reach here, the specific route wasn't handled
+    // This ensures all API routes return JSON, not HTML
+    res.status(404).json({ message: `API endpoint ${req.path} not found` });
   });
 
   const httpServer = createServer(app);
