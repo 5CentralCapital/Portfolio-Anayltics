@@ -22,6 +22,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+// Remove toast for now and focus on fixing the save functionality
 import apiService from '../services/api';
 
 interface Property {
@@ -246,10 +247,11 @@ export default function AssetManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
       setIsEditing(false);
+      console.log('Property updated successfully');
     },
     onError: (error) => {
       console.error('Failed to update property:', error);
-      setIsEditing(false);
+      alert('Failed to save changes. Please try again.');
     }
   });
 
@@ -320,18 +322,24 @@ export default function AssetManagement() {
 
   const savePropertyChanges = () => {
     if (editingModalProperty) {
+      console.log('Saving property changes:', editingModalProperty);
+      const propertyData = {
+        dealAnalyzerData: editingModalProperty.dealAnalyzerData,
+        acquisitionPrice: editingModalProperty.acquisitionPrice,
+        rehabCosts: editingModalProperty.rehabCosts,
+        cashFlow: editingModalProperty.cashFlow,
+        cashOnCashReturn: editingModalProperty.cashOnCashReturn,
+        entity: editingModalProperty.entity,
+        status: editingModalProperty.status
+      };
+      console.log('Property data to save:', propertyData);
+      
       updatePropertyMutation.mutate({
         id: editingModalProperty.id,
-        property: {
-          dealAnalyzerData: editingModalProperty.dealAnalyzerData,
-          acquisitionPrice: editingModalProperty.acquisitionPrice,
-          rehabCosts: editingModalProperty.rehabCosts,
-          cashFlow: editingModalProperty.cashFlow,
-          cashOnCashReturn: editingModalProperty.cashOnCashReturn,
-          entity: editingModalProperty.entity,
-          status: editingModalProperty.status
-        }
+        property: propertyData
       });
+    } else {
+      console.log('No editing property found');
     }
   };
 
