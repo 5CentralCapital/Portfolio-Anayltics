@@ -906,13 +906,19 @@ export default function DealAnalyzer() {
         throw new Error('Authentication required. Please log in first.');
       }
 
+      // Use unified property system for import with automatic synchronization
+      const propertyDataWithDealAnalyzer = {
+        ...propertyData,
+        dealAnalyzerData: JSON.stringify(propertyData.dealAnalyzerData)
+      };
+
       const response = await fetch('/api/properties', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
         },
-        body: JSON.stringify(propertyData),
+        body: JSON.stringify(propertyDataWithDealAnalyzer),
       });
 
       if (!response.ok) {
@@ -923,6 +929,21 @@ export default function DealAnalyzer() {
 
       const result = await response.json();
       console.log('Import successful:', result);
+
+      // Automatically sync the newly created property to ensure calculations are consistent
+      if (result.id) {
+        try {
+          await fetch(`/api/properties/${result.id}/sync`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`,
+            }
+          });
+        } catch (syncError) {
+          console.warn('Property sync after import failed:', syncError);
+        }
+      }
 
       // After successful property creation, import the rehab line items
       if (result.id) {

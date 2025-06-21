@@ -37,6 +37,7 @@ import {
   formatPercentage as formatPercentageUtil,
   PropertyData
 } from '../utils/propertyCalculations';
+import { unifiedPropertyManager, useUnifiedProperty, useUnifiedPropertyUpdate } from '../utils/unifiedPropertySystem';
 import { ClickableKPI, ClickableKPIBar } from '../components/ClickableKPI';
 
 interface Property {

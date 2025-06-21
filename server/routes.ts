@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { kpiService } from "./kpi.service";
 import { dataMigrationService } from "./data-migration";
 import { dataSyncManager } from "./dataSync";
+import { unifiedDataMigrationManager } from "./unifiedDataMigration";
 import { 
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
@@ -371,8 +372,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/properties", authenticateUser, async (req: any, res) => {
     try {
       const propertyData = insertPropertySchema.parse(req.body);
+      const userId = req.user.id;
+      
+      // Create property through storage
       const property = await storage.createProperty(propertyData);
-      res.status(201).json(property);
+      
+      // Immediately sync the new property to ensure consistent calculations
+      const result = await dataSyncManager.updatePropertyWithSync(property.id, {}, userId);
+      
+      // Log any warnings from initial data sync
+      if (result.warnings.length > 0) {
+        console.warn(`New property ${property.id} sync warnings:`, result.warnings);
+      }
+      
+      res.status(201).json(result.property);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid property data", details: error.errors });
@@ -470,6 +483,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Property calculations error:", error);
       res.status(500).json({ error: "Failed to get property calculations" });
+    }
+  });
+
+  // Unified migration routes
+  app.post("/api/data/migrate-all", authenticateUser, async (req: any, res) => {
+    try {
+      const result = await unifiedDataMigrationManager.migrateAllProperties();
+      
+      res.json({
+        message: 'Migration completed',
+        ...result
+      });
+    } catch (error) {
+      console.error("Migration error:", error);
+      res.status(500).json({ error: "Failed to migrate properties" });
+    }
+  });
+
+  app.post("/api/data/migrate-deal-analyzer", authenticateUser, async (req: any, res) => {
+    try {
+      const result = await unifiedDataMigrationManager.migrateDealAnalyzerImports();
+      
+      res.json({
+        message: 'Deal Analyzer imports migrated',
+        ...result
+      });
+    } catch (error) {
+      console.error("Deal Analyzer migration error:", error);
+      res.status(500).json({ error: "Failed to migrate Deal Analyzer imports" });
     }
   });
 
