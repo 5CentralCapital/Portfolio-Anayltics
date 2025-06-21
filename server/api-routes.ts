@@ -29,16 +29,22 @@ router.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    // Get user by email
-    const user = await storage.getUser(email); // Using email as ID for now
-    if (!user) {
+    // Test user credentials for development
+    const testUsers = {
+      'michael@5central.capital': 'michael-id',
+      'sarah@housedoctors.com': 'sarah-id', 
+      'tom@arcadiavision.com': 'tom-id'
+    };
+
+    const userId = testUsers[email as keyof typeof testUsers];
+    if (!userId || password !== 'test123') {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // For testing, use simple password comparison
-    const validPassword = password === 'test123';
-    if (!validPassword) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    // Get user data
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
     }
 
     // Create session token
