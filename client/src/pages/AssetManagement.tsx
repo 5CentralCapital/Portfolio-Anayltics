@@ -445,6 +445,24 @@ export default function AssetManagement() {
       };
       console.log('Updated property:', updatedProperty);
       setEditingModalProperty(updatedProperty);
+      
+      // Force refresh overview calculations when financial data changes
+      if (field === 'dealAnalyzerData') {
+        try {
+          const dealData = JSON.parse(value);
+          // Check if the change affects financial calculations
+          if (dealData.incomeAndExpenses || 
+              dealData.proforma || 
+              dealData.financing || 
+              dealData.rentRoll || 
+              dealData.assumptions) {
+            setCalculationRefreshKey(prev => prev + 1);
+          }
+        } catch (e) {
+          // If parsing fails, still trigger refresh to be safe
+          setCalculationRefreshKey(prev => prev + 1);
+        }
+      }
     }
   };
 
@@ -1857,10 +1875,14 @@ export default function AssetManagement() {
                                   // Force fresh calculation using current property data
                                   const currentProperty = isEditing && editingModalProperty ? editingModalProperty : showPropertyDetailModal;
                                   
+                                  // Use the calculationRefreshKey to force re-render when financial data changes
+                                  const refreshDependency = calculationRefreshKey;
+                                  
                                   // Create a fresh property data object with current dealAnalyzerData
                                   const freshPropertyData = {
                                     ...currentProperty,
-                                    dealAnalyzerData: currentProperty?.dealAnalyzerData
+                                    dealAnalyzerData: currentProperty?.dealAnalyzerData,
+                                    _refreshKey: refreshDependency // Force calculation refresh
                                   };
                                   
                                   const metrics = calculatePropertyMetrics(freshPropertyData as PropertyData);
@@ -1878,10 +1900,14 @@ export default function AssetManagement() {
                                   // Force fresh calculation using current property data
                                   const currentProperty = isEditing && editingModalProperty ? editingModalProperty : showPropertyDetailModal;
                                   
+                                  // Use the calculationRefreshKey to force re-render when financial data changes
+                                  const refreshDependency = calculationRefreshKey;
+                                  
                                   // Create a fresh property data object with current dealAnalyzerData
                                   const freshPropertyData = {
                                     ...currentProperty,
-                                    dealAnalyzerData: currentProperty?.dealAnalyzerData
+                                    dealAnalyzerData: currentProperty?.dealAnalyzerData,
+                                    _refreshKey: refreshDependency // Force calculation refresh
                                   };
                                   
                                   const metrics = calculatePropertyMetrics(freshPropertyData as PropertyData);
