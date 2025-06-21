@@ -248,7 +248,7 @@ export class DatabaseStorage implements IStorage {
 
   async createProperty(property: InsertProperty): Promise<Property> {
     // Handle dealAnalyzerData serialization if it exists
-    const propertyData = { ...property };
+    const propertyData: any = { ...property };
     if (propertyData.dealAnalyzerData && typeof propertyData.dealAnalyzerData === 'object') {
       propertyData.dealAnalyzerData = JSON.stringify(propertyData.dealAnalyzerData);
     }
@@ -259,11 +259,16 @@ export class DatabaseStorage implements IStorage {
 
   async updateProperty(id: number, property: Partial<InsertProperty>): Promise<Property | undefined> {
     // Clean the update data and handle date conversion
-    const updateData = { ...property };
+    const updateData: any = { ...property };
     
     // Remove fields that shouldn't be updated
-    delete (updateData as any).createdAt;
-    delete (updateData as any).id;
+    delete updateData.createdAt;
+    delete updateData.id;
+    
+    // Handle dealAnalyzerData serialization if it exists
+    if (updateData.dealAnalyzerData && typeof updateData.dealAnalyzerData === 'object') {
+      updateData.dealAnalyzerData = JSON.stringify(updateData.dealAnalyzerData);
+    }
     
     const result = await db.update(properties)
       .set({ ...updateData, updatedAt: new Date() })
