@@ -68,7 +68,7 @@ class ApiService {
     const response = await this.request<{
       user: any;
       token: string;
-      expiresAt: string;
+      expiresAt?: string;
     }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
