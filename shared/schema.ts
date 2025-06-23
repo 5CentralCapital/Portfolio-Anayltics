@@ -87,6 +87,17 @@ export const propertyAssumptions = pgTable("property_assumptions", {
   refinanceInterestRate: decimal("refinance_interest_rate", { precision: 5, scale: 4 }).default("0.065"),
   refinanceClosingCostPercent: decimal("refinance_closing_cost_percent", { precision: 5, scale: 4 }).default("0.02"),
   dscrThreshold: decimal("dscr_threshold", { precision: 5, scale: 2 }).default("1.25"),
+  
+  // Enhanced market assumptions for better KPI calculations
+  annualRentGrowth: decimal("annual_rent_growth", { precision: 5, scale: 4 }).default("0.03"),
+  annualExpenseInflation: decimal("annual_expense_inflation", { precision: 5, scale: 4 }).default("0.025"),
+  propertyAppreciationRate: decimal("property_appreciation_rate", { precision: 5, scale: 4 }).default("0.03"),
+  exitCapRate: decimal("exit_cap_rate", { precision: 5, scale: 4 }),
+  
+  // Investment horizon and strategy
+  holdPeriodYears: decimal("hold_period_years", { precision: 5, scale: 1 }).default("5.0"),
+  businessPlan: text("business_plan", { enum: ["buy_and_hold", "value_add", "opportunistic", "ground_up"] }).default("value_add"),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -194,6 +205,93 @@ export const propertyIncomeOther = pgTable("property_income_other", {
   incomeName: text("income_name").notNull(),
   annualAmount: decimal("annual_amount", { precision: 12, scale: 2 }).default("0"),
   description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Property Loans - Multi-loan tracking with loan-specific terms
+export const propertyLoans = pgTable("property_loans", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  loanName: text("loan_name").notNull(),
+  loanType: text("loan_type", { enum: ["acquisition", "refinance", "construction", "bridge", "mezzanine"] }).notNull(),
+  originalAmount: decimal("original_amount", { precision: 15, scale: 2 }).notNull(),
+  currentBalance: decimal("current_balance", { precision: 15, scale: 2 }).notNull(),
+  interestRate: decimal("interest_rate", { precision: 5, scale: 4 }).notNull(),
+  termYears: integer("term_years").notNull(),
+  monthlyPayment: decimal("monthly_payment", { precision: 12, scale: 2 }).notNull(),
+  paymentType: text("payment_type", { enum: ["principal_and_interest", "interest_only"] }).default("principal_and_interest"),
+  maturityDate: date("maturity_date").notNull(),
+  isActive: boolean("is_active").default(true), // Active loan for debt service calculations
+  lender: text("lender"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Property Cash Flow History - Monthly cash flow tracking
+export const propertyCashFlow = pgTable("property_cash_flow", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  cashFlowDate: date("cash_flow_date").notNull(),
+  grossRentalIncome: decimal("gross_rental_income", { precision: 12, scale: 2 }).default("0"),
+  vacancyLoss: decimal("vacancy_loss", { precision: 12, scale: 2 }).default("0"),
+  otherIncome: decimal("other_income", { precision: 12, scale: 2 }).default("0"),
+  effectiveGrossIncome: decimal("effective_gross_income", { precision: 12, scale: 2 }).default("0"),
+  totalOperatingExpenses: decimal("total_operating_expenses", { precision: 12, scale: 2 }).default("0"),
+  netOperatingIncome: decimal("net_operating_income", { precision: 12, scale: 2 }).default("0"),
+  debtService: decimal("debt_service", { precision: 12, scale: 2 }).default("0"),
+  beforeTaxCashFlow: decimal("before_tax_cash_flow", { precision: 12, scale: 2 }).default("0"),
+  capitalExpenditures: decimal("capital_expenditures", { precision: 12, scale: 2 }).default("0"),
+  netCashFlow: decimal("net_cash_flow", { precision: 12, scale: 2 }).default("0"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Property Performance Metrics - Calculated KPIs stored for historical tracking
+export const propertyPerformanceMetrics = pgTable("property_performance_metrics", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  calculationDate: date("calculation_date").notNull(),
+  
+  // Core financial metrics
+  grossRentalIncome: decimal("gross_rental_income", { precision: 15, scale: 2 }).default("0"),
+  netOperatingIncome: decimal("net_operating_income", { precision: 15, scale: 2 }).default("0"),
+  annualCashFlow: decimal("annual_cash_flow", { precision: 15, scale: 2 }).default("0"),
+  
+  // Investment ratios
+  capRate: decimal("cap_rate", { precision: 5, scale: 4 }).default("0"),
+  cashOnCashReturn: decimal("cash_on_cash_return", { precision: 5, scale: 4 }).default("0"),
+  dscr: decimal("dscr", { precision: 5, scale: 2 }).default("0"),
+  equityMultiple: decimal("equity_multiple", { precision: 5, scale: 2 }).default("0"),
+  irr: decimal("irr", { precision: 5, scale: 4 }).default("0"),
+  
+  // Property valuation
+  currentArv: decimal("current_arv", { precision: 15, scale: 2 }).default("0"),
+  totalInvestedCapital: decimal("total_invested_capital", { precision: 15, scale: 2 }).default("0"),
+  currentEquityValue: decimal("current_equity_value", { precision: 15, scale: 2 }).default("0"),
+  
+  // Risk metrics
+  breakEvenOccupancy: decimal("break_even_occupancy", { precision: 5, scale: 4 }).default("0"),
+  operatingExpenseRatio: decimal("operating_expense_ratio", { precision: 5, scale: 4 }).default("0"),
+  
+  // Debt metrics
+  loanToValue: decimal("loan_to_value", { precision: 5, scale: 4 }).default("0"),
+  debtYield: decimal("debt_yield", { precision: 5, scale: 4 }).default("0"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Property Workflow Steps - Project management integration
+export const propertyWorkflowSteps = pgTable("property_workflow_steps", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  stepName: text("step_name").notNull(),
+  stepCategory: text("step_category"), // Links to rehab budget section
+  status: text("status", { enum: ["pending", "in_progress", "completed", "on_hold"] }).default("pending"),
+  startDate: date("start_date"),
+  completedDate: date("completed_date"),
+  budgetItemId: integer("budget_item_id").references(() => propertyRehabBudget.id),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
