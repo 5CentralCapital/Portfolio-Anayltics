@@ -189,18 +189,30 @@ const formatPercentage = (value: string | number) => {
 
 // Loan payment calculation function
 const calculateLoanPayment = (amount: number, interestRate: number, termYears: number, paymentType: string) => {
-  if (amount <= 0 || interestRate <= 0) return 0;
+  console.log('calculateLoanPayment called with:', { amount, interestRate, termYears, paymentType });
+  
+  if (amount <= 0 || interestRate <= 0) {
+    console.log('calculateLoanPayment returning 0 due to invalid amount or rate');
+    return 0;
+  }
   
   const monthlyRate = interestRate / 12;
   
   if (paymentType === 'interest-only') {
-    return amount * monthlyRate;
+    const payment = amount * monthlyRate;
+    console.log('Interest-only payment calculated:', payment);
+    return payment;
   } else {
     // Full amortization
     const numPayments = termYears * 12;
-    if (numPayments <= 0) return 0;
+    if (numPayments <= 0) {
+      console.log('calculateLoanPayment returning 0 due to invalid term');
+      return 0;
+    }
     
-    return amount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+    const payment = amount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+    console.log('Amortizing payment calculated:', payment);
+    return payment;
   }
 };
 
@@ -2930,6 +2942,7 @@ export default function AssetManagement() {
                                               if (loanIndex >= 0) {
                                                 const amount = parseFloat(e.target.value) || 0;
                                                 dealData.loans[loanIndex].amount = amount;
+                                                dealData.loans[loanIndex].loanAmount = amount; // Keep both for consistency
                                                 // Recalculate monthly payment using new function
                                                 dealData.loans[loanIndex].monthlyPayment = calculateLoanPayment(
                                                   amount,
@@ -2965,7 +2978,7 @@ export default function AssetManagement() {
                                                 dealData.loans[loanIndex].interestRate = interestRate;
                                                 // Recalculate monthly payment using new function
                                                 dealData.loans[loanIndex].monthlyPayment = calculateLoanPayment(
-                                                  dealData.loans[loanIndex].amount,
+                                                  dealData.loans[loanIndex].amount || dealData.loans[loanIndex].loanAmount,
                                                   interestRate,
                                                   dealData.loans[loanIndex].termYears,
                                                   dealData.loans[loanIndex].paymentType || 'amortizing'
@@ -2999,7 +3012,7 @@ export default function AssetManagement() {
                                                 dealData.loans[loanIndex].termYears = termYears;
                                                 // Recalculate monthly payment using new function
                                                 dealData.loans[loanIndex].monthlyPayment = calculateLoanPayment(
-                                                  dealData.loans[loanIndex].amount,
+                                                  dealData.loans[loanIndex].amount || dealData.loans[loanIndex].loanAmount,
                                                   dealData.loans[loanIndex].interestRate,
                                                   termYears,
                                                   dealData.loans[loanIndex].paymentType || 'amortizing'
@@ -3029,7 +3042,7 @@ export default function AssetManagement() {
                                                 dealData.loans[loanIndex].paymentType = e.target.value;
                                                 // Recalculate monthly payment with new payment type
                                                 dealData.loans[loanIndex].monthlyPayment = calculateLoanPayment(
-                                                  dealData.loans[loanIndex].amount,
+                                                  dealData.loans[loanIndex].amount || dealData.loans[loanIndex].loanAmount,
                                                   dealData.loans[loanIndex].interestRate,
                                                   dealData.loans[loanIndex].termYears,
                                                   e.target.value
