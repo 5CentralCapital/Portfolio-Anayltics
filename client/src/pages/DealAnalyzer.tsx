@@ -200,20 +200,20 @@ export default function DealAnalyzer() {
 
   // Workflow timeline state - integrated with budget sections
   const [workflowSteps, setWorkflowSteps] = useState(() => loadSavedState('workflowSteps', [
-    { id: 1, step: 'Close on property', status: 'completed', budgetCategory: null, notes: 'Property acquired' },
-    { id: 2, step: 'Eviction current tenants', status: 'in-progress', budgetCategory: null, notes: 'Legal process in progress' },
-    { id: 3, step: 'Permits & Inspections', status: 'pending', budgetCategory: 'exterior', budgetItem: 'Permits', notes: 'City permits required' },
-    { id: 4, step: 'Demolition', status: 'pending', budgetCategory: 'exterior', budgetItem: 'Demolition', notes: 'Remove existing fixtures' },
-    { id: 5, step: 'Electrical & Plumbing Rough', status: 'pending', budgetCategory: 'generalInterior', budgetItem: 'Electrical wiring', notes: 'Rough electrical and plumbing' },
-    { id: 6, step: 'Drywall Installation', status: 'pending', budgetCategory: 'generalInterior', budgetItem: 'Drywall', notes: 'Hang and finish drywall' },
-    { id: 7, step: 'Kitchen Renovation', status: 'pending', budgetCategory: 'kitchens', budgetItem: 'Cabinets', notes: 'Complete kitchen remodel' },
-    { id: 8, step: 'Bathroom Renovation', status: 'pending', budgetCategory: 'bathrooms', budgetItem: 'Vanity', notes: 'Complete bathroom remodel' },
-    { id: 9, step: 'Flooring Installation', status: 'pending', budgetCategory: 'generalInterior', budgetItem: 'Flooring', notes: 'Install new flooring throughout' },
-    { id: 10, step: 'Paint & Finishings', status: 'pending', budgetCategory: 'finishings', budgetItem: 'Paint', notes: 'Interior painting and trim' },
-    { id: 11, step: 'HVAC Installation', status: 'pending', budgetCategory: 'generalInterior', budgetItem: 'Mini split', notes: 'Install heating and cooling' },
-    { id: 12, step: 'Final Inspections', status: 'pending', budgetCategory: null, notes: 'City final inspections' },
-    { id: 13, step: 'List for rent', status: 'pending', budgetCategory: null, notes: 'Market ready units' },
-    { id: 14, step: 'Refinance property', status: 'pending', budgetCategory: null, notes: 'Permanent financing' }
+    { id: 1, step: 'Close on property', status: 'completed', budgetCategory: null, notes: 'Property acquired', unitsCompleted: 0 },
+    { id: 2, step: 'Eviction current tenants', status: 'in-progress', budgetCategory: null, notes: 'Legal process in progress', unitsCompleted: 0 },
+    { id: 3, step: 'Permits & Inspections', status: 'pending', budgetCategory: 'exterior', budgetItem: 'Permits', notes: 'City permits required', unitsCompleted: 0 },
+    { id: 4, step: 'Demolition', status: 'pending', budgetCategory: 'exterior', budgetItem: 'Demolition', notes: 'Remove existing fixtures', unitsCompleted: 0 },
+    { id: 5, step: 'Electrical & Plumbing Rough', status: 'pending', budgetCategory: 'generalInterior', budgetItem: 'Electrical wiring', notes: 'Rough electrical and plumbing', unitsCompleted: 0 },
+    { id: 6, step: 'Drywall Installation', status: 'pending', budgetCategory: 'generalInterior', budgetItem: 'Drywall', notes: 'Hang and finish drywall', unitsCompleted: 0 },
+    { id: 7, step: 'Kitchen Renovation', status: 'pending', budgetCategory: 'kitchens', budgetItem: 'Cabinets', notes: 'Complete kitchen remodel', unitsCompleted: 0 },
+    { id: 8, step: 'Bathroom Renovation', status: 'pending', budgetCategory: 'bathrooms', budgetItem: 'Vanity', notes: 'Complete bathroom remodel', unitsCompleted: 0 },
+    { id: 9, step: 'Flooring Installation', status: 'pending', budgetCategory: 'generalInterior', budgetItem: 'Flooring', notes: 'Install new flooring throughout', unitsCompleted: 0 },
+    { id: 10, step: 'Paint & Finishings', status: 'pending', budgetCategory: 'finishings', budgetItem: 'Paint', notes: 'Interior painting and trim', unitsCompleted: 0 },
+    { id: 11, step: 'HVAC Installation', status: 'pending', budgetCategory: 'generalInterior', budgetItem: 'Mini split', notes: 'Install heating and cooling', unitsCompleted: 0 },
+    { id: 12, step: 'Final Inspections', status: 'pending', budgetCategory: null, notes: 'City final inspections', unitsCompleted: 0 },
+    { id: 13, step: 'List for rent', status: 'pending', budgetCategory: null, notes: 'Market ready units', unitsCompleted: 0 },
+    { id: 14, step: 'Refinance property', status: 'pending', budgetCategory: null, notes: 'Permanent financing', unitsCompleted: 0 }
   ]));
 
   const [editingWorkflow, setEditingWorkflow] = useState(false);
@@ -2963,6 +2963,30 @@ export default function DealAnalyzer() {
                         </div>
                       </div>
                     )}
+
+                    {/* Unit Count Metric */}
+                    <div className="flex-shrink-0 w-20 text-center">
+                      <div className="text-xs text-gray-500 mb-1">Units</div>
+                      <div 
+                        onClick={() => {
+                          const totalUnits = assumptions.units || rentRoll.length;
+                          const currentCompleted = step.unitsCompleted || 0;
+                          const newCompleted = currentCompleted < totalUnits ? currentCompleted + 1 : 0;
+                          
+                          const updated = workflowSteps.map(s => 
+                            s.id === step.id ? {...s, unitsCompleted: newCompleted} : s
+                          );
+                          setWorkflowSteps(updated);
+                        }}
+                        className={`cursor-pointer px-2 py-1 rounded text-xs font-medium transition-all hover-scale ${
+                          (step.unitsCompleted || 0) >= (assumptions.units || rentRoll.length) 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                        }`}
+                      >
+                        {step.unitsCompleted || 0}/{assumptions.units || rentRoll.length}
+                      </div>
+                    </div>
 
                     {/* Notes */}
                     <div className="w-32">
