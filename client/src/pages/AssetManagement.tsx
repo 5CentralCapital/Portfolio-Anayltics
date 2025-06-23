@@ -223,14 +223,16 @@ export default function AssetManagement() {
   const getModalLoanData = () => {
     if (!showPropertyDetailModal) return [];
     
-    const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
-    let loans = currentData?.loans || [];
+    // Use property's stored data or create default data structure
+    const propertyData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : null;
+    let loans = propertyData?.loans || [];
     
-    // If no loans exist, create default acquisition loan
+    // If no loans exist, create default acquisition loan using property data
     if (loans.length === 0) {
-      const loanAmount = parseFloat(showPropertyDetailModal.acquisitionPrice) * (dealAnalyzerData.assumptions?.loanPercentage || 0.8);
-      const interestRate = dealAnalyzerData.assumptions?.interestRate || 0.065;
-      const termYears = dealAnalyzerData.assumptions?.loanTermYears || 30;
+      const loanPercentage = propertyData?.assumptions?.loanPercentage || 0.8;
+      const interestRate = propertyData?.assumptions?.interestRate || 0.065;
+      const termYears = propertyData?.assumptions?.loanTermYears || 30;
+      const loanAmount = parseFloat(showPropertyDetailModal.acquisitionPrice) * loanPercentage;
       const paymentType = termYears <= 3 ? 'interest-only' : 'amortizing';
       
       const defaultLoan = {
