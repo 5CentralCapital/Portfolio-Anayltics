@@ -12,6 +12,51 @@ const loadSavedState = (key: string, defaultValue: any) => {
   }
 };
 
+// Parse address into components
+const parseAddress = (fullAddress: string) => {
+  // Example: "3408 E DR MLK BLVD, Tampa, FL 33610"
+  const parts = fullAddress.split(',').map(part => part.trim());
+  
+  if (parts.length >= 3) {
+    const address = parts[0]; // "3408 E DR MLK BLVD"
+    const city = parts[1]; // "Tampa"
+    const stateZip = parts[2].split(' '); // ["FL", "33610"]
+    const state = stateZip[0] || '';
+    const zipCode = stateZip[1] || '';
+    
+    return { address, city, state, zipCode };
+  } else if (parts.length === 2) {
+    // Handle case with just address and city
+    return {
+      address: parts[0],
+      city: parts[1],
+      state: '',
+      zipCode: ''
+    };
+  } else {
+    // Single part or malformed address
+    return {
+      address: parts[0] || fullAddress,
+      city: '',
+      state: '',
+      zipCode: ''
+    };
+  }
+};
+
+// Format address components for display
+const formatAddressDisplay = (fullAddress: string) => {
+  const { address, city, state, zipCode } = parseAddress(fullAddress);
+  
+  if (city && state) {
+    return `${address} • ${city}, ${state} ${zipCode}`.trim();
+  } else if (city) {
+    return `${address} • ${city}`;
+  } else {
+    return address;
+  }
+};
+
 export default function DealAnalyzer() {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
@@ -777,12 +822,8 @@ export default function DealAnalyzer() {
     setImportingToProperties(true);
     
     try {
-      // Extract city and state from address
-      const addressParts = propertyAddress.split(',');
-      const city = addressParts.length > 1 ? addressParts[addressParts.length - 2].trim() : '';
-      const stateZip = addressParts.length > 2 ? addressParts[addressParts.length - 1].trim() : '';
-      const state = stateZip.split(' ')[0] || '';
-      const zipCode = stateZip.split(' ')[1] || '';
+      // Extract address components using the parsing function
+      const { address, city, state, zipCode } = parseAddress(propertyAddress);
 
       // Calculate rehab costs from detailed sections
       const exteriorTotal = rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
@@ -838,7 +879,7 @@ export default function DealAnalyzer() {
       const propertyData = {
         status: 'Under Contract' as const,
         apartments: Number(assumptions.unitCount) || 1,
-        address: propertyAddress.split(',')[0]?.trim() || propertyName,
+        address: address || propertyName,
         city: city || 'Unknown',
         state: state || 'CT',
         zipCode: zipCode || null,
@@ -1065,7 +1106,7 @@ export default function DealAnalyzer() {
                   title="Double-click to edit"
                   onDoubleClick={() => setEditingAddress(true)}
                 >
-                  {propertyAddress}
+                  {formatAddressDisplay(propertyAddress)}
                 </p>
               )}
             </div>
