@@ -1839,142 +1839,52 @@ export default function AssetManagement() {
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <p className="text-sm text-green-700 dark:text-green-300">Annual Cash Flow</p>
-{(() => {
-                                  // Get current data for calculations
-                                  const currentData = isEditing && editingModalProperty?.dealAnalyzerData 
-                                    ? JSON.parse(editingModalProperty.dealAnalyzerData) 
-                                    : dealAnalyzerData;
+                                {(() => {
+                                  // Use centralized calculations for consistency
+                                  const calculations = getPropertyCalculations();
+                                  console.log('Overview tab - Using centralized calculations:', calculations);
                                   
-                                  let annualCashFlow = 0;
-                                  
-                                  if (currentData?.rentRoll && Array.isArray(currentData.rentRoll)) {
-                                    // Calculate from rent roll data
-                                    const monthlyRentalIncome = currentData.rentRoll.reduce((sum: number, unit: any) => 
-                                      sum + (parseFloat(unit.proFormaRent) || 0), 0);
-                                    const grossRentalIncome = monthlyRentalIncome * 12;
-                                    
-                                    // Apply vacancy rate
-                                    const vacancyRate = currentData?.assumptions?.vacancyRate || 0.05;
-                                    const effectiveGrossIncome = grossRentalIncome * (1 - vacancyRate);
-                                    
-                                    // Calculate total expenses including management fee
-                                    let totalExpenses = 0;
-                                    if (currentData?.incomeAndExpenses?.operatingExpenses) {
-                                      totalExpenses = currentData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
-                                        sum + (parseFloat(expense.annualAmount) || 0), 0);
-                                    } else if (currentData?.expenses) {
-                                      // Use Deal Analyzer expenses object
-                                      totalExpenses = Object.values(currentData.expenses).reduce((sum: number, expense: any) => 
-                                        sum + (parseFloat(expense) || 0), 0);
-                                      // Add management fee (8% of effective gross income)
-                                      const managementFee = effectiveGrossIncome * 0.08;
-                                      totalExpenses += managementFee;
-                                    } else {
-                                      // Use expense ratio fallback
-                                      const expenseRatio = currentData?.assumptions?.expenseRatio || 0.45;
-                                      totalExpenses = effectiveGrossIncome * expenseRatio;
-                                    }
-                                    
-                                    // Calculate NOI
-                                    const noi = effectiveGrossIncome - totalExpenses;
-                                    
-                                    // Calculate debt service
-                                    let annualDebtService = 0;
-                                    if (currentData?.assumptions) {
-                                      const purchasePrice = currentData.assumptions.purchasePrice || parseFloat(showPropertyDetailModal.acquisitionPrice || '0');
-                                      const loanPercentage = currentData.assumptions.loanPercentage || 0.8;
-                                      const interestRate = currentData.assumptions.interestRate || 0.07;
-                                      const loanTermYears = currentData.assumptions.loanTermYears || 30;
-                                      
-                                      const loanAmount = purchasePrice * loanPercentage;
-                                      const monthlyRate = interestRate / 12;
-                                      const numPayments = loanTermYears * 12;
-                                      
-                                      if (monthlyRate > 0 && loanAmount > 0) {
-                                        const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-                                        annualDebtService = monthlyPayment * 12;
-                                      }
-                                    }
-                                    
-                                    annualCashFlow = noi - annualDebtService;
+                                  if (calculations) {
+                                    return (
+                                      <p className={`font-medium ${calculations.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {formatCurrency(calculations.annualCashFlow)}
+                                      </p>
+                                    );
                                   } else {
-                                    // Use stored value as fallback
-                                    annualCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
+                                    // Fallback to stored value only if centralized calculation fails
+                                    const fallbackCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
+                                    return (
+                                      <p className={`font-medium ${fallbackCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {formatCurrency(fallbackCashFlow)}
+                                      </p>
+                                    );
                                   }
-                                  
-                                  return (
-                                    <p className={`font-medium ${annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                      {formatCurrency(annualCashFlow)}
-                                    </p>
-                                  );
                                 })()}
                               </div>
                               <div>
                                 <p className="text-sm text-green-700 dark:text-green-300">Cash-on-Cash Return</p>
-{(() => {
-                                  // Get current data for calculations
-                                  const currentData = isEditing && editingModalProperty?.dealAnalyzerData 
-                                    ? JSON.parse(editingModalProperty.dealAnalyzerData) 
-                                    : dealAnalyzerData;
+                                {(() => {
+                                  // Use centralized calculations for consistency
+                                  const calculations = getPropertyCalculations();
+                                  console.log('Overview tab Cash-on-Cash - Using centralized calculations:', calculations);
                                   
-                                  let annualCashFlow = 0;
-                                  const initialCapital = parseFloat(showPropertyDetailModal.initialCapitalRequired || '0');
-                                  
-                                  if (currentData?.rentRoll && Array.isArray(currentData.rentRoll)) {
-                                    // Calculate from rent roll data (same logic as annual cash flow)
-                                    const monthlyRentalIncome = currentData.rentRoll.reduce((sum: number, unit: any) => 
-                                      sum + (parseFloat(unit.proFormaRent) || 0), 0);
-                                    const grossRentalIncome = monthlyRentalIncome * 12;
-                                    
-                                    // Apply vacancy rate
-                                    const vacancyRate = currentData?.assumptions?.vacancyRate || 0.05;
-                                    const effectiveGrossIncome = grossRentalIncome * (1 - vacancyRate);
-                                    
-                                    // Calculate total expenses
-                                    let totalExpenses = 0;
-                                    if (currentData?.incomeAndExpenses?.operatingExpenses) {
-                                      totalExpenses = currentData.incomeAndExpenses.operatingExpenses.reduce((sum: number, expense: any) => 
-                                        sum + (parseFloat(expense.annualAmount) || 0), 0);
-                                    } else {
-                                      // Use Deal Analyzer assumptions expense ratio if available
-                                      const expenseRatio = currentData?.assumptions?.expenseRatio || 0.45;
-                                      totalExpenses = effectiveGrossIncome * expenseRatio;
-                                    }
-                                    
-                                    // Calculate NOI
-                                    const noi = effectiveGrossIncome - totalExpenses;
-                                    
-                                    // Calculate debt service
-                                    let annualDebtService = 0;
-                                    if (currentData?.assumptions) {
-                                      const purchasePrice = currentData.assumptions.purchasePrice || parseFloat(showPropertyDetailModal.acquisitionPrice || '0');
-                                      const loanPercentage = currentData.assumptions.loanPercentage || 0.8;
-                                      const interestRate = currentData.assumptions.interestRate || 0.07;
-                                      const loanTermYears = currentData.assumptions.loanTermYears || 30;
-                                      
-                                      const loanAmount = purchasePrice * loanPercentage;
-                                      const monthlyRate = interestRate / 12;
-                                      const numPayments = loanTermYears * 12;
-                                      
-                                      if (monthlyRate > 0 && loanAmount > 0) {
-                                        const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-                                        annualDebtService = monthlyPayment * 12;
-                                      }
-                                    }
-                                    
-                                    annualCashFlow = noi - annualDebtService;
+                                  if (calculations) {
+                                    return (
+                                      <p className={`font-medium ${calculations.cashOnCashReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {formatPercentage(calculations.cashOnCashReturn)}
+                                      </p>
+                                    );
                                   } else {
-                                    // Use stored value as fallback
-                                    annualCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
+                                    // Fallback calculation only if centralized calculation fails
+                                    const initialCapital = parseFloat(showPropertyDetailModal.initialCapitalRequired || '0');
+                                    const annualCashFlow = parseFloat(showPropertyDetailModal.cashFlow || '0');
+                                    const fallbackCOC = initialCapital > 0 ? (annualCashFlow / initialCapital) * 100 : 0;
+                                    return (
+                                      <p className={`font-medium ${fallbackCOC >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {formatPercentage(fallbackCOC)}
+                                      </p>
+                                    );
                                   }
-                                  
-                                  const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) * 100 : 0;
-                                  
-                                  return (
-                                    <p className={`font-medium ${cashOnCashReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                      {formatPercentage(cashOnCashReturn)}
-                                    </p>
-                                  );
                                 })()}
                               </div>
                             </div>
