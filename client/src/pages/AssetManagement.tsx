@@ -278,8 +278,14 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
         <div>
           <p className="text-gray-600 dark:text-gray-400">Monthly Cash Flow</p>
           {(() => {
-            // Use same centralized calculation as modal tabs
-            const calculations = calculatePropertyMetrics(property);
+            // Use exact same calculation as modal Overview tab
+            const getPropertyTileCalculations = () => {
+              return calculatePropertyMetrics(property);
+            };
+            
+            const calculations = getPropertyTileCalculations();
+            console.log('Property tile calculations for', property.address, ':', calculations);
+            
             if (calculations && calculations.monthlyCashFlow !== undefined) {
               return (
                 <p className={`font-semibold ${calculations.monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -293,8 +299,14 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
         <div>
           <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
           {(() => {
-            // Use same centralized calculation as modal tabs
-            const calculations = calculatePropertyMetrics(property);
+            // Use exact same calculation as modal Overview tab
+            const getPropertyTileCalculations = () => {
+              return calculatePropertyMetrics(property);
+            };
+            
+            const calculations = getPropertyTileCalculations();
+            console.log('Property tile CoC calculations for', property.address, ':', calculations);
+            
             if (calculations && calculations.cashOnCashReturn !== undefined) {
               return (
                 <p className={`font-semibold ${calculations.cashOnCashReturn >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
