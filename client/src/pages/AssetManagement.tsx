@@ -397,6 +397,13 @@ export default function AssetManagement() {
   const [propertyDetailTab, setPropertyDetailTab] = useState('overview');
   const [editingModalProperty, setEditingModalProperty] = useState<Property | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [showSalesDataModal, setShowSalesDataModal] = useState(false);
+  const [salesDataProperty, setSalesDataProperty] = useState<Property | null>(null);
+  const [salesFormData, setSalesFormData] = useState({
+    salePrice: '',
+    noiAtSale: '',
+    saleDate: new Date().toISOString().split('T')[0]
+  });
   
   // Centralized loan data management for modal consistency
   const getModalLoanData = () => {
@@ -620,6 +627,14 @@ export default function AssetManagement() {
   const handleStatusChange = (id: number, status: string) => {
     const property = properties.find(p => p.id === id);
     if (property) {
+      // If moving from Cashflowing to Sold, show sales data modal
+      if (property.status === 'Cashflowing' && status === 'Sold') {
+        setSalesDataProperty(property);
+        setShowSalesDataModal(true);
+        return;
+      }
+      
+      // For all other status changes, proceed directly
       updatePropertyMutation.mutate({ 
         id: id, 
         property: { ...property, status } 
