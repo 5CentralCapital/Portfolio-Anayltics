@@ -591,11 +591,23 @@ export default function AssetManagement() {
     ];
   };
 
-  // Data fetching hooks
-  const { data: propertiesResponse, isLoading, error } = useQuery({
+  // Data fetching hooks with forced refresh
+  const { data: propertiesResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/properties'],
-    queryFn: () => apiService.getProperties()
+    queryFn: () => apiService.getProperties(),
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
+
+  // Force cache invalidation and refetch on component mount
+  React.useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
+    const timer = setTimeout(() => {
+      refetch();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [refetch, queryClient]);
 
   // Ensure properties is always an array
   const properties = (() => {
