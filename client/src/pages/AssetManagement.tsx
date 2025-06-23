@@ -49,12 +49,6 @@ const calculatePropertyMetrics = (property: Property) => {
     const dealAnalyzerData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : null;
     
     if (!dealAnalyzerData) {
-      console.log(`No Deal Analyzer data for ${property.address}:`, {
-        hasData: !!property.dealAnalyzerData,
-        dataLength: property.dealAnalyzerData?.length,
-        storedCashFlow: property.cashFlow,
-        propertyId: property.id
-      });
       return null;
     }
 
