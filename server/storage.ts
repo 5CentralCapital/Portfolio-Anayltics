@@ -918,10 +918,19 @@ export class DatabaseStorage implements IStorage {
    * Import Deal Analyzer data into normalized database structure
    */
   async importFromDealAnalyzer(dealData: any, additionalPropertyData: any, userId: number): Promise<Property> {
-    // Create property with enhanced data structure
+    // Calculate KPIs from Deal Analyzer data
+    const totalRehabCosts = this.calculateTotalRehabCosts(dealData);
+    const grossRentalIncome = this.calculateGrossRentalIncome(dealData);
+    const totalOperatingExpenses = this.calculateTotalOperatingExpenses(dealData, grossRentalIncome);
+    const noi = grossRentalIncome - totalOperatingExpenses;
+    const arv = dealData.assumptions?.marketCapRate ? noi / dealData.assumptions.marketCapRate : 0;
+    const initialCapital = this.calculateInitialCapital(dealData, totalRehabCosts);
+    const annualCashFlow = this.calculateAnnualCashFlow(dealData, noi);
+
+    // Create property with calculated data structure
     const propertyData = {
       status: "Under Contract" as const,
-      apartments: dealData.assumptions?.unitCount || 1,
+      apartments: dealData.assumptions?.unitCount || dealData.assumptions?.units || 1,
       address: dealData.propertyAddress || additionalPropertyData.address,
       city: additionalPropertyData.city || "",
       state: additionalPropertyData.state || "",
@@ -929,22 +938,92 @@ export class DatabaseStorage implements IStorage {
       entity: additionalPropertyData.entity || "5Central Capital",
       acquisitionDate: additionalPropertyData.acquisitionDate,
       acquisitionPrice: dealData.assumptions?.purchasePrice?.toString() || "0",
-      rehabCosts: dealData.calculations?.totalRehabCosts?.toString() || "0",
-      arvAtTimePurchased: dealData.calculations?.arv?.toString() || "0",
-      initialCapitalRequired: dealData.calculations?.initialCapital?.toString() || "0",
-      cashFlow: dealData.calculations?.annualCashFlow?.toString() || "0",
+      rehabCosts: totalRehabCosts.toString(),
+      arvAtTimePurchased: arv.toString(),
+      initialCapitalRequired: initialCapital.toString(),
+      cashFlow: annualCashFlow.toString(),
       totalProfits: "0",
-      cashOnCashReturn: dealData.calculations?.cashOnCashReturn?.toString() || "0",
+      cashOnCashReturn: initialCapital > 0 ? ((annualCashFlow / initialCapital) * 100).toFixed(2) : "0",
       annualizedReturn: "0",
       dealAnalyzerData: JSON.stringify(dealData) // Keep for backward compatibility
     };
 
     const property = await this.createProperty(propertyData);
     
-    // Import to normalized tables in parallel
-    await this.importNormalizedData(property.id, dealData);
+    // Import to normalized tables
+    try {
+      await this.importNormalizedData(property.id, dealData);
+    } catch (error) {
+      console.error(`Error importing normalized data for property ${property.id}:`, error);
+      // Continue with property creation even if normalized import fails
+    }
     
     return property;
+  }
+
+  private calculateTotalRehabCosts(dealData: any): number {
+    if (!dealData.rehabBudgetSections) return 0;
+    
+    let total = 0;
+    Object.values(dealData.rehabBudgetSections).forEach((section: any) => {
+      if (Array.isArray(section)) {
+        section.forEach((item: any) => {
+          total += item.totalCost || 0;
+        });
+      }
+    });
+    return total;
+  }
+
+  private calculateGrossRentalIncome(dealData: any): number {
+    if (!dealData.rentRoll || !Array.isArray(dealData.rentRoll)) return 0;
+    
+    return dealData.rentRoll.reduce((total: number, unit: any) => {
+      return total + ((unit.proFormaRent || unit.currentRent || 0) * 12);
+    }, 0);
+  }
+
+  private calculateTotalOperatingExpenses(dealData: any, grossIncome: number): number {
+    if (!dealData.expenses) return 0;
+    
+    let total = 0;
+    Object.entries(dealData.expenses).forEach(([key, value]: [string, any]) => {
+      if (key === 'managementFee' && dealData.assumptions?.managementFeePercent) {
+        total += grossIncome * (dealData.assumptions.managementFeePercent / 100);
+      } else {
+        total += value || 0;
+      }
+    });
+    return total;
+  }
+
+  private calculateInitialCapital(dealData: any, totalRehabCosts: number): number {
+    const purchasePrice = dealData.assumptions?.purchasePrice || 0;
+    const loanPercentage = dealData.assumptions?.loanPercentage || 0.8;
+    const downPayment = purchasePrice * (1 - loanPercentage);
+    
+    let closingCosts = 0;
+    if (dealData.closingCosts) {
+      closingCosts = Object.values(dealData.closingCosts).reduce((sum: number, cost: any) => sum + (cost || 0), 0);
+    }
+    
+    return downPayment + totalRehabCosts + closingCosts;
+  }
+
+  private calculateAnnualCashFlow(dealData: any, noi: number): number {
+    const purchasePrice = dealData.assumptions?.purchasePrice || 0;
+    const rehabCosts = this.calculateTotalRehabCosts(dealData);
+    const loanAmount = (purchasePrice + rehabCosts) * (dealData.assumptions?.loanPercentage || 0.8);
+    const interestRate = dealData.assumptions?.interestRate || 0.07;
+    const loanTermYears = dealData.assumptions?.loanTermYears || 30;
+    
+    // Calculate monthly payment using loan formula
+    const monthlyRate = interestRate / 12;
+    const numPayments = loanTermYears * 12;
+    const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+    const annualDebtService = monthlyPayment * 12;
+    
+    return noi - annualDebtService;
   }
 
   /**
@@ -1127,7 +1206,7 @@ export class DatabaseStorage implements IStorage {
       if (dealData.assumptions) {
         await this.createPropertyAssumptions({
           propertyId,
-          unitCount: dealData.assumptions.unitCount || 1,
+          unitCount: dealData.assumptions.unitCount || dealData.assumptions.units || 1,
           purchasePrice: dealData.assumptions.purchasePrice?.toString() || "0",
           loanPercentage: dealData.assumptions.loanPercentage?.toString() || "0.8",
           interestRate: dealData.assumptions.interestRate?.toString() || "0.07",
