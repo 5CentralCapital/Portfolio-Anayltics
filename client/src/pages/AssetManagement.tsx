@@ -189,30 +189,18 @@ const formatPercentage = (value: string | number) => {
 
 // Loan payment calculation function
 const calculateLoanPayment = (amount: number, interestRate: number, termYears: number, paymentType: string) => {
-  console.log('calculateLoanPayment called with:', { amount, interestRate, termYears, paymentType });
-  
-  if (amount <= 0 || interestRate <= 0) {
-    console.log('calculateLoanPayment returning 0 due to invalid amount or rate');
-    return 0;
-  }
+  if (amount <= 0 || interestRate <= 0) return 0;
   
   const monthlyRate = interestRate / 12;
   
   if (paymentType === 'interest-only') {
-    const payment = amount * monthlyRate;
-    console.log('Interest-only payment calculated:', payment);
-    return payment;
+    return amount * monthlyRate;
   } else {
     // Full amortization
     const numPayments = termYears * 12;
-    if (numPayments <= 0) {
-      console.log('calculateLoanPayment returning 0 due to invalid term');
-      return 0;
-    }
+    if (numPayments <= 0) return 0;
     
-    const payment = amount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-    console.log('Amortizing payment calculated:', payment);
-    return payment;
+    return amount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
   }
 };
 
