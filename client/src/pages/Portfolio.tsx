@@ -1,10 +1,159 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropertyCard from '../components/PropertyCard';
 import MetricsCard from '../components/MetricsCard';
-import { Building, DollarSign, TrendingUp, Home, Award } from 'lucide-react';
+import { Building, DollarSign, TrendingUp, Home, Award, FileText, Wrench, Calculator, ShoppingCart, X } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Property } from '@shared/schema';
 
 const Portfolio = () => {
-  // Updated portfolio data from the provided spreadsheet
+  const [showKPIModal, setShowKPIModal] = useState<Property | null>(null);
+
+  // Fetch properties from Asset Management system
+  const { data: propertiesResponse, isLoading, error } = useQuery({
+    queryKey: ['/api/properties'],
+    queryFn: async () => {
+      const response = await fetch('/api/properties');
+      if (!response.ok) throw new Error('Failed to fetch properties');
+      return response.json();
+    }
+  });
+
+  const properties = (() => {
+    if (!propertiesResponse) return [];
+    if (Array.isArray(propertiesResponse)) return propertiesResponse;
+    if (propertiesResponse.data && Array.isArray(propertiesResponse.data)) return propertiesResponse.data;
+    return [];
+  })();
+
+  // Calculate property KPIs for modal
+  const calculatePropertyKPIs = (property: Property) => {
+    if (!property.dealAnalyzerData) return null;
+    try {
+      const dealData = JSON.parse(property.dealAnalyzerData);
+      
+      // Calculate gross rent
+      const grossRent = dealData.rentRoll?.reduce((sum: number, unit: any) => sum + (unit.proFormaRent || unit.currentRent || 0), 0) || 0;
+      
+      // Calculate vacancy and net revenue
+      const vacancyRate = dealData.assumptions?.vacancyRate || 0.05;
+      const vacancy = grossRent * vacancyRate;
+      const netRevenue = grossRent - vacancy;
+      
+      // Calculate expenses correctly (monthly amounts)
+      let totalExpenses = 0;
+      Object.values(dealData.expenses || {}).forEach((expense: any) => {
+        if (typeof expense === 'object' && expense !== null) {
+          const amount = parseFloat(expense.amount || '0');
+          const isPercentage = expense.isPercentage || false;
+          if (isPercentage) {
+            totalExpenses += (netRevenue * 12 * (amount / 100) / 12);
+          } else {
+            totalExpenses += amount;
+          }
+        } else {
+          totalExpenses += (parseFloat(expense || '0') || 0);
+        }
+      });
+      
+      // NOI
+      const noi = netRevenue - totalExpenses;
+      const annualNOI = noi * 12;
+      
+      // Debt service from active loan
+      const activeLoan = dealData.loans?.find((loan: any) => loan.isActive);
+      const debtService = activeLoan?.monthlyPayment || 0;
+      
+      // Cash flow
+      const monthlyCashFlow = noi - debtService;
+      const annualCashFlow = monthlyCashFlow * 12;
+      
+      // Investment calculations
+      const acquisitionPrice = parseFloat(property.acquisitionPrice || '0');
+      const totalRehab = Object.values(dealData.rehabBudget || {}).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
+      const allInCost = acquisitionPrice + totalRehab;
+      
+      const loanPercentage = dealData.assumptions?.loanPercentage || 0.85;
+      const downPayment = acquisitionPrice * (1 - loanPercentage);
+      const closingCosts = Object.values(dealData.closingCosts || {}).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
+      const holdingCosts = Object.values(dealData.holdingCosts || {}).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
+      const totalInvested = downPayment + closingCosts + holdingCosts;
+      
+      // CoC Return
+      const cocReturn = totalInvested > 0 ? (annualCashFlow / totalInvested) * 100 : 0;
+      
+      // ARV and Equity Multiple
+      const marketCapRate = dealData.assumptions?.marketCapRate || 0.055;
+      const arv = annualNOI / marketCapRate;
+      const equityMultiple = totalInvested > 0 ? (arv - allInCost) / totalInvested : 0;
+      
+      return {
+        grossRent,
+        netRevenue,
+        totalExpenses,
+        noi,
+        annualNOI,
+        debtService,
+        monthlyCashFlow,
+        annualCashFlow,
+        acquisitionPrice,
+        totalRehab,
+        allInCost,
+        totalInvested,
+        cocReturn,
+        arv,
+        equityMultiple
+      };
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatPercentage = (value: number) => {
+    return `${value.toFixed(1)}%`;
+  };
+
+  // Separate properties by status
+  const underContractProperties = properties.filter((p: Property) => p.status === 'Under Contract');
+  const rehabbingProperties = properties.filter((p: Property) => p.status === 'Rehabbing');
+  const cashflowingProperties = properties.filter((p: Property) => p.status === 'Cashflowing');
+  const soldPropertiesFromDB = properties.filter((p: Property) => p.status === 'Sold');
+
+  // Loading and error states
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading portfolio data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-red-600">Error loading portfolio data. Please try again.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Hardcoded portfolio data as fallback
   const portfolioProperties = [
     // Currently Owned Properties (in specified order)
     {
@@ -158,9 +307,9 @@ const Portfolio = () => {
     }
   ];
 
-  // Separate current and sold properties
+  // Separate current and sold properties for fallback data
   const currentProperties = portfolioProperties.filter(p => p.status === 'Currently Own');
-  const soldProperties = portfolioProperties.filter(p => p.status === 'Sold');
+  const fallbackSoldProperties = portfolioProperties.filter(p => p.status === 'Sold');
 
   // Portfolio aggregate metrics - Updated to match specified values
   const portfolioMetrics = [
@@ -226,35 +375,289 @@ const Portfolio = () => {
           </div>
         </div>
 
-        {/* Currently Owned Section */}
-        <section className="mb-16">
-          <div className="flex items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Currently Owned Properties</h2>
-            <span className="ml-4 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-              {currentProperties.length} Active
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {currentProperties.map((property, index) => (
-              <PropertyCard key={`current-${index}`} property={property} />
-            ))}
-          </div>
-        </section>
+        {/* Under Contract Properties */}
+        {underContractProperties.length > 0 && (
+          <section className="mb-12">
+            <div className="flex items-center mb-6">
+              <FileText className="h-6 w-6 mr-3 text-orange-500" />
+              <h2 className="text-2xl font-bold text-gray-900">Under Contract</h2>
+              <span className="ml-4 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
+                {underContractProperties.length} Properties
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {underContractProperties.map((property: Property) => (
+                <div
+                  key={property.id}
+                  className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                  onDoubleClick={() => setShowKPIModal(property)}
+                  title="Double-click to view financial KPIs"
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{property.address}</h3>
+                  <p className="text-gray-600 mb-4">{property.city}, {property.state}</p>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">Units</p>
+                      <p className="font-semibold">{property.apartments}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Acquisition Price</p>
+                      <p className="font-semibold">{formatCurrency(parseFloat(property.acquisitionPrice || '0'))}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
-        {/* Sold Properties Section */}
-        <section>
-          <div className="flex items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Sold Properties</h2>
-            <span className="ml-4 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-              {soldProperties.length} Completed
-            </span>
+        {/* Rehabbing Properties */}
+        {rehabbingProperties.length > 0 && (
+          <section className="mb-12">
+            <div className="flex items-center mb-6">
+              <Wrench className="h-6 w-6 mr-3 text-yellow-500" />
+              <h2 className="text-2xl font-bold text-gray-900">Rehabbing</h2>
+              <span className="ml-4 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                {rehabbingProperties.length} Properties
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {rehabbingProperties.map((property: Property) => (
+                <div
+                  key={property.id}
+                  className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                  onDoubleClick={() => setShowKPIModal(property)}
+                  title="Double-click to view financial KPIs"
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{property.address}</h3>
+                  <p className="text-gray-600 mb-4">{property.city}, {property.state}</p>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">Units</p>
+                      <p className="font-semibold">{property.apartments}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Rehab Budget</p>
+                      <p className="font-semibold">{formatCurrency(parseFloat(property.rehabCosts || '0'))}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Cashflowing Properties */}
+        {cashflowingProperties.length > 0 && (
+          <section className="mb-12">
+            <div className="flex items-center mb-6">
+              <Calculator className="h-6 w-6 mr-3 text-green-500" />
+              <h2 className="text-2xl font-bold text-gray-900">Cashflowing</h2>
+              <span className="ml-4 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                {cashflowingProperties.length} Properties
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {cashflowingProperties.map((property: Property) => (
+                <div
+                  key={property.id}
+                  className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                  onDoubleClick={() => setShowKPIModal(property)}
+                  title="Double-click to view financial KPIs"
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{property.address}</h3>
+                  <p className="text-gray-600 mb-4">{property.city}, {property.state}</p>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">Annual Cash Flow</p>
+                      {(() => {
+                        const kpis = calculatePropertyKPIs(property);
+                        return (
+                          <p className={`font-semibold ${kpis?.annualCashFlow && kpis.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {kpis ? formatCurrency(kpis.annualCashFlow) : 'N/A'}
+                          </p>
+                        );
+                      })()}
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Equity Multiple</p>
+                      {(() => {
+                        const kpis = calculatePropertyKPIs(property);
+                        return (
+                          <p className={`font-semibold ${kpis?.equityMultiple && kpis.equityMultiple >= 1 ? 'text-blue-600' : 'text-red-600'}`}>
+                            {kpis ? `${kpis.equityMultiple.toFixed(2)}x` : 'N/A'}
+                          </p>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Sold Properties */}
+        {soldPropertiesFromDB.length > 0 && (
+          <section className="mb-12">
+            <div className="flex items-center mb-6">
+              <ShoppingCart className="h-6 w-6 mr-3 text-blue-500" />
+              <h2 className="text-2xl font-bold text-gray-900">Sold Properties</h2>
+              <span className="ml-4 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                {soldPropertiesFromDB.length} Completed
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {soldPropertiesFromDB.map((property: Property) => (
+                <div
+                  key={property.id}
+                  className="bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow"
+                  onDoubleClick={() => setShowKPIModal(property)}
+                  title="Double-click to view financial KPIs"
+                >
+                  <h3 className="text-md font-semibold text-gray-900 mb-2">{property.address}</h3>
+                  <p className="text-sm text-gray-600 mb-3">{property.city}, {property.state}</p>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Capital Invested</span>
+                      <span className="font-semibold text-blue-700">{formatCurrency(parseFloat(property.initialCapitalRequired || '0'))}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Total Profit</span>
+                      <span className="font-semibold text-green-600">{formatCurrency(parseFloat(property.totalProfits || '0'))}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Equity Multiple</span>
+                      <span className="font-semibold text-purple-600">{parseFloat(property.cashOnCashReturn || '0').toFixed(1)}x</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Sale Price</span>
+                      <span className="font-semibold text-orange-600">{formatCurrency(parseFloat(property.salePrice || '0'))}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* KPI Modal */}
+        {showKPIModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Property KPIs - {showKPIModal.address}
+                </h2>
+                <button
+                  onClick={() => setShowKPIModal(null)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {(() => {
+                const kpis = calculatePropertyKPIs(showKPIModal);
+                if (!kpis) {
+                  return (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No financial data available for this property</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Revenue Section */}
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-4">Revenue</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-blue-700 dark:text-blue-300">Gross Rent (Monthly)</span>
+                          <span className="font-semibold text-blue-900 dark:text-blue-200">{formatCurrency(kpis.grossRent)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-blue-700 dark:text-blue-300">Net Revenue (Monthly)</span>
+                          <span className="font-semibold text-blue-900 dark:text-blue-200">{formatCurrency(kpis.netRevenue)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-blue-700 dark:text-blue-300">Annual NOI</span>
+                          <span className="font-semibold text-blue-900 dark:text-blue-200">{formatCurrency(kpis.annualNOI)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expenses Section */}
+                    <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-red-900 dark:text-red-200 mb-4">Expenses</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-red-700 dark:text-red-300">Operating Expenses (Monthly)</span>
+                          <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(kpis.totalExpenses)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-red-700 dark:text-red-300">Debt Service (Monthly)</span>
+                          <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(kpis.debtService)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cash Flow Section */}
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-green-900 dark:text-green-200 mb-4">Cash Flow</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-green-700 dark:text-green-300">Monthly Cash Flow</span>
+                          <span className={`font-semibold ${kpis.monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(kpis.monthlyCashFlow)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-green-700 dark:text-green-300">Annual Cash Flow</span>
+                          <span className={`font-semibold ${kpis.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(kpis.annualCashFlow)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-green-700 dark:text-green-300">Cash-on-Cash Return</span>
+                          <span className={`font-semibold ${kpis.cocReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatPercentage(kpis.cocReturn)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Investment Summary */}
+                    <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-200 mb-4">Investment Summary</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-purple-700 dark:text-purple-300">Total Invested</span>
+                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.totalInvested)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-purple-700 dark:text-purple-300">All-In Cost</span>
+                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.allInCost)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-purple-700 dark:text-purple-300">Current ARV</span>
+                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.arv)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-purple-700 dark:text-purple-300">Equity Multiple</span>
+                          <span className={`font-semibold ${kpis.equityMultiple >= 1 ? 'text-green-600' : 'text-red-600'}`}>
+                            {kpis.equityMultiple.toFixed(2)}x
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {soldProperties.map((property, index) => (
-              <PropertyCard key={`sold-${index}`} property={property} />
-            ))}
-          </div>
-        </section>
+        )}
 
         {/* Investment Approach */}
         <section className="mt-16 bg-white rounded-xl shadow-lg p-8">
