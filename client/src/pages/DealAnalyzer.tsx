@@ -677,7 +677,7 @@ export default function DealAnalyzer() {
       const noi = netRevenue - totalAnnualExpenses;
       
       // Calculate debt service using initial loan terms (not refinance terms for import)
-      const loanAmount = (assumptions.purchasePrice || 0) * (assumptions.loanPercentage || 0.8);
+      const loanAmount = ((assumptions.purchasePrice || 0) + totalRehabCosts) * (assumptions.loanPercentage || 0.8);
       const interestRate = assumptions.interestRate || 0.0875;
       const loanTermYears = assumptions.loanTermYears || 2;
       
