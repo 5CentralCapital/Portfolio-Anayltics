@@ -7,8 +7,8 @@ export default function DealAnalyzer() {
   const [dealData, setDealData] = useState<any>(null);
   const [editingProperty, setEditingProperty] = useState(false);
   const [editingAddress, setEditingAddress] = useState(false);
-  const [propertyName, setPropertyName] = useState('Maple Street Apartments');
-  const [propertyAddress, setPropertyAddress] = useState('123 Maple Street, Hartford, CT 06106');
+  const [propertyName, setPropertyName] = useState(() => loadSavedState('propertyName', 'Maple Street Apartments'));
+  const [propertyAddress, setPropertyAddress] = useState(() => loadSavedState('propertyAddress', '123 Maple Street, Hartford, CT 06106'));
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [savedDeals, setSavedDeals] = useState<any[]>([]);
@@ -217,6 +217,90 @@ export default function DealAnalyzer() {
   ]));
 
   const [editingWorkflow, setEditingWorkflow] = useState(false);
+
+  // Auto-save functionality - save state changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_propertyName', propertyName);
+  }, [propertyName]);
+
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_propertyAddress', propertyAddress);
+  }, [propertyAddress]);
+
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_exitAnalysis', JSON.stringify(exitAnalysis));
+  }, [exitAnalysis]);
+
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_assumptions', JSON.stringify(assumptions));
+  }, [assumptions]);
+
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_closingCosts', JSON.stringify(closingCosts));
+  }, [closingCosts]);
+
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_closingCostNames', JSON.stringify(closingCostNames));
+  }, [closingCostNames]);
+
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_holdingCosts', JSON.stringify(holdingCosts));
+  }, [holdingCosts]);
+
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_holdingCostNames', JSON.stringify(holdingCostNames));
+  }, [holdingCostNames]);
+
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_unitTypes', JSON.stringify(unitTypes));
+  }, [unitTypes]);
+
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_rentRoll', JSON.stringify(rentRoll));
+  }, [rentRoll]);
+
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_rehabBudgetSections', JSON.stringify(rehabBudgetSections));
+  }, [rehabBudgetSections]);
+
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_expenses', JSON.stringify(expenses));
+  }, [expenses]);
+
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_expenseNames', JSON.stringify(expenseNames));
+  }, [expenseNames]);
+
+  useEffect(() => {
+    localStorage.setItem('dealAnalyzer_workflowSteps', JSON.stringify(workflowSteps));
+  }, [workflowSteps]);
+
+  // Function to clear all saved Deal Analyzer data
+  const clearAllSavedData = () => {
+    const keys = [
+      'dealAnalyzer_propertyName',
+      'dealAnalyzer_propertyAddress',
+      'dealAnalyzer_exitAnalysis',
+      'dealAnalyzer_assumptions',
+      'dealAnalyzer_closingCosts',
+      'dealAnalyzer_closingCostNames',
+      'dealAnalyzer_holdingCosts',
+      'dealAnalyzer_holdingCostNames',
+      'dealAnalyzer_unitTypes',
+      'dealAnalyzer_rentRoll',
+      'dealAnalyzer_rehabBudgetSections',
+      'dealAnalyzer_expenses',
+      'dealAnalyzer_expenseNames',
+      'dealAnalyzer_workflowSteps'
+    ];
+    
+    keys.forEach(key => localStorage.removeItem(key));
+    
+    // Optionally reload the page to reset to defaults
+    if (confirm('Clear all Deal Analyzer data? This will reset all entries to default values.')) {
+      window.location.reload();
+    }
+  };
 
   // Function to update budget item completion when workflow step is marked complete
   const updateBudgetFromWorkflow = (stepId: number, status: string) => {
@@ -479,10 +563,20 @@ export default function DealAnalyzer() {
     }));
   };
 
-  // Helper function to validate and format number input - 1 decimal for rehab
+  // Helper function to validate and format number input - 1 decimal for rehab (allows negative values)
   const validateNumberInput = (value: string): string => {
-    // Remove any non-numeric characters except decimal point
-    let cleaned = value.replace(/[^0-9.]/g, '');
+    // Allow negative sign, numbers, and decimal point
+    let cleaned = value.replace(/[^0-9.-]/g, '');
+    
+    // Ensure only one negative sign at the beginning
+    if (cleaned.includes('-')) {
+      const firstNegative = cleaned.indexOf('-');
+      if (firstNegative > 0) {
+        cleaned = cleaned.replace(/-/g, '');
+      } else {
+        cleaned = '-' + cleaned.substring(1).replace(/-/g, '');
+      }
+    }
     
     // Ensure only one decimal point
     const parts = cleaned.split('.');
@@ -527,10 +621,20 @@ export default function DealAnalyzer() {
     return cleaned;
   };
 
-  // Helper function for overview fields - 2 decimal places
+  // Helper function for overview fields - 2 decimal places (allows negative values)
   const validateOverviewNumberInput = (value: string): string => {
-    // Remove any non-numeric characters except decimal point
-    let cleaned = value.replace(/[^0-9.]/g, '');
+    // Allow negative sign, numbers, and decimal point
+    let cleaned = value.replace(/[^0-9.-]/g, '');
+    
+    // Ensure only one negative sign at the beginning
+    if (cleaned.includes('-')) {
+      const firstNegative = cleaned.indexOf('-');
+      if (firstNegative > 0) {
+        cleaned = cleaned.replace(/-/g, '');
+      } else {
+        cleaned = '-' + cleaned.substring(1).replace(/-/g, '');
+      }
+    }
     
     // Ensure only one decimal point
     const parts = cleaned.split('.');
