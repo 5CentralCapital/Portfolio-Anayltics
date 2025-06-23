@@ -73,47 +73,63 @@ const calculatePropertyMetrics = (property: Property) => {
     const netRevenue = grossRentMonthly - vacancy;
     const noi = netRevenue - totalExpenses;
 
-    // Get active loan from Deal Analyzer data (needed for multiple calculations)
-    const loans = dealAnalyzerData.loans || [];
+    // Get active loan using the same method as financing tab
+    const getPropertyLoanData = () => {
+      // Use property's stored data or create default data structure
+      const propertyData = dealAnalyzerData;
+      let loans = propertyData?.loans || [];
+      
+      // If no loans exist, create default acquisition loan using property data
+      if (loans.length === 0) {
+        const loanPercentage = propertyData?.assumptions?.loanPercentage || 0.8;
+        const interestRate = propertyData?.assumptions?.interestRate || 0.065;
+        const termYears = propertyData?.assumptions?.loanTermYears || 30;
+        const loanAmount = parseFloat(property.acquisitionPrice || '0') * loanPercentage;
+        const paymentType = termYears <= 3 ? 'interest-only' : 'amortizing';
+        
+        const defaultLoan = {
+          id: 1,
+          name: 'Acquisition Loan',
+          amount: loanAmount,
+          loanAmount: loanAmount,
+          interestRate: interestRate,
+          termYears: termYears,
+          monthlyPayment: calculateLoanPayment(loanAmount, interestRate, termYears, paymentType),
+          isActive: true,
+          loanType: 'acquisition',
+          paymentType: paymentType,
+          startDate: property.acquisitionDate || new Date().toISOString().split('T')[0],
+          remainingBalance: loanAmount
+        };
+        loans = [defaultLoan];
+      }
+      
+      return loans;
+    };
+
+    const loans = getPropertyLoanData();
     const activeLoan = loans.find((loan: any) => loan.isActive);
 
-    console.log('Deal Analyzer data structure:', {
-      hasLoans: !!dealAnalyzerData.loans,
+    console.log('Property loan data structure:', {
+      hasLoans: loans.length > 0,
       loansLength: loans.length,
-      loans: loans,
       activeLoan: activeLoan
     });
 
-    // Calculate debt service from Deal Analyzer loan data
+    // Use pre-calculated monthly payment from active loan
     let monthlyDebtService = 0;
     
     if (activeLoan && activeLoan.amount > 0) {
-      const principal = activeLoan.amount;
-      let annualRate = activeLoan.interestRate;
+      // Use the pre-calculated monthlyPayment from the loan object
+      monthlyDebtService = activeLoan.monthlyPayment || 0;
       
-      // Interest rate is already in decimal format from Deal Analyzer (e.g., 0.1075 = 10.75%)
-      const monthlyRate = annualRate / 12;
-      const termMonths = (activeLoan.termYears || 30) * 12;
-      
-      console.log('Debt service calculation details:', {
-        principal,
-        annualRate,
-        monthlyRate,
-        termMonths,
-        paymentType: activeLoan.paymentType
+      console.log('Using pre-calculated debt service from loan:', {
+        loanAmount: activeLoan.amount,
+        interestRate: activeLoan.interestRate,
+        paymentType: activeLoan.paymentType,
+        monthlyPayment: activeLoan.monthlyPayment,
+        monthlyDebtService: monthlyDebtService
       });
-      
-      if (activeLoan.paymentType === 'interest-only') {
-        monthlyDebtService = principal * monthlyRate;
-      } else {
-        // Full amortization
-        if (monthlyRate > 0 && termMonths > 0) {
-          const factor = Math.pow(1 + monthlyRate, termMonths);
-          monthlyDebtService = principal * (monthlyRate * factor) / (factor - 1);
-        }
-      }
-      
-      console.log('Calculated monthly debt service:', monthlyDebtService);
     } else {
       // Fallback to estimated debt service if no loan data
       const monthlyCashFlowFromProperty = parseFloat(property.cashFlow || '0');
