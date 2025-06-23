@@ -1200,6 +1200,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
+   * Calculate rehab completion status based on spent amount and total cost
+   */
+  private getRehabCompletionStatus(item: any): string {
+    const spentAmount = parseFloat(item.spentAmount?.toString() || "0");
+    const totalCost = parseFloat(item.totalCost?.toString() || "0");
+    
+    // Use explicit completion status if provided
+    if (item.completionStatus) {
+      return item.completionStatus;
+    }
+    
+    // Calculate based on spent amount vs total cost
+    if (spentAmount <= 0) {
+      return "Not Started";
+    } else if (spentAmount >= totalCost) {
+      return "Completed";
+    } else {
+      return "In Progress";
+    }
+  }
+
+  /**
    * Import normalized data for existing property
    */
   private async importNormalizedData(propertyId: number, dealData: any): Promise<void> {
