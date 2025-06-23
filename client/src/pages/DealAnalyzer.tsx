@@ -1044,31 +1044,37 @@ export default function DealAnalyzer() {
       {activeTab === 'overview' && (
         <div className="space-y-6">
           {/* Top KPI Bar - Full Width */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
-            <div className="grid grid-cols-6 gap-4">
-              <div className="text-center">
-                <p className="text-sm opacity-90 mb-2">All-In Cost</p>
-                <p className="text-xl font-bold">{formatCurrency(metrics.allInCost)}</p>
+          <div className="bg-gradient-to-r from-blue-600 via-blue-500 via-purple-500 to-purple-600 rounded-lg border border-blue-200 p-8 text-white">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <Calculator className="h-6 w-6 mr-3" />
+                <span className="text-lg font-semibold">Deal Analyzer KPIs</span>
               </div>
-              <div className="text-center">
-                <p className="text-sm opacity-90 mb-2">ARV</p>
-                <p className="text-xl font-bold">{formatCurrency(metrics.arv)}</p>
+            </div>
+            <div className="grid grid-cols-6 gap-6">
+              <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+                <div className="text-sm opacity-90 mb-2">Capital Required</div>
+                <div className="text-2xl font-bold">{formatCurrency(metrics.capitalRequired)}</div>
               </div>
-              <div className="text-center">
-                <p className="text-sm opacity-90 mb-2">Total Profit</p>
-                <p className="text-xl font-bold text-green-300">{formatCurrency(metrics.totalProfit)}</p>
+              <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+                <div className="text-sm opacity-90 mb-2">Rehab Cost</div>
+                <div className="text-2xl font-bold">{formatCurrency(metrics.totalRehab)}</div>
               </div>
-              <div className="text-center">
-                <p className="text-sm opacity-90 mb-2">Capital Required</p>
-                <p className="text-xl font-bold text-orange-300">{formatCurrency(metrics.capitalRequired)}</p>
+              <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+                <div className="text-sm opacity-90 mb-2">All-In Cost</div>
+                <div className="text-2xl font-bold">{formatCurrency(metrics.allInCost)}</div>
               </div>
-              <div className="text-center">
-                <p className="text-sm opacity-90 mb-2">Cash-Out Refi</p>
-                <p className="text-xl font-bold">{formatCurrency(metrics.cashOut)}</p>
+              <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+                <div className="text-sm opacity-90 mb-2">ARV</div>
+                <div className="text-2xl font-bold">{formatCurrency(metrics.arv)}</div>
               </div>
-              <div className="text-center">
-                <p className="text-sm opacity-90 mb-2">Equity Multiple</p>
-                <p className="text-xl font-bold">{metrics.equityMultiple.toFixed(2)}x</p>
+              <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+                <div className="text-sm opacity-90 mb-2">Purchase Cost/Unit</div>
+                <div className="text-2xl font-bold">{formatCurrency(assumptions.purchasePrice / assumptions.unitCount)}</div>
+              </div>
+              <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+                <div className="text-sm opacity-90 mb-2">Equity Multiple</div>
+                <div className="text-2xl font-bold">{metrics.equityMultiple.toFixed(2)}x</div>
               </div>
             </div>
           </div>
