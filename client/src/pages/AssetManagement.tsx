@@ -2369,106 +2369,154 @@ export default function AssetManagement() {
                   case 'income-expenses':
                     return (
                       <div className="space-y-6">
-                        {/* Income Section */}
-                        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">
-                          <h3 className="text-lg font-semibold text-green-900 dark:text-green-300 mb-4">Annual Income</h3>
-                          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {[
-                              { key: 'grossRentalIncome', label: 'Gross Rental Income', value: dealAnalyzerData?.income?.grossRentalIncome || (dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) * 12) || 0 },
-                              { key: 'otherIncome', label: 'Other Income', value: dealAnalyzerData?.income?.otherIncome || 0 },
-                              { key: 'laundryIncome', label: 'Laundry Income', value: dealAnalyzerData?.income?.laundryIncome || 0 },
-                              { key: 'parkingIncome', label: 'Parking Income', value: dealAnalyzerData?.income?.parkingIncome || 0 },
-                              { key: 'storageIncome', label: 'Storage Income', value: dealAnalyzerData?.income?.storageIncome || 0 },
-                              { key: 'petIncome', label: 'Pet Fees', value: dealAnalyzerData?.income?.petIncome || 0 }
-                            ].map((item) => (
-                              <div key={item.key} className="bg-white dark:bg-gray-700 rounded p-4">
-                                <p className="text-sm text-gray-600 dark:text-gray-400">{item.label}</p>
-                                {isEditing ? (
-                                  <input
-                                    type="number"
-                                    value={item.value}
-                                    onChange={(e) => {
-                                      const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
-                                      if (!dealData.income) dealData.income = {};
-                                      dealData.income[item.key] = parseFloat(e.target.value) || 0;
-                                      handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
-                                    }}
-                                    className="w-full mt-1 px-3 py-1 border border-gray-300 rounded text-sm"
-                                  />
-                                ) : (
-                                  <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(item.value)}</p>
-                                )}
+                        {/* Financial Breakdown - Deal Analyzer Style */}
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Financial Breakdown</h3>
+                          
+                          {(() => {
+                            // Calculate values from Deal Analyzer data
+                            const rentRoll = dealAnalyzerData?.rentRoll || [];
+                            const assumptions = dealAnalyzerData?.assumptions || {};
+                            const expenses = dealAnalyzerData?.expenses || {};
+                            
+                            // Revenue calculations
+                            const grossRentAnnual = rentRoll.reduce((sum: number, unit: any) => {
+                              const unitTypes = dealAnalyzerData?.unitTypes || [];
+                              const unitType = unitTypes.find((ut: any) => ut.id === unit.unitTypeId);
+                              return sum + (unitType ? unitType.marketRent * 12 : unit.proFormaRent * 12);
+                            }, 0);
+                            
+                            const vacancyRate = assumptions.vacancyRate || 0.05;
+                            const vacancyLoss = grossRentAnnual * vacancyRate;
+                            const netRevenue = grossRentAnnual - vacancyLoss;
+                            
+                            // Expenses calculations
+                            const propertyTax = expenses.taxes || 15000;
+                            const insurance = expenses.insurance || 14500;
+                            const maintenance = expenses.maintenance || 8000;
+                            const waterSewerTrash = expenses.waterSewerTrash || 6000;
+                            const capitalReserves = expenses.capex || 2000;
+                            const utilities = expenses.utilities || 6000;
+                            const other = expenses.other || 0;
+                            const managementFeeRate = 0.08; // 8% management fee
+                            const managementFee = netRevenue * managementFeeRate;
+                            
+                            const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
+                            const noi = netRevenue - totalExpenses;
+                            
+                            // Get active loan for debt service calculation
+                            const loans = dealAnalyzerData?.loans || [];
+                            const activeLoan = loans.find((loan: any) => loan.isActive) || loans[0];
+                            const monthlyDebtService = activeLoan ? calculateLoanPayment(
+                              activeLoan.loanAmount,
+                              activeLoan.interestRate,
+                              activeLoan.termYears,
+                              activeLoan.paymentType
+                            ) : 0;
+                            
+                            const netCashFlow = (noi / 12) - monthlyDebtService;
+                            
+                            return (
+                              <div className="grid lg:grid-cols-2 gap-8">
+                                {/* Revenue Section */}
+                                <div className="space-y-4">
+                                  <h4 className="text-lg font-semibold text-green-700 dark:text-green-300 border-b border-green-200 pb-2">Revenue</h4>
+                                  
+                                  <div className="space-y-3">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-gray-700 dark:text-gray-300">Gross Rent (Annual)</span>
+                                      {isEditing ? (
+                                        <input
+                                          type="number"
+                                          value={grossRentAnnual}
+                                          className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                          readOnly
+                                        />
+                                      ) : (
+                                        <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(grossRentAnnual)}</span>
+                                      )}
+                                    </div>
+                                    
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-gray-700 dark:text-gray-300">Vacancy Loss ({(vacancyRate * 100).toFixed(1)}%)</span>
+                                      <span className="font-medium text-red-600">-{formatCurrency(vacancyLoss)}</span>
+                                    </div>
+                                    
+                                    <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                                      <span className="font-semibold text-gray-900 dark:text-white">Net Revenue</span>
+                                      <span className="font-bold text-green-600">{formatCurrency(netRevenue)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Expenses Section */}
+                                <div className="space-y-4">
+                                  <h4 className="text-lg font-semibold text-red-700 dark:text-red-300 border-b border-red-200 pb-2">Expenses</h4>
+                                  
+                                  <div className="space-y-3">
+                                    {[
+                                      { key: 'taxes', label: 'Property Tax', value: propertyTax },
+                                      { key: 'insurance', label: 'Insurance', value: insurance },
+                                      { key: 'maintenance', label: 'Maintenance', value: maintenance },
+                                      { key: 'waterSewerTrash', label: 'Water/Sewer/Trash', value: waterSewerTrash },
+                                      { key: 'capex', label: 'Capital Reserves', value: capitalReserves },
+                                      { key: 'utilities', label: 'Utilities', value: utilities },
+                                      { key: 'other', label: 'Other', value: other }
+                                    ].map((item) => (
+                                      <div key={item.key} className="flex justify-between items-center">
+                                        <span className="text-gray-700 dark:text-gray-300">{item.label}</span>
+                                        {isEditing ? (
+                                          <input
+                                            type="number"
+                                            value={item.value}
+                                            onChange={(e) => {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              if (!dealData.expenses) dealData.expenses = {};
+                                              dealData.expenses[item.key] = parseFloat(e.target.value) || 0;
+                                              handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                            }}
+                                            className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                          />
+                                        ) : (
+                                          <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(item.value)}</span>
+                                        )}
+                                      </div>
+                                    ))}
+                                    
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-gray-700 dark:text-gray-300">Management Fee (8%)</span>
+                                      <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(managementFee)}</span>
+                                    </div>
+                                    
+                                    <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                                      <span className="font-semibold text-gray-900 dark:text-white">Total Expenses</span>
+                                      <span className="font-bold text-red-600">{formatCurrency(totalExpenses)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* NOI and Cash Flow Summary */}
+                                <div className="lg:col-span-2 mt-6 pt-6 border-t border-gray-200">
+                                  <div className="grid md:grid-cols-3 gap-6">
+                                    <div className="text-center">
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Net Operating Income (NOI)</p>
+                                      <p className={`text-2xl font-bold ${noi >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(noi)}</p>
+                                    </div>
+                                    
+                                    <div className="text-center">
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Monthly Debt Service {activeLoan ? '(Post-Refi)' : ''}</p>
+                                      <p className="text-2xl font-bold text-orange-600">-{formatCurrency(monthlyDebtService)}</p>
+                                    </div>
+                                    
+                                    <div className="text-center">
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Net Cash Flow (Monthly)</p>
+                                      <p className={`text-2xl font-bold ${netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(netCashFlow)}</p>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Expenses Section */}
-                        <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-6 border border-red-200 dark:border-red-800">
-                          <h3 className="text-lg font-semibold text-red-900 dark:text-red-300 mb-4">Annual Operating Expenses</h3>
-                          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {[
-                              { key: 'taxes', label: 'Property Taxes', value: dealAnalyzerData?.expenses?.taxes || 0 },
-                              { key: 'insurance', label: 'Insurance', value: dealAnalyzerData?.expenses?.insurance || 0 },
-                              { key: 'utilities', label: 'Utilities', value: dealAnalyzerData?.expenses?.utilities || 0 },
-                              { key: 'maintenance', label: 'Maintenance', value: dealAnalyzerData?.expenses?.maintenance || 0 },
-                              { key: 'management', label: 'Property Management', value: dealAnalyzerData?.expenses?.management || 0 },
-                              { key: 'vacancy', label: 'Vacancy Allowance', value: dealAnalyzerData?.expenses?.vacancy || 0 },
-                              { key: 'capex', label: 'Capital Expenditures', value: dealAnalyzerData?.expenses?.capex || 0 },
-                              { key: 'landscaping', label: 'Landscaping', value: dealAnalyzerData?.expenses?.landscaping || 0 },
-                              { key: 'legalAccounting', label: 'Legal & Accounting', value: dealAnalyzerData?.expenses?.legalAccounting || 0 }
-                            ].map((item) => (
-                              <div key={item.key} className="bg-white dark:bg-gray-700 rounded p-4">
-                                <p className="text-sm text-gray-600 dark:text-gray-400">{item.label}</p>
-                                {isEditing ? (
-                                  <input
-                                    type="number"
-                                    value={item.value}
-                                    onChange={(e) => {
-                                      const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
-                                      if (!dealData.expenses) dealData.expenses = {};
-                                      dealData.expenses[item.key] = parseFloat(e.target.value) || 0;
-                                      handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
-                                    }}
-                                    className="w-full mt-1 px-3 py-1 border border-gray-300 rounded text-sm"
-                                  />
-                                ) : (
-                                  <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(item.value)}</p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* NOI Summary */}
-                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
-                          <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-4">Net Operating Income Summary</h3>
-                          <div className="grid md:grid-cols-3 gap-6">
-                            {(() => {
-                              const income = dealAnalyzerData?.income || {};
-                              const expenses = dealAnalyzerData?.expenses || {};
-                              const totalIncome = Object.values(income).reduce((sum: number, val: any) => sum + (val || 0), 0);
-                              const totalExpenses = Object.values(expenses).reduce((sum: number, val: any) => sum + (val || 0), 0);
-                              const noi = totalIncome - totalExpenses;
-                              
-                              return (
-                                <>
-                                  <div className="text-center">
-                                    <p className="text-sm text-blue-700 dark:text-blue-300">Total Income</p>
-                                    <p className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</p>
-                                  </div>
-                                  <div className="text-center">
-                                    <p className="text-sm text-blue-700 dark:text-blue-300">Total Expenses</p>
-                                    <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</p>
-                                  </div>
-                                  <div className="text-center">
-                                    <p className="text-sm text-blue-700 dark:text-blue-300">Net Operating Income</p>
-                                    <p className={`text-2xl font-bold ${noi >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(noi)}</p>
-                                  </div>
-                                </>
-                              );
-                            })()}
-                          </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     );
