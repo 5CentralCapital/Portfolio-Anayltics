@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { kpiService } from "./kpi.service";
+import { calculationService } from "./calculation.service";
 import { 
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
@@ -211,7 +212,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard data route
+  // Dynamic property metrics endpoint
+  app.get("/api/properties/:id/metrics", authenticateUser, async (req: any, res) => {
+    try {
+      const propertyId = parseInt(req.params.id);
+      const metrics = await calculationService.calculatePropertyMetrics(propertyId);
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error calculating property metrics:", error);
+      res.status(500).json({ error: "Failed to calculate metrics" });
+    }
+  });
+
+  // Dynamic portfolio metrics endpoint
+  app.get("/api/portfolio/metrics", authenticateUser, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const portfolioMetrics = await calculationService.calculatePortfolioMetrics(userId);
+      res.json(portfolioMetrics);
+    } catch (error) {
+      console.error("Error calculating portfolio metrics:", error);
+      res.status(500).json({ error: "Failed to calculate portfolio metrics" });
+    }
+  });
+
+  // Dashboard data route with dynamic calculations
   app.get("/api/dashboard", authenticateUser, async (req: any, res) => {
     try {
       const userId = req.user.id;
@@ -219,14 +244,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const latestMetrics = await storage.getLatestCompanyMetrics();
       const investorLeads = await storage.getInvestorLeads();
 
-      // Calculate portfolio statistics
-      const activeProperties = properties.filter(p => p.status === 'Currently Own');
+      // Calculate real-time portfolio statistics using calculation service
+      const portfolioMetrics = await calculationService.calculatePortfolioMetrics(userId);
+      
+      const activeProperties = properties.filter(p => p.status === 'Cashflowing' || p.status === 'Rehabbing');
       const soldProperties = properties.filter(p => p.status === 'Sold');
       
       const totalProperties = properties.length;
-      const totalUnits = properties.reduce((sum, p) => sum + (p.apartments || 0), 0);
-      const totalValue = activeProperties.reduce((sum, p) => sum + Number(p.arvAtTimePurchased || p.acquisitionPrice || 0), 0);
-      const monthlyRent = activeProperties.reduce((sum, p) => sum + Number(p.cashFlow || 0), 0);
+      const totalUnits = portfolioMetrics.totalUnits;
+      const totalValue = portfolioMetrics.totalAUM;
+      const monthlyRent = portfolioMetrics.totalCashFlow / 12;
       const avgCashOnCash = properties.length > 0 
         ? properties.reduce((sum, p) => sum + Number(p.cashOnCashReturn || 0), 0) / properties.length 
         : 0;
