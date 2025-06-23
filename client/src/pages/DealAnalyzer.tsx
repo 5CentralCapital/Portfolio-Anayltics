@@ -32,16 +32,27 @@ export default function DealAnalyzer() {
     finishings: false
   });
   
+  // Load saved state from localStorage or use defaults
+  const loadSavedState = (key: string, defaultValue: any) => {
+    try {
+      const saved = localStorage.getItem(`dealAnalyzer_${key}`);
+      return saved ? JSON.parse(saved) : defaultValue;
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error);
+      return defaultValue;
+    }
+  };
+
   // Exit analysis state
-  const [exitAnalysis, setExitAnalysis] = useState({
+  const [exitAnalysis, setExitAnalysis] = useState(() => loadSavedState('exitAnalysis', {
     saleFactor: 0.055, // Sales cap rate (5.5%) for NOI / Cap Rate calculation
     saleCostsPercent: 0.06, // 6% for broker, legal, closing fees
     holdPeriodYears: 2,
     annualAppreciationRate: 0.03 // 3% annual appreciation rate
-  });
+  }));
   
   // Editable assumptions state
-  const [assumptions, setAssumptions] = useState({
+  const [assumptions, setAssumptions] = useState(() => loadSavedState('assumptions', {
     unitCount: 8,
     purchasePrice: 1500000,
     loanPercentage: 0.80,
@@ -54,51 +65,51 @@ export default function DealAnalyzer() {
     refinanceInterestRate: 0.065,
     refinanceClosingCostPercent: 0.02,
     dscrThreshold: 1.25
-  });
+  }));
 
   // Closing costs breakdown
-  const [closingCosts, setClosingCosts] = useState<{ [key: string]: number }>({
+  const [closingCosts, setClosingCosts] = useState<{ [key: string]: number }>(() => loadSavedState('closingCosts', {
     titleInsurance: 4500,
     appraisalFee: 800,
     legalFees: 2500,
     transferTax: 8000,
     miscellaneous: 2200,
     sellerCredit: -5000
-  });
+  }));
 
-  const [closingCostNames, setClosingCostNames] = useState<{ [key: string]: string }>({
+  const [closingCostNames, setClosingCostNames] = useState<{ [key: string]: string }>(() => loadSavedState('closingCostNames', {
     titleInsurance: 'Title Insurance',
     appraisalFee: 'Appraisal Fee',
     legalFees: 'Legal Fees',
     transferTax: 'Transfer Tax',
     miscellaneous: 'Miscellaneous',
     sellerCredit: 'Seller Credit'
-  });
+  }));
 
   // Holding costs breakdown
-  const [holdingCosts, setHoldingCosts] = useState<{ [key: string]: number }>({
+  const [holdingCosts, setHoldingCosts] = useState<{ [key: string]: number }>(() => loadSavedState('holdingCosts', {
     electric: 2400,
     water: 1800,
     gas: 1200,
     interest: 9600,
     title: 3000
-  });
+  }));
 
-  const [holdingCostNames, setHoldingCostNames] = useState<{ [key: string]: string }>({
+  const [holdingCostNames, setHoldingCostNames] = useState<{ [key: string]: string }>(() => loadSavedState('holdingCostNames', {
     electric: 'Electric',
     water: 'Water',
     gas: 'Gas',
     interest: 'Interest',
     title: 'Title'
-  });
+  }));
 
   // Unit types with market rents
-  const [unitTypes, setUnitTypes] = useState([
+  const [unitTypes, setUnitTypes] = useState(() => loadSavedState('unitTypes', [
     { id: 1, name: '2BR/1BA', marketRent: 1450 },
     { id: 2, name: '3BR/1BA', marketRent: 1650 },
     { id: 3, name: '1BR/1BA', marketRent: 1200 },
     { id: 4, name: '2BR/2BA', marketRent: 1550 }
-  ]);
+  ]));
 
   // Generate rent roll based on unit count
   const generateRentRoll = (count: number) => {
@@ -118,10 +129,13 @@ export default function DealAnalyzer() {
     return units;
   };
 
-  const [rentRoll, setRentRoll] = useState(generateRentRoll(assumptions.unitCount));
+  const [rentRoll, setRentRoll] = useState(() => {
+    const saved = loadSavedState('rentRoll', null);
+    return saved || generateRentRoll(assumptions.unitCount);
+  });
 
   // Structured rehab budget matching the provided format
-  const [rehabBudgetSections, setRehabBudgetSections] = useState({
+  const [rehabBudgetSections, setRehabBudgetSections] = useState(() => loadSavedState('rehabBudgetSections', {
     exterior: [
       { id: 1, category: 'Demolition', perUnitCost: 1500, quantity: 1, totalCost: 15000, completed: false },
       { id: 2, category: 'Permits', perUnitCost: 500, quantity: 1, totalCost: 5000, completed: false },
@@ -160,10 +174,10 @@ export default function DealAnalyzer() {
       { id: 2, category: 'Lights', perUnitCost: 500, quantity: 1, totalCost: 5000, completed: false },
       { id: 3, category: 'Blinds, Doorknobs', perUnitCost: 650, quantity: 1, totalCost: 6500, completed: false },
     ]
-  });
+  }));
 
   // Expense breakdown with names
-  const [expenses, setExpenses] = useState<{ [key: string]: number }>({
+  const [expenses, setExpenses] = useState<{ [key: string]: number }>(() => loadSavedState('expenses', {
     propertyTax: 18000,
     insurance: 8500,
     maintenance: 12000,
@@ -172,9 +186,9 @@ export default function DealAnalyzer() {
     capitalReserves: 4800,
     utilities: 3600,
     other: 2400
-  });
+  }));
 
-  const [expenseNames, setExpenseNames] = useState<{ [key: string]: string }>({
+  const [expenseNames, setExpenseNames] = useState<{ [key: string]: string }>(() => loadSavedState('expenseNames', {
     propertyTax: 'Property Tax',
     insurance: 'Insurance',
     maintenance: 'Maintenance',
@@ -182,10 +196,10 @@ export default function DealAnalyzer() {
     capitalReserves: 'Capital Reserves',
     utilities: 'Utilities',
     other: 'Other'
-  });
+  }));
 
   // Workflow timeline state - integrated with budget sections
-  const [workflowSteps, setWorkflowSteps] = useState([
+  const [workflowSteps, setWorkflowSteps] = useState(() => loadSavedState('workflowSteps', [
     { id: 1, step: 'Close on property', status: 'completed', budgetCategory: null, notes: 'Property acquired' },
     { id: 2, step: 'Eviction current tenants', status: 'in-progress', budgetCategory: null, notes: 'Legal process in progress' },
     { id: 3, step: 'Permits & Inspections', status: 'pending', budgetCategory: 'exterior', budgetItem: 'Permits', notes: 'City permits required' },
@@ -200,7 +214,7 @@ export default function DealAnalyzer() {
     { id: 12, step: 'Final Inspections', status: 'pending', budgetCategory: null, notes: 'City final inspections' },
     { id: 13, step: 'List for rent', status: 'pending', budgetCategory: null, notes: 'Market ready units' },
     { id: 14, step: 'Refinance property', status: 'pending', budgetCategory: null, notes: 'Permanent financing' }
-  ]);
+  ]));
 
   const [editingWorkflow, setEditingWorkflow] = useState(false);
 
