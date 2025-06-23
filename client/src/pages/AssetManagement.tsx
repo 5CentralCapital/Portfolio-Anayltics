@@ -260,6 +260,99 @@ export default function AssetManagement() {
     return loans.find((loan: any) => loan.isActive) || loans[0] || null;
   };
 
+  // Centralized property calculations for consistent metrics across all tabs
+  const getPropertyCalculations = () => {
+    if (!showPropertyDetailModal || !editingModalProperty) return null;
+    
+    const propertyData = editingModalProperty.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+    const rentRoll = propertyData.rentRoll || [];
+    const assumptions = propertyData.assumptions || {};
+    const expenses = propertyData.expenses || {};
+    const unitTypes = propertyData.unitTypes || [];
+    
+    // Revenue calculations
+    const grossRentMonthly = rentRoll.reduce((sum: number, unit: any) => {
+      const unitType = unitTypes.find((ut: any) => ut.id === unit.unitTypeId);
+      return sum + (unitType ? unitType.marketRent : unit.proFormaRent);
+    }, 0);
+    
+    const vacancyRate = assumptions.vacancyRate || 0.05;
+    const vacancy = grossRentMonthly * vacancyRate;
+    const netRevenue = grossRentMonthly - vacancy;
+    
+    // Expense calculations (monthly)
+    const propertyTax = (expenses.taxes || 15000) / 12;
+    const insurance = (expenses.insurance || 14500) / 12;
+    const maintenance = (expenses.maintenance || 8000) / 12;
+    const waterSewerTrash = (expenses.waterSewerTrash || 6000) / 12;
+    const capitalReserves = (expenses.capex || 2000) / 12;
+    const utilities = (expenses.utilities || 6000) / 12;
+    const other = (expenses.other || 0) / 12;
+    const managementFee = netRevenue * 0.08;
+    
+    const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
+    const noi = netRevenue - totalExpenses;
+    
+    // Debt service calculation
+    const activeLoan = getActiveLoan();
+    const monthlyDebtService = activeLoan ? calculateLoanPayment(
+      activeLoan.loanAmount || activeLoan.amount,
+      activeLoan.interestRate,
+      activeLoan.termYears,
+      activeLoan.paymentType
+    ) : 0;
+    
+    // Cash flow calculation
+    const monthlyCashFlow = noi - monthlyDebtService;
+    const annualCashFlow = monthlyCashFlow * 12;
+    
+    // Investment calculations for COC
+    const acquisitionPrice = parseFloat(showPropertyDetailModal.acquisitionPrice) || 0;
+    const totalRehab = propertyData.rehabBudget ? 
+      Object.values(propertyData.rehabBudget).reduce((sum: number, section: any) => {
+        return sum + Object.values(section).reduce((sectionSum: number, item: any) => {
+          return sectionSum + (typeof item === 'object' && item.cost ? item.cost : 0);
+        }, 0);
+      }, 0) : 0;
+    
+    const closingCosts = propertyData.closingCosts ?
+      Object.values(propertyData.closingCosts).reduce((sum: number, cost: any) => sum + (cost || 0), 0) : 0;
+    
+    const holdingCosts = propertyData.holdingCosts ?
+      Object.values(propertyData.holdingCosts).reduce((sum: number, cost: any) => sum + (cost || 0), 0) : 0;
+    
+    const loanPercentage = assumptions.loanPercentage || 0.8;
+    const downPayment = (acquisitionPrice + totalRehab) * (1 - loanPercentage);
+    const totalCashInvested = downPayment + closingCosts + holdingCosts;
+    
+    // Cash-on-Cash Return calculation
+    const cashOnCashReturn = totalCashInvested > 0 ? (annualCashFlow / totalCashInvested) * 100 : 0;
+    
+    return {
+      grossRentMonthly,
+      grossRentAnnual: grossRentMonthly * 12,
+      vacancy,
+      vacancyAnnual: vacancy * 12,
+      netRevenue,
+      netRevenueAnnual: netRevenue * 12,
+      totalExpenses,
+      totalExpensesAnnual: totalExpenses * 12,
+      noi,
+      noiAnnual: noi * 12,
+      monthlyDebtService,
+      annualDebtService: monthlyDebtService * 12,
+      monthlyCashFlow,
+      annualCashFlow,
+      totalCashInvested,
+      cashOnCashReturn,
+      acquisitionPrice,
+      totalRehab,
+      closingCosts,
+      holdingCosts,
+      downPayment
+    };
+  };
+
   // Initialize default rehab line items for a property
   const initializeRehabItems = (property: Property): RehabLineItem[] => {
     const totalBudget = parseFloat(property.rehabCosts) || 100000;
@@ -2415,48 +2508,15 @@ export default function AssetManagement() {
                           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Financial Breakdown</h3>
                           
                           {(() => {
-                            // Calculate values from Deal Analyzer data
-                            const rentRoll = dealAnalyzerData?.rentRoll || [];
-                            const assumptions = dealAnalyzerData?.assumptions || {};
-                            const expenses = dealAnalyzerData?.expenses || {};
+                            // Use centralized calculations for consistency
+                            const calculations = getPropertyCalculations();
+                            console.log('Income & Expenses - Using centralized calculations:', calculations);
                             
-                            // Revenue calculations
-                            const grossRentAnnual = rentRoll.reduce((sum: number, unit: any) => {
-                              const unitTypes = dealAnalyzerData?.unitTypes || [];
-                              const unitType = unitTypes.find((ut: any) => ut.id === unit.unitTypeId);
-                              return sum + (unitType ? unitType.marketRent * 12 : unit.proFormaRent * 12);
-                            }, 0);
+                            if (!calculations) return null;
                             
-                            const vacancyRate = assumptions.vacancyRate || 0.05;
-                            const vacancyLoss = grossRentAnnual * vacancyRate;
-                            const netRevenue = grossRentAnnual - vacancyLoss;
-                            
-                            // Expenses calculations
-                            const propertyTax = expenses.taxes || 15000;
-                            const insurance = expenses.insurance || 14500;
-                            const maintenance = expenses.maintenance || 8000;
-                            const waterSewerTrash = expenses.waterSewerTrash || 6000;
-                            const capitalReserves = expenses.capex || 2000;
-                            const utilities = expenses.utilities || 6000;
-                            const other = expenses.other || 0;
-                            const managementFeeRate = 0.08; // 8% management fee
-                            const managementFee = netRevenue * managementFeeRate;
-                            
-                            const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
-                            const noi = netRevenue - totalExpenses;
-                            
-                            // Get active loan for debt service calculation using centralized function
-                            const activeLoan = getActiveLoan();
-                            console.log('Income & Expenses - Active loan:', activeLoan);
-                            const monthlyDebtService = activeLoan ? calculateLoanPayment(
-                              activeLoan.loanAmount || activeLoan.amount,
-                              activeLoan.interestRate,
-                              activeLoan.termYears,
-                              activeLoan.paymentType
-                            ) : 0;
-                            console.log('Income & Expenses - Monthly debt service:', monthlyDebtService);
-                            
-                            const netCashFlow = (noi / 12) - monthlyDebtService;
+                            // Get the original expenses data for editing purposes
+                            const propertyData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                            const expenses = propertyData?.expenses || {};
                             
                             return (
                               <div className="grid lg:grid-cols-2 gap-8">
@@ -2470,23 +2530,23 @@ export default function AssetManagement() {
                                       {isEditing ? (
                                         <input
                                           type="number"
-                                          value={grossRentAnnual}
+                                          value={calculations.grossRentAnnual}
                                           className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-right"
                                           readOnly
                                         />
                                       ) : (
-                                        <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(grossRentAnnual)}</span>
+                                        <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(calculations.grossRentAnnual)}</span>
                                       )}
                                     </div>
                                     
                                     <div className="flex justify-between items-center">
-                                      <span className="text-gray-700 dark:text-gray-300">Vacancy Loss ({(vacancyRate * 100).toFixed(1)}%)</span>
-                                      <span className="font-medium text-red-600">-{formatCurrency(vacancyLoss)}</span>
+                                      <span className="text-gray-700 dark:text-gray-300">Vacancy Loss (5.0%)</span>
+                                      <span className="font-medium text-red-600">-{formatCurrency(calculations.vacancyAnnual)}</span>
                                     </div>
                                     
                                     <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                                       <span className="font-semibold text-gray-900 dark:text-white">Net Revenue</span>
-                                      <span className="font-bold text-green-600">{formatCurrency(netRevenue)}</span>
+                                      <span className="font-bold text-green-600">{formatCurrency(calculations.netRevenueAnnual)}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -2497,13 +2557,13 @@ export default function AssetManagement() {
                                   
                                   <div className="space-y-3">
                                     {[
-                                      { key: 'taxes', label: 'Property Tax', value: propertyTax },
-                                      { key: 'insurance', label: 'Insurance', value: insurance },
-                                      { key: 'maintenance', label: 'Maintenance', value: maintenance },
-                                      { key: 'waterSewerTrash', label: 'Water/Sewer/Trash', value: waterSewerTrash },
-                                      { key: 'capex', label: 'Capital Reserves', value: capitalReserves },
-                                      { key: 'utilities', label: 'Utilities', value: utilities },
-                                      { key: 'other', label: 'Other', value: other }
+                                      { key: 'taxes', label: 'Property Tax', value: expenses.taxes || 15000 },
+                                      { key: 'insurance', label: 'Insurance', value: expenses.insurance || 14500 },
+                                      { key: 'maintenance', label: 'Maintenance', value: expenses.maintenance || 8000 },
+                                      { key: 'waterSewerTrash', label: 'Water/Sewer/Trash', value: expenses.waterSewerTrash || 6000 },
+                                      { key: 'capex', label: 'Capital Reserves', value: expenses.capex || 2000 },
+                                      { key: 'utilities', label: 'Utilities', value: expenses.utilities || 6000 },
+                                      { key: 'other', label: 'Other', value: expenses.other || 0 }
                                     ].map((item) => (
                                       <div key={item.key} className="flex justify-between items-center">
                                         <span className="text-gray-700 dark:text-gray-300">{item.label}</span>
@@ -2527,12 +2587,12 @@ export default function AssetManagement() {
                                     
                                     <div className="flex justify-between items-center">
                                       <span className="text-gray-700 dark:text-gray-300">Management Fee (8%)</span>
-                                      <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(managementFee)}</span>
+                                      <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(calculations.netRevenueAnnual * 0.08)}</span>
                                     </div>
                                     
                                     <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                                       <span className="font-semibold text-gray-900 dark:text-white">Total Expenses</span>
-                                      <span className="font-bold text-red-600">{formatCurrency(totalExpenses)}</span>
+                                      <span className="font-bold text-red-600">{formatCurrency(calculations.totalExpensesAnnual)}</span>
                                     </div>
                                   </div>
                                 </div>
