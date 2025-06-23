@@ -1455,50 +1455,6 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-
-      // Import financing with CORRECT loan calculation: loan = (purchase + rehab) * loan percentage
-      if (dealData.assumptions) {
-        const purchasePrice = dealData.assumptions.purchasePrice || 0;
-        const loanPercentage = dealData.assumptions.loanPercentage || 0.8;
-        const interestRate = dealData.assumptions.interestRate || 0.07;
-        const loanTermYears = dealData.assumptions.loanTermYears || 30;
-        
-        // Calculate total rehab costs from rehab budget sections
-        let totalRehabCosts = 0;
-        if (dealData.rehabBudgetSections) {
-          for (const [sectionName, items] of Object.entries(dealData.rehabBudgetSections)) {
-            if (Array.isArray(items)) {
-              for (const item of items) {
-                totalRehabCosts += Number(item.totalCost) || 0;
-              }
-            }
-          }
-        }
-        
-        // CRITICAL: Loan amount = (purchase price + rehab cost) * loan percentage
-        const loanAmount = (purchasePrice + totalRehabCosts) * loanPercentage;
-        
-        if (loanAmount > 0) {
-          // Create new loan with correct calculation (skip clearing for now to avoid method errors)
-          await this.createPropertyLoans({
-            propertyId,
-            loanType: "Acquisition",
-            loanAmount: loanAmount.toString(),
-            interestRate: interestRate.toString(),
-            loanTermYears,
-            paymentType: "principal_and_interest",
-            isActive: true,
-            lenderName: "Primary Lender",
-            description: `Acquisition loan: ${(loanPercentage * 100).toFixed(1)}% of $${(purchasePrice + totalRehabCosts).toLocaleString()}`
-          });
-        }
-      }
-
-    } catch (error) {
-      console.error(`Error importing normalized data for property ${propertyId}:`, error);
-      throw error;
-    }
-  }
 }
 
 export const storage = new DatabaseStorage();
