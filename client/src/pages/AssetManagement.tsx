@@ -276,20 +276,60 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
           <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.arvAtTimePurchased || 0)}</p>
         </div>
         <div>
-          <p className="text-gray-600 dark:text-gray-400">Monthly Cash Flow</p>
+          <p className="text-gray-600 dark:text-gray-400">Annual Cash Flow</p>
           {(() => {
-            // Use exact same calculation as modal Overview tab
-            const getPropertyTileCalculations = () => {
-              return calculatePropertyMetrics(property);
+            // Use exact same calculation from property modal
+            const modalCalculations = () => {
+              if (!property.dealAnalyzerData) return null;
+              try {
+                const dealData = JSON.parse(property.dealAnalyzerData);
+                
+                // Calculate gross rent
+                const grossRent = dealData.rentRoll?.reduce((sum: number, unit: any) => sum + (unit.proFormaRent || unit.currentRent || 0), 0) || 0;
+                
+                // Calculate vacancy
+                const vacancyRate = dealData.assumptions?.vacancyRate || 0.05;
+                const vacancy = grossRent * vacancyRate;
+                const netRevenue = grossRent - vacancy;
+                
+                // Calculate expenses correctly (monthly amounts)
+                let totalExpenses = 0;
+                Object.values(dealData.expenses || {}).forEach((expense: any) => {
+                  if (typeof expense === 'object' && expense !== null) {
+                    const amount = parseFloat(expense.amount || '0');
+                    const isPercentage = expense.isPercentage || false;
+                    if (isPercentage) {
+                      totalExpenses += (netRevenue * 12 * (amount / 100) / 12);
+                    } else {
+                      totalExpenses += amount;
+                    }
+                  } else {
+                    totalExpenses += (parseFloat(expense || '0') || 0);
+                  }
+                });
+                
+                // NOI
+                const noi = netRevenue - totalExpenses;
+                
+                // Debt service from active loan
+                const activeLoan = dealData.loans?.find((loan: any) => loan.isActive);
+                const debtService = activeLoan?.monthlyPayment || 0;
+                
+                // Annual cash flow
+                const monthlyCashFlow = noi - debtService;
+                const annualCashFlow = monthlyCashFlow * 12;
+                
+                return { annualCashFlow };
+              } catch (e) {
+                return null;
+              }
             };
             
-            const calculations = getPropertyTileCalculations();
-            console.log('Property tile calculations for', property.address, ':', calculations);
-            
-            if (calculations && calculations.monthlyCashFlow !== undefined) {
+            const calculations = modalCalculations();
+            if (calculations && calculations.annualCashFlow !== undefined) {
               return (
-                <p className={`font-semibold ${calculations.monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(calculations.monthlyCashFlow)}
+                <p className={`font-semibold ${calculations.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(calculations.annualCashFlow)}
                 </p>
               );
             }
@@ -297,20 +337,65 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
           })()}
         </div>
         <div>
-          <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
+          <p className="text-gray-600 dark:text-gray-400">Equity Multiple</p>
           {(() => {
-            // Use exact same calculation as modal Overview tab
-            const getPropertyTileCalculations = () => {
-              return calculatePropertyMetrics(property);
+            // Use exact same calculation from property modal
+            const modalCalculations = () => {
+              if (!property.dealAnalyzerData) return null;
+              try {
+                const dealData = JSON.parse(property.dealAnalyzerData);
+                
+                // Calculate ARV
+                const grossRent = dealData.rentRoll?.reduce((sum: number, unit: any) => sum + (unit.proFormaRent || unit.currentRent || 0), 0) || 0;
+                const vacancyRate = dealData.assumptions?.vacancyRate || 0.05;
+                const vacancy = grossRent * vacancyRate;
+                const netRevenue = grossRent - vacancy;
+                
+                let totalExpenses = 0;
+                Object.values(dealData.expenses || {}).forEach((expense: any) => {
+                  if (typeof expense === 'object' && expense !== null) {
+                    const amount = parseFloat(expense.amount || '0');
+                    const isPercentage = expense.isPercentage || false;
+                    if (isPercentage) {
+                      totalExpenses += (netRevenue * 12 * (amount / 100) / 12);
+                    } else {
+                      totalExpenses += amount;
+                    }
+                  } else {
+                    totalExpenses += (parseFloat(expense || '0') || 0);
+                  }
+                });
+                
+                const noi = netRevenue - totalExpenses;
+                const annualNOI = noi * 12;
+                const marketCapRate = dealData.assumptions?.marketCapRate || 0.055;
+                const arv = annualNOI / marketCapRate;
+                
+                // Calculate all-in cost
+                const acquisitionPrice = parseFloat(property.acquisitionPrice || '0');
+                const totalRehab = Object.values(dealData.rehabBudget || {}).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
+                const allInCost = acquisitionPrice + totalRehab;
+                
+                // Calculate capital required
+                const loanPercentage = dealData.assumptions?.loanPercentage || 0.85;
+                const downPayment = acquisitionPrice * (1 - loanPercentage);
+                const closingCosts = Object.values(dealData.closingCosts || {}).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
+                const capitalRequired = downPayment + closingCosts;
+                
+                // Equity multiple
+                const equityMultiple = capitalRequired > 0 ? (arv - allInCost) / capitalRequired : 0;
+                
+                return { equityMultiple };
+              } catch (e) {
+                return null;
+              }
             };
             
-            const calculations = getPropertyTileCalculations();
-            console.log('Property tile CoC calculations for', property.address, ':', calculations);
-            
-            if (calculations && calculations.cashOnCashReturn !== undefined) {
+            const calculations = modalCalculations();
+            if (calculations && calculations.equityMultiple !== undefined) {
               return (
-                <p className={`font-semibold ${calculations.cashOnCashReturn >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                  {formatPercentage(calculations.cashOnCashReturn)}
+                <p className={`font-semibold ${calculations.equityMultiple >= 1 ? 'text-blue-600' : 'text-red-600'}`}>
+                  {calculations.equityMultiple.toFixed(2)}x
                 </p>
               );
             }
