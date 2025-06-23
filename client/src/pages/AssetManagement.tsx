@@ -239,52 +239,71 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
   );
 };
 
-const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => (
-  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 aspect-square flex flex-col cursor-pointer card-hover transition-all-smooth hover:shadow-md bg-white dark:bg-gray-800"
-       onDoubleClick={() => onDoubleClick(property)}
-       title="Double-click for financial breakdown">
-    {/* Header with property info */}
-    <div className="mb-3">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-tight">{property.address}</h3>
-        <select 
-          value={property.status} 
-          onChange={(e) => onStatusChange(property.id, e.target.value)}
-          className="px-1 py-0.5 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all-smooth hover:border-purple-400"
-        >
-          <option value="Under Contract">Under Contract</option>
-          <option value="Rehabbing">Rehabbing</option>
-          <option value="Cashflowing">Cashflowing</option>
-          <option value="Sold">Sold</option>
-        </select>
+const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
+  // Use centralized calculations for accurate metrics
+  const calculatedMetrics = calculatePropertyMetrics(property);
+  
+  return (
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 aspect-square flex flex-col cursor-pointer card-hover transition-all-smooth hover:shadow-md bg-white dark:bg-gray-800"
+         onDoubleClick={() => onDoubleClick(property)}
+         title="Double-click for financial breakdown">
+      {/* Header with property info */}
+      <div className="mb-3">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-tight">{property.address}</h3>
+          <select 
+            value={property.status} 
+            onChange={(e) => onStatusChange(property.id, e.target.value)}
+            className="px-1 py-0.5 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all-smooth hover:border-purple-400"
+          >
+            <option value="Under Contract">Under Contract</option>
+            <option value="Rehabbing">Rehabbing</option>
+            <option value="Cashflowing">Cashflowing</option>
+            <option value="Sold">Sold</option>
+          </select>
+        </div>
+        <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{property.city}, {property.state}</p>
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 mt-1">
+          Sold
+        </span>
       </div>
-      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{property.city}, {property.state}</p>
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 mt-1">
-        Sold
-      </span>
-    </div>
 
-    {/* Financial metrics grid */}
-    <div className="flex-1 grid grid-cols-2 gap-2 text-xs">
-      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-2">
-        <p className="text-gray-600 dark:text-gray-400 text-xs mb-0.5">Capital</p>
-        <p className="font-bold text-gray-900 dark:text-white text-xs">{formatCurrency(property.initialCapitalRequired)}</p>
-      </div>
-      <div className="bg-green-50 dark:bg-green-900/20 rounded-md p-2">
-        <p className="text-green-700 dark:text-green-400 text-xs mb-0.5">Profit</p>
-        <p className="font-bold text-green-700 dark:text-green-400 text-xs">{formatCurrency(property.totalProfits)}</p>
-      </div>
-      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-md p-2">
-        <p className="text-blue-700 dark:text-blue-400 text-xs mb-0.5">Multiple</p>
-        <p className="font-bold text-blue-700 dark:text-blue-400 text-xs">{(Number(property.totalProfits) / Number(property.initialCapitalRequired)).toFixed(2)}x</p>
-      </div>
-      <div className="bg-purple-50 dark:bg-purple-900/20 rounded-md p-2">
-        <p className="text-purple-700 dark:text-purple-400 text-xs mb-0.5">Sale</p>
-        <p className="font-bold text-purple-700 dark:text-purple-400 text-xs">{formatCurrency(property.salePrice || '0')}</p>
+      {/* Financial metrics grid using centralized calculations */}
+      <div className="flex-1 grid grid-cols-2 gap-2 text-xs">
+        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-2">
+          <p className="text-gray-600 dark:text-gray-400 text-xs mb-0.5">Capital</p>
+          {calculatedMetrics ? (
+            <p className="font-bold text-gray-900 dark:text-white text-xs">{formatCurrency(calculatedMetrics.totalInvestedCapital)}</p>
+          ) : (
+            <p className="font-bold text-gray-900 dark:text-white text-xs">{formatCurrency(property.initialCapitalRequired)}</p>
+          )}
+        </div>
+        <div className="bg-green-50 dark:bg-green-900/20 rounded-md p-2">
+          <p className="text-green-700 dark:text-green-400 text-xs mb-0.5">Profit</p>
+          {calculatedMetrics ? (
+            <p className="font-bold text-green-700 dark:text-green-400 text-xs">
+              {formatCurrency(calculatedMetrics.totalProfit || parseFloat(property.totalProfits || '0'))}
+            </p>
+          ) : (
+            <p className="font-bold text-green-700 dark:text-green-400 text-xs">{formatCurrency(property.totalProfits)}</p>
+          )}
+        </div>
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-md p-2">
+          <p className="text-blue-700 dark:text-blue-400 text-xs mb-0.5">Multiple</p>
+          {calculatedMetrics ? (
+            <p className="font-bold text-blue-700 dark:text-blue-400 text-xs">{calculatedMetrics.equityMultiple.toFixed(2)}x</p>
+          ) : (
+            <p className="font-bold text-blue-700 dark:text-blue-400 text-xs">{(Number(property.totalProfits) / Number(property.initialCapitalRequired)).toFixed(2)}x</p>
+          )}
+        </div>
+        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-md p-2">
+          <p className="text-purple-700 dark:text-purple-400 text-xs mb-0.5">Sale</p>
+          <p className="font-bold text-purple-700 dark:text-purple-400 text-xs">{formatCurrency(property.salePrice || '0')}</p>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Helper functions moved to top of file
 
