@@ -1202,13 +1202,13 @@ export class DatabaseStorage implements IStorage {
   /**
    * Calculate rehab completion status based on spent amount and total cost
    */
-  private getRehabCompletionStatus(item: any): string {
+  private getRehabCompletionStatus(item: any): "Not Started" | "In Progress" | "Completed" {
     const spentAmount = parseFloat(item.spentAmount?.toString() || "0");
     const totalCost = parseFloat(item.totalCost?.toString() || "0");
     
-    // Use explicit completion status if provided
-    if (item.completionStatus) {
-      return item.completionStatus;
+    // Use explicit completion status if provided and valid
+    if (item.completionStatus && ["Not Started", "In Progress", "Completed"].includes(item.completionStatus)) {
+      return item.completionStatus as "Not Started" | "In Progress" | "Completed";
     }
     
     // Calculate based on spent amount vs total cost
@@ -1255,7 +1255,9 @@ export class DatabaseStorage implements IStorage {
             currentRent: unit.currentRent?.toString() || "0",
             proFormaRent: unit.proFormaRent?.toString() || "0",
             isVacant: unit.currentRent === 0 || unit.currentRent === null,
-            tenantName: unit.tenantName || null
+            tenantName: unit.tenantName || null,
+            leaseStart: unit.leaseFrom || null,
+            leaseEnd: unit.leaseTo || null
           });
         }
       }
@@ -1288,7 +1290,7 @@ export class DatabaseStorage implements IStorage {
                 quantity: item.quantity || 1,
                 totalCost: item.totalCost?.toString() || "0",
                 spentAmount: item.spentAmount?.toString() || "0",
-                completionStatus: item.spentAmount > 0 ? "In Progress" : "Not Started"
+                completionStatus: this.getRehabCompletionStatus(item)
               });
             }
           }
