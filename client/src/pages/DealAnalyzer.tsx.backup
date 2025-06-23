@@ -2007,7 +2007,7 @@ export default function DealAnalyzer() {
               <div className="border border-gray-200 rounded-lg p-6">
                 <h4 className="text-lg font-semibold mb-4 text-blue-600">Rent Sensitivity</h4>
                 <div className="text-sm text-gray-600 mb-3">
-                  Base Market Rent: {formatCurrency(rentRoll.reduce((sum, unit) => sum + unit.proFormaRent, 0))} monthly
+                  Base Market Rent: {formatCurrency(rentRoll.reduce((sum, unit) => sum + (unitTypes.find(type => type.id === unit.unitTypeId)?.marketRent || 0), 0) / 12)} monthly
                 </div>
                 <div className="space-y-3">
                   {[-10, -5, 0, 5, 10].map(percent => {
@@ -2176,9 +2176,6 @@ export default function DealAnalyzer() {
                   <tr className="border-b">
                     <th className="text-left py-3 px-4">Unit #</th>
                     <th className="text-left py-3 px-4">Unit Type</th>
-                    <th className="text-left py-3 px-4">Tenant Name</th>
-                    <th className="text-left py-3 px-4">Lease From</th>
-                    <th className="text-left py-3 px-4">Lease To</th>
                     <th className="text-right py-3 px-4">Current Rent</th>
                     <th className="text-right py-3 px-4">Pro Forma Rent</th>
                     <th className="text-right py-3 px-4">Monthly Increase</th>
@@ -2220,40 +2217,6 @@ export default function DealAnalyzer() {
                             ))}
                           </select>
                         </td>
-                        <td className="py-3 px-4">
-                          <input
-                            type="text"
-                            value={unit.tenantName || ''}
-                            onChange={(e) => {
-                              const updated = rentRoll.map(u => u.id === unit.id ? {...u, tenantName: e.target.value} : u);
-                              setRentRoll(updated);
-                            }}
-                            placeholder="Tenant name"
-                            className="w-32 px-2 py-1 border rounded text-sm"
-                          />
-                        </td>
-                        <td className="py-3 px-4">
-                          <input
-                            type="date"
-                            value={unit.leaseFrom || ''}
-                            onChange={(e) => {
-                              const updated = rentRoll.map(u => u.id === unit.id ? {...u, leaseFrom: e.target.value} : u);
-                              setRentRoll(updated);
-                            }}
-                            className="w-32 px-2 py-1 border rounded text-sm"
-                          />
-                        </td>
-                        <td className="py-3 px-4">
-                          <input
-                            type="date"
-                            value={unit.leaseTo || ''}
-                            onChange={(e) => {
-                              const updated = rentRoll.map(u => u.id === unit.id ? {...u, leaseTo: e.target.value} : u);
-                              setRentRoll(updated);
-                            }}
-                            className="w-32 px-2 py-1 border rounded text-sm"
-                          />
-                        </td>
                         <td className="py-3 px-4 text-right">
                           <input
                             type="number"
@@ -2280,9 +2243,6 @@ export default function DealAnalyzer() {
                 <tfoot>
                   <tr className="border-t-2 bg-gray-50">
                     <td className="py-3 px-4 font-bold">Total ({rentRoll.length} units)</td>
-                    <td className="py-3 px-4"></td>
-                    <td className="py-3 px-4"></td>
-                    <td className="py-3 px-4"></td>
                     <td className="py-3 px-4"></td>
                     <td className="py-3 px-4 text-right font-bold">
                       {formatCurrency(rentRoll.reduce((sum, unit) => sum + unit.currentRent, 0))}
