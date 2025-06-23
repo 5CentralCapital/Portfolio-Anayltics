@@ -212,6 +212,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import property from Deal Analyzer with normalized database structure
+  app.post('/api/properties/import-normalized', authenticateUser, async (req: any, res: any) => {
+    try {
+      const { dealData, entity, acquisitionDate, broker, legalNotes, address, city, state, zipCode } = req.body;
+      
+      if (!dealData) {
+        return res.status(400).json({ error: 'Deal data is required' });
+      }
+
+      // Prepare additional property data
+      const additionalPropertyData = {
+        entity: entity || '5Central Capital',
+        acquisitionDate,
+        broker,
+        legalNotes,
+        address: address || dealData.propertyAddress || 'Unknown Address',
+        city: city || 'Unknown City',
+        state: state || 'Unknown State',
+        zipCode: zipCode || ''
+      };
+
+      // Import using the new normalized database structure
+      const newProperty = await storage.importFromDealAnalyzer(dealData, additionalPropertyData, req.user.id);
+      
+      // Calculate and store initial metrics using the enhanced calculation service
+      await calculationService.updatePropertyMetrics(newProperty.id);
+      
+      // Broadcast KPI update
+      await broadcastKPIUpdate(newProperty.id);
+      
+      res.status(201).json({
+        property: newProperty,
+        message: 'Property imported successfully with normalized data structure'
+      });
+    } catch (error) {
+      console.error('Error importing property:', error);
+      res.status(500).json({ error: 'Failed to import property' });
+    }
+  });
+
+  // Sync existing property Deal Analyzer data to normalized tables
+  app.post('/api/properties/:id/sync-normalized', authenticateUser, async (req: any, res: any) => {
+    try {
+      const propertyId = parseInt(req.params.id);
+      
+      await storage.syncDealAnalyzerToNormalized(propertyId);
+      await calculationService.updatePropertyMetrics(propertyId);
+      
+      res.json({ message: 'Property data synchronized to normalized structure' });
+    } catch (error) {
+      console.error('Error syncing property data:', error);
+      res.status(500).json({ error: 'Failed to sync property data' });
+    }
+  });
+
   // Dynamic property metrics endpoint
   app.get("/api/properties/:id/metrics", authenticateUser, async (req: any, res) => {
     try {
