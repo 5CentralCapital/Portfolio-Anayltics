@@ -204,9 +204,16 @@ export default function DealAnalyzer() {
     const totalRehab = rehabSubtotal + contingency;
     const totalClosingCosts = Object.values(closingCosts).reduce((sum, cost) => sum + cost, 0);
     const totalHoldingCosts = Object.values(holdingCosts).reduce((sum, cost) => sum + cost, 0);
-    const initialLoan = assumptions.purchasePrice * assumptions.loanPercentage;
-    const downPayment = assumptions.purchasePrice - initialLoan;
-    const totalCashInvested = downPayment + totalClosingCosts + totalHoldingCosts + totalRehab;
+    
+    // Updated loan calculations: 85% of (purchase price + total rehab cost)
+    const initialLoan = (assumptions.purchasePrice + totalRehab) * 0.85;
+    const downPayment = assumptions.purchasePrice - (assumptions.purchasePrice * 0.85);
+    
+    // Capital required = down payment + total closing costs
+    const capitalRequired = downPayment + totalClosingCosts;
+    
+    // Total cash invested = capital required + holding costs
+    const totalCashInvested = capitalRequired + totalHoldingCosts;
     const allInCost = assumptions.purchasePrice + totalRehab + totalClosingCosts + totalHoldingCosts;
     
     // Revenue calculations
@@ -224,6 +231,7 @@ export default function DealAnalyzer() {
     
     // ARV and refinance calculations
     const arv = noi > 0 && assumptions.marketCapRate > 0 ? noi / assumptions.marketCapRate : assumptions.purchasePrice;
+    // Refinance loan = (editable LTV) * ARV
     const refinanceLoan = arv * assumptions.refinanceLTV;
     const refinanceClosingCosts = refinanceLoan * assumptions.refinanceClosingCostPercent;
     const cashOut = Math.max(0, refinanceLoan - initialLoan - refinanceClosingCosts);
@@ -240,14 +248,11 @@ export default function DealAnalyzer() {
     const actualEquityInvested = totalCashInvested - cashOut; // Net equity after refinance cash-out
     const cashOnCashReturn = actualEquityInvested > 0 ? netCashFlow / actualEquityInvested : 0;
     
-    // Equity multiple: Total value returned divided by initial investment
-    const currentEquityValue = arv - refinanceLoan; // Current equity position
-    const totalValueReturned = cashOut + currentEquityValue;
-    const equityMultiple = totalCashInvested > 0 ? totalValueReturned / totalCashInvested : 0;
+    // Equity multiple: (ARV - all in cost) / capital required
+    const equityMultiple = capitalRequired > 0 ? (arv - allInCost) / capitalRequired : 0;
     
     const breakEvenOccupancy = grossRent > 0 ? (totalExpenses + annualDebtService) / grossRent : 1;
     const totalProfit = arv - allInCost;
-    const capitalRequired = downPayment + totalClosingCosts;
     
     // Exit analysis calculations - Sales Cap Rate approach
     const salePrice = noi > 0 && exitAnalysis.saleFactor > 0 ? noi / exitAnalysis.saleFactor : arv;
