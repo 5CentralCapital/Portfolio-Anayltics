@@ -433,8 +433,8 @@ export function calculateExitScenarios(
     netSaleProceeds: 0,
     totalCashFlow: futureNOI - (financials.loanAmount * financials.interestRate), // Interest-only assumption
     totalReturn: futureNOI * holdPeriodYears,
-    annualizedReturn: futureNOI / financials.initialCapitalRequired,
-    equityMultiple: (projectedSalePrice - financials.loanAmount) / financials.initialCapitalRequired
+    annualizedReturn: futureNOI / calculateInitialCapital(financials.purchasePrice, financials.rehabCosts, financials.closingCosts, financials.holdingCosts, financials.loanAmount),
+    equityMultiple: (projectedSalePrice - financials.loanAmount) / calculateInitialCapital(financials.purchasePrice, financials.rehabCosts, financials.closingCosts, financials.holdingCosts, financials.loanAmount)
   };
   
   // Refinance scenario
@@ -450,8 +450,8 @@ export function calculateExitScenarios(
     netSaleProceeds: cashOutAmount,
     totalCashFlow: futureNOI - (refinanceAmount * (financials.refinanceRate || 0.065)),
     totalReturn: cashOutAmount + (futureNOI * holdPeriodYears),
-    annualizedReturn: (cashOutAmount + futureNOI) / financials.initialCapitalRequired,
-    equityMultiple: (projectedSalePrice - refinanceAmount + cashOutAmount) / financials.initialCapitalRequired
+    annualizedReturn: (cashOutAmount + futureNOI) / calculateInitialCapital(financials.purchasePrice, financials.rehabCosts, financials.closingCosts, financials.holdingCosts, financials.loanAmount),
+    equityMultiple: (projectedSalePrice - refinanceAmount + cashOutAmount) / calculateInitialCapital(financials.purchasePrice, financials.rehabCosts, financials.closingCosts, financials.holdingCosts, financials.loanAmount)
   };
   
   // Sale scenario
@@ -463,8 +463,8 @@ export function calculateExitScenarios(
     netSaleProceeds,
     totalCashFlow: 0, // No ongoing cash flow after sale
     totalReturn: netSaleProceeds + (calculateAllMetrics(financials).annualCashFlow * holdPeriodYears),
-    annualizedReturn: (netSaleProceeds / holdPeriodYears) / financials.initialCapitalRequired,
-    equityMultiple: netSaleProceeds / financials.initialCapitalRequired
+    annualizedReturn: (netSaleProceeds / holdPeriodYears) / calculateInitialCapital(financials.purchasePrice, financials.rehabCosts, financials.closingCosts, financials.holdingCosts, financials.loanAmount),
+    equityMultiple: netSaleProceeds / calculateInitialCapital(financials.purchasePrice, financials.rehabCosts, financials.closingCosts, financials.holdingCosts, financials.loanAmount)
   };
   
   return { hold, refinance, sale };
