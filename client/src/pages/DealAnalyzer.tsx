@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target, BarChart3, Save, Download, Upload, FileDown, Database, X, Trash2 } from 'lucide-react';
 
+// Load saved state function
+const loadSavedState = (key: string, defaultValue: any) => {
+  try {
+    const saved = localStorage.getItem(`dealAnalyzer_${key}`);
+    return saved ? JSON.parse(saved) : defaultValue;
+  } catch (error) {
+    console.error(`Error loading ${key} from localStorage:`, error);
+    return defaultValue;
+  }
+};
+
 export default function DealAnalyzer() {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
@@ -31,17 +42,6 @@ export default function DealAnalyzer() {
     generalInterior: false,
     finishings: false
   });
-  
-  // Load saved state from localStorage or use defaults
-  const loadSavedState = (key: string, defaultValue: any) => {
-    try {
-      const saved = localStorage.getItem(`dealAnalyzer_${key}`);
-      return saved ? JSON.parse(saved) : defaultValue;
-    } catch (error) {
-      console.error(`Error loading ${key} from localStorage:`, error);
-      return defaultValue;
-    }
-  };
 
   // Exit analysis state
   const [exitAnalysis, setExitAnalysis] = useState(() => loadSavedState('exitAnalysis', {
