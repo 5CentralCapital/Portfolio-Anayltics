@@ -161,12 +161,11 @@ export default function EntityDashboard() {
     enabled: !!currentUserId
   });
 
-  // Fetch user's properties with real-time updates
-  const { data: allProperties = [], isLoading, refetch: refetchProperties } = useQuery({
+  // Fetch user's properties
+  const { data: allProperties = [], isLoading } = useQuery({
     queryKey: ['/api/properties'],
     queryFn: () => apiService.getProperties(),
-    enabled: !!currentUserId,
-    refetchInterval: 30000 // Auto-refresh every 30 seconds for real-time updates
+    enabled: !!currentUserId
   });
 
   // Set user entities when data loads

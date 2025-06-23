@@ -915,236 +915,50 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * Direct transfer - use Deal Analyzer's exact displayed values
+   * Import Deal Analyzer data into normalized database structure
    */
   async importFromDealAnalyzer(dealData: any, additionalPropertyData: any, userId: number): Promise<Property> {
-    // Parse address from propertyAddress exactly as entered
-    const fullAddress = dealData.propertyAddress || "";
-    const addressParts = this.parseAddress(fullAddress);
-    
-    // Use EXACT values from Deal Analyzer calculations or assumptions
-    const purchasePrice = dealData.assumptions?.purchasePrice || 0;
-    const unitCount = dealData.assumptions?.unitCount || 1;
-    
-    // Calculate totals using SAME methods as Deal Analyzer frontend
-    let totalRehabCosts = 0;
-    if (dealData.rehabBudgetSections) {
-      Object.values(dealData.rehabBudgetSections).forEach((section: any) => {
-        if (Array.isArray(section)) {
-          section.forEach((item: any) => {
-            totalRehabCosts += Number(item.totalCost) || 0;
-          });
-        }
-      });
-    }
-    
-    // Calculate rental income exactly like frontend
-    let grossRentalIncome = 0;
-    if (dealData.rentRoll && Array.isArray(dealData.rentRoll)) {
-      dealData.rentRoll.forEach((unit: any) => {
-        grossRentalIncome += (Number(unit.proFormaRent) || 0) * 12;
-      });
-    }
-    
-    // Apply vacancy to get effective gross income
-    const vacancyRate = dealData.assumptions?.vacancyRate || 0.05;
-    const effectiveGrossIncome = grossRentalIncome * (1 - vacancyRate);
-    
-    // Calculate operating expenses exactly like frontend
-    let operatingExpenses = 0;
-    if (dealData.expenses) {
-      Object.values(dealData.expenses).forEach((expense: any) => {
-        operatingExpenses += Number(expense) || 0;
-      });
-    }
-    
-    // Calculate NOI and cash flow exactly like frontend
-    const noi = effectiveGrossIncome - operatingExpenses;
-    
-    // Calculate loan payment exactly like frontend
-    const loanPercentage = dealData.assumptions?.loanPercentage || 0.8;
-    const loanAmount = (purchasePrice + totalRehabCosts) * loanPercentage;
-    const interestRate = dealData.assumptions?.interestRate || 0.07;
-    const loanTermYears = dealData.assumptions?.loanTermYears || 30;
-    
-    const monthlyRate = interestRate / 12;
-    const numPayments = loanTermYears * 12;
-    const monthlyPayment = loanAmount > 0 ? 
-      loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1) : 0;
-    const annualDebtService = monthlyPayment * 12;
-    
-    const annualCashFlow = noi - annualDebtService;
-    
-    // Calculate initial capital exactly like frontend
-    const downPayment = (purchasePrice + totalRehabCosts) * (1 - loanPercentage);
-    let closingCosts = 0;
-    if (dealData.closingCosts) {
-      Object.values(dealData.closingCosts).forEach((cost: any) => {
-        closingCosts += Number(cost) || 0;
-      });
-    }
-    const initialCapital = downPayment + closingCosts;
-    
-    // Calculate COC return exactly like frontend
-    const cashOnCashReturn = initialCapital > 0 ? annualCashFlow / initialCapital : 0;
-    
-    // Calculate ARV exactly like frontend
-    const marketCapRate = dealData.assumptions?.marketCapRate || 0.055;
-    const arv = noi > 0 && marketCapRate > 0 ? noi / marketCapRate : purchasePrice;
+    // Calculate KPIs from Deal Analyzer data
+    const totalRehabCosts = this.calculateTotalRehabCosts(dealData);
+    const grossRentalIncome = this.calculateGrossRentalIncome(dealData);
+    const totalOperatingExpenses = this.calculateTotalOperatingExpenses(dealData, grossRentalIncome);
+    const noi = grossRentalIncome - totalOperatingExpenses;
+    const arv = dealData.assumptions?.marketCapRate ? noi / dealData.assumptions.marketCapRate : 0;
+    const initialCapital = this.calculateInitialCapital(dealData, totalRehabCosts);
+    const annualCashFlow = this.calculateAnnualCashFlow(dealData, noi);
 
-    // Use EXACT calculated values - no rounding differences
+    // Create property with calculated data structure
     const propertyData = {
       status: "Under Contract" as const,
-      apartments: unitCount,
-      address: addressParts.address,
-      city: addressParts.city,
-      state: addressParts.state, 
-      zipCode: addressParts.zipCode,
+      apartments: dealData.assumptions?.unitCount || dealData.assumptions?.units || 1,
+      address: dealData.propertyAddress || additionalPropertyData.address,
+      city: additionalPropertyData.city || "",
+      state: additionalPropertyData.state || "",
+      zipCode: additionalPropertyData.zipCode || "",
       entity: additionalPropertyData.entity || "5Central Capital",
       acquisitionDate: additionalPropertyData.acquisitionDate,
-      acquisitionPrice: purchasePrice.toString(),
+      acquisitionPrice: dealData.assumptions?.purchasePrice?.toString() || "0",
       rehabCosts: totalRehabCosts.toString(),
-      arvAtTimePurchased: Math.round(arv).toString(),
-      initialCapitalRequired: Math.round(initialCapital).toString(),
-      cashFlow: Math.round(annualCashFlow).toString(),
+      arvAtTimePurchased: arv.toString(),
+      initialCapitalRequired: initialCapital.toString(),
+      cashFlow: annualCashFlow.toString(),
       totalProfits: "0",
-      cashOnCashReturn: (cashOnCashReturn * 100).toFixed(2),
-      annualizedReturn: (cashOnCashReturn * 100).toFixed(2),
-      dealAnalyzerData: JSON.stringify(dealData)
+      cashOnCashReturn: initialCapital > 0 ? ((annualCashFlow / initialCapital) * 100).toFixed(2) : "0",
+      annualizedReturn: "0",
+      dealAnalyzerData: JSON.stringify(dealData) // Keep for backward compatibility
     };
 
-    return await this.createProperty(propertyData);
-  }
-
-  /**
-   * Parse address string into components
-   */
-  private parseAddress(fullAddress: string): { address: string; city: string; state: string; zipCode: string } {
-    // Default values
-    let address = fullAddress;
-    let city = "";
-    let state = "";
-    let zipCode = "";
-
+    const property = await this.createProperty(propertyData);
+    
+    // Import to normalized tables
     try {
-      // Handle "3408 E DR MLK BLVD Tampa FL 33610" format
-      const trimmed = fullAddress.trim();
-      
-      // Extract zip code (5 digits at end)
-      const zipMatch = trimmed.match(/\s(\d{5})$/);
-      if (zipMatch) {
-        zipCode = zipMatch[1];
-        address = trimmed.replace(/\s\d{5}$/, "");
-      }
-      
-      // Extract state (2 letters before zip)
-      const stateMatch = address.match(/\s([A-Z]{2})\s*$/i);
-      if (stateMatch) {
-        state = stateMatch[1].toUpperCase();
-        address = address.replace(/\s[A-Z]{2}\s*$/i, "");
-      }
-      
-      // Extract city (last word before state)
-      const parts = address.trim().split(/\s+/);
-      if (parts.length > 1) {
-        city = parts[parts.length - 1];
-        address = parts.slice(0, -1).join(" ");
-      }
-      
+      await this.importNormalizedData(property.id, dealData);
     } catch (error) {
-      console.error("Error parsing address:", error);
-      // Keep original address if parsing fails
-      address = fullAddress;
-    }
-
-    return { address, city, state, zipCode };
-  }
-
-  private calculateDealAnalyzerRehabCosts(dealData: any): number {
-    if (!dealData.rehabBudgetSections) return 0;
-    
-    let subtotal = 0;
-    Object.values(dealData.rehabBudgetSections).forEach((section: any) => {
-      if (Array.isArray(section)) {
-        section.forEach((item: any) => {
-          subtotal += (item.perUnitCost || 0) * (item.quantity || 1);
-        });
-      }
-    });
-    
-    // Add 10% contingency like Deal Analyzer
-    return subtotal * 1.10;
-  }
-
-  private calculateDealAnalyzerGrossIncome(dealData: any): number {
-    if (!dealData.rentRoll || !Array.isArray(dealData.rentRoll)) return 0;
-    
-    return dealData.rentRoll.reduce((sum: number, unit: any) => {
-      const unitType = dealData.unitTypes?.find((ut: any) => ut.id === unit.unitTypeId);
-      const monthlyRent = unitType ? unitType.marketRent : (unit.proFormaRent || 0);
-      return sum + (monthlyRent * 12);
-    }, 0);
-  }
-
-  private calculateDealAnalyzerNOI(dealData: any, grossIncome: number): number {
-    const vacancyRate = dealData.assumptions?.vacancyRate || 0.05;
-    const netRevenue = grossIncome * (1 - vacancyRate);
-    
-    // Management fee (8% like Deal Analyzer)
-    const managementFee = netRevenue * 0.08;
-    
-    // Operating expenses
-    let totalExpenses = managementFee;
-    if (dealData.expenses) {
-      totalExpenses += Object.values(dealData.expenses).reduce((sum: number, expense: any) => 
-        sum + (Number(expense) || 0), 0);
+      console.error(`Error importing normalized data for property ${property.id}:`, error);
+      // Continue with property creation even if normalized import fails
     }
     
-    return netRevenue - totalExpenses;
-  }
-
-  private calculateDealAnalyzerInitialCapital(dealData: any, totalRehabCosts: number): number {
-    const purchasePrice = dealData.assumptions?.purchasePrice || 0;
-    const loanPercentage = dealData.assumptions?.loanPercentage || 0.8;
-    const downPayment = purchasePrice * (1 - loanPercentage);
-    
-    // Closing costs
-    let closingCosts = 0;
-    if (dealData.closingCosts) {
-      closingCosts = Object.values(dealData.closingCosts).reduce((sum: number, cost: any) => 
-        sum + (Number(cost) || 0), 0);
-    }
-    
-    // Holding costs
-    let holdingCosts = 0;
-    if (dealData.holdingCosts) {
-      holdingCosts = Object.values(dealData.holdingCosts).reduce((sum: number, cost: any) => 
-        sum + (Number(cost) || 0), 0);
-    }
-    
-    return downPayment + totalRehabCosts + closingCosts + holdingCosts;
-  }
-
-  private calculateDealAnalyzerCashFlow(dealData: any, noi: number, totalRehabCosts: number): number {
-    const purchasePrice = dealData.assumptions?.purchasePrice || 0;
-    const loanPercentage = dealData.assumptions?.loanPercentage || 0.8;
-    const interestRate = dealData.assumptions?.interestRate || 0.0875;
-    const loanTermYears = dealData.assumptions?.loanTermYears || 2;
-    
-    // Calculate loan amount (purchase + rehab) * loan percentage
-    const loanAmount = (purchasePrice + totalRehabCosts) * loanPercentage;
-    
-    // Calculate monthly payment using Deal Analyzer's formula
-    let monthlyPayment = 0;
-    if (loanAmount > 0 && interestRate > 0) {
-      const monthlyRate = interestRate / 12;
-      const numPayments = loanTermYears * 12;
-      monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
-        (Math.pow(1 + monthlyRate, numPayments) - 1);
-    }
-    
-    const annualDebtService = monthlyPayment * 12;
-    return noi - annualDebtService;
+    return property;
   }
 
   private calculateTotalRehabCosts(dealData: any): number {
@@ -1204,19 +1018,12 @@ export class DatabaseStorage implements IStorage {
     const loanTermYears = dealData.assumptions?.loanTermYears || 30;
     
     // Calculate monthly payment using loan formula
-    const monthlyPayment = this.calculateMonthlyPayment(loanAmount, interestRate, loanTermYears);
+    const monthlyRate = interestRate / 12;
+    const numPayments = loanTermYears * 12;
+    const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
     const annualDebtService = monthlyPayment * 12;
     
     return noi - annualDebtService;
-  }
-
-  private calculateMonthlyPayment(loanAmount: number, interestRate: number, loanTermYears: number): number {
-    if (loanAmount <= 0 || interestRate <= 0) return 0;
-    
-    const monthlyRate = interestRate / 12;
-    const numPayments = loanTermYears * 12;
-    
-    return loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
   }
 
   /**
@@ -1391,7 +1198,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * Import normalized data for existing property with fixed array handling
+   * Import normalized data for existing property
    */
   private async importNormalizedData(propertyId: number, dealData: any): Promise<void> {
     try {
@@ -1429,13 +1236,10 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
-      // Clear existing data before importing fresh data
-      await this.clearNormalizedPropertyData(propertyId);
-
-      // Import expenses data - Deal Analyzer stores expenses as an object with key-value pairs
-      if (dealData.expenses && typeof dealData.expenses === 'object' && !Array.isArray(dealData.expenses)) {
+      // Import expenses data
+      if (dealData.expenses) {
         for (const [expenseKey, expenseValue] of Object.entries(dealData.expenses)) {
-          if (typeof expenseValue === 'number' && expenseValue !== 0) {
+          if (typeof expenseValue === 'number' && expenseValue > 0) {
             await this.createPropertyExpenses({
               propertyId,
               expenseType: this.getExpenseCategory(expenseKey),
@@ -1494,35 +1298,6 @@ export class DatabaseStorage implements IStorage {
           }
         }
       }
-      // Import closing costs - Deal Analyzer stores as object with key-value pairs
-      if (dealData.closingCosts && typeof dealData.closingCosts === 'object' && !Array.isArray(dealData.closingCosts)) {
-        for (const [costKey, costValue] of Object.entries(dealData.closingCosts)) {
-          if (typeof costValue === 'number' && costValue !== 0) {
-            await this.createPropertyClosingCosts({
-              propertyId,
-              costType: this.formatExpenseName(costKey),
-              amount: costValue.toString(),
-              description: `${this.formatExpenseName(costKey)} from Deal Analyzer import`
-            });
-          }
-        }
-      }
-
-      // Import holding costs - Deal Analyzer stores as object with key-value pairs
-      if (dealData.holdingCosts && typeof dealData.holdingCosts === 'object' && !Array.isArray(dealData.holdingCosts)) {
-        for (const [costKey, costValue] of Object.entries(dealData.holdingCosts)) {
-          if (typeof costValue === 'number' && costValue !== 0) {
-            await this.createPropertyHoldingCosts({
-              propertyId,
-              costType: this.formatExpenseName(costKey),
-              amount: costValue.toString(),
-              description: `${this.formatExpenseName(costKey)} during holding period`
-            });
-          }
-        }
-      }
-
-      // Skip loan creation for now to avoid method errors - data is preserved in dealAnalyzerData field
     } catch (error) {
       console.error(`Error importing normalized data for property ${propertyId}:`, error);
       throw error;

@@ -2408,14 +2408,15 @@ export default function AssetManagement() {
                           <h3 className="text-lg font-semibold text-red-900 dark:text-red-300 mb-4">Annual Operating Expenses</h3>
                           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {[
-                              { key: 'propertyTax', label: 'Property Tax', value: dealAnalyzerData?.expenses?.propertyTax || 0 },
+                              { key: 'taxes', label: 'Property Taxes', value: dealAnalyzerData?.expenses?.taxes || 0 },
                               { key: 'insurance', label: 'Insurance', value: dealAnalyzerData?.expenses?.insurance || 0 },
                               { key: 'utilities', label: 'Utilities', value: dealAnalyzerData?.expenses?.utilities || 0 },
                               { key: 'maintenance', label: 'Maintenance', value: dealAnalyzerData?.expenses?.maintenance || 0 },
-                              { key: 'managementFee', label: 'Management Fee', value: dealAnalyzerData?.expenses?.managementFee || 0 },
-                              { key: 'waterSewerTrash', label: 'Water/Sewer/Trash', value: dealAnalyzerData?.expenses?.waterSewerTrash || 0 },
-                              { key: 'capitalReserves', label: 'Capital Reserves', value: dealAnalyzerData?.expenses?.capitalReserves || 0 },
-                              { key: 'other', label: 'Other Expenses', value: dealAnalyzerData?.expenses?.other || 0 }
+                              { key: 'management', label: 'Property Management', value: dealAnalyzerData?.expenses?.management || 0 },
+                              { key: 'vacancy', label: 'Vacancy Allowance', value: dealAnalyzerData?.expenses?.vacancy || 0 },
+                              { key: 'capex', label: 'Capital Expenditures', value: dealAnalyzerData?.expenses?.capex || 0 },
+                              { key: 'landscaping', label: 'Landscaping', value: dealAnalyzerData?.expenses?.landscaping || 0 },
+                              { key: 'legalAccounting', label: 'Legal & Accounting', value: dealAnalyzerData?.expenses?.legalAccounting || 0 }
                             ].map((item) => (
                               <div key={item.key} className="bg-white dark:bg-gray-700 rounded p-4">
                                 <p className="text-sm text-gray-600 dark:text-gray-400">{item.label}</p>

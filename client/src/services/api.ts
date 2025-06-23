@@ -210,25 +210,6 @@ class ApiService {
     }
   }
 
-  // Real-time calculation endpoints
-  async getEntityMetrics(entityName: string): Promise<ApiResponse<any>> {
-    return this.request(`/entities/${encodeURIComponent(entityName)}/metrics`);
-  }
-
-  async recalculatePropertyMetrics(propertyId: number): Promise<ApiResponse<any>> {
-    return this.request(`/properties/${propertyId}/recalculate`, {
-      method: 'POST',
-    });
-  }
-
-  async getPropertyMetrics(propertyId: number): Promise<ApiResponse<any>> {
-    return this.request(`/properties/${propertyId}/metrics`);
-  }
-
-  async getPortfolioMetrics(): Promise<ApiResponse<any>> {
-    return this.request('/portfolio/metrics');
-  }
-
   // Utility methods
   isAuthenticated(): boolean {
     return !!this.token;
