@@ -272,52 +272,23 @@ export class CalculationService {
       debtYield: metrics.debtYield.toString()
     });
   }
-        const dealData = JSON.parse(property.dealAnalyzerData);
-        marketCapRate = dealData.assumptions?.marketCapRate || 0.055;
-      } catch (e) {
-        marketCapRate = 0.055;
-      }
-    }
-    const arv = netOperatingIncome > 0 ? netOperatingIncome / marketCapRate : purchasePrice;
-    
-    // Calculate equity multiple
-    const initialInvestment = Number(property.initialCapitalRequired) || allInCost * 0.2;
-    const equityMultiple = initialInvestment > 0 ? (arv - allInCost) / initialInvestment : 0;
-    
-    const cashOnCashReturn = initialInvestment > 0 ? cashFlow / initialInvestment : 0;
-
-    return {
-      grossRentalIncome,
-      totalExpenses,
-      netOperatingIncome,
-      cashFlow,
-      capRate,
-      cashOnCashReturn,
-      dscr,
-      arv,
-      equityMultiple,
-      totalRehab,
-      allInCost
-    };
-  }
 
   /**
    * Calculate loan payment based on parameters
    */
   private calculateLoanPayment(amount: number, annualRate: number, termYears: number, paymentType: string): number {
     if (paymentType === 'interest_only') {
-      return amount * (annualRate / 12);
+      return (amount * annualRate) / 12;
     }
-
+    
+    // Principal and interest calculation
     const monthlyRate = annualRate / 12;
-    const totalPayments = termYears * 12;
+    const numPayments = termYears * 12;
     
-    if (monthlyRate === 0) return amount / totalPayments;
+    if (monthlyRate === 0) return amount / numPayments;
     
-    const numerator = monthlyRate * Math.pow(1 + monthlyRate, totalPayments);
-    const denominator = Math.pow(1 + monthlyRate, totalPayments) - 1;
-    
-    return amount * (numerator / denominator);
+    return amount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+           (Math.pow(1 + monthlyRate, numPayments) - 1);
   }
 
   /**
@@ -325,42 +296,11 @@ export class CalculationService {
    */
   async updatePropertyMetrics(propertyId: number): Promise<void> {
     const metrics = await this.calculatePropertyMetrics(propertyId);
-    
-    // Store calculated metrics in dealAnalyzerData JSON field
-    const property = await db.query.properties.findFirst({
-      where: eq(properties.id, propertyId)
-    });
-    
-    if (property) {
-      let dealData = {};
-      if (property.dealAnalyzerData) {
-        try {
-          dealData = JSON.parse(property.dealAnalyzerData);
-        } catch (e) {
-          dealData = {};
-        }
-      }
-      
-      // Update calculated metrics
-      (dealData as any).calculatedMetrics = {
-        grossRentalIncome: metrics.grossRentalIncome,
-        netOperatingIncome: metrics.netOperatingIncome,
-        cashFlow: metrics.cashFlow,
-        capRate: metrics.capRate,
-        arv: metrics.arv,
-        updatedAt: new Date()
-      };
-      
-      await db.update(properties)
-        .set({
-          dealAnalyzerData: JSON.stringify(dealData)
-        })
-        .where(eq(properties.id, propertyId));
-    }
+    await this.storePropertyMetrics(propertyId, metrics);
   }
 
   /**
-   * Recalculate portfolio-level metrics
+   * Calculate portfolio-level metrics for a user
    */
   async calculatePortfolioMetrics(userId: number): Promise<{
     totalAUM: number;
@@ -369,17 +309,14 @@ export class CalculationService {
     totalCashFlow: number;
     totalEquity: number;
   }> {
-    // Get user's entity names first
-    const userEntities = await db.select({ entityName: entityMemberships.entityName })
-      .from(entityMemberships)
-      .where(eq(entityMemberships.userId, userId));
-    
-    const entityNames = userEntities.map(e => e.entityName);
-    
     // Get user's properties through entity memberships
-    const userProperties = await db.query.properties.findMany({
-      where: (properties, { inArray }) => inArray(properties.entity, entityNames)
-    });
+    const userProperties = await db.select()
+      .from(properties)
+      .where(sql`EXISTS (
+        SELECT 1 FROM entity_memberships em 
+        WHERE em.user_id = ${userId} 
+        AND em.entity_name = ${properties.entity}
+      )`);
 
     let totalAUM = 0;
     let totalUnits = 0;
@@ -390,21 +327,11 @@ export class CalculationService {
     for (const property of userProperties) {
       const metrics = await this.calculatePropertyMetrics(property.id);
       
-      totalAUM += metrics.arv;
-      totalUnits += Number(property.apartments);
-      totalCashFlow += metrics.cashFlow;
-      // Calculate equity from dealAnalyzerData if available
-      let purchasePrice = 0;
-      if (property.dealAnalyzerData) {
-        try {
-          const dealData = JSON.parse(property.dealAnalyzerData);
-          purchasePrice = dealData.assumptions?.purchasePrice || 0;
-        } catch (e) {
-          purchasePrice = 0;
-        }
-      }
-      totalEquity += metrics.arv - purchasePrice;
-      weightedCapRate += metrics.capRate * metrics.arv;
+      totalAUM += metrics.currentArv;
+      totalUnits += property.apartments;
+      totalCashFlow += metrics.beforeTaxCashFlow;
+      totalEquity += metrics.currentEquityValue;
+      weightedCapRate += metrics.capRate * metrics.currentArv;
     }
 
     const averageCapRate = totalAUM > 0 ? weightedCapRate / totalAUM : 0;
