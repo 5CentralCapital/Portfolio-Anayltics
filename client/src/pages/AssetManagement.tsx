@@ -2654,7 +2654,7 @@ export default function AssetManagement() {
                                   const loans = currentData?.loans || [];
                                   const activeLoan = loans.find((loan: any) => loan.isActive) || loans[0];
                                   const monthlyDebtService = activeLoan ? calculateLoanPayment(
-                                    activeLoan.loanAmount,
+                                    activeLoan.loanAmount || activeLoan.amount,
                                     activeLoan.interestRate,
                                     activeLoan.termYears,
                                     activeLoan.paymentType
@@ -2716,7 +2716,7 @@ export default function AssetManagement() {
                                     const loans = currentData?.loans || [];
                                     const activeLoan = loans.find((loan: any) => loan.isActive) || loans[0];
                                     const monthlyDebtService = activeLoan ? calculateLoanPayment(
-                                      activeLoan.loanAmount,
+                                      activeLoan.loanAmount || activeLoan.amount,
                                       activeLoan.interestRate,
                                       activeLoan.termYears,
                                       activeLoan.paymentType
