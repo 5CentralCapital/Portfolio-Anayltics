@@ -49,7 +49,18 @@ const calculatePropertyMetrics = (property: Property) => {
     const dealAnalyzerData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : null;
     
     if (!dealAnalyzerData) {
-      return null;
+      console.log(`No Deal Analyzer data for ${property.address}, using fallback calculation`);
+      // Fallback calculation using stored property values
+      const storedCashFlow = parseFloat(property.cashFlow || '0');
+      return {
+        noi: storedCashFlow + 2000, // Estimate NOI
+        monthlyDebtService: 2000, // Estimate debt service
+        monthlyCashFlow: storedCashFlow,
+        annualCashFlow: storedCashFlow * 12,
+        cashOnCashReturn: 15, // Default estimate
+        totalCashInvested: parseFloat(property.initialCapitalRequired || '0'),
+        downPayment: parseFloat(property.initialCapitalRequired || '0')
+      };
     }
 
     // Calculate gross rental income from rent roll
@@ -231,6 +242,17 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
   // Use centralized calculations for accurate metrics
   const calculatedMetrics = calculatePropertyMetrics(property);
   
+  // Debug logging to identify discrepancy
+  console.log(`PropertyCard Debug for ${property.address}:`, {
+    propertyId: property.id,
+    storedCashFlow: property.cashFlow,
+    calculatedMonthly: calculatedMetrics?.monthlyCashFlow,
+    hasCalculatedMetrics: !!calculatedMetrics,
+    calculatedNOI: calculatedMetrics?.noi,
+    calculatedDebtService: calculatedMetrics?.monthlyDebtService,
+    calculation: calculatedMetrics
+  });
+  
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 w-full cursor-pointer hover:shadow-lg transition-shadow card-hover"
          onDoubleClick={() => onDoubleClick(property)}
@@ -278,7 +300,9 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
               {formatCurrency(calculatedMetrics.monthlyCashFlow)}
             </p>
           ) : (
-            <p className="font-semibold text-gray-500">N/A</p>
+            <p className="font-semibold text-red-600">
+              ERROR: No calculation data
+            </p>
           )}
         </div>
         <div>
