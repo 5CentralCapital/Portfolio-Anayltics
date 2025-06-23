@@ -1052,7 +1052,7 @@ export default function DealAnalyzer() {
                 <span className="text-lg font-semibold">Deal Analyzer KPIs</span>
               </div>
             </div>
-            <div className="grid grid-cols-6 gap-6">
+            <div className="grid grid-cols-7 gap-6">
               <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
                 <div className="text-sm opacity-90 mb-2">Capital Required</div>
                 <div className="text-2xl font-bold">{formatCurrency(metrics.capitalRequired)}</div>
@@ -1072,6 +1072,10 @@ export default function DealAnalyzer() {
               <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
                 <div className="text-sm opacity-90 mb-2">Purchase Cost/Unit</div>
                 <div className="text-2xl font-bold">{formatCurrency(assumptions.purchasePrice / assumptions.unitCount)}</div>
+              </div>
+              <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+                <div className="text-sm opacity-90 mb-2">Profit</div>
+                <div className="text-2xl font-bold">{formatCurrency(metrics.arv - metrics.allInCost)}</div>
               </div>
               <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
                 <div className="text-sm opacity-90 mb-2">Equity Multiple</div>
