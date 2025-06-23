@@ -183,6 +183,7 @@ Changelog:
 - June 23, 2025. Enhanced Deal Analyzer import functionality to include new rent roll features (tenant names, lease start/end dates) and rehab budget progress tracking (spent amounts, completion status) - updated database schema to support leaseStart and leaseEnd fields in property_rent_roll table - enhanced importNormalizedDataComponents function to import tenant information and lease dates from Deal Analyzer rent roll - improved rehab budget import to calculate completion status based on spent amounts versus total costs for accurate progress tracking
 - June 23, 2025. Removed confirmation modal when moving properties through status ladder - status changes via dropdown now happen immediately without confirmation step for streamlined property management workflow
 - June 23, 2025. Replaced rehab tracking modal in Asset Management with comprehensive Deal Analyzer rehab budget system - unified experience with detailed budget tables, category breakdown, progress tracking, timeline workflow, and automatic calculations matching Deal Analyzer functionality - maintains full import compatibility and data integrity
+- June 23, 2025. Unified property data display across Asset Management and Entity Dashboard by implementing centralized calculatePropertyMetrics function - Entity Dashboard Properties tab now displays identical financial metrics and calculations as Asset Management ensuring complete data consistency and accurate property performance tracking throughout the entire application
 
 ## User Preferences
 
