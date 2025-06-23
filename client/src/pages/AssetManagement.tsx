@@ -3697,7 +3697,7 @@ export default function AssetManagement() {
                       
                       const allInCost = acquisitionPrice + rehabCosts + closingCosts + holdingCosts;
                       const totalProfit = (salePrice - allInCost) + totalCashFlow;
-                      const initialCapital = parseFloat(salesDataProperty.initialCapitalRequired || '0') || calculations.totalInvestedCapital;
+                      const initialCapital = parseFloat(salesDataProperty.initialCapitalRequired || '0') || (calculations?.totalCashInvested || 0);
                       const equityMultiple = initialCapital > 0 ? (salePrice - allInCost + totalCashFlow) / initialCapital : 0;
                       const cashOnCashReturn = initialCapital > 0 ? (totalProfit / initialCapital) * 100 : 0;
                       const saleCapRate = noiAtSale > 0 ? (noiAtSale / salePrice) * 100 : 0;
@@ -3789,7 +3789,7 @@ export default function AssetManagement() {
                       // Calculate metrics
                       const holdTimeYears = (saleDateObj.getTime() - acquisitionDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
                       const holdTimeMonths = Math.round(holdTimeYears * 12);
-                      const totalCashFlow = calculations.monthlyCashFlow * holdTimeMonths;
+                      const totalCashFlow = (calculations?.monthlyCashFlow || 0) * holdTimeMonths;
                       
                       const acquisitionPrice = parseFloat(salesDataProperty.acquisitionPrice || '0');
                       const rehabCosts = parseFloat(salesDataProperty.rehabCosts || '0');
@@ -3801,7 +3801,7 @@ export default function AssetManagement() {
                       
                       const allInCost = acquisitionPrice + rehabCosts + closingCosts + holdingCosts;
                       const totalProfit = (salePrice - allInCost) + totalCashFlow;
-                      const initialCapital = parseFloat(salesDataProperty.initialCapitalRequired || '0') || calculations.totalInvestedCapital;
+                      const initialCapital = parseFloat(salesDataProperty.initialCapitalRequired || '0') || (calculations?.totalCashInvested || 0);
                       const equityMultiple = initialCapital > 0 ? (salePrice - allInCost + totalCashFlow) / initialCapital : 0;
                       const cashOnCashReturn = initialCapital > 0 ? (totalProfit / initialCapital) * 100 : 0;
                       const annualizedReturn = holdTimeYears > 0 ? (Math.pow(equityMultiple, 1/holdTimeYears) - 1) * 100 : 0;
