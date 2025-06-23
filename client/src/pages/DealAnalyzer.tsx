@@ -352,17 +352,17 @@ export default function DealAnalyzer() {
 
   // Calculation functions
   const calculateMetrics = () => {
-    const exteriorTotal = rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
-    const generalInteriorTotal = rehabBudgetSections.generalInterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
-    const kitchensTotal = rehabBudgetSections.kitchens.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
-    const bathroomsTotal = rehabBudgetSections.bathrooms.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
-    const finishingsTotal = rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+    const exteriorTotal = (rehabBudgetSections?.exterior || []).reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+    const generalInteriorTotal = (rehabBudgetSections?.generalInterior || []).reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+    const kitchensTotal = (rehabBudgetSections?.kitchens || []).reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+    const bathroomsTotal = (rehabBudgetSections?.bathrooms || []).reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
+    const finishingsTotal = (rehabBudgetSections?.finishings || []).reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
     
     const rehabSubtotal = exteriorTotal + generalInteriorTotal + kitchensTotal + bathroomsTotal + finishingsTotal;
     const contingency = rehabSubtotal * 0.10; // 10% buffer
     const totalRehab = rehabSubtotal + contingency;
-    const totalClosingCosts = Object.values(closingCosts).reduce((sum, cost) => sum + cost, 0);
-    const totalHoldingCosts = Object.values(holdingCosts).reduce((sum, cost) => sum + cost, 0);
+    const totalClosingCosts = Object.values(closingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
+    const totalHoldingCosts = Object.values(holdingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
     
     // Updated loan calculations: loan percentage of (purchase price + total rehab cost)
     const initialLoan = (assumptions.purchasePrice + totalRehab) * assumptions.loanPercentage;
@@ -376,8 +376,8 @@ export default function DealAnalyzer() {
     const allInCost = assumptions.purchasePrice + totalRehab + totalClosingCosts + totalHoldingCosts;
     
     // Revenue calculations
-    const grossRent = rentRoll.reduce((sum, unit) => {
-      const unitType = unitTypes.find(ut => ut.id === unit.unitTypeId);
+    const grossRent = (rentRoll || []).reduce((sum, unit) => {
+      const unitType = (unitTypes || []).find(ut => ut.id === unit.unitTypeId);
       return sum + (unitType ? unitType.marketRent : unit.proFormaRent);
     }, 0) * 12;
     const vacancyLoss = grossRent * assumptions.vacancyRate;
