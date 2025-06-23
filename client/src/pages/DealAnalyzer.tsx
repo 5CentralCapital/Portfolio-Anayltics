@@ -225,7 +225,7 @@ export default function DealAnalyzer() {
   };
 
   // Function to get budget item completion status
-  const getBudgetItemStatus = (budgetCategory: string | null, budgetItem: string | null) => {
+  const getBudgetItemStatus = (budgetCategory: string | null, budgetItem: string | null | undefined) => {
     if (!budgetCategory || !budgetItem) return null;
     
     const section = rehabBudgetSections[budgetCategory as keyof typeof rehabBudgetSections];
@@ -2716,7 +2716,6 @@ export default function DealAnalyzer() {
                       step: 'New Step',
                       status: 'pending',
                       budgetCategory: null,
-                      budgetItem: null,
                       notes: ''
                     };
                     setWorkflowSteps([...workflowSteps, newStep]);
@@ -2768,7 +2767,7 @@ export default function DealAnalyzer() {
 
             <div className="space-y-3">
               {workflowSteps.map((step, index) => {
-                const budgetItemCompleted = getBudgetItemStatus(step.budgetCategory, step.budgetItem);
+                const budgetItemCompleted = getBudgetItemStatus(step.budgetCategory, step.budgetItem || null);
                 const isLinkedToBudget = step.budgetCategory && step.budgetItem;
                 
                 return (
@@ -2881,10 +2880,10 @@ export default function DealAnalyzer() {
                           }}
                           placeholder="Notes"
                           className="w-full px-2 py-1 border rounded text-xs"
-                      />
-                    ) : (
-                      <span className="text-xs text-gray-600 text-center block">{step.progress}</span>
-                    )}
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-600 text-center block">{step.notes}</span>
+                      )}
                   </div>
 
                   {/* Notes */}
@@ -2934,7 +2933,8 @@ export default function DealAnalyzer() {
                     </button>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Progress Summary */}
