@@ -472,95 +472,6 @@ export default function AssetManagement() {
     };
   };
 
-  // Centralized property calculations for consistent metrics across all tabs
-  const getPropertyCalculations = () => {
-    if (!showPropertyDetailModal || !editingModalProperty) return null;
-    return calculatePropertyMetrics(editingModalProperty);
-  };
-    
-    // Revenue calculations
-    const grossRentMonthly = rentRoll.reduce((sum: number, unit: any) => {
-      const unitType = unitTypes.find((ut: any) => ut.id === unit.unitTypeId);
-      return sum + (unitType ? unitType.marketRent : unit.proFormaRent);
-    }, 0);
-    
-    const vacancyRate = assumptions.vacancyRate || 0.05;
-    const vacancy = grossRentMonthly * vacancyRate;
-    const netRevenue = grossRentMonthly - vacancy;
-    
-    // Expense calculations (monthly)
-    const propertyTax = (expenses.taxes || 15000) / 12;
-    const insurance = (expenses.insurance || 14500) / 12;
-    const maintenance = (expenses.maintenance || 8000) / 12;
-    const waterSewerTrash = (expenses.waterSewerTrash || 6000) / 12;
-    const capitalReserves = (expenses.capex || 2000) / 12;
-    const utilities = (expenses.utilities || 6000) / 12;
-    const other = (expenses.other || 0) / 12;
-    const managementFee = netRevenue * 0.08;
-    
-    const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
-    const noi = netRevenue - totalExpenses;
-    
-    // Debt service calculation
-    const activeLoan = getActiveLoan();
-    const monthlyDebtService = activeLoan ? calculateLoanPayment(
-      activeLoan.loanAmount || activeLoan.amount,
-      activeLoan.interestRate,
-      activeLoan.termYears,
-      activeLoan.paymentType
-    ) : 0;
-    
-    // Cash flow calculation
-    const monthlyCashFlow = noi - monthlyDebtService;
-    const annualCashFlow = monthlyCashFlow * 12;
-    
-    // Investment calculations for COC
-    const acquisitionPrice = parseFloat(showPropertyDetailModal.acquisitionPrice) || 0;
-    const totalRehab = propertyData.rehabBudget ? 
-      Object.values(propertyData.rehabBudget).reduce((sum: number, section: any) => {
-        return sum + Object.values(section).reduce((sectionSum: number, item: any) => {
-          return sectionSum + (typeof item === 'object' && item.cost ? item.cost : 0);
-        }, 0);
-      }, 0) : 0;
-    
-    const closingCosts = propertyData.closingCosts ?
-      Object.values(propertyData.closingCosts).reduce((sum: number, cost: any) => sum + (cost || 0), 0) : 0;
-    
-    const holdingCosts = propertyData.holdingCosts ?
-      Object.values(propertyData.holdingCosts).reduce((sum: number, cost: any) => sum + (cost || 0), 0) : 0;
-    
-    const loanPercentage = assumptions.loanPercentage || 0.8;
-    const downPayment = (acquisitionPrice + totalRehab) * (1 - loanPercentage);
-    const totalCashInvested = downPayment + closingCosts + holdingCosts;
-    
-    // Cash-on-Cash Return calculation
-    const cashOnCashReturn = totalCashInvested > 0 ? (annualCashFlow / totalCashInvested) * 100 : 0;
-    
-    return {
-      grossRentMonthly,
-      grossRentAnnual: grossRentMonthly * 12,
-      vacancy,
-      vacancyAnnual: vacancy * 12,
-      netRevenue,
-      netRevenueAnnual: netRevenue * 12,
-      totalExpenses,
-      totalExpensesAnnual: totalExpenses * 12,
-      noi,
-      noiAnnual: noi * 12,
-      monthlyDebtService,
-      annualDebtService: monthlyDebtService * 12,
-      monthlyCashFlow,
-      annualCashFlow,
-      totalCashInvested,
-      cashOnCashReturn,
-      acquisitionPrice,
-      totalRehab,
-      closingCosts,
-      holdingCosts,
-      downPayment
-    };
-  };
-
   // Initialize default rehab line items for a property
   const initializeRehabItems = (property: Property): RehabLineItem[] => {
     const totalBudget = parseFloat(property.rehabCosts) || 100000;
@@ -586,6 +497,7 @@ export default function AssetManagement() {
     ];
   };
 
+  // Data fetching hooks
   const { data: propertiesResponse, isLoading, error } = useQuery({
     queryKey: ['/api/properties'],
     queryFn: () => apiService.getProperties()
@@ -713,8 +625,11 @@ export default function AssetManagement() {
     setIsEditing(false);
   };
 
-  // Data fetching hooks
-  const { data: properties = [], isLoading, error } = useQuery<Property[]>({ queryKey: ['/api/properties'] });
+  // Add the missing getPropertyCalculations function
+  const getPropertyCalculations = () => {
+    if (!showPropertyDetailModal || !editingModalProperty) return null;
+    return calculatePropertyMetrics(editingModalProperty);
+  };
 
   if (isLoading) {
     return (
