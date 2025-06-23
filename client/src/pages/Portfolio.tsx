@@ -8,11 +8,11 @@ import { Property } from '@shared/schema';
 const Portfolio = () => {
   const [showKPIModal, setShowKPIModal] = useState<Property | null>(null);
 
-  // Fetch properties from Asset Management system
+  // Fetch properties from public endpoint
   const { data: propertiesResponse, isLoading, error } = useQuery({
-    queryKey: ['/api/properties'],
+    queryKey: ['/api/property-performance'],
     queryFn: async () => {
-      const response = await fetch('/api/properties');
+      const response = await fetch('/api/property-performance');
       if (!response.ok) throw new Error('Failed to fetch properties');
       return response.json();
     }
