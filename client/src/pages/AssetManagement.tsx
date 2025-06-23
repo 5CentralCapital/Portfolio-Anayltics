@@ -3672,7 +3672,7 @@ export default function AssetManagement() {
                       const holdTimeMonths = Math.round(holdTimeYears * 12);
                       
                       // Calculate total cash flow during hold period
-                      const totalCashFlow = calculations.monthlyCashFlow * holdTimeMonths;
+                      const totalCashFlow = calculations ? calculations.monthlyCashFlow * holdTimeMonths : 0;
                       
                       // Calculate all-in cost
                       const acquisitionPrice = parseFloat(salesDataProperty.acquisitionPrice || '0');
