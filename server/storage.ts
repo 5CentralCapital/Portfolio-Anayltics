@@ -1324,8 +1324,23 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
-      // Import expenses data
-      if (dealData.expenses) {
+      // Import expenses data - Deal Analyzer stores expenses as an array of objects
+      if (dealData.expenses && Array.isArray(dealData.expenses)) {
+        for (const expense of dealData.expenses) {
+          if (expense && expense.category && (expense.amount > 0 || expense.isPercentage)) {
+            await this.createPropertyExpenses({
+              propertyId,
+              expenseType: this.getExpenseCategory(expense.category),
+              expenseName: expense.category,
+              annualAmount: expense.amount?.toString() || "0",
+              isPercentage: expense.isPercentage || false
+            });
+          }
+        }
+      }
+      
+      // Legacy support for old expense format (object with key-value pairs)
+      if (dealData.expenses && !Array.isArray(dealData.expenses) && typeof dealData.expenses === 'object') {
         for (const [expenseKey, expenseValue] of Object.entries(dealData.expenses)) {
           if (typeof expenseValue === 'number' && expenseValue > 0) {
             await this.createPropertyExpenses({
