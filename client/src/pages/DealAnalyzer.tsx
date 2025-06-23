@@ -772,6 +772,77 @@ export default function DealAnalyzer() {
     setSavedDeals(updatedDeals);
   };
 
+  // Import saved deal directly to Properties database
+  const importSavedDealToProperties = async (savedDeal: any) => {
+    setImportingToProperties(true);
+    
+    try {
+      // Load the saved deal data temporarily
+      const currentState = {
+        propertyName,
+        propertyAddress,
+        assumptions,
+        rehabBudgetSections,
+        closingCosts,
+        holdingCosts,
+        expenses,
+        rentRoll,
+        unitTypes,
+        exitAnalysis,
+        workflowSteps
+      };
+
+      // Temporarily load saved deal data
+      setPropertyName(savedDeal.propertyName || 'Untitled Property');
+      setPropertyAddress(savedDeal.propertyAddress || 'Unknown Address');
+      setAssumptions(savedDeal.assumptions || {});
+      setRehabBudgetSections(savedDeal.rehabBudgetSections || {});
+      setClosingCosts(savedDeal.closingCosts || {});
+      setHoldingCosts(savedDeal.holdingCosts || {});
+      setExpenses(savedDeal.expenses || {});
+      setRentRoll(savedDeal.rentRoll || []);
+      setUnitTypes(savedDeal.unitTypes || []);
+      setExitAnalysis(savedDeal.exitAnalysis || {});
+      setWorkflowSteps(savedDeal.workflowSteps || []);
+
+      // Wait for state updates
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Set up default import form data
+      setImportFormData({
+        entity: '5Central Capital',
+        acquisitionDate: new Date().toISOString().split('T')[0],
+        broker: '',
+        legalNotes: `Imported from saved deal: ${savedDeal.name || 'Untitled'}`,
+        closingTimeline: ''
+      });
+
+      // Show import modal for additional details
+      setShowImportModal(true);
+
+      // Restore original state after a delay
+      setTimeout(() => {
+        setPropertyName(currentState.propertyName);
+        setPropertyAddress(currentState.propertyAddress);
+        setAssumptions(currentState.assumptions);
+        setRehabBudgetSections(currentState.rehabBudgetSections);
+        setClosingCosts(currentState.closingCosts);
+        setHoldingCosts(currentState.holdingCosts);
+        setExpenses(currentState.expenses);
+        setRentRoll(currentState.rentRoll);
+        setUnitTypes(currentState.unitTypes);
+        setExitAnalysis(currentState.exitAnalysis);
+        setWorkflowSteps(currentState.workflowSteps);
+      }, 5000);
+
+    } catch (error) {
+      console.error('Error importing saved deal to properties:', error);
+      alert('Failed to prepare saved deal for import. Please try again.');
+    } finally {
+      setImportingToProperties(false);
+    }
+  };
+
   // Import deal to Properties database
   const importToProperties = async () => {
     setImportingToProperties(true);
@@ -1096,6 +1167,7 @@ export default function DealAnalyzer() {
               onClick={() => setShowImportModal(true)}
               disabled={importingToProperties}
               className="flex items-center px-2 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 transition-all-smooth hover-scale btn-bounce"
+              title="Import current Deal Analyzer data to Properties database"
             >
               <Database className="h-3 w-3 mr-1 icon-pulse" />
               {importingToProperties ? 'Importing...' : 'Import to Properties'}
@@ -1149,6 +1221,13 @@ export default function DealAnalyzer() {
                       className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-all-smooth hover-scale btn-bounce"
                     >
                       Load
+                    </button>
+                    <button
+                      onClick={() => importSavedDealToProperties(deal)}
+                      className="px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-all-smooth hover-scale btn-bounce"
+                      title="Import this deal directly to Properties"
+                    >
+                      Import
                     </button>
                     <button
                       onClick={() => deleteDeal(deal.id)}
