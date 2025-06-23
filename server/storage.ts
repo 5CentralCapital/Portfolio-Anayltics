@@ -1286,7 +1286,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * Import normalized data for existing property
+   * Import normalized data for existing property with fixed array handling
    */
   private async importNormalizedData(propertyId: number, dealData: any): Promise<void> {
     try {
@@ -1401,6 +1401,110 @@ export class DatabaseStorage implements IStorage {
           }
         }
       }
+      // CRITICAL FIX: Handle Deal Analyzer's array format for expenses, costs, and financing
+      
+      // Clear and re-import expenses from array format
+      if (dealData.expenses && Array.isArray(dealData.expenses)) {
+        const existingExpenses = await this.getPropertyExpenses(propertyId);
+        for (const expense of existingExpenses) {
+          await this.deletePropertyExpenses(expense.id);
+        }
+        
+        for (const expense of dealData.expenses) {
+          if (expense && expense.category && (expense.amount > 0 || expense.isPercentage)) {
+            await this.createPropertyExpenses({
+              propertyId,
+              expenseType: this.getExpenseCategory(expense.category),
+              expenseName: expense.category,
+              annualAmount: expense.amount?.toString() || "0",
+              isPercentage: expense.isPercentage || false
+            });
+          }
+        }
+      }
+
+      // Clear and re-import closing costs from array format
+      if (dealData.closingCosts && Array.isArray(dealData.closingCosts)) {
+        const existingClosingCosts = await this.getPropertyClosingCosts(propertyId);
+        for (const cost of existingClosingCosts) {
+          await this.deletePropertyClosingCosts(cost.id);
+        }
+        
+        for (const cost of dealData.closingCosts) {
+          if (cost && cost.item && cost.amount !== undefined) {
+            await this.createPropertyClosingCosts({
+              propertyId,
+              costType: cost.item,
+              amount: cost.amount.toString(),
+              description: `${cost.item} from Deal Analyzer import`
+            });
+          }
+        }
+      }
+
+      // Clear and re-import holding costs from array format
+      if (dealData.holdingCosts && Array.isArray(dealData.holdingCosts)) {
+        const existingHoldingCosts = await this.getPropertyHoldingCosts(propertyId);
+        for (const cost of existingHoldingCosts) {
+          await this.deletePropertyHoldingCosts(cost.id);
+        }
+        
+        for (const cost of dealData.holdingCosts) {
+          if (cost && cost.item && cost.amount !== undefined && cost.amount > 0) {
+            await this.createPropertyHoldingCosts({
+              propertyId,
+              costType: cost.item,
+              amount: cost.amount.toString(),
+              description: `${cost.item} during holding period`
+            });
+          }
+        }
+      }
+
+      // Import financing with CORRECT loan calculation: loan = (purchase + rehab) * loan percentage
+      if (dealData.assumptions) {
+        const purchasePrice = dealData.assumptions.purchasePrice || 0;
+        const loanPercentage = dealData.assumptions.loanPercentage || 0.8;
+        const interestRate = dealData.assumptions.interestRate || 0.07;
+        const loanTermYears = dealData.assumptions.loanTermYears || 30;
+        
+        // Calculate total rehab costs from rehab budget sections
+        let totalRehabCosts = 0;
+        if (dealData.rehabBudgetSections) {
+          for (const [sectionName, items] of Object.entries(dealData.rehabBudgetSections)) {
+            if (Array.isArray(items)) {
+              for (const item of items) {
+                totalRehabCosts += Number(item.totalCost) || 0;
+              }
+            }
+          }
+        }
+        
+        // CRITICAL: Loan amount = (purchase price + rehab cost) * loan percentage
+        const loanAmount = (purchasePrice + totalRehabCosts) * loanPercentage;
+        
+        if (loanAmount > 0) {
+          // Clear existing loans first
+          const existingLoans = await this.getPropertyLoans(propertyId);
+          for (const loan of existingLoans) {
+            await this.deletePropertyLoans(loan.id);
+          }
+          
+          // Create new loan with correct calculation
+          await this.createPropertyLoans({
+            propertyId,
+            loanType: "Acquisition",
+            loanAmount: loanAmount.toString(),
+            interestRate: interestRate.toString(),
+            loanTermYears,
+            paymentType: "principal_and_interest",
+            isActive: true,
+            lenderName: "Primary Lender",
+            description: `Acquisition loan: ${(loanPercentage * 100).toFixed(1)}% of $${(purchasePrice + totalRehabCosts).toLocaleString()}`
+          });
+        }
+      }
+
     } catch (error) {
       console.error(`Error importing normalized data for property ${propertyId}:`, error);
       throw error;
