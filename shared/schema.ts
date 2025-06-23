@@ -125,7 +125,9 @@ export const propertyRentRoll = pgTable("property_rent_roll", {
   currentRent: decimal("current_rent", { precision: 10, scale: 2 }).default("0"),
   proFormaRent: decimal("pro_forma_rent", { precision: 10, scale: 2 }).default("0"),
   isVacant: boolean("is_vacant").default(false),
-  leaseEndDate: date("lease_end_date"),
+  leaseStart: date("lease_start"),
+  leaseEnd: date("lease_end"),
+  leaseEndDate: date("lease_end_date"), // Keep for backward compatibility
   tenantName: text("tenant_name"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

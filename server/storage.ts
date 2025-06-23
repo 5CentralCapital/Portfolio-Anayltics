@@ -915,7 +915,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * Import Deal Analyzer data into normalized database structure
+   * Import Deal Analyzer data into normalized database structure with enhanced rent roll and rehab tracking
    */
   async importFromDealAnalyzer(dealData: any, additionalPropertyData: any, userId: number): Promise<Property> {
     // Calculate KPIs from Deal Analyzer data
@@ -1114,7 +1114,7 @@ export class DatabaseStorage implements IStorage {
         });
       }
 
-      // Import rent roll data
+      // Import rent roll data with enhanced tenant and lease information
       if (dealData.rentRoll && Array.isArray(dealData.rentRoll)) {
         for (const unit of dealData.rentRoll) {
           await this.createPropertyRentRoll({
@@ -1124,7 +1124,9 @@ export class DatabaseStorage implements IStorage {
             currentRent: unit.currentRent?.toString() || "0",
             proFormaRent: unit.proFormaRent?.toString() || "0",
             isVacant: unit.currentRent === 0 || unit.currentRent === null,
-            tenantName: unit.tenantName || null
+            tenantName: unit.tenantName || null,
+            leaseStart: unit.leaseFrom || null,
+            leaseEnd: unit.leaseTo || null
           });
         }
       }
