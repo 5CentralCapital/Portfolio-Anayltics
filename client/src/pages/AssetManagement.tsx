@@ -2405,14 +2405,17 @@ export default function AssetManagement() {
                             const noi = netRevenue - totalExpenses;
                             
                             // Get active loan for debt service calculation
-                            const loans = dealAnalyzerData?.loans || [];
+                            const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
+                            const loans = currentData?.loans || [];
                             const activeLoan = loans.find((loan: any) => loan.isActive) || loans[0];
+                            console.log('Income & Expenses - Active loan:', activeLoan);
                             const monthlyDebtService = activeLoan ? calculateLoanPayment(
-                              activeLoan.loanAmount,
+                              activeLoan.loanAmount || activeLoan.amount,
                               activeLoan.interestRate,
                               activeLoan.termYears,
                               activeLoan.paymentType
                             ) : 0;
+                            console.log('Income & Expenses - Monthly debt service:', monthlyDebtService);
                             
                             const netCashFlow = (noi / 12) - monthlyDebtService;
                             
@@ -2653,12 +2656,14 @@ export default function AssetManagement() {
                                   const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
                                   const loans = currentData?.loans || [];
                                   const activeLoan = loans.find((loan: any) => loan.isActive) || loans[0];
+                                  console.log('12-Month Proforma - Active loan:', activeLoan);
                                   const monthlyDebtService = activeLoan ? calculateLoanPayment(
                                     activeLoan.loanAmount || activeLoan.amount,
                                     activeLoan.interestRate,
                                     activeLoan.termYears,
                                     activeLoan.paymentType
                                   ) : 0;
+                                  console.log('12-Month Proforma - Monthly debt service:', monthlyDebtService);
                                   
                                   const cashFlow = noi - monthlyDebtService;
                                   
@@ -2819,8 +2824,11 @@ export default function AssetManagement() {
                                 const termYears = dealAnalyzerData.assumptions.loanTermYears || 30;
                                 const paymentType = termYears <= 3 ? 'interest-only' : 'amortizing';
                                 
+                                console.log('Creating default loan:', { loanAmount, interestRate, termYears, paymentType });
+                                
                                 // Calculate monthly payment using the same function
                                 const monthlyPayment = calculateLoanPayment(loanAmount, interestRate, termYears, paymentType);
+                                console.log('Default loan monthly payment:', monthlyPayment);
                                 
                                 const originalLoan = {
                                   id: 1,
