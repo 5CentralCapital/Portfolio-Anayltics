@@ -240,6 +240,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate and store initial metrics using the enhanced calculation service
       await calculationService.updatePropertyMetrics(newProperty.id);
       
+      // Trigger real-time calculation update for cross-module consistency
+      await realTimeCalculator.updatePropertyMetrics(newProperty.id);
+      
       // Broadcast KPI update
       await broadcastKPIUpdate(newProperty.id);
       
@@ -289,6 +292,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error calculating portfolio metrics:", error);
       res.status(500).json({ error: "Failed to calculate portfolio metrics" });
+    }
+  });
+
+  // Real-time entity metrics endpoint
+  app.get("/api/entities/:name/metrics", authenticateUser, async (req: any, res) => {
+    try {
+      const entityName = req.params.name;
+      const userId = req.user.id;
+      
+      // Use real-time calculator for entity metrics
+      const entityMetrics = await realTimeCalculator.calculateEntityMetrics(entityName, userId);
+      
+      res.json(entityMetrics);
+    } catch (error) {
+      console.error("Error calculating entity metrics:", error);
+      res.status(500).json({ error: "Failed to calculate entity metrics" });
+    }
+  });
+
+  // Real-time property recalculation endpoint
+  app.post("/api/properties/:id/recalculate", authenticateUser, async (req: any, res) => {
+    try {
+      const propertyId = parseInt(req.params.id);
+      
+      // Trigger real-time calculation update
+      const updatedMetrics = await realTimeCalculator.updatePropertyMetrics(propertyId);
+      
+      res.json({
+        message: 'Property metrics recalculated successfully',
+        metrics: updatedMetrics
+      });
+    } catch (error) {
+      console.error("Error recalculating property metrics:", error);
+      res.status(500).json({ error: "Failed to recalculate property metrics" });
     }
   });
 
