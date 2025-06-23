@@ -80,19 +80,36 @@ const calculatePropertyMetrics = (property: Property) => {
     
     if (activeLoan) {
       const principal = activeLoan.amount || 0;
-      const annualRate = activeLoan.interestRate || 0; // Already in decimal format (0.1075 = 10.75%)
+      let annualRate = activeLoan.interestRate || 0;
+      
+      // Convert percentage to decimal if needed (e.g., 10.75 -> 0.1075)
+      if (annualRate > 1) {
+        annualRate = annualRate / 100;
+      }
+      
       const monthlyRate = annualRate / 12;
       const termMonths = (activeLoan.termYears || 30) * 12;
+      
+      console.log('Debt service calculation:', {
+        principal,
+        originalRate: activeLoan.interestRate,
+        convertedRate: annualRate,
+        monthlyRate,
+        termMonths,
+        paymentType: activeLoan.paymentType
+      });
       
       if (activeLoan.paymentType === 'interest-only') {
         monthlyDebtService = principal * monthlyRate;
       } else {
         // Full amortization
-        if (monthlyRate > 0) {
+        if (monthlyRate > 0 && termMonths > 0) {
           monthlyDebtService = principal * (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / 
                              (Math.pow(1 + monthlyRate, termMonths) - 1);
         }
       }
+      
+      console.log('Calculated monthly debt service:', monthlyDebtService);
     }
 
     // Calculate cash flow
