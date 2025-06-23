@@ -792,7 +792,15 @@ export default function AssetManagement() {
 
                         {/* Budget Tracking */}
                         <div>
-                          <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Budget Tracking</h4>
+                          <div className="flex justify-between items-center mb-4">
+                            <h4 className="text-lg font-medium text-gray-900 dark:text-white">Budget Tracking</h4>
+                            <button
+                              onClick={() => setShowRehabModal(property)}
+                              className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                            >
+                              View Details
+                            </button>
+                          </div>
                           <div className="space-y-4">
                             <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                               <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Total Budget</span>
