@@ -839,13 +839,23 @@ export default function DealAnalyzer() {
         throw new Error('Authentication required. Please log in first.');
       }
 
-      const response = await fetch('/api/properties', {
+      const response = await fetch('/api/properties/import-normalized', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
         },
-        body: JSON.stringify(propertyData),
+        body: JSON.stringify({
+          dealData: propertyData.dealAnalyzerData,
+          entity: importFormData.entity || '5Central Capital',
+          acquisitionDate: importFormData.acquisitionDate || new Date().toISOString().split('T')[0],
+          broker: importFormData.broker || '',
+          legalNotes: importFormData.legalNotes || '',
+          address: propertyAddress.split(',')[0]?.trim() || propertyName,
+          city: city || 'Unknown',
+          state: state || 'CT',
+          zipCode: zipCode || ''
+        }),
       });
 
       if (!response.ok) {
