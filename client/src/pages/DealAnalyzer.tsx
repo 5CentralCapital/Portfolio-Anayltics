@@ -2933,7 +2933,7 @@ export default function DealAnalyzer() {
                     </button>
                   )}
                 </div>
-                );
+                )
               })}
             </div>
 

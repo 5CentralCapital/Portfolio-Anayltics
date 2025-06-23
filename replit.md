@@ -173,6 +173,7 @@ Changelog:
 - June 23, 2025. Added 3-month initial interest reserve cost to both loan analysis section (monthly debt service × 3) and closing costs section with automatic calculation - implemented negative number support for seller credits in closing costs using new validateClosingCostInput function
 - June 23, 2025. Added comprehensive editable timeline/workflow section to bottom of rehab budget tab with pre-populated steps (close, eviction, renovations, demo, paint, minisplits, flooring, listing, refinance), status tracking (pending/in-progress/completed/on-hold), progress indicators, notes fields, add/delete functionality, and progress summary dashboard
 - June 23, 2025. Updated 3-month interest reserve in closing costs section to dynamically calculate from loan analysis values instead of static editable amount - both loan analysis and closing costs sections now show consistent real-time calculated values that update with loan parameter changes
+- June 23, 2025. Redesigned timeline/workflow in rehab section with comprehensive budget integration - workflow steps now link directly to specific budget items (e.g., Kitchen Renovation → Kitchens/Cabinets), marking steps complete automatically updates budget item completion status, added category progress overview with real-time progress bars for all 5 budget categories, enhanced visual design with color-coded status indicators and budget link displays
 
 ## User Preferences
 
