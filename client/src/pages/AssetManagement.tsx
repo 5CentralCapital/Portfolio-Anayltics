@@ -25,6 +25,86 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 // Remove toast for now and focus on fixing the save functionality
 import apiService from '../services/api';
 
+// Calculate property metrics using Deal Analyzer data
+const calculatePropertyMetrics = (property: Property) => {
+  try {
+    const dealAnalyzerData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : null;
+    
+    if (!dealAnalyzerData) {
+      return null;
+    }
+
+    // Calculate gross rental income from rent roll
+    const grossRentMonthly = dealAnalyzerData.rentRoll?.reduce((sum: number, unit: any) => {
+      return sum + (unit.proFormaRent || unit.currentRent || 0);
+    }, 0) || 0;
+
+    // Calculate total expenses
+    const expenses = dealAnalyzerData.expenses || {};
+    const totalExpenses = Object.values(expenses).reduce((sum: number, val: any) => {
+      const expense = typeof val === 'object' ? val.amount || 0 : val || 0;
+      return sum + expense;
+    }, 0);
+
+    // Calculate vacancy
+    const assumptions = dealAnalyzerData.assumptions || {};
+    const vacancyRate = assumptions.vacancyRate || 0.05;
+    const vacancy = grossRentMonthly * vacancyRate;
+
+    // Calculate NOI
+    const netRevenue = grossRentMonthly - vacancy;
+    const noi = netRevenue - totalExpenses;
+
+    // Calculate debt service from active loan
+    const loans = dealAnalyzerData.loans || [];
+    const activeLoan = loans.find((loan: any) => loan.isActive);
+    let monthlyDebtService = 0;
+    
+    if (activeLoan) {
+      const principal = activeLoan.amount || 0;
+      const annualRate = (activeLoan.interestRate || 0) / 100;
+      const monthlyRate = annualRate / 12;
+      const termMonths = (activeLoan.termYears || 30) * 12;
+      
+      if (activeLoan.paymentType === 'interestOnly') {
+        monthlyDebtService = principal * monthlyRate;
+      } else {
+        // Full amortization
+        if (monthlyRate > 0) {
+          monthlyDebtService = principal * (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / 
+                             (Math.pow(1 + monthlyRate, termMonths) - 1);
+        }
+      }
+    }
+
+    // Calculate cash flow
+    const monthlyCashFlow = noi - monthlyDebtService;
+    const annualCashFlow = monthlyCashFlow * 12;
+
+    // Calculate cash-on-cash return
+    const totalInvested = parseFloat(property.initialCapitalRequired || '0');
+    const cashOnCashReturn = totalInvested > 0 ? (annualCashFlow / totalInvested) * 100 : 0;
+
+    return {
+      grossRentMonthly,
+      totalExpenses,
+      vacancy,
+      netRevenue,
+      noi,
+      monthlyDebtService,
+      monthlyCashFlow,
+      annualCashFlow,
+      cashOnCashReturn,
+      grossRentAnnual: grossRentMonthly * 12,
+      vacancyAnnual: vacancy * 12,
+      netRevenueAnnual: netRevenue * 12
+    };
+  } catch (error) {
+    console.error('Error calculating property metrics:', error);
+    return null;
+  }
+};
+
 interface Property {
   id: number;
   status: string;
@@ -65,57 +145,81 @@ const entities = [
   'Arcadia Vision Group'
 ];
 
-const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => (
-  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 w-full cursor-pointer hover:shadow-lg transition-shadow card-hover"
-       onDoubleClick={() => onDoubleClick(property)}
-       title="Double-click for financial breakdown">
-    <div className="flex items-center justify-between mb-4">
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{property.address}</h3>
-        <p className="text-gray-600 dark:text-gray-400">{property.city}, {property.state} {property.zipCode || ''}</p>
+const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
+  // Use centralized calculations for accurate metrics
+  const calculatedMetrics = calculatePropertyMetrics(property);
+  
+  return (
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 w-full cursor-pointer hover:shadow-lg transition-shadow card-hover"
+         onDoubleClick={() => onDoubleClick(property)}
+         title="Double-click for financial breakdown">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{property.address}</h3>
+          <p className="text-gray-600 dark:text-gray-400">{property.city}, {property.state} {property.zipCode || ''}</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <select 
+            value={property.status} 
+            onChange={(e) => onStatusChange(property.id, e.target.value)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+          >
+            <option value="Under Contract">Under Contract</option>
+            <option value="Rehabbing">Rehabbing</option>
+            <option value="Cashflowing">Cashflowing</option>
+            <option value="Sold">Sold</option>
+          </select>
+        </div>
       </div>
-      <div className="flex items-center gap-4">
-        <select 
-          value={property.status} 
-          onChange={(e) => onStatusChange(property.id, e.target.value)}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-        >
-          <option value="Under Contract">Under Contract</option>
-          <option value="Rehabbing">Rehabbing</option>
-          <option value="Cashflowing">Cashflowing</option>
-          <option value="Sold">Sold</option>
-        </select>
-      </div>
-    </div>
 
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Units</p>
-        <p className="font-semibold text-gray-900 dark:text-white">{property.apartments}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
+        <div>
+          <p className="text-gray-600 dark:text-gray-400">Units</p>
+          <p className="font-semibold text-gray-900 dark:text-white">{property.apartments}</p>
+        </div>
+        <div>
+          <p className="text-gray-600 dark:text-gray-400">Acquisition Price</p>
+          <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
+        </div>
+        <div>
+          <p className="text-gray-600 dark:text-gray-400">Rehab Costs</p>
+          <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.rehabCosts)}</p>
+        </div>
+        <div>
+          <p className="text-gray-600 dark:text-gray-400">ARV</p>
+          <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.arvAtTimePurchased || 0)}</p>
+        </div>
+        <div>
+          <p className="text-gray-600 dark:text-gray-400">Monthly Cash Flow</p>
+          {calculatedMetrics ? (
+            <p className={`font-semibold ${calculatedMetrics.monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(calculatedMetrics.monthlyCashFlow)}
+            </p>
+          ) : (
+            <p className="font-semibold text-gray-500">N/A</p>
+          )}
+        </div>
+        <div>
+          <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
+          {calculatedMetrics ? (
+            <p className={`font-semibold ${calculatedMetrics.cashOnCashReturn >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              {formatPercentage(calculatedMetrics.cashOnCashReturn)}
+            </p>
+          ) : (
+            <p className="font-semibold text-gray-500">N/A</p>
+          )}
+        </div>
       </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Acquisition Price</p>
-        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
-      </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Rehab Costs</p>
-        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.rehabCosts)}</p>
-      </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">ARV</p>
-        <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.arvAtTimePurchased || 0)}</p>
-      </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">Monthly Cash Flow</p>
-        <p className="font-semibold text-green-600">{formatCurrency(property.cashFlow)}</p>
-      </div>
-      <div>
-        <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
-        <p className="font-semibold text-blue-600">{formatPercentage(property.cashOnCashReturn)}</p>
-      </div>
-    </div>
 
-    {property.acquisitionDate && (
+      {property.acquisitionDate && (
+        <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+          <MapPin className="w-4 h-4 inline mr-1" />
+          Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
+        </div>
+      )}
+    </div>
+  );
+};
       <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
         <MapPin className="w-4 h-4 inline mr-1" />
         Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
@@ -255,15 +359,127 @@ export default function AssetManagement() {
     return loans.find((loan: any) => loan.isActive) || loans[0] || null;
   };
 
-  // Centralized property calculations for consistent metrics across all tabs
-  const getPropertyCalculations = () => {
-    if (!showPropertyDetailModal || !editingModalProperty) return null;
+  // Universal calculation function that works for any property
+  const calculatePropertyMetrics = (property: Property) => {
+    if (!property.dealAnalyzerData) return null;
     
-    const propertyData = editingModalProperty.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+    const propertyData = JSON.parse(property.dealAnalyzerData);
     const rentRoll = propertyData.rentRoll || [];
     const assumptions = propertyData.assumptions || {};
     const expenses = propertyData.expenses || {};
     const unitTypes = propertyData.unitTypes || [];
+    
+    // Revenue calculations
+    const grossRentMonthly = rentRoll.reduce((sum: number, unit: any) => {
+      const unitType = unitTypes.find((ut: any) => ut.id === unit.unitTypeId);
+      return sum + (unitType ? unitType.marketRent : unit.proFormaRent);
+    }, 0);
+    
+    const vacancyRate = assumptions.vacancyRate || 0.05;
+    const vacancy = grossRentMonthly * vacancyRate;
+    const netRevenue = grossRentMonthly - vacancy;
+    
+    // Expense calculations (monthly)
+    const propertyTax = (expenses.propertyTax || 15000) / 12;
+    const insurance = (expenses.insurance || 14500) / 12;
+    const maintenance = (expenses.maintenance || 8000) / 12;
+    const waterSewerTrash = (expenses.waterSewerTrash || 6000) / 12;
+    const capitalReserves = (expenses.capitalReserves || 2000) / 12;
+    const utilities = (expenses.utilities || 6000) / 12;
+    const other = (expenses.other || 0) / 12;
+    const managementFee = netRevenue * 0.08;
+    
+    const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
+    const noi = netRevenue - totalExpenses;
+    
+    // Debt service calculation using available loan data
+    const activeLoan = propertyData.loans?.find((loan: any) => loan.isActive) || null;
+    let monthlyDebtService = 0;
+    
+    if (activeLoan) {
+      const loanAmount = activeLoan.loanAmount || activeLoan.amount || 0;
+      const interestRate = activeLoan.interestRate || 0.08;
+      const termYears = activeLoan.termYears || 30;
+      const paymentType = activeLoan.paymentType || 'full-amortization';
+      
+      if (paymentType === 'interest-only') {
+        monthlyDebtService = (loanAmount * interestRate) / 12;
+      } else {
+        const monthlyRate = interestRate / 12;
+        const numPayments = termYears * 12;
+        if (monthlyRate > 0) {
+          monthlyDebtService = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+        }
+      }
+    } else {
+      // Fallback to basic calculation if no loan data
+      const acquisitionPrice = parseFloat(property.acquisitionPrice) || 0;
+      const rehabCosts = parseFloat(property.rehabCosts) || 0;
+      const loanPercentage = assumptions.loanPercentage || 0.8;
+      const interestRate = assumptions.interestRate || 0.08;
+      const termYears = assumptions.loanTermYears || 30;
+      
+      const loanAmount = (acquisitionPrice + rehabCosts) * loanPercentage;
+      if (loanAmount > 0) {
+        const monthlyRate = interestRate / 12;
+        const numPayments = termYears * 12;
+        if (monthlyRate > 0) {
+          monthlyDebtService = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+        }
+      }
+    }
+    
+    // Cash flow calculation
+    const monthlyCashFlow = noi - monthlyDebtService;
+    const annualCashFlow = monthlyCashFlow * 12;
+    
+    // Investment calculations for COC
+    const acquisitionPrice = parseFloat(property.acquisitionPrice) || 0;
+    const totalRehab = parseFloat(property.rehabCosts) || 0;
+    
+    const closingCosts = propertyData.closingCosts ?
+      Object.values(propertyData.closingCosts).reduce((sum: number, cost: any) => sum + (Number(cost) || 0), 0) : 0;
+    
+    const holdingCosts = propertyData.holdingCosts ?
+      Object.values(propertyData.holdingCosts).reduce((sum: number, cost: any) => sum + (Number(cost) || 0), 0) : 0;
+    
+    const loanPercentage = assumptions.loanPercentage || 0.8;
+    const downPayment = (acquisitionPrice + totalRehab) * (1 - loanPercentage);
+    const totalCashInvested = downPayment + closingCosts + holdingCosts;
+    
+    // Cash-on-Cash Return calculation
+    const cashOnCashReturn = totalCashInvested > 0 ? (annualCashFlow / totalCashInvested) * 100 : 0;
+    
+    return {
+      grossRentMonthly,
+      grossRentAnnual: grossRentMonthly * 12,
+      vacancy,
+      vacancyAnnual: vacancy * 12,
+      netRevenue,
+      netRevenueAnnual: netRevenue * 12,
+      totalExpenses,
+      totalExpensesAnnual: totalExpenses * 12,
+      noi,
+      noiAnnual: noi * 12,
+      monthlyDebtService,
+      annualDebtService: monthlyDebtService * 12,
+      monthlyCashFlow,
+      annualCashFlow,
+      totalCashInvested,
+      cashOnCashReturn,
+      acquisitionPrice,
+      totalRehab,
+      closingCosts,
+      holdingCosts,
+      downPayment
+    };
+  };
+
+  // Centralized property calculations for consistent metrics across all tabs
+  const getPropertyCalculations = () => {
+    if (!showPropertyDetailModal || !editingModalProperty) return null;
+    return calculatePropertyMetrics(editingModalProperty);
+  };
     
     // Revenue calculations
     const grossRentMonthly = rentRoll.reduce((sum: number, unit: any) => {
