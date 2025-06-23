@@ -189,6 +189,7 @@ Changelog:
 - June 23, 2025. Fixed property tile display inconsistency - resolved issue where tiles showed incorrect cash flow and CoC return values despite correct modal calculations - property tiles now display accurate $4,855 monthly cash flow and 21.6% CoC return matching modal Overview tab calculations
 - June 23, 2025. Updated property tiles to display Annual Cash Flow and Equity Multiple instead of monthly cash flow and CoC return - implemented exact same calculation logic from property modal Overview tab ensuring consistent financial metrics across all property displays with proper Deal Analyzer data integration
 - June 23, 2025. Replaced Portfolio page with Asset Management property status system - properties now organized by status (Under Contract, Rehabbing, Cashflowing, Sold) with double-click KPI modal functionality displaying comprehensive financial metrics including revenue, expenses, cash flow, and investment summary using real Deal Analyzer data calculations
+- June 23, 2025. Fixed Portfolio page KPI calculations with centralized calculation logic - resolved TypeScript errors, implemented consistent financial metrics across all property displays, added public portfolio endpoint for unauthenticated access, and unified KPI modal display with comprehensive revenue, expenses, cash flow, and investment summary sections using authentic Deal Analyzer data
 
 ## User Preferences
 

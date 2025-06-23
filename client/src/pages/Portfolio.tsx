@@ -637,11 +637,11 @@ const Portfolio = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-blue-700 dark:text-blue-300">Effective Gross Income (Monthly)</span>
-                          <span className="font-semibold text-blue-900 dark:text-blue-200">{formatCurrency(kpis.effectiveGrossIncome || 0)}</span>
+                          <span className="font-semibold text-blue-900 dark:text-blue-200">{formatCurrency(kpis.effectiveGrossIncome)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-blue-700 dark:text-blue-300">Annual NOI</span>
-                          <span className="font-semibold text-blue-900 dark:text-blue-200">{formatCurrency(kpis.annualNOI || 0)}</span>
+                          <span className="font-semibold text-blue-900 dark:text-blue-200">{formatCurrency(kpis.annualNOI)}</span>
                         </div>
                       </div>
                     </div>
@@ -652,11 +652,11 @@ const Portfolio = () => {
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span className="text-red-700 dark:text-red-300">Operating Expenses (Monthly)</span>
-                          <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(kpis.monthlyExpenses || 0)}</span>
+                          <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(kpis.monthlyExpenses)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-red-700 dark:text-red-300">Debt Service (Monthly)</span>
-                          <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(kpis.monthlyDebtService || 0)}</span>
+                          <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(kpis.monthlyDebtService)}</span>
                         </div>
                       </div>
                     </div>
@@ -667,20 +667,20 @@ const Portfolio = () => {
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span className="text-green-700 dark:text-green-300">Monthly Cash Flow</span>
-                          <span className={`font-semibold ${(kpis.monthlyCashFlow || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatCurrency(kpis.monthlyCashFlow || 0)}
+                          <span className={`font-semibold ${kpis.monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(kpis.monthlyCashFlow)}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-green-700 dark:text-green-300">Annual Cash Flow</span>
-                          <span className={`font-semibold ${(kpis.annualCashFlow || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatCurrency(kpis.annualCashFlow || 0)}
+                          <span className={`font-semibold ${kpis.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(kpis.annualCashFlow)}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-green-700 dark:text-green-300">Cash-on-Cash Return</span>
-                          <span className={`font-semibold ${(kpis.cocReturn || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatPercentage(kpis.cocReturn || 0)}
+                          <span className={`font-semibold ${kpis.cocReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatPercentage(kpis.cocReturn)}
                           </span>
                         </div>
                       </div>
@@ -692,20 +692,20 @@ const Portfolio = () => {
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span className="text-purple-700 dark:text-purple-300">Capital Required</span>
-                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.capitalRequired || 0)}</span>
+                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.capitalRequired)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-purple-700 dark:text-purple-300">All-In Cost</span>
-                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.allInCost || 0)}</span>
+                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.allInCost)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-purple-700 dark:text-purple-300">Current ARV</span>
-                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.arv || 0)}</span>
+                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.arv)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-purple-700 dark:text-purple-300">Equity Multiple</span>
-                          <span className={`font-semibold ${(kpis.equityMultiple || 0) >= 1 ? 'text-green-600' : 'text-red-600'}`}>
-                            {(kpis.equityMultiple || 0).toFixed(2)}x
+                          <span className={`font-semibold ${kpis.equityMultiple >= 1 ? 'text-green-600' : 'text-red-600'}`}>
+                            {kpis.equityMultiple.toFixed(2)}x
                           </span>
                         </div>
                       </div>
