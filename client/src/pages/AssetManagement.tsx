@@ -2602,17 +2602,17 @@ export default function AssetManagement() {
                                   <div className="grid md:grid-cols-3 gap-6">
                                     <div className="text-center">
                                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Net Operating Income (NOI)</p>
-                                      <p className={`text-2xl font-bold ${noi >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(noi)}</p>
+                                      <p className={`text-2xl font-bold ${calculations.noiAnnual >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(calculations.noiAnnual)}</p>
                                     </div>
                                     
                                     <div className="text-center">
-                                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Monthly Debt Service {activeLoan ? '(Post-Refi)' : ''}</p>
-                                      <p className="text-2xl font-bold text-orange-600">-{formatCurrency(monthlyDebtService)}</p>
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Monthly Debt Service</p>
+                                      <p className="text-2xl font-bold text-orange-600">-{formatCurrency(calculations.monthlyDebtService)}</p>
                                     </div>
                                     
                                     <div className="text-center">
                                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Net Cash Flow (Monthly)</p>
-                                      <p className={`text-2xl font-bold ${netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(netCashFlow)}</p>
+                                      <p className={`text-2xl font-bold ${calculations.monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(calculations.monthlyCashFlow)}</p>
                                     </div>
                                   </div>
                                 </div>
@@ -2722,59 +2722,21 @@ export default function AssetManagement() {
                                 {Array.from({ length: 12 }, (_, index) => {
                                   const month = index + 1;
                                   
-                                  // Use same calculations as Income & Expenses tab
-                                  const rentRoll = dealAnalyzerData?.rentRoll || [];
-                                  const assumptions = dealAnalyzerData?.assumptions || {};
-                                  const expenses = dealAnalyzerData?.expenses || {};
-                                  
-                                  // Revenue calculations (monthly)
-                                  const grossRentMonthly = rentRoll.reduce((sum: number, unit: any) => {
-                                    const unitTypes = dealAnalyzerData?.unitTypes || [];
-                                    const unitType = unitTypes.find((ut: any) => ut.id === unit.unitTypeId);
-                                    return sum + (unitType ? unitType.marketRent : unit.proFormaRent);
-                                  }, 0);
-                                  
-                                  const vacancyRate = assumptions.vacancyRate || 0.05;
-                                  const vacancy = grossRentMonthly * vacancyRate;
-                                  const netRevenue = grossRentMonthly - vacancy;
-                                  
-                                  // Expenses calculations (monthly)
-                                  const propertyTax = (expenses.taxes || 15000) / 12;
-                                  const insurance = (expenses.insurance || 14500) / 12;
-                                  const maintenance = (expenses.maintenance || 8000) / 12;
-                                  const waterSewerTrash = (expenses.waterSewerTrash || 6000) / 12;
-                                  const capitalReserves = (expenses.capex || 2000) / 12;
-                                  const utilities = (expenses.utilities || 6000) / 12;
-                                  const other = (expenses.other || 0) / 12;
-                                  const managementFee = netRevenue * 0.08; // 8% of net revenue
-                                  
-                                  const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
-                                  const noi = netRevenue - totalExpenses;
-                                  
-                                  // Get active loan for debt service calculation using centralized function
-                                  const activeLoan = getActiveLoan();
-                                  console.log('12-Month Proforma - Active loan:', activeLoan);
-                                  const monthlyDebtService = activeLoan ? calculateLoanPayment(
-                                    activeLoan.loanAmount || activeLoan.amount,
-                                    activeLoan.interestRate,
-                                    activeLoan.termYears,
-                                    activeLoan.paymentType
-                                  ) : 0;
-                                  console.log('12-Month Proforma - Monthly debt service:', monthlyDebtService);
-                                  
-                                  const cashFlow = noi - monthlyDebtService;
+                                  // Use centralized calculations for consistency
+                                  const calculations = getPropertyCalculations();
+                                  if (!calculations) return null;
                                   
                                   return (
                                     <tr key={month} className={month % 2 === 0 ? 'bg-indigo-25 dark:bg-indigo-900/10' : ''}>
                                       <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">Month {month}</td>
-                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">{formatCurrency(grossRentMonthly)}</td>
-                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(vacancy)})</td>
-                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">{formatCurrency(netRevenue)}</td>
-                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(totalExpenses)})</td>
-                                      <td className="px-4 py-2 text-sm font-medium text-indigo-900 dark:text-indigo-200">{formatCurrency(noi)}</td>
-                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(monthlyDebtService)})</td>
-                                      <td className={`px-4 py-2 text-sm font-medium ${cashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {formatCurrency(cashFlow)}
+                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">{formatCurrency(calculations.grossRentMonthly)}</td>
+                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(calculations.vacancy)})</td>
+                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">{formatCurrency(calculations.netRevenue)}</td>
+                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(calculations.totalExpenses)})</td>
+                                      <td className="px-4 py-2 text-sm font-medium text-indigo-900 dark:text-indigo-200">{formatCurrency(calculations.noi)}</td>
+                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(calculations.monthlyDebtService)})</td>
+                                      <td className={`px-4 py-2 text-sm font-medium ${calculations.monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {formatCurrency(calculations.monthlyCashFlow)}
                                       </td>
                                     </tr>
                                   );
@@ -2784,68 +2746,32 @@ export default function AssetManagement() {
                                 <tr>
                                   <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">Annual Total</td>
                                   {(() => {
-                                    // Calculate totals by summing all 12 months
-                                    const rentRoll = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData).rentRoll : [];
-                                    const assumptions = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData).assumptions : {};
-                                    const expenses = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData).expenses : {};
-                                    const unitTypes = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData).unitTypes : [];
+                                    // Use centralized calculations for annual totals
+                                    const calculations = getPropertyCalculations();
+                                    if (!calculations) return null;
                                     
-                                    // Calculate monthly amounts
-                                    const grossRentMonthly = rentRoll.reduce((sum: number, unit: any) => {
-                                      const unitType = unitTypes.find((ut: any) => ut.id === unit.unitTypeId);
-                                      return sum + (unitType ? unitType.marketRent : unit.proFormaRent);
-                                    }, 0);
-                                    
-                                    const vacancyRate = assumptions.vacancyRate || 0.05;
-                                    const vacancy = grossRentMonthly * vacancyRate;
-                                    const netRevenue = grossRentMonthly - vacancy;
-                                    
-                                    const propertyTax = (expenses.taxes || 15000) / 12;
-                                    const insurance = (expenses.insurance || 14500) / 12;
-                                    const maintenance = (expenses.maintenance || 8000) / 12;
-                                    const waterSewerTrash = (expenses.waterSewerTrash || 6000) / 12;
-                                    const capitalReserves = (expenses.capex || 2000) / 12;
-                                    const utilities = (expenses.utilities || 6000) / 12;
-                                    const other = (expenses.other || 0) / 12;
-                                    const managementFee = netRevenue * 0.08;
-                                    
-                                    const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
-                                    const noi = netRevenue - totalExpenses;
-                                    
-                                    // Get active loan for debt service calculation using centralized function
-                                    const activeLoan = getActiveLoan();
-                                    const monthlyDebtService = activeLoan ? calculateLoanPayment(
-                                      activeLoan.loanAmount || activeLoan.amount,
-                                      activeLoan.interestRate,
-                                      activeLoan.termYears,
-                                      activeLoan.paymentType
-                                    ) : 0;
-                                    
-                                    const cashFlow = noi - monthlyDebtService;
-                                    
-                                    // Annual totals = monthly amounts × 12
                                     return (
                                       <>
                                         <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
-                                          {formatCurrency(grossRentMonthly * 12)}
+                                          {formatCurrency(calculations.grossRentAnnual)}
                                         </td>
                                         <td className="px-4 py-2 text-sm font-bold text-red-600">
-                                          ({formatCurrency(vacancy * 12)})
+                                          ({formatCurrency(calculations.vacancyAnnual)})
                                         </td>
                                         <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
-                                          {formatCurrency(netRevenue * 12)}
+                                          {formatCurrency(calculations.netRevenueAnnual)}
                                         </td>
                                         <td className="px-4 py-2 text-sm font-bold text-red-600">
-                                          ({formatCurrency(totalExpenses * 12)})
+                                          ({formatCurrency(calculations.totalExpensesAnnual)})
                                         </td>
                                         <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
-                                          {formatCurrency(noi * 12)}
+                                          {formatCurrency(calculations.noiAnnual)}
                                         </td>
                                         <td className="px-4 py-2 text-sm font-bold text-red-600">
-                                          ({formatCurrency(monthlyDebtService * 12)})
+                                          ({formatCurrency(calculations.annualDebtService)})
                                         </td>
-                                        <td className={`px-4 py-2 text-sm font-bold ${cashFlow * 12 >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                          {formatCurrency(cashFlow * 12)}
+                                        <td className={`px-4 py-2 text-sm font-bold ${calculations.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                          {formatCurrency(calculations.annualCashFlow)}
                                         </td>
                                       </>
                                     );
