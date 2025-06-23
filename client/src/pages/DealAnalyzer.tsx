@@ -936,6 +936,7 @@ export default function DealAnalyzer() {
           rentRoll,
           unitTypes,
           exitAnalysis,
+          workflowSteps,
           calculations: {
             totalRehabCosts,
             totalClosingCosts,
