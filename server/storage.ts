@@ -918,16 +918,19 @@ export class DatabaseStorage implements IStorage {
    * Import Deal Analyzer data into normalized database structure
    */
   async importFromDealAnalyzer(dealData: any, additionalPropertyData: any, userId: number): Promise<Property> {
-    // Calculate KPIs from Deal Analyzer data
-    const totalRehabCosts = this.calculateTotalRehabCosts(dealData);
-    const grossRentalIncome = this.calculateGrossRentalIncome(dealData);
-    const totalOperatingExpenses = this.calculateTotalOperatingExpenses(dealData, grossRentalIncome);
-    const noi = grossRentalIncome - totalOperatingExpenses;
-    const arv = dealData.assumptions?.marketCapRate ? noi / dealData.assumptions.marketCapRate : 0;
-    const initialCapital = this.calculateInitialCapital(dealData, totalRehabCosts);
-    const annualCashFlow = this.calculateAnnualCashFlow(dealData, noi);
+    // Extract calculated values directly from Deal Analyzer calculations
+    const calculations = dealData.calculations || {};
+    
+    // Recalculate values using Deal Analyzer's exact logic to ensure accuracy
+    const totalRehabCosts = this.calculateDealAnalyzerRehabCosts(dealData);
+    const grossRentalIncome = this.calculateDealAnalyzerGrossIncome(dealData);
+    const noi = this.calculateDealAnalyzerNOI(dealData, grossRentalIncome);
+    const arv = calculations.arv || (dealData.assumptions?.marketCapRate ? noi / dealData.assumptions.marketCapRate : 0);
+    const initialCapital = this.calculateDealAnalyzerInitialCapital(dealData, totalRehabCosts);
+    const annualCashFlow = this.calculateDealAnalyzerCashFlow(dealData, noi, totalRehabCosts);
+    const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) * 100 : 0;
 
-    // Create property with calculated data structure
+    // Create property with accurately calculated values
     const propertyData = {
       status: "Under Contract" as const,
       apartments: dealData.assumptions?.unitCount || dealData.assumptions?.units || 1,
@@ -943,7 +946,7 @@ export class DatabaseStorage implements IStorage {
       initialCapitalRequired: initialCapital.toString(),
       cashFlow: annualCashFlow.toString(),
       totalProfits: "0",
-      cashOnCashReturn: initialCapital > 0 ? ((annualCashFlow / initialCapital) * 100).toFixed(2) : "0",
+      cashOnCashReturn: cashOnCashReturn.toFixed(2),
       annualizedReturn: "0",
       dealAnalyzerData: JSON.stringify(dealData) // Keep for backward compatibility
     };
@@ -959,6 +962,93 @@ export class DatabaseStorage implements IStorage {
     }
     
     return property;
+  }
+
+  private calculateDealAnalyzerRehabCosts(dealData: any): number {
+    if (!dealData.rehabBudgetSections) return 0;
+    
+    let subtotal = 0;
+    Object.values(dealData.rehabBudgetSections).forEach((section: any) => {
+      if (Array.isArray(section)) {
+        section.forEach((item: any) => {
+          subtotal += (item.perUnitCost || 0) * (item.quantity || 1);
+        });
+      }
+    });
+    
+    // Add 10% contingency like Deal Analyzer
+    return subtotal * 1.10;
+  }
+
+  private calculateDealAnalyzerGrossIncome(dealData: any): number {
+    if (!dealData.rentRoll || !Array.isArray(dealData.rentRoll)) return 0;
+    
+    return dealData.rentRoll.reduce((sum: number, unit: any) => {
+      const unitType = dealData.unitTypes?.find((ut: any) => ut.id === unit.unitTypeId);
+      const monthlyRent = unitType ? unitType.marketRent : (unit.proFormaRent || 0);
+      return sum + (monthlyRent * 12);
+    }, 0);
+  }
+
+  private calculateDealAnalyzerNOI(dealData: any, grossIncome: number): number {
+    const vacancyRate = dealData.assumptions?.vacancyRate || 0.05;
+    const netRevenue = grossIncome * (1 - vacancyRate);
+    
+    // Management fee (8% like Deal Analyzer)
+    const managementFee = netRevenue * 0.08;
+    
+    // Operating expenses
+    let totalExpenses = managementFee;
+    if (dealData.expenses) {
+      totalExpenses += Object.values(dealData.expenses).reduce((sum: number, expense: any) => 
+        sum + (Number(expense) || 0), 0);
+    }
+    
+    return netRevenue - totalExpenses;
+  }
+
+  private calculateDealAnalyzerInitialCapital(dealData: any, totalRehabCosts: number): number {
+    const purchasePrice = dealData.assumptions?.purchasePrice || 0;
+    const loanPercentage = dealData.assumptions?.loanPercentage || 0.8;
+    const downPayment = purchasePrice * (1 - loanPercentage);
+    
+    // Closing costs
+    let closingCosts = 0;
+    if (dealData.closingCosts) {
+      closingCosts = Object.values(dealData.closingCosts).reduce((sum: number, cost: any) => 
+        sum + (Number(cost) || 0), 0);
+    }
+    
+    // Holding costs
+    let holdingCosts = 0;
+    if (dealData.holdingCosts) {
+      holdingCosts = Object.values(dealData.holdingCosts).reduce((sum: number, cost: any) => 
+        sum + (Number(cost) || 0), 0);
+    }
+    
+    return downPayment + totalRehabCosts + closingCosts + holdingCosts;
+  }
+
+  private calculateDealAnalyzerCashFlow(dealData: any, noi: number, totalRehabCosts: number): number {
+    const purchasePrice = dealData.assumptions?.purchasePrice || 0;
+    const loanPercentage = dealData.assumptions?.loanPercentage || 0.8;
+    const interestRate = dealData.assumptions?.interestRate || 0.0875;
+    const loanTermYears = dealData.assumptions?.loanTermYears || 2;
+    
+    // Calculate loan amount (purchase + rehab) * loan percentage
+    const loanAmount = (purchasePrice + totalRehabCosts) * loanPercentage;
+    
+    // Calculate monthly payment using Deal Analyzer's formula
+    let monthlyPayment = 0;
+    if (loanAmount > 0 && interestRate > 0) {
+      const monthlyRate = interestRate / 12;
+      const numPayments = loanTermYears * 12;
+      monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+        (Math.pow(1 + monthlyRate, numPayments) - 1);
+    }
+    
+    const annualDebtService = monthlyPayment * 12;
+    return noi - annualDebtService;
   }
 
   private calculateTotalRehabCosts(dealData: any): number {
