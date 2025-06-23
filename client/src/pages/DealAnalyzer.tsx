@@ -566,88 +566,17 @@ export default function DealAnalyzer() {
   // Helper function to validate and format number input - 1 decimal for rehab (allows negative values)
   const validateNumberInput = (value: string): string => {
     // Allow negative sign, numbers, and decimal point
-    let cleaned = value.replace(/[^0-9.-]/g, '');
-    
-    // Ensure only one negative sign at the beginning
-    if (cleaned.includes('-')) {
-      const firstNegative = cleaned.indexOf('-');
-      if (firstNegative > 0) {
-        cleaned = cleaned.replace(/-/g, '');
-      } else {
-        cleaned = '-' + cleaned.substring(1).replace(/-/g, '');
-      }
-    }
-    
-    // Ensure only one decimal point
-    const parts = cleaned.split('.');
-    if (parts.length > 2) {
-      cleaned = parts[0] + '.' + parts.slice(1).join('');
-    }
-    
-    // Limit to one decimal place
-    if (parts.length === 2 && parts[1].length > 1) {
-      cleaned = parts[0] + '.' + parts[1].substring(0, 1);
-    }
-    
-    return cleaned;
+    return value;
   };
 
   // Helper function for closing costs - allows negative numbers for seller credits
   const validateClosingCostInput = (value: string): string => {
-    // Allow negative sign, numbers, and decimal point
-    let cleaned = value.replace(/[^0-9.-]/g, '');
-    
-    // Ensure only one negative sign at the beginning
-    if (cleaned.includes('-')) {
-      const firstNegative = cleaned.indexOf('-');
-      if (firstNegative > 0) {
-        cleaned = cleaned.replace(/-/g, '');
-      } else {
-        cleaned = '-' + cleaned.substring(1).replace(/-/g, '');
-      }
-    }
-    
-    // Ensure only one decimal point
-    const parts = cleaned.split('.');
-    if (parts.length > 2) {
-      cleaned = parts[0] + '.' + parts.slice(1).join('');
-    }
-    
-    // Limit to two decimal places
-    if (parts.length === 2 && parts[1].length > 2) {
-      cleaned = parts[0] + '.' + parts[1].substring(0, 2);
-    }
-    
-    return cleaned;
+    return value;
   };
 
   // Helper function for overview fields - 2 decimal places (allows negative values)
   const validateOverviewNumberInput = (value: string): string => {
-    // Allow negative sign, numbers, and decimal point
-    let cleaned = value.replace(/[^0-9.-]/g, '');
-    
-    // Ensure only one negative sign at the beginning
-    if (cleaned.includes('-')) {
-      const firstNegative = cleaned.indexOf('-');
-      if (firstNegative > 0) {
-        cleaned = cleaned.replace(/-/g, '');
-      } else {
-        cleaned = '-' + cleaned.substring(1).replace(/-/g, '');
-      }
-    }
-    
-    // Ensure only one decimal point
-    const parts = cleaned.split('.');
-    if (parts.length > 2) {
-      cleaned = parts[0] + '.' + parts.slice(1).join('');
-    }
-    
-    // Limit to two decimal places
-    if (parts.length === 2 && parts[1].length > 2) {
-      cleaned = parts[0] + '.' + parts[1].substring(0, 2);
-    }
-    
-    return cleaned;
+    return value;
   };
 
   const updateRehabItem = (section: string, itemId: number, field: string, value: number | string) => {
@@ -1065,6 +994,7 @@ export default function DealAnalyzer() {
     }
   };
 
+  // Component render
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
