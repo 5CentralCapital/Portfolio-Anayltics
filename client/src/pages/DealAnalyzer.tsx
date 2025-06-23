@@ -937,6 +937,21 @@ export default function DealAnalyzer() {
           unitTypes,
           exitAnalysis,
           workflowSteps,
+          // Include loan data in the same format that Asset Management expects
+          loans: [{
+            id: 1,
+            name: 'Acquisition Loan',
+            amount: loanAmount,
+            loanAmount: loanAmount,
+            interestRate: interestRate,
+            termYears: loanTermYears,
+            monthlyPayment: monthlyPayment,
+            isActive: true,
+            loanType: 'acquisition',
+            paymentType: loanTermYears <= 3 ? 'interest-only' : 'amortizing',
+            startDate: importFormData.acquisitionDate || new Date().toISOString().split('T')[0],
+            remainingBalance: loanAmount
+          }],
           calculations: {
             totalRehabCosts,
             totalClosingCosts,
@@ -945,7 +960,8 @@ export default function DealAnalyzer() {
             arv,
             noi,
             annualCashFlow,
-            cashOnCashReturn
+            cashOnCashReturn,
+            monthlyDebtService: monthlyPayment
           }
         }
       };
