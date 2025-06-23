@@ -25,6 +25,24 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 // Remove toast for now and focus on fixing the save functionality
 import apiService from '../services/api';
 
+// Utility functions
+const formatCurrency = (amount: number | string) => {
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(numAmount)) return '$0';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(numAmount);
+};
+
+const formatPercentage = (value: number | string) => {
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(numValue)) return '0.0%';
+  return `${numValue.toFixed(1)}%`;
+};
+
 // Calculate property metrics using Deal Analyzer data
 const calculatePropertyMetrics = (property: Property) => {
   try {
@@ -220,13 +238,6 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
     </div>
   );
 };
-      <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-        <MapPin className="w-4 h-4 inline mr-1" />
-        Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
-      </div>
-    )}
-  </div>
-);
 
 const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => (
   <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 aspect-square flex flex-col cursor-pointer card-hover transition-all-smooth hover:shadow-md bg-white dark:bg-gray-800"
@@ -275,21 +286,7 @@ const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { propert
   </div>
 );
 
-// Helper functions
-const formatCurrency = (amount: string | number) => {
-  const num = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.-]/g, '')) : amount;
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(num);
-};
-
-const formatPercentage = (value: string | number) => {
-  const num = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]/g, '')) : value;
-  return `${num.toFixed(1)}%`;
-};
+// Helper functions moved to top of file
 
 // Loan payment calculation function
 const calculateLoanPayment = (amount: number, interestRate: number, termYears: number, paymentType: string) => {
@@ -716,7 +713,8 @@ export default function AssetManagement() {
     setIsEditing(false);
   };
 
-
+  // Data fetching hooks
+  const { data: properties = [], isLoading, error } = useQuery<Property[]>({ queryKey: ['/api/properties'] });
 
   if (isLoading) {
     return (
