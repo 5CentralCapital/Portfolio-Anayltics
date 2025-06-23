@@ -36,7 +36,8 @@ export default function DealAnalyzer() {
   const [exitAnalysis, setExitAnalysis] = useState({
     saleFactor: 0.055, // Sales cap rate (5.5%) for NOI / Cap Rate calculation
     saleCostsPercent: 0.06, // 6% for broker, legal, closing fees
-    holdPeriodYears: 2
+    holdPeriodYears: 2,
+    annualAppreciationRate: 0.03 // 3% annual appreciation rate
   });
   
   // Editable assumptions state
@@ -1739,6 +1740,18 @@ export default function DealAnalyzer() {
                     />
                   </div>
                   <div className="flex justify-between">
+                    <span>Annual Appreciation (%)</span>
+                    <input
+                      type="number"
+                      value={(exitAnalysis.annualAppreciationRate * 100).toFixed(1)}
+                      onChange={(e) => setExitAnalysis({...exitAnalysis, annualAppreciationRate: (parseFloat(e.target.value) || 3.0) / 100})}
+                      className="w-20 px-2 py-1 border rounded text-right"
+                      step="0.1"
+                      min="0.0"
+                      max="10.0"
+                    />
+                  </div>
+                  <div className="flex justify-between">
                     <span>Annual Cash Flow</span>
                     <span className="font-medium">{formatCurrency(metrics.netCashFlow)}</span>
                   </div>
@@ -1748,11 +1761,11 @@ export default function DealAnalyzer() {
                   </div>
                   <div className="flex justify-between">
                     <span>Property Appreciation</span>
-                    <span className="font-medium">{formatCurrency(metrics.arv - assumptions.purchasePrice)}</span>
+                    <span className="font-medium">{formatCurrency(metrics.arv * exitAnalysis.annualAppreciationRate * exitAnalysis.holdPeriodYears)}</span>
                   </div>
                   <div className="border-t pt-2 flex justify-between">
                     <span className="font-semibold">Total Hold Return</span>
-                    <span className="font-bold text-blue-600">{formatCurrency((metrics.netCashFlow * exitAnalysis.holdPeriodYears) + (metrics.arv - assumptions.purchasePrice))}</span>
+                    <span className="font-bold text-blue-600">{formatCurrency((metrics.netCashFlow * exitAnalysis.holdPeriodYears) + (metrics.arv * exitAnalysis.annualAppreciationRate * exitAnalysis.holdPeriodYears))}</span>
                   </div>
                 </div>
               </div>
@@ -1807,7 +1820,7 @@ export default function DealAnalyzer() {
                 </div>
                 <div>
                   <span className="text-gray-600">Hold ROI</span>
-                  <div className="text-2xl font-bold text-blue-600">{((((metrics.netCashFlow * exitAnalysis.holdPeriodYears) + (metrics.arv - assumptions.purchasePrice)) / metrics.capitalRequired) * 100).toFixed(1)}%</div>
+                  <div className="text-2xl font-bold text-blue-600">{((((metrics.netCashFlow * exitAnalysis.holdPeriodYears) + (metrics.arv * exitAnalysis.annualAppreciationRate * exitAnalysis.holdPeriodYears)) / metrics.capitalRequired) * 100).toFixed(1)}%</div>
                 </div>
                 <div>
                   <span className="text-gray-600">Sell ROI</span>
