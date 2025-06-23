@@ -600,14 +600,10 @@ export default function AssetManagement() {
     refetchOnWindowFocus: true
   });
 
-  // Force cache invalidation and refetch on component mount
+  // Force refetch on component mount to ensure fresh data
   React.useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
-    const timer = setTimeout(() => {
-      refetch();
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [refetch, queryClient]);
+    refetch();
+  }, []);
 
   // Ensure properties is always an array
   const properties = (() => {
