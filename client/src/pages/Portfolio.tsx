@@ -25,85 +25,143 @@ const Portfolio = () => {
     return [];
   })();
 
-  // Calculate property KPIs for modal
+  // Calculate property KPIs using centralized calculation logic
   const calculatePropertyKPIs = (property: Property) => {
-    if (!property.dealAnalyzerData) return null;
+    if (!property.dealAnalyzerData) {
+      // Return basic metrics from property fields if no deal data
+      return {
+        grossRent: 0,
+        effectiveGrossIncome: 0,
+        monthlyExpenses: 0,
+        monthlyNOI: 0,
+        annualNOI: 0,
+        monthlyDebtService: 0,
+        monthlyCashFlow: parseFloat(property.cashFlow || '0'),
+        annualCashFlow: parseFloat(property.cashFlow || '0') * 12,
+        acquisitionPrice: parseFloat(property.acquisitionPrice || '0'),
+        totalRehab: parseFloat(property.rehabCosts || '0'),
+        allInCost: parseFloat(property.acquisitionPrice || '0') + parseFloat(property.rehabCosts || '0'),
+        capitalRequired: parseFloat(property.initialCapitalRequired || '0'),
+        arv: parseFloat(property.arvAtTimePurchased || '0'),
+        equityMultiple: property.totalProfits && property.initialCapitalRequired 
+          ? parseFloat(property.totalProfits) / parseFloat(property.initialCapitalRequired)
+          : 0,
+        cocReturn: property.cashOnCashReturn ? parseFloat(property.cashOnCashReturn) : 0
+      };
+    }
+    
     try {
       const dealData = JSON.parse(property.dealAnalyzerData);
       
-      // Calculate gross rent
-      const grossRent = dealData.rentRoll?.reduce((sum: number, unit: any) => sum + (unit.proFormaRent || unit.currentRent || 0), 0) || 0;
+      // Get gross rental income
+      const grossRent = dealData.rentRoll?.reduce((sum: number, unit: any) => {
+        return sum + (parseFloat(unit.proFormaRent || unit.currentRent || '0'));
+      }, 0) || 0;
       
-      // Calculate vacancy and net revenue
+      // Calculate vacancy loss
       const vacancyRate = dealData.assumptions?.vacancyRate || 0.05;
       const vacancy = grossRent * vacancyRate;
-      const netRevenue = grossRent - vacancy;
+      const effectiveGrossIncome = grossRent - vacancy;
       
-      // Calculate expenses correctly (monthly amounts)
-      let totalExpenses = 0;
-      Object.values(dealData.expenses || {}).forEach((expense: any) => {
-        if (typeof expense === 'object' && expense !== null) {
-          const amount = parseFloat(expense.amount || '0');
-          const isPercentage = expense.isPercentage || false;
-          if (isPercentage) {
-            totalExpenses += (netRevenue * 12 * (amount / 100) / 12);
+      // Calculate monthly operating expenses
+      let monthlyExpenses = 0;
+      if (dealData.expenses) {
+        Object.entries(dealData.expenses).forEach(([key, value]: [string, any]) => {
+          if (value && typeof value === 'object' && 'amount' in value) {
+            const amount = parseFloat(value.amount || '0');
+            const isPercentage = value.isPercentage || false;
+            
+            if (isPercentage) {
+              monthlyExpenses += (effectiveGrossIncome * 12 * (amount / 100)) / 12;
+            } else {
+              monthlyExpenses += amount;
+            }
           } else {
-            totalExpenses += amount;
+            monthlyExpenses += parseFloat(value || '0');
           }
-        } else {
-          totalExpenses += (parseFloat(expense || '0') || 0);
-        }
-      });
+        });
+      }
       
-      // NOI
-      const noi = netRevenue - totalExpenses;
-      const annualNOI = noi * 12;
+      // Calculate NOI
+      const monthlyNOI = effectiveGrossIncome - monthlyExpenses;
+      const annualNOI = monthlyNOI * 12;
       
-      // Debt service from active loan
-      const activeLoan = dealData.loans?.find((loan: any) => loan.isActive);
-      const debtService = activeLoan?.monthlyPayment || 0;
+      // Get debt service from active loan
+      const activeLoan = dealData.loans?.find((loan: any) => loan.isActive) || dealData.loans?.[0];
+      const monthlyDebtService = activeLoan?.monthlyPayment || 0;
       
-      // Cash flow
-      const monthlyCashFlow = noi - debtService;
+      // Calculate cash flow
+      const monthlyCashFlow = monthlyNOI - monthlyDebtService;
       const annualCashFlow = monthlyCashFlow * 12;
       
-      // Investment calculations
+      // Calculate investment metrics
       const acquisitionPrice = parseFloat(property.acquisitionPrice || '0');
-      const totalRehab = Object.values(dealData.rehabBudget || {}).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
+      
+      // Calculate total rehab from budget
+      let totalRehab = 0;
+      if (dealData.rehabBudget) {
+        Object.values(dealData.rehabBudget).forEach((category: any) => {
+          if (typeof category === 'object') {
+            Object.values(category).forEach((item: any) => {
+              if (typeof item === 'object' && item.cost) {
+                totalRehab += parseFloat(item.cost || '0');
+              }
+            });
+          }
+        });
+      }
+      
       const allInCost = acquisitionPrice + totalRehab;
       
+      // Calculate capital required
       const loanPercentage = dealData.assumptions?.loanPercentage || 0.85;
-      const downPayment = acquisitionPrice * (1 - loanPercentage);
-      const closingCosts = Object.values(dealData.closingCosts || {}).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
-      const holdingCosts = Object.values(dealData.holdingCosts || {}).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
-      const totalInvested = downPayment + closingCosts + holdingCosts;
+      const downPayment = (acquisitionPrice + totalRehab) * (1 - loanPercentage);
       
-      // CoC Return
-      const cocReturn = totalInvested > 0 ? (annualCashFlow / totalInvested) * 100 : 0;
+      let closingCosts = 0;
+      if (dealData.closingCosts) {
+        Object.values(dealData.closingCosts).forEach((cost: any) => {
+          closingCosts += parseFloat(cost || '0');
+        });
+      }
       
-      // ARV and Equity Multiple
+      let holdingCosts = 0;
+      if (dealData.holdingCosts) {
+        Object.values(dealData.holdingCosts).forEach((cost: any) => {
+          holdingCosts += parseFloat(cost || '0');
+        });
+      }
+      
+      const capitalRequired = downPayment + closingCosts + holdingCosts;
+      
+      // Calculate ARV using cap rate
       const marketCapRate = dealData.assumptions?.marketCapRate || 0.055;
-      const arv = annualNOI / marketCapRate;
-      const equityMultiple = totalInvested > 0 ? (arv - allInCost) / totalInvested : 0;
+      const arv = annualNOI > 0 ? annualNOI / marketCapRate : acquisitionPrice;
+      
+      // Calculate equity multiple
+      const equityMultiple = capitalRequired > 0 ? (arv - allInCost) / capitalRequired : 0;
+      
+      // Calculate cash-on-cash return
+      const cocReturn = capitalRequired > 0 ? (annualCashFlow / capitalRequired) * 100 : 0;
       
       return {
         grossRent,
-        netRevenue,
-        totalExpenses,
-        noi,
+        effectiveGrossIncome,
+        monthlyExpenses,
+        monthlyNOI,
         annualNOI,
-        debtService,
+        monthlyDebtService,
         monthlyCashFlow,
         annualCashFlow,
         acquisitionPrice,
         totalRehab,
         allInCost,
-        totalInvested,
-        cocReturn,
+        capitalRequired,
         arv,
-        equityMultiple
+        equityMultiple,
+        cocReturn
       };
-    } catch (e) {
+    } catch (error) {
+      console.error('Error calculating KPIs for', property.address, error);
       return null;
     }
   };
@@ -578,12 +636,12 @@ const Portfolio = () => {
                           <span className="font-semibold text-blue-900 dark:text-blue-200">{formatCurrency(kpis.grossRent)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-blue-700 dark:text-blue-300">Net Revenue (Monthly)</span>
-                          <span className="font-semibold text-blue-900 dark:text-blue-200">{formatCurrency(kpis.netRevenue)}</span>
+                          <span className="text-blue-700 dark:text-blue-300">Effective Gross Income (Monthly)</span>
+                          <span className="font-semibold text-blue-900 dark:text-blue-200">{formatCurrency(kpis.effectiveGrossIncome || 0)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-blue-700 dark:text-blue-300">Annual NOI</span>
-                          <span className="font-semibold text-blue-900 dark:text-blue-200">{formatCurrency(kpis.annualNOI)}</span>
+                          <span className="font-semibold text-blue-900 dark:text-blue-200">{formatCurrency(kpis.annualNOI || 0)}</span>
                         </div>
                       </div>
                     </div>
@@ -594,11 +652,11 @@ const Portfolio = () => {
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span className="text-red-700 dark:text-red-300">Operating Expenses (Monthly)</span>
-                          <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(kpis.totalExpenses)}</span>
+                          <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(kpis.monthlyExpenses || 0)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-red-700 dark:text-red-300">Debt Service (Monthly)</span>
-                          <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(kpis.debtService)}</span>
+                          <span className="font-semibold text-red-900 dark:text-red-200">{formatCurrency(kpis.monthlyDebtService || 0)}</span>
                         </div>
                       </div>
                     </div>
@@ -609,20 +667,20 @@ const Portfolio = () => {
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span className="text-green-700 dark:text-green-300">Monthly Cash Flow</span>
-                          <span className={`font-semibold ${kpis.monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatCurrency(kpis.monthlyCashFlow)}
+                          <span className={`font-semibold ${(kpis.monthlyCashFlow || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(kpis.monthlyCashFlow || 0)}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-green-700 dark:text-green-300">Annual Cash Flow</span>
-                          <span className={`font-semibold ${kpis.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatCurrency(kpis.annualCashFlow)}
+                          <span className={`font-semibold ${(kpis.annualCashFlow || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(kpis.annualCashFlow || 0)}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-green-700 dark:text-green-300">Cash-on-Cash Return</span>
-                          <span className={`font-semibold ${kpis.cocReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatPercentage(kpis.cocReturn)}
+                          <span className={`font-semibold ${(kpis.cocReturn || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatPercentage(kpis.cocReturn || 0)}
                           </span>
                         </div>
                       </div>
@@ -633,21 +691,21 @@ const Portfolio = () => {
                       <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-200 mb-4">Investment Summary</h3>
                       <div className="space-y-3">
                         <div className="flex justify-between">
-                          <span className="text-purple-700 dark:text-purple-300">Total Invested</span>
-                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.totalInvested)}</span>
+                          <span className="text-purple-700 dark:text-purple-300">Capital Required</span>
+                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.capitalRequired || 0)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-purple-700 dark:text-purple-300">All-In Cost</span>
-                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.allInCost)}</span>
+                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.allInCost || 0)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-purple-700 dark:text-purple-300">Current ARV</span>
-                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.arv)}</span>
+                          <span className="font-semibold text-purple-900 dark:text-purple-200">{formatCurrency(kpis.arv || 0)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-purple-700 dark:text-purple-300">Equity Multiple</span>
-                          <span className={`font-semibold ${kpis.equityMultiple >= 1 ? 'text-green-600' : 'text-red-600'}`}>
-                            {kpis.equityMultiple.toFixed(2)}x
+                          <span className={`font-semibold ${(kpis.equityMultiple || 0) >= 1 ? 'text-green-600' : 'text-red-600'}`}>
+                            {(kpis.equityMultiple || 0).toFixed(2)}x
                           </span>
                         </div>
                       </div>
