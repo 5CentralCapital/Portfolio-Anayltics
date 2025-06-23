@@ -500,57 +500,7 @@ export default function AssetManagement() {
     setIsEditing(false);
   };
 
-  // Update rehab line item
-  const updateRehabItem = (propertyId: number, itemId: string, updates: Partial<RehabLineItem>) => {
-    setRehabLineItems(prev => ({
-      ...prev,
-      [propertyId]: prev[propertyId]?.map(item => 
-        item.id === itemId ? { ...item, ...updates } : item
-      ) || []
-    }));
-  };
 
-  // Add new rehab line item
-  const addRehabItem = (propertyId: number, category: string) => {
-    const newItem: RehabLineItem = {
-      id: Date.now().toString(),
-      category,
-      item: 'New Item',
-      budgetAmount: 0,
-      spentAmount: 0,
-      completed: false
-    };
-    
-    setRehabLineItems(prev => ({
-      ...prev,
-      [propertyId]: [...(prev[propertyId] || []), newItem]
-    }));
-  };
-
-  // Delete rehab line item
-  const deleteRehabItem = (propertyId: number, itemId: string) => {
-    setRehabLineItems(prev => ({
-      ...prev,
-      [propertyId]: prev[propertyId]?.filter(item => item.id !== itemId) || []
-    }));
-  };
-
-  // Calculate progress for a property
-  const calculateRehabProgress = (propertyId: number) => {
-    const items = rehabLineItems[propertyId] || [];
-    if (items.length === 0) return { completionPercentage: 0, spentPercentage: 0, totalBudget: 0, totalSpent: 0 };
-    
-    const completedItems = items.filter(item => item.completed).length;
-    const totalBudget = items.reduce((sum, item) => sum + item.budgetAmount, 0);
-    const totalSpent = items.reduce((sum, item) => sum + item.spentAmount, 0);
-    
-    return {
-      completionPercentage: (completedItems / items.length) * 100,
-      spentPercentage: totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0,
-      totalBudget,
-      totalSpent
-    };
-  };
 
   if (isLoading) {
     return (
@@ -1232,13 +1182,13 @@ export default function AssetManagement() {
 
 
 
-      {/* Editable Rehab Line Items Modal */}
+      {/* Comprehensive Rehab Budget Modal - Same as Deal Analyzer */}
       {showRehabModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-7xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Rehab Progress - {showRehabModal.address}
+                Rehab Budget - {showRehabModal.address}
               </h2>
               <button
                 onClick={() => setShowRehabModal(null)}
@@ -1248,181 +1198,324 @@ export default function AssetManagement() {
               </button>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-6">
-              {/* Progress Summary */}
-              <div className="lg:col-span-1 space-y-4">
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                  <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-4">
-                    Progress Summary
-                  </h3>
-                  {(() => {
-                    const progress = calculateRehabProgress(showRehabModal.id);
-                    return (
-                      <div className="space-y-4">
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-blue-700 dark:text-blue-300">Completion</span>
-                            <span className="font-semibold text-blue-900 dark:text-blue-200">
-                              {progress.completionPercentage.toFixed(1)}%
-                            </span>
-                          </div>
-                          <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                              style={{ width: `${progress.completionPercentage}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-blue-700 dark:text-blue-300">Budget Spent</span>
-                            <span className="font-semibold text-blue-900 dark:text-blue-200">
-                              {progress.spentPercentage.toFixed(1)}%
-                            </span>
-                          </div>
-                          <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full transition-all duration-300 ${
-                                progress.spentPercentage > 100 ? 'bg-red-600' :
-                                progress.spentPercentage > 90 ? 'bg-yellow-600' : 'bg-green-600'
-                              }`}
-                              style={{ width: `${Math.min(progress.spentPercentage, 100)}%` }}
-                            ></div>
-                          </div>
-                        </div>
+            {(() => {
+              const dealAnalyzerData = showRehabModal.dealAnalyzerData ? JSON.parse(showRehabModal.dealAnalyzerData) : null;
+              
+              if (!dealAnalyzerData?.rehabBudgetSections) {
+                return (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 dark:text-gray-400">No rehab budget data available. Import from Deal Analyzer or add manually.</p>
+                  </div>
+                );
+              }
 
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div className="bg-white dark:bg-gray-700 p-2 rounded">
-                            <p className="text-gray-600 dark:text-gray-400">Budget</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">
-                              {formatCurrency(progress.totalBudget)}
-                            </p>
-                          </div>
-                          <div className="bg-white dark:bg-gray-700 p-2 rounded">
-                            <p className="text-gray-600 dark:text-gray-400">Spent</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">
-                              {formatCurrency(progress.totalSpent)}
-                            </p>
-                          </div>
-                        </div>
+              const allItems = Object.values(dealAnalyzerData.rehabBudgetSections).flat();
+              const totalBudget = allItems.reduce((sum: number, item: any) => sum + (item.totalCost || (item.perUnitCost * item.quantity)), 0);
+              const totalSpent = allItems.reduce((sum: number, item: any) => sum + (item.spentAmount || 0), 0);
+              const completedItems = allItems.filter((item: any) => item.completed).length;
+              const completionPercentage = allItems.length > 0 ? (completedItems / allItems.length) * 100 : 0;
+              const spentPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+              const remaining = totalBudget - totalSpent;
+              const buffer = totalBudget * 0.1;
 
-                        <div className="bg-white dark:bg-gray-700 p-2 rounded">
-                          <p className="text-gray-600 dark:text-gray-400">Remaining</p>
-                          <p className={`font-semibold ${
-                            progress.totalBudget - progress.totalSpent >= 0 
-                              ? 'text-green-600' 
-                              : 'text-red-600'
-                          }`}>
-                            {formatCurrency(progress.totalBudget - progress.totalSpent)}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
+              const getCategoryProgress = (category: string) => {
+                const section = dealAnalyzerData.rehabBudgetSections[category];
+                if (!section || section.length === 0) return 0;
+                const completedItems = section.filter((item: any) => item.completed || false).length;
+                return Math.round((completedItems / section.length) * 100);
+              };
 
-              {/* Line Items */}
-              <div className="lg:col-span-2">
+              return (
                 <div className="space-y-6">
-                  {['Exterior', 'Kitchens', 'Bathrooms', 'General Interior'].map(category => {
-                    const categoryItems = (rehabLineItems[showRehabModal.id] || []).filter(item => item.category === category);
-                    
-                    return (
-                      <div key={category} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                        <div className="flex justify-between items-center mb-4">
-                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{category}</h4>
-                          <button
-                            onClick={() => addRehabItem(showRehabModal.id, category)}
-                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                          >
-                            Add Item
-                          </button>
+                  {/* Two Column Layout */}
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* Left Column - Budget Table */}
+                    <div className="bg-white border border-gray-200 rounded-lg">
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr className="border-b bg-gray-50">
+                              <th className="text-left py-2 px-3 font-medium text-sm border-r">Category</th>
+                              <th className="text-right py-2 px-3 font-medium text-sm border-r">Per unit</th>
+                              <th className="text-right py-2 px-3 font-medium text-sm border-r">Units</th>
+                              <th className="text-right py-2 px-3 font-medium text-sm">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {/* Exterior Section */}
+                            <tr className="bg-blue-50">
+                              <td className="py-2 px-3 font-semibold text-blue-700" colSpan={4}>
+                                Exterior
+                              </td>
+                            </tr>
+                            {dealAnalyzerData.rehabBudgetSections.exterior?.map((item: any, index: number) => (
+                              <tr key={index} className="border-b">
+                                <td className="py-2 px-3 border-r">{item.category}</td>
+                                <td className="py-2 px-3 text-right border-r">${parseInt(item.perUnitCost || 0).toLocaleString()}</td>
+                                <td className="py-2 px-3 text-right border-r">{item.quantity}</td>
+                                <td className="py-2 px-3 text-right">${(item.totalCost || (item.perUnitCost * item.quantity)).toLocaleString()}</td>
+                              </tr>
+                            ))}
+                            <tr className="bg-blue-100 font-semibold">
+                              <td className="py-2 px-3" colSpan={3}>Total</td>
+                              <td className="py-2 px-3 text-right">
+                                ${dealAnalyzerData.rehabBudgetSections.exterior?.reduce((sum: number, item: any) => 
+                                  sum + (item.totalCost || (item.perUnitCost * item.quantity)), 0).toLocaleString()}
+                              </td>
+                            </tr>
+
+                            {/* Kitchens Section */}
+                            <tr className="bg-green-50">
+                              <td className="py-2 px-3 font-semibold text-green-700" colSpan={4}>
+                                Kitchens
+                              </td>
+                            </tr>
+                            {dealAnalyzerData.rehabBudgetSections.kitchens?.map((item: any, index: number) => (
+                              <tr key={index} className="border-b">
+                                <td className="py-2 px-3 border-r">{item.category}</td>
+                                <td className="py-2 px-3 text-right border-r">${parseInt(item.perUnitCost || 0).toLocaleString()}</td>
+                                <td className="py-2 px-3 text-right border-r">{item.quantity}</td>
+                                <td className="py-2 px-3 text-right">${(item.totalCost || (item.perUnitCost * item.quantity)).toLocaleString()}</td>
+                              </tr>
+                            ))}
+                            <tr className="bg-green-100 font-semibold">
+                              <td className="py-2 px-3" colSpan={3}>Total</td>
+                              <td className="py-2 px-3 text-right">
+                                ${dealAnalyzerData.rehabBudgetSections.kitchens?.reduce((sum: number, item: any) => 
+                                  sum + (item.totalCost || (item.perUnitCost * item.quantity)), 0).toLocaleString()}
+                              </td>
+                            </tr>
+
+                            {/* Bathrooms Section */}
+                            <tr className="bg-purple-50">
+                              <td className="py-2 px-3 font-semibold text-purple-700" colSpan={4}>
+                                Bathrooms
+                              </td>
+                            </tr>
+                            {dealAnalyzerData.rehabBudgetSections.bathrooms?.map((item: any, index: number) => (
+                              <tr key={index} className="border-b">
+                                <td className="py-2 px-3 border-r">{item.category}</td>
+                                <td className="py-2 px-3 text-right border-r">${parseInt(item.perUnitCost || 0).toLocaleString()}</td>
+                                <td className="py-2 px-3 text-right border-r">{item.quantity}</td>
+                                <td className="py-2 px-3 text-right">${(item.totalCost || (item.perUnitCost * item.quantity)).toLocaleString()}</td>
+                              </tr>
+                            ))}
+                            <tr className="bg-purple-100 font-semibold">
+                              <td className="py-2 px-3" colSpan={3}>Total</td>
+                              <td className="py-2 px-3 text-right">
+                                ${dealAnalyzerData.rehabBudgetSections.bathrooms?.reduce((sum: number, item: any) => 
+                                  sum + (item.totalCost || (item.perUnitCost * item.quantity)), 0).toLocaleString()}
+                              </td>
+                            </tr>
+
+                            {/* General Interior Section */}
+                            <tr className="bg-orange-50">
+                              <td className="py-2 px-3 font-semibold text-orange-700" colSpan={4}>
+                                General Interior Rough
+                              </td>
+                            </tr>
+                            {dealAnalyzerData.rehabBudgetSections.generalInterior?.map((item: any, index: number) => (
+                              <tr key={index} className="border-b">
+                                <td className="py-2 px-3 border-r">{item.category}</td>
+                                <td className="py-2 px-3 text-right border-r">${parseInt(item.perUnitCost || 0).toLocaleString()}</td>
+                                <td className="py-2 px-3 text-right border-r">{item.quantity}</td>
+                                <td className="py-2 px-3 text-right">${(item.totalCost || (item.perUnitCost * item.quantity)).toLocaleString()}</td>
+                              </tr>
+                            ))}
+                            <tr className="bg-orange-100 font-semibold">
+                              <td className="py-2 px-3" colSpan={3}>Total</td>
+                              <td className="py-2 px-3 text-right">
+                                ${dealAnalyzerData.rehabBudgetSections.generalInterior?.reduce((sum: number, item: any) => 
+                                  sum + (item.totalCost || (item.perUnitCost * item.quantity)), 0).toLocaleString()}
+                              </td>
+                            </tr>
+
+                            {/* Finishings Section */}
+                            <tr className="bg-indigo-50">
+                              <td className="py-2 px-3 font-semibold text-indigo-700" colSpan={4}>
+                                Finishings
+                              </td>
+                            </tr>
+                            {dealAnalyzerData.rehabBudgetSections.finishings?.map((item: any, index: number) => (
+                              <tr key={index} className="border-b">
+                                <td className="py-2 px-3 border-r">{item.category}</td>
+                                <td className="py-2 px-3 text-right border-r">${parseInt(item.perUnitCost || 0).toLocaleString()}</td>
+                                <td className="py-2 px-3 text-right border-r">{item.quantity}</td>
+                                <td className="py-2 px-3 text-right">${(item.totalCost || (item.perUnitCost * item.quantity)).toLocaleString()}</td>
+                              </tr>
+                            ))}
+                            <tr className="bg-indigo-100 font-semibold">
+                              <td className="py-2 px-3" colSpan={3}>Total</td>
+                              <td className="py-2 px-3 text-right">
+                                ${dealAnalyzerData.rehabBudgetSections.finishings?.reduce((sum: number, item: any) => 
+                                  sum + (item.totalCost || (item.perUnitCost * item.quantity)), 0).toLocaleString()}
+                              </td>
+                            </tr>
+
+                            {/* Final Summary */}
+                            <tr className="border-t-2 border-gray-300 bg-gray-100 font-bold">
+                              <td className="py-3 px-3" colSpan={3}>Total Project Cost</td>
+                              <td className="py-3 px-3 text-right">${totalBudget.toLocaleString()}</td>
+                            </tr>
+                            <tr className="bg-yellow-100 font-semibold">
+                              <td className="py-2 px-3" colSpan={3}>10% Buffer</td>
+                              <td className="py-2 px-3 text-right">${buffer.toLocaleString()}</td>
+                            </tr>
+                            <tr className="bg-gray-200 font-bold text-lg">
+                              <td className="py-3 px-3" colSpan={3}>Total with Buffer</td>
+                              <td className="py-3 px-3 text-right">${(totalBudget + buffer).toLocaleString()}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Right Column - Timeline & Progress */}
+                    <div className="space-y-6">
+                      {/* Progress Summary */}
+                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Project Overview</h3>
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Total Budget</p>
+                            <p className="font-bold text-gray-900 dark:text-white">{formatCurrency(totalBudget)}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Total Spent</p>
+                            <p className="font-bold text-gray-900 dark:text-white">{formatCurrency(totalSpent)}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Remaining</p>
+                            <p className="font-bold text-gray-900 dark:text-white">{formatCurrency(remaining)}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Completion</p>
+                            <p className="font-bold text-gray-900 dark:text-white">{completionPercentage.toFixed(1)}%</p>
+                          </div>
                         </div>
-                        
+
                         <div className="space-y-3">
-                          {categoryItems.map(item => (
-                            <div key={item.id} className="bg-white dark:bg-gray-800 rounded p-3 grid grid-cols-12 gap-2 items-center">
-                              <div className="col-span-1">
-                                <input
-                                  type="checkbox"
-                                  checked={item.completed}
-                                  onChange={(e) => updateRehabItem(showRehabModal.id, item.id, { completed: e.target.checked })}
-                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                                />
-                              </div>
-                              
-                              <div className="col-span-4">
-                                <input
-                                  type="text"
-                                  value={item.item}
-                                  onChange={(e) => updateRehabItem(showRehabModal.id, item.id, { item: e.target.value })}
-                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                />
-                              </div>
-                              
-                              <div className="col-span-2">
-                                <input
-                                  type="number"
-                                  value={item.budgetAmount}
-                                  onChange={(e) => updateRehabItem(showRehabModal.id, item.id, { budgetAmount: parseFloat(e.target.value) || 0 })}
-                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                  placeholder="Budget"
-                                />
-                              </div>
-                              
-                              <div className="col-span-2">
-                                <input
-                                  type="number"
-                                  value={item.spentAmount}
-                                  onChange={(e) => updateRehabItem(showRehabModal.id, item.id, { spentAmount: parseFloat(e.target.value) || 0 })}
-                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                  placeholder="Spent"
-                                />
-                              </div>
-                              
-                              <div className="col-span-2">
-                                <input
-                                  type="text"
-                                  value={item.notes || ''}
-                                  onChange={(e) => updateRehabItem(showRehabModal.id, item.id, { notes: e.target.value })}
-                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                  placeholder="Notes"
-                                />
-                              </div>
-                              
-                              <div className="col-span-1">
-                                <button
-                                  onClick={() => deleteRehabItem(showRehabModal.id, item.id)}
-                                  className="text-red-600 hover:text-red-800 p-1"
-                                  title="Delete item"
-                                >
-                                  <X className="h-4 w-4" />
-                                </button>
-                              </div>
+                          <div>
+                            <div className="flex justify-between text-sm mb-1">
+                              <span>Overall Progress</span>
+                              <span>{completionPercentage.toFixed(1)}%</span>
                             </div>
-                          ))}
-                          
-                          {categoryItems.length === 0 && (
-                            <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
-                              No items in this category. Click "Add Item" to get started.
+                            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                              <div 
+                                className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                                style={{ width: `${completionPercentage}%` }}
+                              ></div>
                             </div>
-                          )}
+                          </div>
+
+                          <div>
+                            <div className="flex justify-between text-sm mb-1">
+                              <span>Budget Spent</span>
+                              <span>{spentPercentage.toFixed(1)}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full transition-all duration-300 ${
+                                  spentPercentage > 100 ? 'bg-red-600' : 
+                                  spentPercentage > 85 ? 'bg-yellow-500' : 'bg-green-600'
+                                }`}
+                                style={{ width: `${Math.min(spentPercentage, 100)}%` }}
+                              ></div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
 
-            <div className="flex justify-end mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      {/* Category Progress */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Category Progress</h3>
+                        <div className="space-y-3">
+                          {['exterior', 'kitchens', 'bathrooms', 'generalInterior', 'finishings'].map(category => {
+                            const progress = getCategoryProgress(category);
+                            const categoryNames: Record<string, string> = {
+                              exterior: 'Exterior',
+                              kitchens: 'Kitchens', 
+                              bathrooms: 'Bathrooms',
+                              generalInterior: 'General Interior',
+                              finishings: 'Finishings'
+                            };
+                            
+                            return (
+                              <div key={category}>
+                                <div className="flex justify-between text-sm mb-1">
+                                  <span>{categoryNames[category]}</span>
+                                  <span>{progress}%</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${progress}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Timeline/Workflow */}
+                      {dealAnalyzerData.workflowSteps && (
+                        <div className="bg-white border border-gray-200 rounded-lg p-6">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-4">Project Timeline & Workflow</h3>
+                          <div className="space-y-3 max-h-96 overflow-y-auto">
+                            {dealAnalyzerData.workflowSteps.map((step: any, index: number) => {
+                              const statusIcons: Record<string, string> = {
+                                'completed': '✓',
+                                'in-progress': '⟳', 
+                                'pending': '○',
+                                'on-hold': '⏸'
+                              };
+                              
+                              const statusColors: Record<string, string> = {
+                                'completed': 'text-green-600',
+                                'in-progress': 'text-blue-600',
+                                'pending': 'text-gray-400',
+                                'on-hold': 'text-orange-500'
+                              };
+
+                              return (
+                                <div key={step.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                                  <div className={`font-bold text-lg ${statusColors[step.status]}`}>
+                                    {statusIcons[step.status]}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex justify-between items-start">
+                                      <h4 className="font-medium text-gray-900">{step.name}</h4>
+                                      <span className="text-xs text-gray-500 capitalize">{step.status.replace('-', ' ')}</span>
+                                    </div>
+                                    {step.budgetCategory && step.budgetItem && (
+                                      <p className="text-xs text-blue-600">
+                                        Linked to: {step.budgetCategory} → {step.budgetItem}
+                                      </p>
+                                    )}
+                                    {step.notes && (
+                                      <p className="text-sm text-gray-600 mt-1">{step.notes}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Modal Footer */}
+            <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setShowRehabModal(null)}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               >
-                Save & Close
+                Close
               </button>
             </div>
           </div>

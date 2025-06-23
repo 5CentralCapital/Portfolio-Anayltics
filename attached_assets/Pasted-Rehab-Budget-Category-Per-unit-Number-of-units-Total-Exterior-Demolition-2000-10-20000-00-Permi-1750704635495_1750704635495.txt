@@ -1,0 +1,357 @@
+Rehab Budget
+Category	Per unit	Number of units	Total
+Exterior	
+Demolition
+$
+2000
+10
+$ 20000.00
+Permits
+$
+0
+1
+$ 0.00
+Windows
+$
+1244
+10
+$ 12440.00
+Landscaping
+$
+500
+10
+$ 5000.00
+Roof
+$
+144500
+1
+$ 144500.00
+Driveway
+$
+0
+1
+$ 0.00
+Total	$ 181940.00		$ 181940.00
+Kitchens	
+Cabinets
+$
+1500
+10
+$ 15000.00
+Counter
+$
+750
+10
+$ 7500.00
+Sink + faucet
+$
+500
+10
+$ 5000.00
+Appliances
+$
+600
+10
+$ 6000.00
+$ 33500.00		$ 33500.00
+Bathrooms	
+Toilet
+$
+350
+10
+$ 3500.00
+Vanity/Mirror
+$
+600
+10
+$ 6000.00
+Shower
+$
+1500
+10
+$ 15000.00
+Tile
+$
+1500
+10
+$ 15000.00
+Lighting
+$
+100
+10
+$ 1000.00
+$ 40500.00		$ 40500.00
+Category	Per unit	Number of units	Total
+General Interior Rough	+ Add
+Exterior Doors
+$
+1000
+10
+$ 10000.00
+Framing
+$
+1300
+10
+$ 13000.00
+Drywall
+$
+4000
+10
+$ 40000.00
+Insulation
+$
+1200
+10
+$ 12000.00
+Hot Water Heater
+$
+850
+10
+$ 8500.00
+Plumbing
+$
+2000
+10
+$ 20000.00
+Electric panels
+$
+1200
+10
+$ 12000.00
+Electrical wiring
+$
+400
+10
+$ 4000.00
+Mini split
+$
+2000
+10
+$ 20000.00
+Paint
+$
+1500
+10
+$ 15000.00
+Interior door
+$
+800
+10
+$ 8000.00
+Flooring
+$
+1500
+10
+$ 15000.00
+$ 177500.00		$ 177500.00
+Finishings	+ Add
+Fixtures
+$
+0
+1
+$ 0.00
+Lights
+$
+0
+1
+$ 0.00
+Blinds, Doorknobs
+$
+0
+1
+$ 0.00
+$ 0.00		$ 0.00
+Exterior	$ 181940.00
+General Interior	$ 177500.00
+Kitchens	$ 33500.00
+Bathrooms	$ 40500.00
+Finishings	$ 0.00
+Total	$ 433440.00
+10% Buffer	$ 43344.00
+$ 476784.00
+Breakdown
+Total	Per Unit
+Labor	$ 325080.00	$ 32508.00
+Materials	$ 108360.00	$ 10836.00
+Buffer	$ 43344.00	$ 4334.40
+Project Timeline & Workflow
++ Add Step
+Edit
+Exterior
+0%
+Kitchens
+0%
+Bathrooms
+0%
+General Interior
+0%
+Finishings
+0%
+✓
+
+Completed
+Close on property
+Units
+2/10
+Property acquired
+Property acquired
+✓
+2
+
+In Progress
+Eviction current tenants
+Units
+0/10
+Legal process in progress
+Legal process in progress
+⟳
+3
+
+Pending
+Permits & Inspections
+Permits
+Linked to: exterior → Permits
+Budget
+Units
+0/10
+City permits required
+City permits required
+○
+4
+
+Pending
+Demolition
+Demolition
+Linked to: exterior → Demolition
+Budget
+Units
+0/10
+Remove existing fixtures
+Remove existing fixtures
+○
+5
+
+Pending
+Electrical & Plumbing Rough
+Electrical wiring
+Linked to: generalInterior → Electrical wiring
+Budget
+Units
+0/10
+Rough electrical and plumbing
+Rough electrical and plumbing
+○
+6
+
+Pending
+Drywall Installation
+Drywall
+Linked to: generalInterior → Drywall
+Budget
+Units
+0/10
+Hang and finish drywall
+Hang and finish drywall
+○
+7
+
+Pending
+Kitchen Renovation
+Cabinets
+Linked to: kitchens → Cabinets
+Budget
+Units
+0/10
+Complete kitchen remodel
+Complete kitchen remodel
+○
+8
+
+Pending
+Bathroom Renovation
+Vanity
+Linked to: bathrooms → Vanity
+Budget
+Units
+0/10
+Complete bathroom remodel
+Complete bathroom remodel
+○
+9
+
+Pending
+Flooring Installation
+Flooring
+Linked to: generalInterior → Flooring
+Budget
+Units
+0/10
+Install new flooring throughout
+Install new flooring throughout
+○
+10
+
+Pending
+Paint & Finishings
+Paint
+Linked to: finishings → Paint
+Budget
+Units
+0/10
+Interior painting and trim
+Interior painting and trim
+○
+11
+
+Pending
+HVAC Installation
+Mini split
+Linked to: generalInterior → Mini split
+Budget
+Units
+0/10
+Install heating and cooling
+Install heating and cooling
+○
+12
+
+Pending
+Final Inspections
+Units
+0/10
+City final inspections
+City final inspections
+○
+13
+
+Pending
+List for rent
+Units
+0/10
+Market ready units
+Market ready units
+○
+14
+
+Pending
+Refinance property
+Units
+0/10
+Permanent financing
+Permanent financing
+○
+Total Steps
+
+14
+
+Completed
+
+1
+
+In Progress
+
+1
+
+Overall Progress
+
+7%
