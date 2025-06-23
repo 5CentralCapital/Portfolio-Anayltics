@@ -228,8 +228,12 @@ const entities = [
 ];
 
 const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
-  // Use centralized calculations for accurate metrics
-  const calculatedMetrics = calculatePropertyMetrics(property);
+  // Use same calculation function as modal Overview tab
+  const calculations = getPropertyCalculations(property);
+  const calculatedMetrics = calculations ? {
+    monthlyCashFlow: calculations.monthlyCashFlow,
+    cashOnCashReturn: calculations.cashOnCashReturn
+  } : null;
   
 
   
