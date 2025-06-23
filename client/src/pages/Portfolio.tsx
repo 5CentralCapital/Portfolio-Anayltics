@@ -10,9 +10,9 @@ const Portfolio = () => {
 
   // Fetch properties from public endpoint
   const { data: propertiesResponse, isLoading, error } = useQuery({
-    queryKey: ['/api/property-performance'],
+    queryKey: ['/api/public/portfolio'],
     queryFn: async () => {
-      const response = await fetch('/api/property-performance');
+      const response = await fetch('/api/public/portfolio');
       if (!response.ok) throw new Error('Failed to fetch properties');
       return response.json();
     }

@@ -371,6 +371,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public portfolio route (no authentication required)
+  app.get("/api/public/portfolio", async (req, res) => {
+    try {
+      // Get all properties for public portfolio display
+      const properties = await storage.getProperties();
+      
+      // Filter to only include properties that should be public
+      const publicProperties = properties.filter(p => 
+        p.status === 'Cashflowing' || p.status === 'Sold' || p.status === 'Rehabbing'
+      );
+      
+      res.json(publicProperties);
+    } catch (error) {
+      console.error("Public portfolio error:", error);
+      res.status(500).json({ error: "Failed to load portfolio data" });
+    }
+  });
+
   // Property performance route
   app.get("/api/property-performance", authenticateUser, async (req: any, res) => {
     try {
