@@ -277,15 +277,83 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
         </div>
         <div>
           <p className="text-gray-600 dark:text-gray-400">Monthly Cash Flow</p>
-          <p className="font-semibold text-green-600">
-            {formatCurrency(4855.40)}
-          </p>
+          {(() => {
+            const dealData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : null;
+            if (!dealData) return <p className="font-semibold text-gray-500">N/A</p>;
+            
+            const grossRent = dealData.rentRoll?.reduce((sum: number, unit: any) => sum + (unit.proFormaRent || unit.currentRent || 0), 0) || 0;
+            const vacancy = grossRent * ((dealData.assumptions?.vacancyRate || 0.05));
+            const netRevenue = grossRent - vacancy;
+            
+            const totalExpenses = Object.values(dealData.expenses || {}).reduce((sum: number, expense: any) => {
+              if (typeof expense === 'object' && expense !== null) {
+                const amount = parseFloat(expense.amount || '0');
+                const isPercentage = expense.isPercentage || false;
+                if (isPercentage) {
+                  return sum + (netRevenue * 12 * (amount / 100) / 12);
+                } else {
+                  return sum + amount;
+                }
+              }
+              return sum + (parseFloat(expense || '0') || 0);
+            }, 0);
+            
+            const noi = netRevenue - totalExpenses;
+            const activeLoan = dealData.loans?.find((loan: any) => loan.isActive);
+            const debtService = activeLoan?.monthlyPayment || 0;
+            const cashFlow = noi - debtService;
+            
+            return (
+              <p className={`font-semibold ${cashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(cashFlow)}
+              </p>
+            );
+          })()}
         </div>
         <div>
           <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
-          <p className="font-semibold text-blue-600">
-            {formatPercentage(21.60)}
-          </p>
+          {(() => {
+            const dealData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : null;
+            if (!dealData) return <p className="font-semibold text-gray-500">N/A</p>;
+            
+            const grossRent = dealData.rentRoll?.reduce((sum: number, unit: any) => sum + (unit.proFormaRent || unit.currentRent || 0), 0) || 0;
+            const vacancy = grossRent * ((dealData.assumptions?.vacancyRate || 0.05));
+            const netRevenue = grossRent - vacancy;
+            
+            const totalExpenses = Object.values(dealData.expenses || {}).reduce((sum: number, expense: any) => {
+              if (typeof expense === 'object' && expense !== null) {
+                const amount = parseFloat(expense.amount || '0');
+                const isPercentage = expense.isPercentage || false;
+                if (isPercentage) {
+                  return sum + (netRevenue * 12 * (amount / 100) / 12);
+                } else {
+                  return sum + amount;
+                }
+              }
+              return sum + (parseFloat(expense || '0') || 0);
+            }, 0);
+            
+            const noi = netRevenue - totalExpenses;
+            const activeLoan = dealData.loans?.find((loan: any) => loan.isActive);
+            const debtService = activeLoan?.monthlyPayment || 0;
+            const cashFlow = noi - debtService;
+            
+            const acquisitionPrice = parseFloat(property.acquisitionPrice || '0');
+            const loanPercentage = dealData.assumptions?.loanPercentage || 0.85;
+            const downPayment = acquisitionPrice * (1 - loanPercentage);
+            const closingCosts = Object.values(dealData.closingCosts || {}).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
+            const holdingCosts = Object.values(dealData.holdingCosts || {}).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
+            const totalInvested = downPayment + closingCosts + holdingCosts;
+            
+            const annualCashFlow = cashFlow * 12;
+            const cocReturn = totalInvested > 0 ? (annualCashFlow / totalInvested) * 100 : 0;
+            
+            return (
+              <p className={`font-semibold ${cocReturn >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                {formatPercentage(cocReturn)}
+              </p>
+            );
+          })()}
         </div>
       </div>
 
