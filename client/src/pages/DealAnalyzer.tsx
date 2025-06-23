@@ -1893,28 +1893,42 @@ export default function DealAnalyzer() {
             {/* Interest Rate Impact */}
             <div className="mt-6 border border-gray-200 rounded-lg p-6">
               <h4 className="text-lg font-semibold mb-4 text-purple-600">Interest Rate Impact</h4>
+              <div className="text-sm text-gray-600 mb-3">
+                Base Refinance Rate: {(assumptions.refinanceInterestRate * 100).toFixed(1)}%
+              </div>
               <div className="grid grid-cols-5 gap-4">
-                {[3.5, 4.0, 4.5, 5.0, 5.5].map(rate => {
-                  const monthlyRate = rate / 100 / 12;
-                  const payments = assumptions.loanTermYears * 12;
-                  const monthlyPayment = (metrics.initialLoan * monthlyRate * Math.pow(1 + monthlyRate, payments)) / (Math.pow(1 + monthlyRate, payments) - 1);
-                  const annualPayment = monthlyPayment * 12;
-                  const adjustedCashFlow = metrics.noi - annualPayment;
-                  
-                  return (
-                    <div key={rate} className="text-center">
-                      <div className={`font-semibold ${rate === assumptions.interestRate * 100 ? 'text-blue-600' : ''}`}>
-                        {rate.toFixed(1)}%
+                {(() => {
+                  const baseRate = assumptions.refinanceInterestRate * 100;
+                  const rates = [
+                    baseRate - 1.0,
+                    baseRate - 0.5,
+                    baseRate,
+                    baseRate + 0.5,
+                    baseRate + 1.0
+                  ];
+                  return rates.map(rate => {
+                    const monthlyRate = rate / 100 / 12;
+                    const payments = 30 * 12; // 30-year term for refinance
+                    const monthlyPayment = (metrics.refinanceLoan * monthlyRate * Math.pow(1 + monthlyRate, payments)) / (Math.pow(1 + monthlyRate, payments) - 1);
+                    const annualPayment = monthlyPayment * 12;
+                    const adjustedCashFlow = metrics.noi - annualPayment;
+                    const isBase = Math.abs(rate - baseRate) < 0.01;
+                    
+                    return (
+                      <div key={rate} className="text-center">
+                        <div className={`font-semibold ${isBase ? 'text-blue-600' : ''}`}>
+                          {rate.toFixed(1)}%
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {formatCurrency(monthlyPayment)}/mo
+                        </div>
+                        <div className={`text-sm font-medium ${adjustedCashFlow >= 0 ? 'text-green-600' : 'text-red-600'} ${isBase ? 'font-bold' : ''}`}>
+                          {formatCurrency(adjustedCashFlow)}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600">
-                        {formatCurrency(monthlyPayment)}/mo
-                      </div>
-                      <div className={`text-sm font-medium ${adjustedCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(adjustedCashFlow)}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </div>
             </div>
           </div>

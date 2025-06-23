@@ -167,6 +167,7 @@ Changelog:
 - June 23, 2025. Enhanced Deal Analyzer sensitivity analysis with dynamic calculations - rent sensitivity now shows +/-5% and 10% variations around actual market rent values from rent roll, cap rate sensitivity displays +/-0.5% and 1.0% variations around editable market cap rate assumption from overview page - both sections now show base values and dynamically adjust calculations based on user-defined assumptions rather than static ranges
 - June 23, 2025. Fixed initial loan calculation in Deal Analyzer to properly use editable loan percentage assumption from overview page instead of hardcoded 85% - updated frontend calculation logic to use assumptions.loanPercentage for both initial loan amount and down payment calculations, ensuring loan percentage field directly controls loan calculations throughout the analysis
 - June 23, 2025. Corrected loan analysis section initial loan calculation to use (purchase price + total rehab cost) × loan percentage assumption instead of purchase price only - ensures loan analysis reflects complete project financing including acquisition and renovation costs
+- June 23, 2025. Updated interest rate sensitivity analysis to dynamically use refinance interest rate assumption with +/-0.5% and 1.0% variations instead of hardcoded rates - displays base refinance rate and calculates cash flow impact using refinance loan amount and 30-year term for accurate post-refinance analysis
 
 ## User Preferences
 
