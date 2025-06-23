@@ -233,6 +233,8 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
   
 
   
+
+  
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 w-full cursor-pointer hover:shadow-lg transition-shadow card-hover"
          onDoubleClick={() => onDoubleClick(property)}
