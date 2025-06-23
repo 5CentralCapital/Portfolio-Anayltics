@@ -41,8 +41,8 @@ export class TestDatabase {
    */
   async createTestUser(): Promise<any> {
     const [user] = await db.insert(users).values({
-      id: '999',
       email: 'test@example.com',
+      passwordHash: 'test-password-hash',
       firstName: 'Test',
       lastName: 'User',
       profileImageUrl: null,
