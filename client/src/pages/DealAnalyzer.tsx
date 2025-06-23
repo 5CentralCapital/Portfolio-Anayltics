@@ -123,42 +123,42 @@ export default function DealAnalyzer() {
   // Structured rehab budget matching the provided format
   const [rehabBudgetSections, setRehabBudgetSections] = useState({
     exterior: [
-      { id: 1, category: 'Demolition', perUnitCost: 1500, quantity: 1, totalCost: 15000 },
-      { id: 2, category: 'Permits', perUnitCost: 500, quantity: 1, totalCost: 5000 },
-      { id: 3, category: 'Windows', perUnitCost: 3750, quantity: 8, totalCost: 30000 },
-      { id: 4, category: 'Landscaping', perUnitCost: 500, quantity: 1, totalCost: 5000 },
+      { id: 1, category: 'Demolition', perUnitCost: 1500, quantity: 1, totalCost: 15000, completed: false },
+      { id: 2, category: 'Permits', perUnitCost: 500, quantity: 1, totalCost: 5000, completed: false },
+      { id: 3, category: 'Windows', perUnitCost: 3750, quantity: 8, totalCost: 30000, completed: false },
+      { id: 4, category: 'Landscaping', perUnitCost: 500, quantity: 1, totalCost: 5000, completed: false },
     ],
     generalInterior: [
-      { id: 1, category: 'Exterior Doors', perUnitCost: 1250, quantity: 1, totalCost: 12500 },
-      { id: 2, category: 'Framing', perUnitCost: 500, quantity: 1, totalCost: 5000 },
-      { id: 3, category: 'Drywall', perUnitCost: 3500, quantity: 1, totalCost: 35000 },
-      { id: 4, category: 'Insulation', perUnitCost: 1250, quantity: 1, totalCost: 12500 },
-      { id: 5, category: 'Hot Water Heater', perUnitCost: 800, quantity: 1, totalCost: 8000 },
-      { id: 6, category: 'Plumbing', perUnitCost: 1500, quantity: 1, totalCost: 15000 },
-      { id: 7, category: 'Electric panels', perUnitCost: 2000, quantity: 1, totalCost: 8000 },
-      { id: 8, category: 'Electrical wiring', perUnitCost: 1000, quantity: 1, totalCost: 10000 },
-      { id: 9, category: 'Mini split', perUnitCost: 2000, quantity: 1, totalCost: 20000 },
-      { id: 10, category: 'Paint', perUnitCost: 1000, quantity: 1, totalCost: 10000 },
-      { id: 11, category: 'Interior door', perUnitCost: 500, quantity: 1, totalCost: 5000 },
-      { id: 12, category: 'Flooring', perUnitCost: 2612.50, quantity: 1, totalCost: 26125 },
+      { id: 1, category: 'Exterior Doors', perUnitCost: 1250, quantity: 1, totalCost: 12500, completed: false },
+      { id: 2, category: 'Framing', perUnitCost: 500, quantity: 1, totalCost: 5000, completed: false },
+      { id: 3, category: 'Drywall', perUnitCost: 3500, quantity: 1, totalCost: 35000, completed: false },
+      { id: 4, category: 'Insulation', perUnitCost: 1250, quantity: 1, totalCost: 12500, completed: false },
+      { id: 5, category: 'Hot Water Heater', perUnitCost: 800, quantity: 1, totalCost: 8000, completed: false },
+      { id: 6, category: 'Plumbing', perUnitCost: 1500, quantity: 1, totalCost: 15000, completed: false },
+      { id: 7, category: 'Electric panels', perUnitCost: 2000, quantity: 1, totalCost: 8000, completed: false },
+      { id: 8, category: 'Electrical wiring', perUnitCost: 1000, quantity: 1, totalCost: 10000, completed: false },
+      { id: 9, category: 'Mini split', perUnitCost: 2000, quantity: 1, totalCost: 20000, completed: false },
+      { id: 10, category: 'Paint', perUnitCost: 1000, quantity: 1, totalCost: 10000, completed: false },
+      { id: 11, category: 'Interior door', perUnitCost: 500, quantity: 1, totalCost: 5000, completed: false },
+      { id: 12, category: 'Flooring', perUnitCost: 2612.50, quantity: 1, totalCost: 26125, completed: false },
     ],
     kitchens: [
-      { id: 1, category: 'Cabinets', perUnitCost: 2250, quantity: 1, totalCost: 22500 },
-      { id: 2, category: 'Counter', perUnitCost: 750, quantity: 1, totalCost: 7500 },
-      { id: 3, category: 'Sink + faucet', perUnitCost: 500, quantity: 1, totalCost: 5000 },
-      { id: 4, category: 'Appliances', perUnitCost: 1000, quantity: 1, totalCost: 10000 },
+      { id: 1, category: 'Cabinets', perUnitCost: 2250, quantity: 1, totalCost: 22500, completed: false },
+      { id: 2, category: 'Counter', perUnitCost: 750, quantity: 1, totalCost: 7500, completed: false },
+      { id: 3, category: 'Sink + faucet', perUnitCost: 500, quantity: 1, totalCost: 5000, completed: false },
+      { id: 4, category: 'Appliances', perUnitCost: 1000, quantity: 1, totalCost: 10000, completed: false },
     ],
     bathrooms: [
-      { id: 1, category: 'Toilet', perUnitCost: 350, quantity: 1, totalCost: 3500 },
-      { id: 2, category: 'Vanity/Mirror', perUnitCost: 650, quantity: 1, totalCost: 6500 },
-      { id: 3, category: 'Shower', perUnitCost: 1000, quantity: 1, totalCost: 10000 },
-      { id: 4, category: 'Tile', perUnitCost: 1250, quantity: 1, totalCost: 12500 },
-      { id: 5, category: 'Lighting', perUnitCost: 100, quantity: 1, totalCost: 1000 },
+      { id: 1, category: 'Toilet', perUnitCost: 350, quantity: 1, totalCost: 3500, completed: false },
+      { id: 2, category: 'Vanity/Mirror', perUnitCost: 650, quantity: 1, totalCost: 6500, completed: false },
+      { id: 3, category: 'Shower', perUnitCost: 1000, quantity: 1, totalCost: 10000, completed: false },
+      { id: 4, category: 'Tile', perUnitCost: 1250, quantity: 1, totalCost: 12500, completed: false },
+      { id: 5, category: 'Lighting', perUnitCost: 100, quantity: 1, totalCost: 1000, completed: false },
     ],
     finishings: [
-      { id: 1, category: 'Fixtures', perUnitCost: 200, quantity: 1, totalCost: 2000 },
-      { id: 2, category: 'Lights', perUnitCost: 500, quantity: 1, totalCost: 5000 },
-      { id: 3, category: 'Blinds, Doorknobs', perUnitCost: 650, quantity: 1, totalCost: 6500 },
+      { id: 1, category: 'Fixtures', perUnitCost: 200, quantity: 1, totalCost: 2000, completed: false },
+      { id: 2, category: 'Lights', perUnitCost: 500, quantity: 1, totalCost: 5000, completed: false },
+      { id: 3, category: 'Blinds, Doorknobs', perUnitCost: 650, quantity: 1, totalCost: 6500, completed: false },
     ]
   });
 
@@ -184,20 +184,65 @@ export default function DealAnalyzer() {
     other: 'Other'
   });
 
-  // Workflow timeline state
+  // Workflow timeline state - integrated with budget sections
   const [workflowSteps, setWorkflowSteps] = useState([
-    { id: 1, step: 'Close on property', status: 'completed', progress: '', notes: '' },
-    { id: 2, step: 'Eviction current tenants', status: 'in-progress', progress: '8/14', notes: 'Units evicted' },
-    { id: 3, step: 'Start renovations', status: 'pending', progress: '0/8', notes: 'Units renovated' },
-    { id: 4, step: 'Demo', status: 'pending', progress: '', notes: '' },
-    { id: 5, step: 'Paint', status: 'pending', progress: '', notes: '' },
-    { id: 6, step: 'Minisplits', status: 'pending', progress: '', notes: '' },
-    { id: 7, step: 'Flooring', status: 'pending', progress: '', notes: '' },
-    { id: 8, step: 'List for rent', status: 'pending', progress: '2/8', notes: 'Units listed' },
-    { id: 9, step: 'Refinance property', status: 'pending', progress: '', notes: '' }
+    { id: 1, step: 'Close on property', status: 'completed', budgetCategory: null, notes: 'Property acquired' },
+    { id: 2, step: 'Eviction current tenants', status: 'in-progress', budgetCategory: null, notes: 'Legal process in progress' },
+    { id: 3, step: 'Permits & Inspections', status: 'pending', budgetCategory: 'exterior', budgetItem: 'Permits', notes: 'City permits required' },
+    { id: 4, step: 'Demolition', status: 'pending', budgetCategory: 'exterior', budgetItem: 'Demolition', notes: 'Remove existing fixtures' },
+    { id: 5, step: 'Electrical & Plumbing Rough', status: 'pending', budgetCategory: 'generalInterior', budgetItem: 'Electrical wiring', notes: 'Rough electrical and plumbing' },
+    { id: 6, step: 'Drywall Installation', status: 'pending', budgetCategory: 'generalInterior', budgetItem: 'Drywall', notes: 'Hang and finish drywall' },
+    { id: 7, step: 'Kitchen Renovation', status: 'pending', budgetCategory: 'kitchens', budgetItem: 'Cabinets', notes: 'Complete kitchen remodel' },
+    { id: 8, step: 'Bathroom Renovation', status: 'pending', budgetCategory: 'bathrooms', budgetItem: 'Vanity', notes: 'Complete bathroom remodel' },
+    { id: 9, step: 'Flooring Installation', status: 'pending', budgetCategory: 'generalInterior', budgetItem: 'Flooring', notes: 'Install new flooring throughout' },
+    { id: 10, step: 'Paint & Finishings', status: 'pending', budgetCategory: 'finishings', budgetItem: 'Paint', notes: 'Interior painting and trim' },
+    { id: 11, step: 'HVAC Installation', status: 'pending', budgetCategory: 'generalInterior', budgetItem: 'Mini split', notes: 'Install heating and cooling' },
+    { id: 12, step: 'Final Inspections', status: 'pending', budgetCategory: null, notes: 'City final inspections' },
+    { id: 13, step: 'List for rent', status: 'pending', budgetCategory: null, notes: 'Market ready units' },
+    { id: 14, step: 'Refinance property', status: 'pending', budgetCategory: null, notes: 'Permanent financing' }
   ]);
 
   const [editingWorkflow, setEditingWorkflow] = useState(false);
+
+  // Function to update budget item completion when workflow step is marked complete
+  const updateBudgetFromWorkflow = (stepId: number, status: string) => {
+    const step = workflowSteps.find(s => s.id === stepId);
+    if (step && step.budgetCategory && step.budgetItem && status === 'completed') {
+      // Find and update the corresponding budget item
+      setRehabBudgetSections(prev => {
+        const updated = { ...prev };
+        if (updated[step.budgetCategory as keyof typeof updated]) {
+          updated[step.budgetCategory as keyof typeof updated] = updated[step.budgetCategory as keyof typeof updated].map(item => {
+            if (item.category === step.budgetItem) {
+              return { ...item, completed: true };
+            }
+            return item;
+          });
+        }
+        return updated;
+      });
+    }
+  };
+
+  // Function to get budget item completion status
+  const getBudgetItemStatus = (budgetCategory: string | null, budgetItem: string | null) => {
+    if (!budgetCategory || !budgetItem) return null;
+    
+    const section = rehabBudgetSections[budgetCategory as keyof typeof rehabBudgetSections];
+    if (!section) return null;
+    
+    const item = section.find(item => item.category === budgetItem);
+    return item?.completed || false;
+  };
+
+  // Function to calculate overall progress for each budget category
+  const getCategoryProgress = (category: string) => {
+    const section = rehabBudgetSections[category as keyof typeof rehabBudgetSections];
+    if (!section || section.length === 0) return 0;
+    
+    const completedItems = section.filter(item => item.completed || false).length;
+    return Math.round((completedItems / section.length) * 100);
+  };
 
   useEffect(() => {
     // Simulate loading
@@ -2670,7 +2715,8 @@ export default function DealAnalyzer() {
                       id: maxId + 1,
                       step: 'New Step',
                       status: 'pending',
-                      progress: '',
+                      budgetCategory: null,
+                      budgetItem: null,
                       notes: ''
                     };
                     setWorkflowSteps([...workflowSteps, newStep]);
@@ -2692,67 +2738,149 @@ export default function DealAnalyzer() {
               </div>
             </div>
 
-            <div className="space-y-4">
-              {workflowSteps.map((step, index) => (
-                <div key={step.id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-all-smooth card-hover">
-                  {/* Step Number */}
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-medium">
-                    {index + 1}
+            {/* Category Progress Overview */}
+            <div className="grid grid-cols-5 gap-4 mb-6">
+              {['exterior', 'kitchens', 'bathrooms', 'generalInterior', 'finishings'].map(category => {
+                const categoryNames: Record<string, string> = {
+                  exterior: 'Exterior',
+                  kitchens: 'Kitchens',
+                  bathrooms: 'Bathrooms',
+                  generalInterior: 'General Interior',
+                  finishings: 'Finishings'
+                };
+                const progress = getCategoryProgress(category);
+                return (
+                  <div key={category} className="bg-gray-50 rounded-lg p-3 text-center">
+                    <h4 className="text-xs font-medium text-gray-600 mb-2">{categoryNames[category]}</h4>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          progress === 100 ? 'bg-green-500' : progress > 0 ? 'bg-blue-500' : 'bg-gray-300'
+                        }`}
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-xs font-medium text-gray-700">{progress}%</span>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Status Indicator */}
-                  <div className="flex-shrink-0">
-                    <select
-                      value={step.status}
-                      onChange={(e) => {
-                        const updated = workflowSteps.map(s => 
-                          s.id === step.id ? {...s, status: e.target.value} : s
-                        );
-                        setWorkflowSteps(updated);
-                      }}
-                      className="px-2 py-1 border rounded text-xs"
-                      disabled={!editingWorkflow}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="in-progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                      <option value="on-hold">On Hold</option>
-                    </select>
-                  </div>
+            <div className="space-y-3">
+              {workflowSteps.map((step, index) => {
+                const budgetItemCompleted = getBudgetItemStatus(step.budgetCategory, step.budgetItem);
+                const isLinkedToBudget = step.budgetCategory && step.budgetItem;
+                
+                return (
+                  <div key={step.id} className={`flex items-center space-x-4 p-3 border rounded-lg transition-all-smooth card-hover ${
+                    step.status === 'completed' ? 'bg-green-50 border-green-200' :
+                    step.status === 'in-progress' ? 'bg-blue-50 border-blue-200' :
+                    step.status === 'on-hold' ? 'bg-yellow-50 border-yellow-200' :
+                    'bg-white border-gray-200 hover:border-blue-300'
+                  }`}>
+                    {/* Step Number */}
+                    <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                      step.status === 'completed' ? 'bg-green-500 text-white' :
+                      step.status === 'in-progress' ? 'bg-blue-500 text-white' :
+                      step.status === 'on-hold' ? 'bg-yellow-500 text-white' :
+                      'bg-gray-200 text-gray-600'
+                    }`}>
+                      {step.status === 'completed' ? '✓' : index + 1}
+                    </div>
 
-                  {/* Step Name */}
-                  <div className="flex-1">
-                    {editingWorkflow ? (
-                      <input
-                        type="text"
-                        value={step.step}
+                    {/* Status Dropdown */}
+                    <div className="flex-shrink-0">
+                      <select
+                        value={step.status}
                         onChange={(e) => {
+                          const newStatus = e.target.value;
                           const updated = workflowSteps.map(s => 
-                            s.id === step.id ? {...s, step: e.target.value} : s
+                            s.id === step.id ? {...s, status: newStatus} : s
                           );
                           setWorkflowSteps(updated);
+                          
+                          // Update budget item completion when workflow step is marked complete
+                          updateBudgetFromWorkflow(step.id, newStatus);
                         }}
-                        className="w-full px-2 py-1 border rounded text-sm font-medium"
-                      />
-                    ) : (
-                      <span className="text-sm font-medium text-gray-900">{step.step}</span>
+                        className={`px-2 py-1 border rounded text-xs font-medium ${
+                          step.status === 'completed' ? 'bg-green-100 border-green-300 text-green-800' :
+                          step.status === 'in-progress' ? 'bg-blue-100 border-blue-300 text-blue-800' :
+                          step.status === 'on-hold' ? 'bg-yellow-100 border-yellow-300 text-yellow-800' :
+                          'bg-white border-gray-300 text-gray-700'
+                        }`}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="on-hold">On Hold</option>
+                      </select>
+                    </div>
+
+                    {/* Step Name and Budget Link */}
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        {editingWorkflow ? (
+                          <input
+                            type="text"
+                            value={step.step}
+                            onChange={(e) => {
+                              const updated = workflowSteps.map(s => 
+                                s.id === step.id ? {...s, step: e.target.value} : s
+                              );
+                              setWorkflowSteps(updated);
+                            }}
+                            className="flex-1 px-2 py-1 border rounded text-sm font-medium"
+                          />
+                        ) : (
+                          <span className="text-sm font-medium text-gray-900">{step.step}</span>
+                        )}
+                        
+                        {/* Budget Link Indicator */}
+                        {isLinkedToBudget && (
+                          <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ${
+                            budgetItemCompleted ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            <span className="w-2 h-2 rounded-full bg-current"></span>
+                            <span>{step.budgetItem}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Budget Category Indicator */}
+                      {isLinkedToBudget && (
+                        <div className="mt-1">
+                          <span className="text-xs text-gray-500">
+                            Linked to: {step.budgetCategory} → {step.budgetItem}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Budget Progress Indicator */}
+                    {isLinkedToBudget && (
+                      <div className="flex-shrink-0 w-16 text-center">
+                        <div className={`text-xs font-medium ${
+                          budgetItemCompleted ? 'text-green-600' : 'text-gray-500'
+                        }`}>
+                          {budgetItemCompleted ? 'Budget ✓' : 'Budget'}
+                        </div>
+                      </div>
                     )}
-                  </div>
 
-                  {/* Progress */}
-                  <div className="w-20">
-                    {editingWorkflow ? (
-                      <input
-                        type="text"
-                        value={step.progress}
-                        onChange={(e) => {
-                          const updated = workflowSteps.map(s => 
-                            s.id === step.id ? {...s, progress: e.target.value} : s
-                          );
-                          setWorkflowSteps(updated);
-                        }}
-                        placeholder="0/8"
-                        className="w-full px-2 py-1 border rounded text-xs text-center"
+                    {/* Notes */}
+                    <div className="w-32">
+                      {editingWorkflow ? (
+                        <input
+                          type="text"
+                          value={step.notes}
+                          onChange={(e) => {
+                            const updated = workflowSteps.map(s => 
+                              s.id === step.id ? {...s, notes: e.target.value} : s
+                            );
+                            setWorkflowSteps(updated);
+                          }}
+                          placeholder="Notes"
+                          className="w-full px-2 py-1 border rounded text-xs"
                       />
                     ) : (
                       <span className="text-xs text-gray-600 text-center block">{step.progress}</span>
