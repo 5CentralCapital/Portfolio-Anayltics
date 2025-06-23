@@ -63,6 +63,7 @@ export default function DealAnalyzer() {
     legalFees: 2500,
     transferTax: 8000,
     miscellaneous: 2200,
+    interestReserve: 7200,
     sellerCredit: -5000
   });
 
@@ -72,6 +73,7 @@ export default function DealAnalyzer() {
     legalFees: 'Legal Fees',
     transferTax: 'Transfer Tax',
     miscellaneous: 'Miscellaneous',
+    interestReserve: '3-Month Interest Reserve',
     sellerCredit: 'Seller Credit'
   });
 
@@ -419,6 +421,35 @@ export default function DealAnalyzer() {
     // Limit to one decimal place
     if (parts.length === 2 && parts[1].length > 1) {
       cleaned = parts[0] + '.' + parts[1].substring(0, 1);
+    }
+    
+    return cleaned;
+  };
+
+  // Helper function for closing costs - allows negative numbers for seller credits
+  const validateClosingCostInput = (value: string): string => {
+    // Allow negative sign, numbers, and decimal point
+    let cleaned = value.replace(/[^0-9.-]/g, '');
+    
+    // Ensure only one negative sign at the beginning
+    if (cleaned.includes('-')) {
+      const firstNegative = cleaned.indexOf('-');
+      if (firstNegative > 0) {
+        cleaned = cleaned.replace(/-/g, '');
+      } else {
+        cleaned = '-' + cleaned.substring(1).replace(/-/g, '');
+      }
+    }
+    
+    // Ensure only one decimal point
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    // Limit to two decimal places
+    if (parts.length === 2 && parts[1].length > 2) {
+      cleaned = parts[0] + '.' + parts[1].substring(0, 2);
     }
     
     return cleaned;
@@ -1219,7 +1250,7 @@ export default function DealAnalyzer() {
                               type="text"
                               value={value}
                               onChange={(e) => {
-                                const validated = validateNumberInput(e.target.value);
+                                const validated = validateClosingCostInput(e.target.value);
                                 updateClosingCost(key, Number(validated) || 0);
                               }}
                               className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right"
@@ -1595,6 +1626,10 @@ export default function DealAnalyzer() {
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Monthly Debt Service</span>
                   <span className="font-medium">{formatCurrency(metrics.initialLoan * assumptions.interestRate / 12)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">3-Month Interest Reserve</span>
+                  <span className="font-medium">{formatCurrency((metrics.initialLoan * assumptions.interestRate / 12) * 3)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Interest Rate</span>
