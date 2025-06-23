@@ -3587,6 +3587,251 @@ export default function AssetManagement() {
           </div>
         </div>
       )}
+
+      {/* Sales Data Modal */}
+      {showSalesDataModal && salesDataProperty && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-2xl mx-4">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Property Sale Data - {salesDataProperty.address}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowSalesDataModal(false);
+                    setSalesDataProperty(null);
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Sale Input Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Sale Price
+                    </label>
+                    <input
+                      type="number"
+                      value={salesFormData.salePrice}
+                      onChange={(e) => setSalesFormData(prev => ({ ...prev, salePrice: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter sale price"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      NOI at Sale
+                    </label>
+                    <input
+                      type="number"
+                      value={salesFormData.noiAtSale}
+                      onChange={(e) => setSalesFormData(prev => ({ ...prev, noiAtSale: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Annual NOI at sale"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Sale Date
+                    </label>
+                    <input
+                      type="date"
+                      value={salesFormData.saleDate}
+                      onChange={(e) => setSalesFormData(prev => ({ ...prev, saleDate: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Calculated Metrics Preview */}
+                {salesFormData.salePrice && salesFormData.noiAtSale && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-3">
+                      Calculated Metrics Preview
+                    </h3>
+                    
+                    {(() => {
+                      const salePrice = parseFloat(salesFormData.salePrice);
+                      const noiAtSale = parseFloat(salesFormData.noiAtSale);
+                      
+                      if (!salePrice || !noiAtSale) return null;
+                      
+                      const calculations = calculatePropertyMetrics(salesDataProperty);
+                      const acquisitionDate = new Date(salesDataProperty.acquisitionDate || '2025-01-01');
+                      const saleDateObj = new Date(salesFormData.saleDate);
+                      
+                      // Calculate hold time in years (with decimals)
+                      const holdTimeYears = (saleDateObj.getTime() - acquisitionDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+                      const holdTimeMonths = Math.round(holdTimeYears * 12);
+                      
+                      // Calculate total cash flow during hold period
+                      const totalCashFlow = calculations.monthlyCashFlow * holdTimeMonths;
+                      
+                      // Calculate all-in cost
+                      const acquisitionPrice = parseFloat(salesDataProperty.acquisitionPrice || '0');
+                      const rehabCosts = parseFloat(salesDataProperty.rehabCosts || '0');
+                      const dealAnalyzerData = salesDataProperty.dealAnalyzerData ? JSON.parse(salesDataProperty.dealAnalyzerData) : {};
+                      const closingCosts = dealAnalyzerData.closingCosts ? 
+                        Object.values(dealAnalyzerData.closingCosts).reduce((sum: number, val: any) => sum + (val || 0), 0) : 0;
+                      const holdingCosts = dealAnalyzerData.holdingCosts ? 
+                        Object.values(dealAnalyzerData.holdingCosts).reduce((sum: number, val: any) => sum + (val || 0), 0) : 0;
+                      
+                      const allInCost = acquisitionPrice + rehabCosts + closingCosts + holdingCosts;
+                      const totalProfit = (salePrice - allInCost) + totalCashFlow;
+                      const initialCapital = parseFloat(salesDataProperty.initialCapitalRequired || '0') || calculations.totalInvestedCapital;
+                      const equityMultiple = initialCapital > 0 ? (salePrice - allInCost + totalCashFlow) / initialCapital : 0;
+                      const cashOnCashReturn = initialCapital > 0 ? (totalProfit / initialCapital) * 100 : 0;
+                      const saleCapRate = noiAtSale > 0 ? (noiAtSale / salePrice) * 100 : 0;
+                      const annualizedReturn = holdTimeYears > 0 ? (Math.pow(equityMultiple, 1/holdTimeYears) - 1) * 100 : 0;
+                      
+                      return (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <p className="text-blue-700 dark:text-blue-300">Hold Time</p>
+                            <p className="font-semibold text-blue-900 dark:text-blue-200">
+                              {Math.round(holdTimeYears * 10) / 10} years ({holdTimeMonths} months)
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-blue-700 dark:text-blue-300">Total Cash Flow</p>
+                            <p className="font-semibold text-blue-900 dark:text-blue-200">
+                              {formatCurrency(totalCashFlow)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-blue-700 dark:text-blue-300">Total Profit</p>
+                            <p className="font-semibold text-blue-900 dark:text-blue-200">
+                              {formatCurrency(totalProfit)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-blue-700 dark:text-blue-300">Equity Multiple</p>
+                            <p className="font-semibold text-blue-900 dark:text-blue-200">
+                              {equityMultiple.toFixed(2)}x
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-blue-700 dark:text-blue-300">Cash-on-Cash Return</p>
+                            <p className="font-semibold text-blue-900 dark:text-blue-200">
+                              {formatPercentage(cashOnCashReturn)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-blue-700 dark:text-blue-300">Sale Cap Rate</p>
+                            <p className="font-semibold text-blue-900 dark:text-blue-200">
+                              {formatPercentage(saleCapRate)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-blue-700 dark:text-blue-300">Annualized Return</p>
+                            <p className="font-semibold text-blue-900 dark:text-blue-200">
+                              {formatPercentage(annualizedReturn)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-blue-700 dark:text-blue-300">All-In Cost</p>
+                            <p className="font-semibold text-blue-900 dark:text-blue-200">
+                              {formatCurrency(allInCost)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={() => {
+                      setShowSalesDataModal(false);
+                      setSalesDataProperty(null);
+                    }}
+                    className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!salesDataProperty) return;
+                      
+                      const salePrice = parseFloat(salesFormData.salePrice);
+                      const noiAtSale = parseFloat(salesFormData.noiAtSale);
+                      
+                      if (!salePrice || !noiAtSale) {
+                        alert('Please enter both sale price and NOI at sale');
+                        return;
+                      }
+                      
+                      const calculations = calculatePropertyMetrics(salesDataProperty);
+                      const acquisitionDate = new Date(salesDataProperty.acquisitionDate || '2025-01-01');
+                      const saleDateObj = new Date(salesFormData.saleDate);
+                      
+                      // Calculate metrics
+                      const holdTimeYears = (saleDateObj.getTime() - acquisitionDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+                      const holdTimeMonths = Math.round(holdTimeYears * 12);
+                      const totalCashFlow = calculations.monthlyCashFlow * holdTimeMonths;
+                      
+                      const acquisitionPrice = parseFloat(salesDataProperty.acquisitionPrice || '0');
+                      const rehabCosts = parseFloat(salesDataProperty.rehabCosts || '0');
+                      const dealAnalyzerData = salesDataProperty.dealAnalyzerData ? JSON.parse(salesDataProperty.dealAnalyzerData) : {};
+                      const closingCosts = dealAnalyzerData.closingCosts ? 
+                        Object.values(dealAnalyzerData.closingCosts).reduce((sum: number, val: any) => sum + (val || 0), 0) : 0;
+                      const holdingCosts = dealAnalyzerData.holdingCosts ? 
+                        Object.values(dealAnalyzerData.holdingCosts).reduce((sum: number, val: any) => sum + (val || 0), 0) : 0;
+                      
+                      const allInCost = acquisitionPrice + rehabCosts + closingCosts + holdingCosts;
+                      const totalProfit = (salePrice - allInCost) + totalCashFlow;
+                      const initialCapital = parseFloat(salesDataProperty.initialCapitalRequired || '0') || calculations.totalInvestedCapital;
+                      const equityMultiple = initialCapital > 0 ? (salePrice - allInCost + totalCashFlow) / initialCapital : 0;
+                      const cashOnCashReturn = initialCapital > 0 ? (totalProfit / initialCapital) * 100 : 0;
+                      const annualizedReturn = holdTimeYears > 0 ? (Math.pow(equityMultiple, 1/holdTimeYears) - 1) * 100 : 0;
+                      
+                      // Update property with sales data and calculated metrics
+                      const updatedProperty = {
+                        ...salesDataProperty,
+                        status: 'Sold',
+                        salePrice: salePrice.toString(),
+                        saleDate: salesFormData.saleDate,
+                        noiAtSale: noiAtSale.toString(),
+                        totalProfits: totalProfit.toString(),
+                        cashOnCashReturn: cashOnCashReturn.toString(),
+                        annualizedReturn: annualizedReturn.toString(),
+                        yearsHeld: (Math.round(holdTimeYears * 10) / 10).toString(),
+                        equityMultiple: equityMultiple.toString()
+                      };
+                      
+                      updatePropertyMutation.mutate({ 
+                        id: salesDataProperty.id, 
+                        property: updatedProperty 
+                      });
+                      
+                      // Close modal and reset form
+                      setShowSalesDataModal(false);
+                      setSalesDataProperty(null);
+                      setSalesFormData({
+                        salePrice: '',
+                        noiAtSale: '',
+                        saleDate: new Date().toISOString().split('T')[0]
+                      });
+                    }}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Complete Sale
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
