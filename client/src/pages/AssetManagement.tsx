@@ -707,18 +707,18 @@ export default function AssetManagement() {
           {properties.filter((p: Property) => p.status === 'Rehabbing').length > 0 ? (
             <div className="space-y-6 stagger-children">
               {properties.filter((p: Property) => p.status === 'Rehabbing').map((property: Property) => {
-                // Initialize rehab items if not present
-                if (!rehabLineItems[property.id]) {
-                  setRehabLineItems(prev => ({
-                    ...prev,
-                    [property.id]: initializeRehabItems(property)
-                  }));
-                }
+                // Get rehab progress from Deal Analyzer data if available
+                const dealAnalyzerData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : null;
+                let rehabBudget = parseFloat(property.rehabCosts) || 0;
+                let rehabSpent = 0;
+                let rehabProgress = 0;
                 
-                const progress = calculateRehabProgress(property.id);
-                const rehabBudget = progress.totalBudget || parseFloat(property.rehabCosts);
-                const rehabSpent = progress.totalSpent;
-                const rehabProgress = progress.spentPercentage;
+                if (dealAnalyzerData?.rehabBudgetSections) {
+                  const allItems = Object.values(dealAnalyzerData.rehabBudgetSections).flat();
+                  rehabBudget = allItems.reduce((sum: number, item: any) => sum + (item.totalCost || (item.perUnitCost * item.quantity)), 0);
+                  rehabSpent = allItems.reduce((sum: number, item: any) => sum + (item.spentAmount || 0), 0);
+                  rehabProgress = rehabBudget > 0 ? (rehabSpent / rehabBudget) * 100 : 0;
+                }
                 
                 return (
                   <div key={property.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover-scale transition-all-smooth card-hover cursor-pointer"
