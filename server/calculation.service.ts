@@ -158,7 +158,7 @@ export class CalculationService {
       }
       
       // Update calculated metrics
-      dealData.calculatedMetrics = {
+      (dealData as any).calculatedMetrics = {
         grossRentalIncome: metrics.grossRentalIncome,
         netOperatingIncome: metrics.netOperatingIncome,
         cashFlow: metrics.cashFlow,
