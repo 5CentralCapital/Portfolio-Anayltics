@@ -2042,8 +2042,9 @@ export default function AssetManagement() {
                                         unitNumber: `${dealData.rentRoll.length + 1}`,
                                         unitTypeId: dealData.unitTypes[0]?.id || '',
                                         proFormaRent: 0,
-                                        currentTenant: '',
-                                        leaseEnd: ''
+                                        tenantName: '',
+                                        leaseFrom: '',
+                                        leaseTo: ''
                                       });
                                       handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                     }}
@@ -2060,6 +2061,9 @@ export default function AssetManagement() {
                                     <tr>
                                       <th className="px-4 py-2 text-left text-sm font-medium text-green-700 dark:text-green-300">Unit</th>
                                       <th className="px-4 py-2 text-left text-sm font-medium text-green-700 dark:text-green-300">Type</th>
+                                      <th className="px-4 py-2 text-left text-sm font-medium text-green-700 dark:text-green-300">Tenant</th>
+                                      <th className="px-4 py-2 text-left text-sm font-medium text-green-700 dark:text-green-300">Lease Start</th>
+                                      <th className="px-4 py-2 text-left text-sm font-medium text-green-700 dark:text-green-300">Lease End</th>
                                       <th className="px-4 py-2 text-left text-sm font-medium text-green-700 dark:text-green-300">Current Rent</th>
                                       <th className="px-4 py-2 text-left text-sm font-medium text-green-700 dark:text-green-300">Market Rent</th>
                                       <th className="px-4 py-2 text-left text-sm font-medium text-green-700 dark:text-green-300">Upside</th>
@@ -2112,6 +2116,55 @@ export default function AssetManagement() {
                                               </select>
                                             ) : (
                                               unitType?.name || 'Unknown'
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
+                                            {isEditing ? (
+                                              <input
+                                                type="text"
+                                                value={unit.tenantName || ''}
+                                                onChange={(e) => {
+                                                  const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                                  dealData.rentRoll[index].tenantName = e.target.value;
+                                                  handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                }}
+                                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                                placeholder="Tenant name"
+                                              />
+                                            ) : (
+                                              unit.tenantName || 'Vacant'
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
+                                            {isEditing ? (
+                                              <input
+                                                type="date"
+                                                value={unit.leaseFrom || ''}
+                                                onChange={(e) => {
+                                                  const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                                  dealData.rentRoll[index].leaseFrom = e.target.value;
+                                                  handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                }}
+                                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                              />
+                                            ) : (
+                                              unit.leaseFrom || '-'
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
+                                            {isEditing ? (
+                                              <input
+                                                type="date"
+                                                value={unit.leaseTo || ''}
+                                                onChange={(e) => {
+                                                  const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                                  dealData.rentRoll[index].leaseTo = e.target.value;
+                                                  handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                }}
+                                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                              />
+                                            ) : (
+                                              unit.leaseTo || '-'
                                             )}
                                           </td>
                                           <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
