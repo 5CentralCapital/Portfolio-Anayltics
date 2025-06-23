@@ -918,19 +918,17 @@ export class DatabaseStorage implements IStorage {
    * Import Deal Analyzer data into normalized database structure
    */
   async importFromDealAnalyzer(dealData: any, additionalPropertyData: any, userId: number): Promise<Property> {
-    // Extract calculated values directly from Deal Analyzer calculations
+    // Use the calculated values that Deal Analyzer already computed and stored
     const calculations = dealData.calculations || {};
     
-    // Recalculate values using Deal Analyzer's exact logic to ensure accuracy
-    const totalRehabCosts = this.calculateDealAnalyzerRehabCosts(dealData);
-    const grossRentalIncome = this.calculateDealAnalyzerGrossIncome(dealData);
-    const noi = this.calculateDealAnalyzerNOI(dealData, grossRentalIncome);
-    const arv = calculations.arv || (dealData.assumptions?.marketCapRate ? noi / dealData.assumptions.marketCapRate : 0);
-    const initialCapital = this.calculateDealAnalyzerInitialCapital(dealData, totalRehabCosts);
-    const annualCashFlow = this.calculateDealAnalyzerCashFlow(dealData, noi, totalRehabCosts);
-    const cashOnCashReturn = initialCapital > 0 ? (annualCashFlow / initialCapital) * 100 : 0;
+    // Use Deal Analyzer's pre-calculated values - these are the correct values!
+    const totalRehabCosts = calculations.totalRehabCosts || 0;
+    const arv = calculations.arv || 0;
+    const initialCapital = calculations.initialCapital || 0;
+    const annualCashFlow = calculations.annualCashFlow || 0;
+    const cashOnCashReturn = calculations.cashOnCashReturn || 0;
 
-    // Create property with accurately calculated values
+    // Create property with Deal Analyzer's calculated values exactly as computed
     const propertyData = {
       status: "Under Contract" as const,
       apartments: dealData.assumptions?.unitCount || dealData.assumptions?.units || 1,
@@ -946,7 +944,7 @@ export class DatabaseStorage implements IStorage {
       initialCapitalRequired: initialCapital.toString(),
       cashFlow: annualCashFlow.toString(),
       totalProfits: "0",
-      cashOnCashReturn: cashOnCashReturn.toFixed(2),
+      cashOnCashReturn: (cashOnCashReturn * 100).toFixed(2), // Convert to percentage
       annualizedReturn: "0",
       dealAnalyzerData: JSON.stringify(dealData) // Keep for backward compatibility
     };
