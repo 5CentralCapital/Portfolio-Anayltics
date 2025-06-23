@@ -2619,28 +2619,56 @@ export default function AssetManagement() {
                               <tbody className="divide-y divide-indigo-200 dark:divide-indigo-700">
                                 {Array.from({ length: 12 }, (_, index) => {
                                   const month = index + 1;
-                                  const monthlyRent = (dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0);
-                                  const vacancyRate = (dealAnalyzerData?.assumptions?.vacancyRate || 0.05);
-                                  const grossIncome = monthlyRent;
-                                  const vacancy = grossIncome * vacancyRate;
-                                  const netIncome = grossIncome - vacancy;
-                                  const monthlyExpenses = (Object.values(dealAnalyzerData?.expenses || {}).reduce((sum: number, val: any) => sum + (val || 0), 0)) / 12;
-                                  const noi = netIncome - monthlyExpenses;
                                   
-                                  // Get active loan's monthly payment from financing tab
+                                  // Use same calculations as Income & Expenses tab
+                                  const rentRoll = dealAnalyzerData?.rentRoll || [];
+                                  const assumptions = dealAnalyzerData?.assumptions || {};
+                                  const expenses = dealAnalyzerData?.expenses || {};
+                                  
+                                  // Revenue calculations (monthly)
+                                  const grossRentMonthly = rentRoll.reduce((sum: number, unit: any) => {
+                                    const unitTypes = dealAnalyzerData?.unitTypes || [];
+                                    const unitType = unitTypes.find((ut: any) => ut.id === unit.unitTypeId);
+                                    return sum + (unitType ? unitType.marketRent : unit.proFormaRent);
+                                  }, 0);
+                                  
+                                  const vacancyRate = assumptions.vacancyRate || 0.05;
+                                  const vacancy = grossRentMonthly * vacancyRate;
+                                  const netRevenue = grossRentMonthly - vacancy;
+                                  
+                                  // Expenses calculations (monthly)
+                                  const propertyTax = (expenses.taxes || 15000) / 12;
+                                  const insurance = (expenses.insurance || 14500) / 12;
+                                  const maintenance = (expenses.maintenance || 8000) / 12;
+                                  const waterSewerTrash = (expenses.waterSewerTrash || 6000) / 12;
+                                  const capitalReserves = (expenses.capex || 2000) / 12;
+                                  const utilities = (expenses.utilities || 6000) / 12;
+                                  const other = (expenses.other || 0) / 12;
+                                  const managementFee = netRevenue * 0.08; // 8% of net revenue
+                                  
+                                  const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
+                                  const noi = netRevenue - totalExpenses;
+                                  
+                                  // Get active loan for debt service calculation
                                   const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
-                                  const activeLoan = currentData?.loans?.find((l: any) => l.isActive);
-                                  const monthlyDebtService = activeLoan?.monthlyPayment || dealAnalyzerData?.calculations?.monthlyDebtService || 0;
+                                  const loans = currentData?.loans || [];
+                                  const activeLoan = loans.find((loan: any) => loan.isActive) || loans[0];
+                                  const monthlyDebtService = activeLoan ? calculateLoanPayment(
+                                    activeLoan.loanAmount,
+                                    activeLoan.interestRate,
+                                    activeLoan.termYears,
+                                    activeLoan.paymentType
+                                  ) : 0;
                                   
                                   const cashFlow = noi - monthlyDebtService;
                                   
                                   return (
                                     <tr key={month} className={month % 2 === 0 ? 'bg-indigo-25 dark:bg-indigo-900/10' : ''}>
                                       <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">Month {month}</td>
-                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">{formatCurrency(grossIncome)}</td>
+                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">{formatCurrency(grossRentMonthly)}</td>
                                       <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(vacancy)})</td>
-                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">{formatCurrency(netIncome)}</td>
-                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(monthlyExpenses)})</td>
+                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">{formatCurrency(netRevenue)}</td>
+                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(totalExpenses)})</td>
                                       <td className="px-4 py-2 text-sm font-medium text-indigo-900 dark:text-indigo-200">{formatCurrency(noi)}</td>
                                       <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(monthlyDebtService)})</td>
                                       <td className={`px-4 py-2 text-sm font-medium ${cashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -2653,47 +2681,76 @@ export default function AssetManagement() {
                               <tfoot className="bg-indigo-100 dark:bg-indigo-900/30">
                                 <tr>
                                   <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">Annual Total</td>
-                                  <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
-                                    {formatCurrency((dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0) * 12)}
-                                  </td>
-                                  <td className="px-4 py-2 text-sm font-bold text-red-600">
-                                    ({formatCurrency(((dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0) * 12) * (dealAnalyzerData?.assumptions?.vacancyRate || 0.05))})
-                                  </td>
-                                  <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
-                                    {formatCurrency(((dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0) * 12) * (1 - (dealAnalyzerData?.assumptions?.vacancyRate || 0.05)))}
-                                  </td>
-                                  <td className="px-4 py-2 text-sm font-bold text-red-600">
-                                    ({formatCurrency(Object.values(dealAnalyzerData?.expenses || {}).reduce((sum: number, val: any) => sum + (val || 0), 0))})
-                                  </td>
-                                  <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
-                                    {formatCurrency(
-                                      (((dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0) * 12) * (1 - (dealAnalyzerData?.assumptions?.vacancyRate || 0.05))) - 
-                                      Object.values(dealAnalyzerData?.expenses || {}).reduce((sum: number, val: any) => sum + (val || 0), 0)
-                                    )}
-                                  </td>
-                                  <td className="px-4 py-2 text-sm font-bold text-red-600">
-                                    {(() => {
-                                      // Get active loan's annual debt service
-                                      const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
-                                      const activeLoan = currentData?.loans?.find((l: any) => l.isActive);
-                                      const annualDebtService = (activeLoan?.monthlyPayment || dealAnalyzerData?.calculations?.monthlyDebtService || 0) * 12;
-                                      return `(${formatCurrency(annualDebtService)})`;
-                                    })()}
-                                  </td>
-                                  <td className="px-4 py-2 text-sm font-bold text-green-600">
-                                    {(() => {
-                                      const noi = (((dealAnalyzerData?.rentRoll?.reduce((sum: number, unit: any) => sum + unit.proFormaRent, 0) || 0) * 12) * (1 - (dealAnalyzerData?.assumptions?.vacancyRate || 0.05))) - 
-                                        Object.values(dealAnalyzerData?.expenses || {}).reduce((sum: number, val: any) => sum + (val || 0), 0);
-                                      
-                                      // Get active loan's annual debt service
-                                      const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
-                                      const activeLoan = currentData?.loans?.find((l: any) => l.isActive);
-                                      const annualDebtService = (activeLoan?.monthlyPayment || dealAnalyzerData?.calculations?.monthlyDebtService || 0) * 12;
-                                      
-                                      const annualCashFlow = noi - annualDebtService;
-                                      return formatCurrency(annualCashFlow);
-                                    })()}
-                                  </td>
+                                  {(() => {
+                                    // Use same calculations as Income & Expenses tab for annual totals
+                                    const rentRoll = dealAnalyzerData?.rentRoll || [];
+                                    const assumptions = dealAnalyzerData?.assumptions || {};
+                                    const expenses = dealAnalyzerData?.expenses || {};
+                                    
+                                    // Revenue calculations (annual)
+                                    const grossRentAnnual = rentRoll.reduce((sum: number, unit: any) => {
+                                      const unitTypes = dealAnalyzerData?.unitTypes || [];
+                                      const unitType = unitTypes.find((ut: any) => ut.id === unit.unitTypeId);
+                                      return sum + (unitType ? unitType.marketRent * 12 : unit.proFormaRent * 12);
+                                    }, 0);
+                                    
+                                    const vacancyRate = assumptions.vacancyRate || 0.05;
+                                    const vacancyLoss = grossRentAnnual * vacancyRate;
+                                    const netRevenue = grossRentAnnual - vacancyLoss;
+                                    
+                                    // Expenses calculations (annual)
+                                    const propertyTax = expenses.taxes || 15000;
+                                    const insurance = expenses.insurance || 14500;
+                                    const maintenance = expenses.maintenance || 8000;
+                                    const waterSewerTrash = expenses.waterSewerTrash || 6000;
+                                    const capitalReserves = expenses.capex || 2000;
+                                    const utilities = expenses.utilities || 6000;
+                                    const other = expenses.other || 0;
+                                    const managementFee = netRevenue * 0.08; // 8% of net revenue
+                                    
+                                    const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
+                                    const noi = netRevenue - totalExpenses;
+                                    
+                                    // Get active loan for debt service calculation
+                                    const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
+                                    const loans = currentData?.loans || [];
+                                    const activeLoan = loans.find((loan: any) => loan.isActive) || loans[0];
+                                    const monthlyDebtService = activeLoan ? calculateLoanPayment(
+                                      activeLoan.loanAmount,
+                                      activeLoan.interestRate,
+                                      activeLoan.termYears,
+                                      activeLoan.paymentType
+                                    ) : 0;
+                                    const annualDebtService = monthlyDebtService * 12;
+                                    
+                                    const annualCashFlow = noi - annualDebtService;
+                                    
+                                    return (
+                                      <>
+                                        <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
+                                          {formatCurrency(grossRentAnnual)}
+                                        </td>
+                                        <td className="px-4 py-2 text-sm font-bold text-red-600">
+                                          ({formatCurrency(vacancyLoss)})
+                                        </td>
+                                        <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
+                                          {formatCurrency(netRevenue)}
+                                        </td>
+                                        <td className="px-4 py-2 text-sm font-bold text-red-600">
+                                          ({formatCurrency(totalExpenses)})
+                                        </td>
+                                        <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
+                                          {formatCurrency(noi)}
+                                        </td>
+                                        <td className="px-4 py-2 text-sm font-bold text-red-600">
+                                          ({formatCurrency(annualDebtService)})
+                                        </td>
+                                        <td className="px-4 py-2 text-sm font-bold text-green-600">
+                                          {formatCurrency(annualCashFlow)}
+                                        </td>
+                                      </>
+                                    );
+                                  })()}
                                 </tr>
                               </tfoot>
                             </table>
@@ -2716,18 +2773,27 @@ export default function AssetManagement() {
                                     const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                                     if (!dealData.loans) dealData.loans = [];
                                     
+                                    const loanAmount = 0;
+                                    const interestRate = 0.065;
+                                    const termYears = 30;
+                                    const paymentType = 'amortizing';
+                                    
+                                    // Calculate monthly payment for new loan
+                                    const monthlyPayment = calculateLoanPayment(loanAmount, interestRate, termYears, paymentType);
+                                    
                                     const newLoan = {
                                       id: Date.now(),
                                       name: `Loan ${dealData.loans.length + 1}`,
-                                      amount: 0,
-                                      interestRate: 0.065,
-                                      termYears: 30,
-                                      monthlyPayment: 0,
+                                      amount: loanAmount,
+                                      loanAmount: loanAmount, // Add this for consistency
+                                      interestRate: interestRate,
+                                      termYears: termYears,
+                                      monthlyPayment: monthlyPayment,
                                       isActive: dealData.loans.length === 0, // First loan is active by default
                                       loanType: 'refinance',
-                                      paymentType: 'amortizing', // 'amortizing' or 'interest-only'
+                                      paymentType: paymentType,
                                       startDate: new Date().toISOString().split('T')[0],
-                                      remainingBalance: 0
+                                      remainingBalance: loanAmount
                                     };
                                     
                                     dealData.loans.push(newLoan);
@@ -2748,17 +2814,25 @@ export default function AssetManagement() {
                               
                               // If no loans exist, create the original acquisition loan
                               if (loans.length === 0) {
-                                const loanAmount = parseFloat(showPropertyDetailModal.acquisitionPrice) * dealAnalyzerData.assumptions.loanPercentage;
+                                const loanAmount = parseFloat(showPropertyDetailModal.acquisitionPrice) * (dealAnalyzerData.assumptions.loanPercentage || 0.8);
+                                const interestRate = dealAnalyzerData.assumptions.interestRate || 0.065;
+                                const termYears = dealAnalyzerData.assumptions.loanTermYears || 30;
+                                const paymentType = termYears <= 3 ? 'interest-only' : 'amortizing';
+                                
+                                // Calculate monthly payment using the same function
+                                const monthlyPayment = calculateLoanPayment(loanAmount, interestRate, termYears, paymentType);
+                                
                                 const originalLoan = {
                                   id: 1,
                                   name: 'Acquisition Loan',
                                   amount: loanAmount,
-                                  interestRate: dealAnalyzerData.assumptions.interestRate,
-                                  termYears: dealAnalyzerData.assumptions.loanTermYears,
-                                  monthlyPayment: dealAnalyzerData.calculations?.monthlyDebtService || 0,
+                                  loanAmount: loanAmount, // Add this for consistency
+                                  interestRate: interestRate,
+                                  termYears: termYears,
+                                  monthlyPayment: monthlyPayment,
                                   isActive: true,
                                   loanType: 'acquisition',
-                                  paymentType: dealAnalyzerData.assumptions.loanTermYears <= 3 ? 'interest-only' : 'amortizing',
+                                  paymentType: paymentType,
                                   startDate: showPropertyDetailModal.acquisitionDate || new Date().toISOString().split('T')[0],
                                   remainingBalance: loanAmount
                                 };
@@ -3058,8 +3132,21 @@ export default function AssetManagement() {
                                   <p className="font-medium text-gray-900 dark:text-white text-lg">
                                     {(() => {
                                       const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
-                                      const activeLoan = currentData.loans?.find((l: any) => l.isActive);
-                                      return formatCurrency(activeLoan?.monthlyPayment || dealAnalyzerData.calculations?.monthlyDebtService || 0);
+                                      const loans = currentData?.loans || [];
+                                      const activeLoan = loans.find((l: any) => l.isActive) || loans[0];
+                                      
+                                      if (activeLoan) {
+                                        // Calculate using the same function
+                                        const monthlyPayment = calculateLoanPayment(
+                                          activeLoan.loanAmount || activeLoan.amount,
+                                          activeLoan.interestRate,
+                                          activeLoan.termYears,
+                                          activeLoan.paymentType
+                                        );
+                                        return formatCurrency(monthlyPayment);
+                                      }
+                                      
+                                      return formatCurrency(dealAnalyzerData.calculations?.monthlyDebtService || 0);
                                     })()}
                                   </p>
                                 </div>
@@ -3068,9 +3155,21 @@ export default function AssetManagement() {
                                   <p className="font-medium text-gray-900 dark:text-white text-lg">
                                     {(() => {
                                       const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
-                                      const activeLoan = currentData.loans?.find((l: any) => l.isActive);
-                                      const monthlyPayment = activeLoan?.monthlyPayment || dealAnalyzerData.calculations?.monthlyDebtService || 0;
-                                      return formatCurrency(monthlyPayment * 12);
+                                      const loans = currentData?.loans || [];
+                                      const activeLoan = loans.find((l: any) => l.isActive) || loans[0];
+                                      
+                                      if (activeLoan) {
+                                        // Calculate using the same function and multiply by 12
+                                        const monthlyPayment = calculateLoanPayment(
+                                          activeLoan.loanAmount || activeLoan.amount,
+                                          activeLoan.interestRate,
+                                          activeLoan.termYears,
+                                          activeLoan.paymentType
+                                        );
+                                        return formatCurrency(monthlyPayment * 12);
+                                      }
+                                      
+                                      return formatCurrency((dealAnalyzerData.calculations?.monthlyDebtService || 0) * 12);
                                     })()}
                                   </p>
                                 </div>
