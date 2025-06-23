@@ -205,9 +205,9 @@ export default function DealAnalyzer() {
     const totalClosingCosts = Object.values(closingCosts).reduce((sum, cost) => sum + cost, 0);
     const totalHoldingCosts = Object.values(holdingCosts).reduce((sum, cost) => sum + cost, 0);
     
-    // Updated loan calculations: 85% of (purchase price + total rehab cost)
-    const initialLoan = (assumptions.purchasePrice + totalRehab) * 0.85;
-    const downPayment = assumptions.purchasePrice - (assumptions.purchasePrice * 0.85);
+    // Updated loan calculations: loan percentage of (purchase price + total rehab cost)
+    const initialLoan = (assumptions.purchasePrice + totalRehab) * assumptions.loanPercentage;
+    const downPayment = assumptions.purchasePrice - (assumptions.purchasePrice * assumptions.loanPercentage);
     
     // Capital required = down payment + total closing costs
     const capitalRequired = downPayment + totalClosingCosts;

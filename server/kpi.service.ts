@@ -143,8 +143,9 @@ export class KPIService {
     const adjustedOperatingExpenses = totalOperatingExpenses + capexReserve;
     const netOperatingIncome = effectiveGrossIncome - adjustedOperatingExpenses;
 
-    // Initial loan calculation: 85% of (purchase price + total rehab cost)
-    const initialLoanAmount = (Number(deal.purchasePrice) + totalRehab) * 0.85;
+    // Initial loan calculation: loan percentage of (purchase price + total rehab cost)
+    const loanPercentage = Number(deal.loanPercentage) || 0.80; // Default to 80% if not specified
+    const initialLoanAmount = (Number(deal.purchasePrice) + totalRehab) * loanPercentage;
     
     // Debt service calculations using active loan or fall back to initial loan
     const activeLoan = data.loans.find(loan => loan.isActive) || 

@@ -227,6 +227,7 @@ export const deals = pgTable("deals", {
   
   // Acquisition details
   purchasePrice: decimal("purchase_price", { precision: 15, scale: 2 }).notNull(),
+  loanPercentage: decimal("loan_percentage", { precision: 5, scale: 4 }).default("0.80"),
   marketCapRate: decimal("market_cap_rate", { precision: 5, scale: 4 }).notNull(),
   exitCapRate: decimal("exit_cap_rate", { precision: 5, scale: 4 }),
   
