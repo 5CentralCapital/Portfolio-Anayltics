@@ -33,6 +33,11 @@ export interface DealKPIs {
   ltc: number;
   ltv: number;
   
+  // Investment metrics
+  capitalRequired: number;
+  totalCashInvested: number;
+  initialLoanAmount: number;
+  
   // Break-even analysis
   breakEvenOccupancy: number;
   
@@ -138,17 +143,22 @@ export class KPIService {
     const adjustedOperatingExpenses = totalOperatingExpenses + capexReserve;
     const netOperatingIncome = effectiveGrossIncome - adjustedOperatingExpenses;
 
-    // Debt service calculations
-    const primaryLoan = data.loans.find(loan => loan.loanType === 'acquisition') || data.loans[0];
+    // Initial loan calculation: 85% of (purchase price + total rehab cost)
+    const initialLoanAmount = (Number(deal.purchasePrice) + totalRehab) * 0.85;
+    
+    // Debt service calculations using active loan or fall back to initial loan
+    const activeLoan = data.loans.find(loan => loan.isActive) || 
+                      data.loans.find(loan => loan.loanType === 'acquisition') || 
+                      data.loans[0];
     let monthlyDebtService = 0;
     let annualDebtService = 0;
 
-    if (primaryLoan) {
-      const loanAmount = Number(primaryLoan.loanAmount);
-      const monthlyRate = Number(primaryLoan.interestRate) / 12;
-      const totalPayments = Number(primaryLoan.amortizationYears) * 12;
+    if (activeLoan) {
+      const loanAmount = Number(activeLoan.loanAmount);
+      const monthlyRate = Number(activeLoan.interestRate) / 12;
+      const totalPayments = Number(activeLoan.amortizationYears) * 12;
       
-      if (primaryLoan.ioMonths && primaryLoan.ioMonths > 0) {
+      if (activeLoan.ioMonths && activeLoan.ioMonths > 0) {
         // Interest-only period
         monthlyDebtService = loanAmount * monthlyRate;
       } else {
@@ -158,19 +168,33 @@ export class KPIService {
         monthlyDebtService = loanAmount * (numerator / denominator);
       }
       annualDebtService = monthlyDebtService * 12;
+    } else {
+      // Fall back to initial loan calculation if no loans defined
+      const monthlyRate = 0.055 / 12; // Default 5.5% rate
+      const totalPayments = 30 * 12; // Default 30-year amortization
+      const numerator = monthlyRate * Math.pow(1 + monthlyRate, totalPayments);
+      const denominator = Math.pow(1 + monthlyRate, totalPayments) - 1;
+      monthlyDebtService = initialLoanAmount * (numerator / denominator);
+      annualDebtService = monthlyDebtService * 12;
     }
 
     // Key ratios and metrics
     const arv = netOperatingIncome / Number(deal.marketCapRate);
     const cashFlow = netOperatingIncome - annualDebtService;
-    const cashInvested = allInCost - (primaryLoan ? Number(primaryLoan.loanAmount) : 0);
-    const cashOnCashReturn = cashInvested > 0 ? cashFlow / cashInvested : 0;
+    
+    // Capital required calculation: all-in cost minus initial loan
+    const capitalRequired = allInCost - initialLoanAmount;
+    
+    // Total cash invested = capital required + holding costs
+    const totalCashInvested = capitalRequired + totalHoldingCosts;
+    
+    const cashOnCashReturn = capitalRequired > 0 ? cashFlow / capitalRequired : 0;
     const capRate = Number(deal.purchasePrice) > 0 ? netOperatingIncome / Number(deal.purchasePrice) : 0;
     const dscr = annualDebtService > 0 ? netOperatingIncome / annualDebtService : 0;
     
     // Loan-to-cost and loan-to-value ratios
-    const ltc = primaryLoan ? Number(primaryLoan.loanAmount) / allInCost : 0;
-    const ltv = primaryLoan ? Number(primaryLoan.loanAmount) / arv : 0;
+    const ltc = initialLoanAmount / allInCost;
+    const ltv = initialLoanAmount / arv;
 
     // Break-even occupancy
     const fixedExpenses = totalOperatingExpenses + annualDebtService;
@@ -185,13 +209,15 @@ export class KPIService {
     const exitValue = futureNOI / exitCapRate;
     const totalCashFlow = cashFlow * holdYears;
     const totalReturn = exitValue - allInCost + totalCashFlow;
-    const irr = Math.pow(totalReturn / cashInvested, 1 / holdYears) - 1;
-    const equityMultiple = totalReturn / cashInvested;
+    const irr = Math.pow(totalReturn / capitalRequired, 1 / holdYears) - 1;
+    
+    // Updated equity multiple calculation: (ARV - all in cost) / capital required
+    const equityMultiple = capitalRequired > 0 ? (arv - allInCost) / capitalRequired : 0;
 
-    // Refinance calculations
-    const refiLTV = 0.75; // Assume 75% LTV on refinance
+    // Refinance calculations using editable LTV
+    const refiLTV = Number(deal.refinanceLTV) || 0.75; // Use editable LTV or default to 75%
     const newLoanAmount = arv * refiLTV;
-    const existingLoanBalance = primaryLoan ? Number(primaryLoan.loanAmount) * 0.9 : 0; // Assume 10% paid down
+    const existingLoanBalance = activeLoan ? Number(activeLoan.loanAmount) * 0.9 : initialLoanAmount * 0.9; // Assume 10% paid down
     const cashOut = Math.max(0, newLoanAmount - existingLoanBalance);
     const totalProfit = arv - allInCost + cashOut;
 
@@ -225,6 +251,9 @@ export class KPIService {
       newLoanAmount,
       cashOut,
       totalProfit,
+      capitalRequired,
+      totalCashInvested,
+      initialLoanAmount,
       isSpeculative,
       dscrWarning,
       occupancyRisk

@@ -244,6 +244,9 @@ export const deals = pgTable("deals", {
   startToStabilizationMonths: integer("start_to_stabilization_months").default(12),
   projectedRefiMonth: integer("projected_refi_month").default(24),
   
+  // Refinance settings
+  refinanceLTV: decimal("refinance_ltv", { precision: 5, scale: 4 }).default("0.75"),
+  
   // Team
   assignedPM: text("assigned_pm"),
   assignedGC: text("assigned_gc"),
@@ -322,6 +325,7 @@ export const dealLoans = pgTable("deal_loans", {
   lenderFees: decimal("lender_fees", { precision: 10, scale: 2 }).default("0"),
   appraisalCost: decimal("appraisal_cost", { precision: 10, scale: 2 }).default("0"),
   legalCost: decimal("legal_cost", { precision: 10, scale: 2 }).default("0"),
+  isActive: boolean("is_active").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
