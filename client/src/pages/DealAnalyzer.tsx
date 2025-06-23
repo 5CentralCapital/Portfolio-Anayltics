@@ -186,6 +186,21 @@ export default function DealAnalyzer() {
     other: 'Other'
   });
 
+  // Workflow timeline state
+  const [workflowSteps, setWorkflowSteps] = useState([
+    { id: 1, step: 'Close on property', status: 'completed', progress: '', notes: '' },
+    { id: 2, step: 'Eviction current tenants', status: 'in-progress', progress: '8/14', notes: 'Units evicted' },
+    { id: 3, step: 'Start renovations', status: 'pending', progress: '0/8', notes: 'Units renovated' },
+    { id: 4, step: 'Demo', status: 'pending', progress: '', notes: '' },
+    { id: 5, step: 'Paint', status: 'pending', progress: '', notes: '' },
+    { id: 6, step: 'Minisplits', status: 'pending', progress: '', notes: '' },
+    { id: 7, step: 'Flooring', status: 'pending', progress: '', notes: '' },
+    { id: 8, step: 'List for rent', status: 'pending', progress: '2/8', notes: 'Units listed' },
+    { id: 9, step: 'Refinance property', status: 'pending', progress: '', notes: '' }
+  ]);
+
+  const [editingWorkflow, setEditingWorkflow] = useState(false);
+
   useEffect(() => {
     // Simulate loading
     setTimeout(() => {
@@ -2631,6 +2646,189 @@ export default function DealAnalyzer() {
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+          
+          {/* Workflow Timeline Section */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6 mt-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <Calendar className="h-5 w-5 mr-2 text-blue-600" />
+                Project Timeline & Workflow
+              </h3>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => {
+                    const maxId = Math.max(...workflowSteps.map(s => s.id), 0);
+                    const newStep = {
+                      id: maxId + 1,
+                      step: 'New Step',
+                      status: 'pending',
+                      progress: '',
+                      notes: ''
+                    };
+                    setWorkflowSteps([...workflowSteps, newStep]);
+                  }}
+                  className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors-smooth hover-scale"
+                >
+                  + Add Step
+                </button>
+                <button
+                  onClick={() => setEditingWorkflow(!editingWorkflow)}
+                  className={`px-3 py-1 rounded text-sm font-medium transition-colors-smooth hover-scale ${
+                    editingWorkflow 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  {editingWorkflow ? 'Save' : 'Edit'}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {workflowSteps.map((step, index) => (
+                <div key={step.id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-all-smooth card-hover">
+                  {/* Step Number */}
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-medium">
+                    {index + 1}
+                  </div>
+
+                  {/* Status Indicator */}
+                  <div className="flex-shrink-0">
+                    <select
+                      value={step.status}
+                      onChange={(e) => {
+                        const updated = workflowSteps.map(s => 
+                          s.id === step.id ? {...s, status: e.target.value} : s
+                        );
+                        setWorkflowSteps(updated);
+                      }}
+                      className="px-2 py-1 border rounded text-xs"
+                      disabled={!editingWorkflow}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="in-progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                      <option value="on-hold">On Hold</option>
+                    </select>
+                  </div>
+
+                  {/* Step Name */}
+                  <div className="flex-1">
+                    {editingWorkflow ? (
+                      <input
+                        type="text"
+                        value={step.step}
+                        onChange={(e) => {
+                          const updated = workflowSteps.map(s => 
+                            s.id === step.id ? {...s, step: e.target.value} : s
+                          );
+                          setWorkflowSteps(updated);
+                        }}
+                        className="w-full px-2 py-1 border rounded text-sm font-medium"
+                      />
+                    ) : (
+                      <span className="text-sm font-medium text-gray-900">{step.step}</span>
+                    )}
+                  </div>
+
+                  {/* Progress */}
+                  <div className="w-20">
+                    {editingWorkflow ? (
+                      <input
+                        type="text"
+                        value={step.progress}
+                        onChange={(e) => {
+                          const updated = workflowSteps.map(s => 
+                            s.id === step.id ? {...s, progress: e.target.value} : s
+                          );
+                          setWorkflowSteps(updated);
+                        }}
+                        placeholder="0/8"
+                        className="w-full px-2 py-1 border rounded text-xs text-center"
+                      />
+                    ) : (
+                      <span className="text-xs text-gray-600 text-center block">{step.progress}</span>
+                    )}
+                  </div>
+
+                  {/* Notes */}
+                  <div className="w-32">
+                    {editingWorkflow ? (
+                      <input
+                        type="text"
+                        value={step.notes}
+                        onChange={(e) => {
+                          const updated = workflowSteps.map(s => 
+                            s.id === step.id ? {...s, notes: e.target.value} : s
+                          );
+                          setWorkflowSteps(updated);
+                        }}
+                        placeholder="Notes"
+                        className="w-full px-2 py-1 border rounded text-xs"
+                      />
+                    ) : (
+                      <span className="text-xs text-gray-500">{step.notes}</span>
+                    )}
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className="flex-shrink-0">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      step.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      step.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
+                      step.status === 'on-hold' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {step.status === 'completed' ? '✓' :
+                       step.status === 'in-progress' ? '⟳' :
+                       step.status === 'on-hold' ? '⏸' : '○'}
+                    </span>
+                  </div>
+
+                  {/* Delete Button */}
+                  {editingWorkflow && (
+                    <button
+                      onClick={() => {
+                        const updated = workflowSteps.filter(s => s.id !== step.id);
+                        setWorkflowSteps(updated);
+                      }}
+                      className="flex-shrink-0 text-red-600 hover:text-red-800 transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Progress Summary */}
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-4 gap-4 text-center">
+                <div>
+                  <p className="text-xs text-gray-600">Total Steps</p>
+                  <p className="text-lg font-bold text-gray-900">{workflowSteps.length}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Completed</p>
+                  <p className="text-lg font-bold text-green-600">
+                    {workflowSteps.filter(s => s.status === 'completed').length}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">In Progress</p>
+                  <p className="text-lg font-bold text-blue-600">
+                    {workflowSteps.filter(s => s.status === 'in-progress').length}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">Overall Progress</p>
+                  <p className="text-lg font-bold text-purple-600">
+                    {Math.round((workflowSteps.filter(s => s.status === 'completed').length / workflowSteps.length) * 100)}%
+                  </p>
+                </div>
               </div>
             </div>
           </div>
