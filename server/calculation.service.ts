@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { properties, propertyRentRoll, propertyExpenses, propertyRehabBudget } from "@shared/schema";
+import { properties, propertyRentRoll, propertyExpenses, propertyRehabBudget, entityMemberships } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 export interface PropertyMetrics {
@@ -34,24 +34,37 @@ export class CalculationService {
     // Get rehab budget
     const rehabItems = await db.select().from(propertyRehabBudget).where(eq(propertyRehabBudget.propertyId, propertyId));
 
-    // Calculate metrics dynamically
+    // Calculate metrics dynamically using actual schema properties
     const grossRentalIncome = rentRoll.reduce((sum, unit) => {
-      const rent = unit.isOccupied ? Number(unit.currentRent) : Number(unit.marketRent);
+      const rent = !unit.isVacant ? Number(unit.currentRent || 0) : Number(unit.proFormaRent || 0);
       return sum + (rent * 12);
     }, 0);
 
     const totalExpenses = expenses.reduce((sum, expense) => {
-      if (expense.isPercentOfRent) {
-        return sum + (grossRentalIncome * Number(expense.percentage));
+      if (expense.isPercentage) {
+        const percentageValue = Number(expense.percentageBase || 0) / 100;
+        return sum + (grossRentalIncome * percentageValue);
       }
-      return sum + (Number(expense.monthlyAmount) * 12);
+      return sum + (Number(expense.annualAmount || 0));
     }, 0);
 
-    const totalRehab = rehabItems.reduce((sum, item) => sum + Number(item.budgetAmount), 0);
-    const allInCost = Number(property.purchasePrice) + totalRehab;
+    const totalRehab = rehabItems.reduce((sum, item) => sum + Number(item.totalCost || 0), 0);
+    
+    // Get purchase price from dealAnalyzerData if available
+    let purchasePrice = 0;
+    if (property.dealAnalyzerData) {
+      try {
+        const dealData = JSON.parse(property.dealAnalyzerData);
+        purchasePrice = dealData.assumptions?.purchasePrice || 0;
+      } catch (e) {
+        purchasePrice = 0;
+      }
+    }
+    
+    const allInCost = purchasePrice + totalRehab;
     
     const netOperatingIncome = grossRentalIncome - totalExpenses;
-    const capRate = Number(property.purchasePrice) > 0 ? netOperatingIncome / Number(property.purchasePrice) : 0;
+    const capRate = purchasePrice > 0 ? netOperatingIncome / purchasePrice : 0;
     
     // Get active loan for debt service
     const dealData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : {};
@@ -72,8 +85,16 @@ export class CalculationService {
     const dscr = annualDebtService > 0 ? netOperatingIncome / annualDebtService : 0;
     
     // Calculate ARV based on current NOI and market cap rate
-    const marketCapRate = Number(property.marketCapRate) || 0.055;
-    const arv = netOperatingIncome > 0 ? netOperatingIncome / marketCapRate : Number(property.purchasePrice);
+    let marketCapRate = 0.055;
+    if (property.dealAnalyzerData) {
+      try {
+        const dealData = JSON.parse(property.dealAnalyzerData);
+        marketCapRate = dealData.assumptions?.marketCapRate || 0.055;
+      } catch (e) {
+        marketCapRate = 0.055;
+      }
+    }
+    const arv = netOperatingIncome > 0 ? netOperatingIncome / marketCapRate : purchasePrice;
     
     // Calculate equity multiple
     const initialInvestment = Number(property.initialCapitalRequired) || allInCost * 0.2;
@@ -121,17 +142,37 @@ export class CalculationService {
   async updatePropertyMetrics(propertyId: number): Promise<void> {
     const metrics = await this.calculatePropertyMetrics(propertyId);
     
-    // Update calculated fields in properties table
-    await db.update(properties)
-      .set({
-        grossRentalIncome: metrics.grossRentalIncome.toString(),
-        netOperatingIncome: metrics.netOperatingIncome.toString(),
-        cashFlow: metrics.cashFlow.toString(),
-        capRate: metrics.capRate.toString(),
-        arv: metrics.arv.toString(),
+    // Store calculated metrics in dealAnalyzerData JSON field
+    const property = await db.query.properties.findFirst({
+      where: eq(properties.id, propertyId)
+    });
+    
+    if (property) {
+      let dealData = {};
+      if (property.dealAnalyzerData) {
+        try {
+          dealData = JSON.parse(property.dealAnalyzerData);
+        } catch (e) {
+          dealData = {};
+        }
+      }
+      
+      // Update calculated metrics
+      dealData.calculatedMetrics = {
+        grossRentalIncome: metrics.grossRentalIncome,
+        netOperatingIncome: metrics.netOperatingIncome,
+        cashFlow: metrics.cashFlow,
+        capRate: metrics.capRate,
+        arv: metrics.arv,
         updatedAt: new Date()
-      })
-      .where(eq(properties.id, propertyId));
+      };
+      
+      await db.update(properties)
+        .set({
+          dealAnalyzerData: JSON.stringify(dealData)
+        })
+        .where(eq(properties.id, propertyId));
+    }
   }
 
   /**
@@ -144,11 +185,16 @@ export class CalculationService {
     totalCashFlow: number;
     totalEquity: number;
   }> {
+    // Get user's entity names first
+    const userEntities = await db.select({ entityName: entityMemberships.entityName })
+      .from(entityMemberships)
+      .where(eq(entityMemberships.userId, userId));
+    
+    const entityNames = userEntities.map(e => e.entityName);
+    
     // Get user's properties through entity memberships
     const userProperties = await db.query.properties.findMany({
-      where: (properties, { inArray }) => inArray(properties.entity, 
-        db.select({ entityName: true }).from(entityMemberships).where(eq(entityMemberships.userId, userId))
-      )
+      where: (properties, { inArray }) => inArray(properties.entity, entityNames)
     });
 
     let totalAUM = 0;
@@ -163,7 +209,17 @@ export class CalculationService {
       totalAUM += metrics.arv;
       totalUnits += Number(property.apartments);
       totalCashFlow += metrics.cashFlow;
-      totalEquity += metrics.arv - Number(property.purchasePrice);
+      // Calculate equity from dealAnalyzerData if available
+      let purchasePrice = 0;
+      if (property.dealAnalyzerData) {
+        try {
+          const dealData = JSON.parse(property.dealAnalyzerData);
+          purchasePrice = dealData.assumptions?.purchasePrice || 0;
+        } catch (e) {
+          purchasePrice = 0;
+        }
+      }
+      totalEquity += metrics.arv - purchasePrice;
       weightedCapRate += metrics.capRate * metrics.arv;
     }
 
