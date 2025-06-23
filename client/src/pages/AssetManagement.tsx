@@ -77,6 +77,13 @@ const calculatePropertyMetrics = (property: Property) => {
     const loans = dealAnalyzerData.loans || [];
     const activeLoan = loans.find((loan: any) => loan.isActive);
 
+    console.log('Deal Analyzer data structure:', {
+      hasLoans: !!dealAnalyzerData.loans,
+      loansLength: loans.length,
+      loans: loans,
+      activeLoan: activeLoan
+    });
+
     // Calculate debt service from Deal Analyzer loan data
     let monthlyDebtService = 0;
     
