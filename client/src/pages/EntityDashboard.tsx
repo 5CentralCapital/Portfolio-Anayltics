@@ -711,8 +711,7 @@ export default function EntityDashboard() {
                     { id: 'overview', label: 'Overview', icon: PieChart },
                     { id: 'financials', label: 'Financials', icon: DollarSign },
                     { id: 'members', label: 'Owners & Members', icon: Users },
-                    { id: 'compliance', label: 'Compliance', icon: FileText },
-                    { id: 'properties', label: 'Properties', icon: Building }
+                    { id: 'compliance', label: 'Compliance', icon: FileText }
                   ].map((tab) => (
                     <button
                       key={tab.id}
@@ -817,101 +816,7 @@ export default function EntityDashboard() {
                   </div>
                 )}
 
-                {activeTabs[entityName] === 'properties' && (
-                  <div className="space-y-4">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Entity Properties</h4>
-                    {entityProperties.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Building className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500 dark:text-gray-400">No properties assigned to {entityName}</p>
-                      </div>
-                    ) : (
-                      <div className="grid gap-3">
-                        {entityProperties.map((property) => {
-                          // Use centralized calculations for consistent metrics
-                          const calculatedMetrics = calculatePropertyMetrics(property);
-                          
-                          return (
-                            <div 
-                              key={property.id} 
-                              className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 w-full cursor-pointer hover:shadow-lg transition-shadow card-hover"
-                              onDoubleClick={() => setSelectedPropertyModal(property)}
-                              title="Double-click for financial breakdown"
-                            >
-                              <div className="flex items-center justify-between mb-4">
-                                <div>
-                                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{property.address}</h3>
-                                  <p className="text-gray-600 dark:text-gray-400">{property.city}, {property.state} {property.zipCode || ''}</p>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    property.status === 'Cashflowing' 
-                                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                      : property.status === 'Under Contract'
-                                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                      : property.status === 'Rehabbing'
-                                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                      : property.status === 'Sold'
-                                      ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                                  }`}>
-                                    {property.status}
-                                  </span>
-                                </div>
-                              </div>
 
-                              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
-                                <div>
-                                  <p className="text-gray-600 dark:text-gray-400">Units</p>
-                                  <p className="font-semibold text-gray-900 dark:text-white">{property.apartments}</p>
-                                </div>
-                                <div>
-                                  <p className="text-gray-600 dark:text-gray-400">Acquisition Price</p>
-                                  <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.acquisitionPrice)}</p>
-                                </div>
-                                <div>
-                                  <p className="text-gray-600 dark:text-gray-400">Rehab Costs</p>
-                                  <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.rehabCosts)}</p>
-                                </div>
-                                <div>
-                                  <p className="text-gray-600 dark:text-gray-400">ARV</p>
-                                  <p className="font-semibold text-gray-900 dark:text-white">{formatCurrency(property.arvAtTimePurchased || 0)}</p>
-                                </div>
-                                <div>
-                                  <p className="text-gray-600 dark:text-gray-400">Monthly Cash Flow</p>
-                                  {calculatedMetrics ? (
-                                    <p className={`font-semibold ${calculatedMetrics.monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                      {formatCurrency(calculatedMetrics.monthlyCashFlow)}
-                                    </p>
-                                  ) : (
-                                    <p className="font-semibold text-gray-500">N/A</p>
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="text-gray-600 dark:text-gray-400">CoC Return</p>
-                                  {calculatedMetrics ? (
-                                    <p className={`font-semibold ${calculatedMetrics.cashOnCashReturn >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                                      {formatPercentage(calculatedMetrics.cashOnCashReturn)}
-                                    </p>
-                                  ) : (
-                                    <p className="font-semibold text-gray-500">N/A</p>
-                                  )}
-                                </div>
-                              </div>
-
-                              {property.acquisitionDate && (
-                                <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                                  <span className="inline mr-1">📍</span>
-                                  Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {activeTabs[entityName] === 'financials' && (
                   <div className="space-y-6">

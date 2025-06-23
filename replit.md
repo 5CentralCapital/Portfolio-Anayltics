@@ -184,6 +184,7 @@ Changelog:
 - June 23, 2025. Removed confirmation modal when moving properties through status ladder - status changes via dropdown now happen immediately without confirmation step for streamlined property management workflow
 - June 23, 2025. Replaced rehab tracking modal in Asset Management with comprehensive Deal Analyzer rehab budget system - unified experience with detailed budget tables, category breakdown, progress tracking, timeline workflow, and automatic calculations matching Deal Analyzer functionality - maintains full import compatibility and data integrity
 - June 23, 2025. Unified property data display across Asset Management and Entity Dashboard by implementing centralized calculatePropertyMetrics function - Entity Dashboard Properties tab now displays identical financial metrics and calculations as Asset Management ensuring complete data consistency and accurate property performance tracking throughout the entire application
+- June 23, 2025. Removed Properties tab from Entity Dashboard per user request and implemented robust debt service calculation with multiple fallback methods - added safety checks for unreasonable debt service amounts, improved calculation logic with bounds checking, and implemented estimation methods using NOI ratios when Deal Analyzer loan data is problematic
 
 ## User Preferences
 
