@@ -218,6 +218,45 @@ export default function AssetManagement() {
   const [propertyDetailTab, setPropertyDetailTab] = useState('overview');
   const [editingModalProperty, setEditingModalProperty] = useState<Property | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  
+  // Centralized loan data management for modal consistency
+  const getModalLoanData = () => {
+    if (!showPropertyDetailModal) return [];
+    
+    const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
+    let loans = currentData?.loans || [];
+    
+    // If no loans exist, create default acquisition loan
+    if (loans.length === 0) {
+      const loanAmount = parseFloat(showPropertyDetailModal.acquisitionPrice) * (dealAnalyzerData.assumptions?.loanPercentage || 0.8);
+      const interestRate = dealAnalyzerData.assumptions?.interestRate || 0.065;
+      const termYears = dealAnalyzerData.assumptions?.loanTermYears || 30;
+      const paymentType = termYears <= 3 ? 'interest-only' : 'amortizing';
+      
+      const defaultLoan = {
+        id: 1,
+        name: 'Acquisition Loan',
+        amount: loanAmount,
+        loanAmount: loanAmount,
+        interestRate: interestRate,
+        termYears: termYears,
+        monthlyPayment: calculateLoanPayment(loanAmount, interestRate, termYears, paymentType),
+        isActive: true,
+        loanType: 'acquisition',
+        paymentType: paymentType,
+        startDate: showPropertyDetailModal.acquisitionDate || new Date().toISOString().split('T')[0],
+        remainingBalance: loanAmount
+      };
+      loans = [defaultLoan];
+    }
+    
+    return loans;
+  };
+
+  const getActiveLoan = () => {
+    const loans = getModalLoanData();
+    return loans.find((loan: any) => loan.isActive) || loans[0] || null;
+  };
 
   // Initialize default rehab line items for a property
   const initializeRehabItems = (property: Property): RehabLineItem[] => {
@@ -2404,40 +2443,8 @@ export default function AssetManagement() {
                             const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
                             const noi = netRevenue - totalExpenses;
                             
-                            // Get active loan for debt service calculation - use shared loan data
-                            const getSharedLoanDataForIncomeExpenses = () => {
-                              const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
-                              let loans = currentData?.loans || [];
-                              
-                              // If no loans exist, create the default acquisition loan
-                              if (loans.length === 0) {
-                                const loanAmount = parseFloat(showPropertyDetailModal.acquisitionPrice) * (dealAnalyzerData.assumptions.loanPercentage || 0.8);
-                                const interestRate = dealAnalyzerData.assumptions.interestRate || 0.065;
-                                const termYears = dealAnalyzerData.assumptions.loanTermYears || 30;
-                                const paymentType = termYears <= 3 ? 'interest-only' : 'amortizing';
-                                
-                                const defaultLoan = {
-                                  id: 1,
-                                  name: 'Acquisition Loan',
-                                  amount: loanAmount,
-                                  loanAmount: loanAmount,
-                                  interestRate: interestRate,
-                                  termYears: termYears,
-                                  monthlyPayment: calculateLoanPayment(loanAmount, interestRate, termYears, paymentType),
-                                  isActive: true,
-                                  loanType: 'acquisition',
-                                  paymentType: paymentType,
-                                  startDate: showPropertyDetailModal.acquisitionDate || new Date().toISOString().split('T')[0],
-                                  remainingBalance: loanAmount
-                                };
-                                loans = [defaultLoan];
-                              }
-                              
-                              return loans;
-                            };
-                            
-                            const loans = getSharedLoanDataForIncomeExpenses();
-                            const activeLoan = loans.find((loan: any) => loan.isActive) || loans[0];
+                            // Get active loan for debt service calculation using centralized function
+                            const activeLoan = getActiveLoan();
                             console.log('Income & Expenses - Active loan:', activeLoan);
                             const monthlyDebtService = activeLoan ? calculateLoanPayment(
                               activeLoan.loanAmount || activeLoan.amount,
@@ -2682,40 +2689,8 @@ export default function AssetManagement() {
                                   const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
                                   const noi = netRevenue - totalExpenses;
                                   
-                                  // Get active loan for debt service calculation - use shared loan data
-                                  const getSharedLoanData = () => {
-                                    const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
-                                    let loans = currentData?.loans || [];
-                                    
-                                    // If no loans exist, create the default acquisition loan
-                                    if (loans.length === 0) {
-                                      const loanAmount = parseFloat(showPropertyDetailModal.acquisitionPrice) * (dealAnalyzerData.assumptions.loanPercentage || 0.8);
-                                      const interestRate = dealAnalyzerData.assumptions.interestRate || 0.065;
-                                      const termYears = dealAnalyzerData.assumptions.loanTermYears || 30;
-                                      const paymentType = termYears <= 3 ? 'interest-only' : 'amortizing';
-                                      
-                                      const defaultLoan = {
-                                        id: 1,
-                                        name: 'Acquisition Loan',
-                                        amount: loanAmount,
-                                        loanAmount: loanAmount,
-                                        interestRate: interestRate,
-                                        termYears: termYears,
-                                        monthlyPayment: calculateLoanPayment(loanAmount, interestRate, termYears, paymentType),
-                                        isActive: true,
-                                        loanType: 'acquisition',
-                                        paymentType: paymentType,
-                                        startDate: showPropertyDetailModal.acquisitionDate || new Date().toISOString().split('T')[0],
-                                        remainingBalance: loanAmount
-                                      };
-                                      loans = [defaultLoan];
-                                    }
-                                    
-                                    return loans;
-                                  };
-                                  
-                                  const loans = getSharedLoanData();
-                                  const activeLoan = loans.find((loan: any) => loan.isActive) || loans[0];
+                                  // Get active loan for debt service calculation using centralized function
+                                  const activeLoan = getActiveLoan();
                                   console.log('12-Month Proforma - Active loan:', activeLoan);
                                   const monthlyDebtService = activeLoan ? calculateLoanPayment(
                                     activeLoan.loanAmount || activeLoan.amount,
@@ -2874,39 +2849,8 @@ export default function AssetManagement() {
 
                             {/* Existing Loans */}
                             {(() => {
-                              const currentData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
-                              let loans = currentData.loans || [];
-                              
-                              // If no loans exist, create the original acquisition loan
-                              if (loans.length === 0) {
-                                const loanAmount = parseFloat(showPropertyDetailModal.acquisitionPrice) * (dealAnalyzerData.assumptions.loanPercentage || 0.8);
-                                const interestRate = dealAnalyzerData.assumptions.interestRate || 0.065;
-                                const termYears = dealAnalyzerData.assumptions.loanTermYears || 30;
-                                const paymentType = termYears <= 3 ? 'interest-only' : 'amortizing';
-                                
-                                // Calculate monthly payment using the same function
-                                const monthlyPayment = calculateLoanPayment(loanAmount, interestRate, termYears, paymentType);
-                                
-                                const originalLoan = {
-                                  id: 1,
-                                  name: 'Acquisition Loan',
-                                  amount: loanAmount,
-                                  loanAmount: loanAmount, // Add this for consistency
-                                  interestRate: interestRate,
-                                  termYears: termYears,
-                                  monthlyPayment: monthlyPayment,
-                                  isActive: true,
-                                  loanType: 'acquisition',
-                                  paymentType: paymentType,
-                                  startDate: showPropertyDetailModal.acquisitionDate || new Date().toISOString().split('T')[0],
-                                  remainingBalance: loanAmount
-                                };
-                                loans = [originalLoan];
-                                
-                                // Update the shared data structure immediately
-                                currentData.loans = loans;
-                                console.log('Updated currentData with default loan:', currentData.loans);
-                              }
+                              const loans = getModalLoanData();
+                              console.log('Financing tab - Using centralized loan data:', loans);
 
                               return loans.map((loan: any) => (
                                 <div key={loan.id} className={`bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-6 border-2 ${loan.isActive ? 'border-indigo-500' : 'border-indigo-200 dark:border-indigo-800'}`}>
