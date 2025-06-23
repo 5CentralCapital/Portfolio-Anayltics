@@ -73,30 +73,46 @@ const calculatePropertyMetrics = (property: Property) => {
     const netRevenue = grossRentMonthly - vacancy;
     const noi = netRevenue - totalExpenses;
 
-    // Calculate debt service using simplified approach to fix calculation errors
+    // Get active loan from Deal Analyzer data (needed for multiple calculations)
+    const loans = dealAnalyzerData.loans || [];
+    const activeLoan = loans.find((loan: any) => loan.isActive);
+
+    // Calculate debt service from Deal Analyzer loan data
     let monthlyDebtService = 0;
     
-    // Use property cash flow field as primary source
-    const monthlyCashFlowFromProperty = parseFloat(property.cashFlow || '0');
-    
-    // Estimate debt service based on NOI and cash flow
-    if (noi > 0) {
-      if (monthlyCashFlowFromProperty < 0) {
-        // If cash flow is negative, debt service = NOI - cash flow
-        monthlyDebtService = noi - monthlyCashFlowFromProperty;
+    if (activeLoan && activeLoan.amount > 0) {
+      const principal = activeLoan.amount;
+      let annualRate = activeLoan.interestRate;
+      
+      // Interest rate is already in decimal format from Deal Analyzer (e.g., 0.1075 = 10.75%)
+      const monthlyRate = annualRate / 12;
+      const termMonths = (activeLoan.termYears || 30) * 12;
+      
+      console.log('Debt service calculation details:', {
+        principal,
+        annualRate,
+        monthlyRate,
+        termMonths,
+        paymentType: activeLoan.paymentType
+      });
+      
+      if (activeLoan.paymentType === 'interest-only') {
+        monthlyDebtService = principal * monthlyRate;
       } else {
-        // If cash flow is positive, assume 60% of NOI goes to debt service
-        monthlyDebtService = noi * 0.6;
+        // Full amortization
+        if (monthlyRate > 0 && termMonths > 0) {
+          const factor = Math.pow(1 + monthlyRate, termMonths);
+          monthlyDebtService = principal * (monthlyRate * factor) / (factor - 1);
+        }
       }
       
-      // Safety bounds check - debt service shouldn't exceed NOI
-      if (monthlyDebtService > noi) {
-        monthlyDebtService = noi * 0.8; // Cap at 80% of NOI
-      }
-      
-      // Lower bound check - minimum reasonable debt service
-      if (monthlyDebtService < 0) {
-        monthlyDebtService = 0;
+      console.log('Calculated monthly debt service:', monthlyDebtService);
+    } else {
+      // Fallback to estimated debt service if no loan data
+      const monthlyCashFlowFromProperty = parseFloat(property.cashFlow || '0');
+      if (noi > 0 && monthlyCashFlowFromProperty < noi) {
+        monthlyDebtService = noi - monthlyCashFlowFromProperty;
+        if (monthlyDebtService < 0) monthlyDebtService = 0;
       }
     }
 
