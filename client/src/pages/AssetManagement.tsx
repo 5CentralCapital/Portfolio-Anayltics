@@ -80,11 +80,11 @@ const calculatePropertyMetrics = (property: Property) => {
     
     if (activeLoan) {
       const principal = activeLoan.amount || 0;
-      const annualRate = (activeLoan.interestRate || 0) / 100;
+      const annualRate = activeLoan.interestRate || 0; // Already in decimal format (0.1075 = 10.75%)
       const monthlyRate = annualRate / 12;
       const termMonths = (activeLoan.termYears || 30) * 12;
       
-      if (activeLoan.paymentType === 'interestOnly') {
+      if (activeLoan.paymentType === 'interest-only') {
         monthlyDebtService = principal * monthlyRate;
       } else {
         // Full amortization
@@ -99,9 +99,25 @@ const calculatePropertyMetrics = (property: Property) => {
     const monthlyCashFlow = noi - monthlyDebtService;
     const annualCashFlow = monthlyCashFlow * 12;
 
-    // Calculate cash-on-cash return
+    // Calculate investment metrics
     const totalInvested = parseFloat(property.initialCapitalRequired || '0');
     const cashOnCashReturn = totalInvested > 0 ? (annualCashFlow / totalInvested) * 100 : 0;
+    
+    // Calculate total invested capital (acquisition + rehab + closing + holding costs)
+    const acquisitionPrice = parseFloat(property.acquisitionPrice || '0');
+    const rehabCosts = parseFloat(property.rehabCosts || '0');
+    const closingCosts = dealAnalyzerData.closingCosts ? 
+      Object.values(dealAnalyzerData.closingCosts).reduce((sum: number, val: any) => sum + (val || 0), 0) : 0;
+    const holdingCosts = dealAnalyzerData.holdingCosts ? 
+      Object.values(dealAnalyzerData.holdingCosts).reduce((sum: number, val: any) => sum + (val || 0), 0) : 0;
+    
+    const totalInvestedCapital = totalInvested > 0 ? totalInvested : (acquisitionPrice + rehabCosts + closingCosts + holdingCosts);
+    
+    // Calculate ARV and equity metrics
+    const arv = parseFloat(property.arvAtTimePurchased || '0');
+    const currentEquity = arv - (activeLoan?.remainingBalance || activeLoan?.amount || 0);
+    const totalProfit = parseFloat(property.totalProfits || '0');
+    const equityMultiple = totalInvestedCapital > 0 ? (currentEquity + totalProfit) / totalInvestedCapital : 0;
 
     return {
       grossRentMonthly,
@@ -115,7 +131,11 @@ const calculatePropertyMetrics = (property: Property) => {
       cashOnCashReturn,
       grossRentAnnual: grossRentMonthly * 12,
       vacancyAnnual: vacancy * 12,
-      netRevenueAnnual: netRevenue * 12
+      netRevenueAnnual: netRevenue * 12,
+      totalInvestedCapital,
+      totalProfit,
+      equityMultiple,
+      currentEquity
     };
   } catch (error) {
     console.error('Error calculating property metrics:', error);
