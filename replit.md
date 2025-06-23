@@ -172,6 +172,7 @@ Changelog:
 - June 23, 2025. Added profit KPI to Deal Analyzer KPI bar between Purchase Cost/Unit and Equity Multiple showing ARV - All-In Cost calculation - expanded KPI bar from 6 to 7 columns to display total potential profit from the deal for clearer investment evaluation
 - June 23, 2025. Added 3-month initial interest reserve cost to both loan analysis section (monthly debt service × 3) and closing costs section with automatic calculation - implemented negative number support for seller credits in closing costs using new validateClosingCostInput function
 - June 23, 2025. Added comprehensive editable timeline/workflow section to bottom of rehab budget tab with pre-populated steps (close, eviction, renovations, demo, paint, minisplits, flooring, listing, refinance), status tracking (pending/in-progress/completed/on-hold), progress indicators, notes fields, add/delete functionality, and progress summary dashboard
+- June 23, 2025. Updated 3-month interest reserve in closing costs section to dynamically calculate from loan analysis values instead of static editable amount - both loan analysis and closing costs sections now show consistent real-time calculated values that update with loan parameter changes
 
 ## User Preferences
 

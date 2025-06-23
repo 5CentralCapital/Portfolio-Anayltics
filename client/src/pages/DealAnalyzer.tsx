@@ -63,7 +63,6 @@ export default function DealAnalyzer() {
     legalFees: 2500,
     transferTax: 8000,
     miscellaneous: 2200,
-    interestReserve: 7200,
     sellerCredit: -5000
   });
 
@@ -73,7 +72,6 @@ export default function DealAnalyzer() {
     legalFees: 'Legal Fees',
     transferTax: 'Transfer Tax',
     miscellaneous: 'Miscellaneous',
-    interestReserve: '3-Month Interest Reserve',
     sellerCredit: 'Seller Credit'
   });
 
@@ -1287,10 +1285,17 @@ export default function DealAnalyzer() {
                       })}
                     </>
                   )}
-                  <div className="flex justify-between items-center pt-2 border-t">
+                  
+                  {/* 3-Month Interest Reserve - Dynamic Calculation */}
+                  <div className="flex justify-between items-center py-2 border-t border-gray-200">
+                    <span className="text-sm font-medium text-gray-700">3-Month Interest Reserve</span>
+                    <span className="text-sm font-medium">{formatCurrency((metrics.initialLoan * assumptions.interestRate / 12) * 3)}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center pt-2 border-t border-gray-900">
                     <span className="font-medium text-gray-900">Total Closing Costs (Purchase)</span>
                     <span className="font-bold text-green-600">
-                      {formatCurrency(Object.values(closingCosts).reduce((sum, cost) => sum + cost, 0))}
+                      {formatCurrency(Object.values(closingCosts).reduce((sum, cost) => sum + cost, 0) + ((metrics.initialLoan * assumptions.interestRate / 12) * 3))}
                     </span>
                   </div>
                 </div>
