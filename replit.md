@@ -168,6 +168,7 @@ Changelog:
 - June 23, 2025. Fixed initial loan calculation in Deal Analyzer to properly use editable loan percentage assumption from overview page instead of hardcoded 85% - updated frontend calculation logic to use assumptions.loanPercentage for both initial loan amount and down payment calculations, ensuring loan percentage field directly controls loan calculations throughout the analysis
 - June 23, 2025. Corrected loan analysis section initial loan calculation to use (purchase price + total rehab cost) × loan percentage assumption instead of purchase price only - ensures loan analysis reflects complete project financing including acquisition and renovation costs
 - June 23, 2025. Updated interest rate sensitivity analysis to dynamically use refinance interest rate assumption with +/-0.5% and 1.0% variations instead of hardcoded rates - displays base refinance rate and calculates cash flow impact using refinance loan amount and 30-year term for accurate post-refinance analysis
+- June 23, 2025. Fixed hold strategy property appreciation calculation to use ARV as baseline instead of purchase price with editable annual appreciation rate input field (default 3.0%) - property appreciation now calculates as ARV × annual appreciation rate × hold period years for accurate investment projections based on stabilized property value after improvements
 
 ## User Preferences
 
