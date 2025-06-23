@@ -1831,6 +1831,9 @@ export default function DealAnalyzer() {
               {/* Rent Sensitivity */}
               <div className="border border-gray-200 rounded-lg p-6">
                 <h4 className="text-lg font-semibold mb-4 text-blue-600">Rent Sensitivity</h4>
+                <div className="text-sm text-gray-600 mb-3">
+                  Base Market Rent: {formatCurrency(rentRoll.reduce((sum, unit) => sum + (unitTypes.find(type => type.id === unit.unitTypeId)?.marketRent || 0), 0) / 12)} monthly
+                </div>
                 <div className="space-y-3">
                   {[-10, -5, 0, 5, 10].map(percent => {
                     const adjustedRent = metrics.grossRent * (1 + percent / 100);
@@ -1851,24 +1854,38 @@ export default function DealAnalyzer() {
               {/* Cap Rate Sensitivity */}
               <div className="border border-gray-200 rounded-lg p-6">
                 <h4 className="text-lg font-semibold mb-4 text-green-600">Cap Rate Sensitivity</h4>
+                <div className="text-sm text-gray-600 mb-3">
+                  Base Market Cap Rate: {(assumptions.marketCapRate * 100).toFixed(1)}%
+                </div>
                 <div className="space-y-3">
-                  {[4.0, 4.5, 5.0, 5.5, 6.0].map(capRate => {
-                    const impliedValue = metrics.noi / (capRate / 100);
-                    const profitAtCap = impliedValue - metrics.allInCost;
-                    return (
-                      <div key={capRate} className="flex justify-between items-center">
-                        <span className={capRate === 5.0 ? 'font-bold' : ''}>{capRate.toFixed(1)}%</span>
-                        <div className="text-right">
-                          <div className={`${profitAtCap >= 0 ? 'text-green-600' : 'text-red-600'} ${capRate === 5.0 ? 'font-bold' : ''}`}>
-                            {formatCurrency(impliedValue)}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {formatCurrency(profitAtCap)} profit
+                  {(() => {
+                    const baseCapRate = assumptions.marketCapRate * 100;
+                    const capRates = [
+                      baseCapRate - 1.0,
+                      baseCapRate - 0.5,
+                      baseCapRate,
+                      baseCapRate + 0.5,
+                      baseCapRate + 1.0
+                    ];
+                    return capRates.map(capRate => {
+                      const impliedValue = metrics.noi / (capRate / 100);
+                      const profitAtCap = impliedValue - metrics.allInCost;
+                      const isBase = Math.abs(capRate - baseCapRate) < 0.01;
+                      return (
+                        <div key={capRate} className="flex justify-between items-center">
+                          <span className={isBase ? 'font-bold' : ''}>{capRate.toFixed(1)}%</span>
+                          <div className="text-right">
+                            <div className={`${profitAtCap >= 0 ? 'text-green-600' : 'text-red-600'} ${isBase ? 'font-bold' : ''}`}>
+                              {formatCurrency(impliedValue)}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {formatCurrency(profitAtCap)} profit
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             </div>
