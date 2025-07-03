@@ -162,6 +162,18 @@ const calculatePropertyMetrics = (property: Property) => {
     const currentEquity = arv - (activeLoan?.remainingBalance || activeLoan?.amount || 0);
     const totalProfit = parseFloat(property.totalProfits || '0');
     const equityMultiple = totalInvestedCapital > 0 ? (currentEquity + totalProfit) / totalInvestedCapital : 0;
+    
+    console.log('Admin Dashboard Equity Multiple Calculation for', property.address, {
+      arv,
+      activeLoanAmount: activeLoan?.amount || 0,
+      activeLoanRemainingBalance: activeLoan?.remainingBalance || 0,
+      currentEquity,
+      totalProfit,
+      totalInvestedCapital,
+      totalInvested,
+      equityMultiple,
+      calculation: `(${currentEquity} + ${totalProfit}) / ${totalInvestedCapital} = ${equityMultiple}`
+    });
 
     return {
       grossRentMonthly,

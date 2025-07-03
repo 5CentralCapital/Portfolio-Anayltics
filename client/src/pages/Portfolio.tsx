@@ -143,12 +143,28 @@ const Portfolio = () => {
       
       const capitalRequired = downPayment + closingCosts + holdingCosts;
       
+      // Calculate total invested capital exactly like Admin dashboard
+      const totalInvested = parseFloat(property.initialCapitalRequired || '0');
+      const totalInvestedCapital = totalInvested > 0 ? totalInvested : (acquisitionPrice + totalRehab + closingCosts + holdingCosts);
+      
       // Calculate ARV and equity metrics (matching Admin dashboard exactly)
       const arv = parseFloat(property.arvAtTimePurchased || '0');
       const currentEquity = arv - (activeLoan?.remainingBalance || activeLoan?.amount || 0);
       const totalProfit = parseFloat(property.totalProfits || '0');
-      const totalInvestedCapital = capitalRequired > 0 ? capitalRequired : (acquisitionPrice + totalRehab + closingCosts + holdingCosts);
       const equityMultiple = totalInvestedCapital > 0 ? (currentEquity + totalProfit) / totalInvestedCapital : 0;
+      
+      console.log('Portfolio Equity Multiple Calculation for', property.address, {
+        arv,
+        activeLoanAmount: activeLoan?.amount || 0,
+        activeLoanRemainingBalance: activeLoan?.remainingBalance || 0,
+        currentEquity,
+        totalProfit,
+        totalInvested,
+        totalInvestedCapital,
+        capitalRequired,
+        equityMultiple,
+        calculation: `(${currentEquity} + ${totalProfit}) / ${totalInvestedCapital} = ${equityMultiple}`
+      });
       
       // Calculate cash-on-cash return
       const cocReturn = capitalRequired > 0 ? (annualCashFlow / capitalRequired) * 100 : 0;
