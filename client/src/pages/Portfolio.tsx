@@ -28,7 +28,16 @@ const Portfolio = () => {
   // Calculate property KPIs using centralized calculation logic
   const calculatePropertyKPIs = (property: Property) => {
     if (!property.dealAnalyzerData) {
-      // Return basic metrics from property fields if no deal data
+      // Return basic metrics from property fields if no deal data (matching Admin dashboard exactly)
+      const acquisitionPrice = parseFloat(property.acquisitionPrice || '0');
+      const totalRehab = parseFloat(property.rehabCosts || '0');
+      const allInCost = acquisitionPrice + totalRehab;
+      const totalInvestedCapital = parseFloat(property.initialCapitalRequired || '0');
+      const arv = parseFloat(property.arvAtTimePurchased || '0');
+      const totalProfit = parseFloat(property.totalProfits || '0');
+      const currentEquity = arv; // Assume no debt for properties without deal data
+      const equityMultiple = totalInvestedCapital > 0 ? (currentEquity + totalProfit) / totalInvestedCapital : 0;
+      
       return {
         grossRent: 0,
         effectiveGrossIncome: 0,
@@ -38,14 +47,15 @@ const Portfolio = () => {
         monthlyDebtService: 0,
         monthlyCashFlow: parseFloat(property.cashFlow || '0'),
         annualCashFlow: parseFloat(property.cashFlow || '0') * 12,
-        acquisitionPrice: parseFloat(property.acquisitionPrice || '0'),
-        totalRehab: parseFloat(property.rehabCosts || '0'),
-        allInCost: parseFloat(property.acquisitionPrice || '0') + parseFloat(property.rehabCosts || '0'),
-        capitalRequired: parseFloat(property.initialCapitalRequired || '0'),
-        arv: parseFloat(property.arvAtTimePurchased || '0'),
-        equityMultiple: property.totalProfits && property.initialCapitalRequired 
-          ? parseFloat(property.totalProfits) / parseFloat(property.initialCapitalRequired)
-          : 0,
+        acquisitionPrice,
+        totalRehab,
+        allInCost,
+        capitalRequired: totalInvestedCapital,
+        totalInvestedCapital,
+        arv,
+        currentEquity,
+        totalProfit,
+        equityMultiple,
         cocReturn: property.cashOnCashReturn ? parseFloat(property.cashOnCashReturn) : 0
       };
     }
@@ -133,12 +143,12 @@ const Portfolio = () => {
       
       const capitalRequired = downPayment + closingCosts + holdingCosts;
       
-      // Calculate ARV using cap rate
-      const marketCapRate = dealData.assumptions?.marketCapRate || 0.055;
-      const arv = annualNOI > 0 ? annualNOI / marketCapRate : acquisitionPrice;
-      
-      // Calculate equity multiple
-      const equityMultiple = capitalRequired > 0 ? (arv - allInCost) / capitalRequired : 0;
+      // Calculate ARV and equity metrics (matching Admin dashboard exactly)
+      const arv = parseFloat(property.arvAtTimePurchased || '0');
+      const currentEquity = arv - (activeLoan?.remainingBalance || activeLoan?.amount || 0);
+      const totalProfit = parseFloat(property.totalProfits || '0');
+      const totalInvestedCapital = capitalRequired > 0 ? capitalRequired : (acquisitionPrice + totalRehab + closingCosts + holdingCosts);
+      const equityMultiple = totalInvestedCapital > 0 ? (currentEquity + totalProfit) / totalInvestedCapital : 0;
       
       // Calculate cash-on-cash return
       const cocReturn = capitalRequired > 0 ? (annualCashFlow / capitalRequired) * 100 : 0;
@@ -156,7 +166,10 @@ const Portfolio = () => {
         totalRehab,
         allInCost,
         capitalRequired,
+        totalInvestedCapital,
         arv,
+        currentEquity,
+        totalProfit,
         equityMultiple,
         cocReturn
       };
