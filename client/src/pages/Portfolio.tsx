@@ -34,9 +34,9 @@ const Portfolio = () => {
       const allInCost = acquisitionPrice + totalRehab;
       const totalInvestedCapital = parseFloat(property.initialCapitalRequired || '0');
       const arv = parseFloat(property.arvAtTimePurchased || '0');
-      const totalProfit = parseFloat(property.totalProfits || '0');
-      const currentEquity = arv; // Assume no debt for properties without deal data
-      const equityMultiple = totalInvestedCapital > 0 ? (currentEquity + totalProfit) / totalInvestedCapital : 0;
+      const cashCollected = parseFloat(property.totalProfits || '0');
+      const capitalRequired = totalInvestedCapital; // Use same value for simple case
+      const equityMultiple = capitalRequired > 0 ? (arv - allInCost + cashCollected) / capitalRequired : 0;
       
       return {
         grossRent: 0,
@@ -53,8 +53,7 @@ const Portfolio = () => {
         capitalRequired: totalInvestedCapital,
         totalInvestedCapital,
         arv,
-        currentEquity,
-        totalProfit,
+        cashCollected,
         equityMultiple,
         cocReturn: property.cashOnCashReturn ? parseFloat(property.cashOnCashReturn) : 0
       };
@@ -147,23 +146,18 @@ const Portfolio = () => {
       const totalInvested = parseFloat(property.initialCapitalRequired || '0');
       const totalInvestedCapital = totalInvested > 0 ? totalInvested : (acquisitionPrice + totalRehab + closingCosts + holdingCosts);
       
-      // Calculate ARV and equity metrics (matching Admin dashboard exactly)
+      // Calculate ARV and equity metrics using correct formula: (ARV - all in costs + cash collected) / capital required
       const arv = parseFloat(property.arvAtTimePurchased || '0');
-      const currentEquity = arv - (activeLoan?.remainingBalance || activeLoan?.amount || 0);
-      const totalProfit = parseFloat(property.totalProfits || '0');
-      const equityMultiple = totalInvestedCapital > 0 ? (currentEquity + totalProfit) / totalInvestedCapital : 0;
+      const cashCollected = parseFloat(property.totalProfits || '0'); // This represents cash flow collected over time
+      const equityMultiple = capitalRequired > 0 ? (arv - allInCost + cashCollected) / capitalRequired : 0;
       
       console.log('Portfolio Equity Multiple Calculation for', property.address, {
         arv,
-        activeLoanAmount: activeLoan?.amount || 0,
-        activeLoanRemainingBalance: activeLoan?.remainingBalance || 0,
-        currentEquity,
-        totalProfit,
-        totalInvested,
-        totalInvestedCapital,
+        allInCost,
+        cashCollected,
         capitalRequired,
         equityMultiple,
-        calculation: `(${currentEquity} + ${totalProfit}) / ${totalInvestedCapital} = ${equityMultiple}`
+        calculation: `(${arv} - ${allInCost} + ${cashCollected}) / ${capitalRequired} = ${equityMultiple}`
       });
       
       // Calculate cash-on-cash return
@@ -184,8 +178,7 @@ const Portfolio = () => {
         capitalRequired,
         totalInvestedCapital,
         arv,
-        currentEquity,
-        totalProfit,
+        cashCollected,
         equityMultiple,
         cocReturn
       };

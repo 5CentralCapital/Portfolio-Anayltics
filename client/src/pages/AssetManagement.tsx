@@ -157,22 +157,20 @@ const calculatePropertyMetrics = (property: Property) => {
     
     const totalInvestedCapital = totalInvested > 0 ? totalInvested : (acquisitionPrice + rehabCosts + closingCosts + holdingCosts);
     
-    // Calculate ARV and equity metrics
+    // Calculate equity multiple using correct formula: (ARV - all in costs + cash collected) / capital required
     const arv = parseFloat(property.arvAtTimePurchased || '0');
-    const currentEquity = arv - (activeLoan?.remainingBalance || activeLoan?.amount || 0);
-    const totalProfit = parseFloat(property.totalProfits || '0');
-    const equityMultiple = totalInvestedCapital > 0 ? (currentEquity + totalProfit) / totalInvestedCapital : 0;
+    const allInCost = acquisitionPrice + rehabCosts + closingCosts + holdingCosts;
+    const cashCollected = parseFloat(property.totalProfits || '0');
+    const capitalRequired = totalInvested; // Use actual capital required
+    const equityMultiple = capitalRequired > 0 ? (arv - allInCost + cashCollected) / capitalRequired : 0;
     
     console.log('Admin Dashboard Equity Multiple Calculation for', property.address, {
       arv,
-      activeLoanAmount: activeLoan?.amount || 0,
-      activeLoanRemainingBalance: activeLoan?.remainingBalance || 0,
-      currentEquity,
-      totalProfit,
-      totalInvestedCapital,
-      totalInvested,
+      allInCost,
+      cashCollected,
+      capitalRequired,
       equityMultiple,
-      calculation: `(${currentEquity} + ${totalProfit}) / ${totalInvestedCapital} = ${equityMultiple}`
+      calculation: `(${arv} - ${allInCost} + ${cashCollected}) / ${capitalRequired} = ${equityMultiple}`
     });
 
     return {
@@ -189,9 +187,10 @@ const calculatePropertyMetrics = (property: Property) => {
       vacancyAnnual: vacancy * 12,
       netRevenueAnnual: netRevenue * 12,
       totalInvestedCapital,
-      totalProfit,
-      equityMultiple,
-      currentEquity
+      allInCost,
+      cashCollected,
+      capitalRequired,
+      equityMultiple
     };
   } catch (error) {
     console.error('Error calculating property metrics:', error);
@@ -469,7 +468,7 @@ const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { propert
           <p className="text-green-700 dark:text-green-400 text-xs mb-0.5">Profit</p>
           {calculatedMetrics ? (
             <p className="font-bold text-green-700 dark:text-green-400 text-xs">
-              {formatCurrency(calculatedMetrics.totalProfit || parseFloat(property.totalProfits || '0'))}
+              {formatCurrency(calculatedMetrics.cashCollected || parseFloat(property.totalProfits || '0'))}
             </p>
           ) : (
             <p className="font-bold text-green-700 dark:text-green-400 text-xs">{formatCurrency(property.totalProfits)}</p>
