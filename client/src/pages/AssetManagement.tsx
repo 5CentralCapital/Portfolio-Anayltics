@@ -45,131 +45,7 @@ const calculateLoanPayment = (amount: number, interestRate: number, termYears: n
   }
 };
 
-    // Get active loan using the same method as financing tab
-    const getPropertyLoanData = () => {
-      // Use property's stored data or create default data structure
-      const propertyData = dealAnalyzerData;
-      let loans = propertyData?.loans || [];
-      
-      // If no loans exist, create default acquisition loan using property data
-      if (loans.length === 0) {
-        const loanPercentage = propertyData?.assumptions?.loanPercentage || 0.8;
-        const interestRate = propertyData?.assumptions?.interestRate || 0.065;
-        const termYears = propertyData?.assumptions?.loanTermYears || 30;
-        const loanAmount = parseFloat(property.acquisitionPrice || '0') * loanPercentage;
-        const paymentType = termYears <= 3 ? 'interest-only' : 'amortizing';
-        
-        const defaultLoan = {
-          id: 1,
-          name: 'Acquisition Loan',
-          amount: loanAmount,
-          loanAmount: loanAmount,
-          interestRate: interestRate,
-          termYears: termYears,
-          monthlyPayment: calculateLoanPayment(loanAmount, interestRate, termYears, paymentType),
-          isActive: true,
-          loanType: 'acquisition',
-          paymentType: paymentType,
-          startDate: property.acquisitionDate || new Date().toISOString().split('T')[0],
-          remainingBalance: loanAmount
-        };
-        loans = [defaultLoan];
-      }
-      
-      return loans;
-    };
-
-    const loans = getPropertyLoanData();
-    const activeLoan = loans.find((loan: any) => loan.isActive);
-
-    console.log('Property loan data structure:', {
-      hasLoans: loans.length > 0,
-      loansLength: loans.length,
-      activeLoan: activeLoan
-    });
-
-    // Use pre-calculated monthly payment from active loan
-    let monthlyDebtService = 0;
-    
-    if (activeLoan && activeLoan.amount > 0) {
-      // Use the pre-calculated monthlyPayment from the loan object
-      monthlyDebtService = activeLoan.monthlyPayment || 0;
-      
-      console.log('Using pre-calculated debt service from loan:', {
-        loanAmount: activeLoan.amount,
-        interestRate: activeLoan.interestRate,
-        paymentType: activeLoan.paymentType,
-        monthlyPayment: activeLoan.monthlyPayment,
-        monthlyDebtService: monthlyDebtService
-      });
-    } else {
-      // Fallback to estimated debt service if no loan data
-      const monthlyCashFlowFromProperty = parseFloat(property.cashFlow || '0');
-      if (noi > 0 && monthlyCashFlowFromProperty < noi) {
-        monthlyDebtService = noi - monthlyCashFlowFromProperty;
-        if (monthlyDebtService < 0) monthlyDebtService = 0;
-      }
-    }
-
-    // Calculate cash flow
-    const monthlyCashFlow = noi - monthlyDebtService;
-    const annualCashFlow = monthlyCashFlow * 12;
-
-    // Calculate investment metrics
-    const totalInvested = parseFloat(property.initialCapitalRequired || '0');
-    const cashOnCashReturn = totalInvested > 0 ? (annualCashFlow / totalInvested) * 100 : 0;
-    
-    // Calculate total invested capital (acquisition + rehab + closing + holding costs)
-    const acquisitionPrice = parseFloat(property.acquisitionPrice || '0');
-    const rehabCosts = parseFloat(property.rehabCosts || '0');
-    const closingCosts = dealAnalyzerData.closingCosts ? 
-      Object.values(dealAnalyzerData.closingCosts).reduce((sum: number, val: any) => sum + (val || 0), 0) : 0;
-    const holdingCosts = dealAnalyzerData.holdingCosts ? 
-      Object.values(dealAnalyzerData.holdingCosts).reduce((sum: number, val: any) => sum + (val || 0), 0) : 0;
-    
-    const totalInvestedCapital = totalInvested > 0 ? totalInvested : (acquisitionPrice + rehabCosts + closingCosts + holdingCosts);
-    
-    // Calculate equity multiple using correct formula: (ARV - all in costs + cash collected) / capital required
-    const arv = parseFloat(property.arvAtTimePurchased || '0');
-    const allInCost = acquisitionPrice + rehabCosts + closingCosts + holdingCosts;
-    const cashCollected = parseFloat(property.totalProfits || '0');
-    const capitalRequired = totalInvested; // Use actual capital required
-    const equityMultiple = capitalRequired > 0 ? (arv - allInCost + cashCollected) / capitalRequired : 0;
-    
-    console.log('Admin Dashboard Equity Multiple Calculation for', property.address, {
-      arv,
-      allInCost,
-      cashCollected,
-      capitalRequired,
-      equityMultiple,
-      calculation: `(${arv} - ${allInCost} + ${cashCollected}) / ${capitalRequired} = ${equityMultiple}`
-    });
-
-    return {
-      grossRentMonthly,
-      totalExpenses,
-      vacancy,
-      netRevenue,
-      noi,
-      monthlyDebtService,
-      monthlyCashFlow,
-      annualCashFlow,
-      cashOnCashReturn,
-      grossRentAnnual: grossRentMonthly * 12,
-      vacancyAnnual: vacancy * 12,
-      netRevenueAnnual: netRevenue * 12,
-      totalInvestedCapital,
-      allInCost,
-      cashCollected,
-      capitalRequired,
-      equityMultiple
-    };
-  } catch (error) {
-    console.error('Error calculating property metrics:', error);
-    return null;
-  }
-};
-
+// Interfaces
 interface Property {
   id: number;
   status: string;
@@ -206,13 +82,48 @@ interface RehabLineItem {
 
 const entities = [
   '5Central Capital',
-  'The House Doctors',
+  'The House Doctors',  
   'Arcadia Vision Group'
 ];
 
+interface Property {
+  id: number;
+  status: string;
+  apartments: number;
+  address: string;
+  city: string;
+  state: string;
+  zipCode?: string;
+  entity?: string;
+  acquisitionDate?: string;
+  acquisitionPrice: string;
+  rehabCosts: string;
+  arvAtTimePurchased?: string;
+  initialCapitalRequired: string;
+  cashFlow: string;
+  salePrice?: string;
+  salePoints?: string;
+  totalProfits: string;
+  yearsHeld?: string;
+  cashOnCashReturn: string;
+  annualizedReturn: string;
+  dealAnalyzerData?: string; // JSON string containing comprehensive Deal Analyzer data
+}
+
+interface RehabLineItem {
+  id: string;
+  category: string;
+  item: string;
+  budgetAmount: number;
+  spentAmount: number;
+  completed: boolean;
+  notes?: string;
+}
+
 const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
-  // Use same calculation function as modal Overview tab
-  const calculatedMetrics = calculatePropertyMetrics(property);
+  const { calculatePropertyKPIs, formatCurrency } = useCalculations();
+  // Use centralized calculation function
+  const calculatedMetrics = calculatePropertyKPIs(property);
   
 
   
@@ -399,8 +310,9 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
 };
 
 const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
+  const { calculatePropertyKPIs, formatCurrency } = useCalculations();
   // Use centralized calculations for accurate metrics
-  const calculatedMetrics = calculatePropertyMetrics(property);
+  const calculatedMetrics = calculatePropertyKPIs(property);
   
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 aspect-square flex flex-col cursor-pointer card-hover transition-all-smooth hover:shadow-md bg-white dark:bg-gray-800"
@@ -467,27 +379,9 @@ const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { propert
   );
 };
 
-// Helper functions moved to top of file
-
-// Loan payment calculation function
-const calculateLoanPayment = (amount: number, interestRate: number, termYears: number, paymentType: string) => {
-  if (amount <= 0 || interestRate <= 0) return 0;
-  
-  const monthlyRate = interestRate / 12;
-  
-  if (paymentType === 'interest-only') {
-    return amount * monthlyRate;
-  } else {
-    // Full amortization
-    const numPayments = termYears * 12;
-    if (numPayments <= 0) return 0;
-    
-    return amount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-  }
-};
-
 export default function AssetManagement() {
   const queryClient = useQueryClient();
+  const { calculatePropertyKPIs, calculatePortfolioMetrics, formatCurrency, formatPercentage } = useCalculations();
   // Feature/unfeature property mutation
   const featureMutation = useMutation({
     mutationFn: async ({ id, isFeatured }: { id: number; isFeatured: boolean }) => {
@@ -577,121 +471,7 @@ export default function AssetManagement() {
     return loans.find((loan: any) => loan.isActive) || loans[0] || null;
   };
 
-  // Universal calculation function that works for any property
-  const calculatePropertyMetrics = (property: Property) => {
-    if (!property.dealAnalyzerData) return null;
-    
-    const propertyData = JSON.parse(property.dealAnalyzerData);
-    const rentRoll = propertyData.rentRoll || [];
-    const assumptions = propertyData.assumptions || {};
-    const expenses = propertyData.expenses || {};
-    const unitTypes = propertyData.unitTypes || [];
-    
-    // Revenue calculations
-    const grossRentMonthly = rentRoll.reduce((sum: number, unit: any) => {
-      const unitType = unitTypes.find((ut: any) => ut.id === unit.unitTypeId);
-      return sum + (unitType ? unitType.marketRent : unit.proFormaRent);
-    }, 0);
-    
-    const vacancyRate = assumptions.vacancyRate || 0.05;
-    const vacancy = grossRentMonthly * vacancyRate;
-    const netRevenue = grossRentMonthly - vacancy;
-    
-    // Expense calculations (monthly)
-    const propertyTax = (expenses.propertyTax || 15000) / 12;
-    const insurance = (expenses.insurance || 14500) / 12;
-    const maintenance = (expenses.maintenance || 8000) / 12;
-    const waterSewerTrash = (expenses.waterSewerTrash || 6000) / 12;
-    const capitalReserves = (expenses.capitalReserves || 2000) / 12;
-    const utilities = (expenses.utilities || 6000) / 12;
-    const other = (expenses.other || 0) / 12;
-    const managementFee = netRevenue * 0.08;
-    
-    const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
-    const noi = netRevenue - totalExpenses;
-    
-    // Debt service calculation using available loan data
-    const activeLoan = propertyData.loans?.find((loan: any) => loan.isActive) || null;
-    let monthlyDebtService = 0;
-    
-    if (activeLoan) {
-      const loanAmount = activeLoan.loanAmount || activeLoan.amount || 0;
-      const interestRate = activeLoan.interestRate || 0.08;
-      const termYears = activeLoan.termYears || 30;
-      const paymentType = activeLoan.paymentType || 'full-amortization';
-      
-      if (paymentType === 'interest-only') {
-        monthlyDebtService = (loanAmount * interestRate) / 12;
-      } else {
-        const monthlyRate = interestRate / 12;
-        const numPayments = termYears * 12;
-        if (monthlyRate > 0) {
-          monthlyDebtService = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-        }
-      }
-    } else {
-      // Fallback to basic calculation if no loan data
-      const acquisitionPrice = parseFloat(property.acquisitionPrice) || 0;
-      const rehabCosts = parseFloat(property.rehabCosts) || 0;
-      const loanPercentage = assumptions.loanPercentage || 0.8;
-      const interestRate = assumptions.interestRate || 0.08;
-      const termYears = assumptions.loanTermYears || 30;
-      
-      const loanAmount = (acquisitionPrice + rehabCosts) * loanPercentage;
-      if (loanAmount > 0) {
-        const monthlyRate = interestRate / 12;
-        const numPayments = termYears * 12;
-        if (monthlyRate > 0) {
-          monthlyDebtService = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-        }
-      }
-    }
-    
-    // Cash flow calculation
-    const monthlyCashFlow = noi - monthlyDebtService;
-    const annualCashFlow = monthlyCashFlow * 12;
-    
-    // Investment calculations for COC
-    const acquisitionPrice = parseFloat(property.acquisitionPrice) || 0;
-    const totalRehab = parseFloat(property.rehabCosts) || 0;
-    
-    const closingCosts = propertyData.closingCosts ?
-      Object.values(propertyData.closingCosts).reduce((sum: number, cost: any) => sum + (Number(cost) || 0), 0) : 0;
-    
-    const holdingCosts = propertyData.holdingCosts ?
-      Object.values(propertyData.holdingCosts).reduce((sum: number, cost: any) => sum + (Number(cost) || 0), 0) : 0;
-    
-    const loanPercentage = assumptions.loanPercentage || 0.8;
-    const downPayment = (acquisitionPrice + totalRehab) * (1 - loanPercentage);
-    const totalCashInvested = downPayment + closingCosts + holdingCosts;
-    
-    // Cash-on-Cash Return calculation
-    const cashOnCashReturn = totalCashInvested > 0 ? (annualCashFlow / totalCashInvested) * 100 : 0;
-    
-    return {
-      grossRentMonthly,
-      grossRentAnnual: grossRentMonthly * 12,
-      vacancy,
-      vacancyAnnual: vacancy * 12,
-      netRevenue,
-      netRevenueAnnual: netRevenue * 12,
-      totalExpenses,
-      totalExpensesAnnual: totalExpenses * 12,
-      noi,
-      noiAnnual: noi * 12,
-      monthlyDebtService,
-      annualDebtService: monthlyDebtService * 12,
-      monthlyCashFlow,
-      annualCashFlow,
-      totalCashInvested,
-      cashOnCashReturn,
-      acquisitionPrice,
-      totalRehab,
-      closingCosts,
-      holdingCosts,
-      downPayment
-    };
-  };
+  // Removed local calculatePropertyMetrics - now using centralized calculation service
 
   // Initialize default rehab line items for a property
   const initializeRehabItems = (property: Property): RehabLineItem[] => {
@@ -884,7 +664,7 @@ export default function AssetManagement() {
   // Add the missing getPropertyCalculations function
   const getPropertyCalculations = () => {
     if (!showPropertyDetailModal || !editingModalProperty) return null;
-    return calculatePropertyMetrics(editingModalProperty);
+    return calculatePropertyKPIs(editingModalProperty);
   };
 
   if (isLoading) {
@@ -1037,9 +817,9 @@ export default function AssetManagement() {
       let propertiesWithMetrics = 0;
       
       properties.forEach((prop: Property) => {
-        const metrics = calculatePropertyMetrics(prop);
+        const metrics = calculatePropertyKPIs(prop);
         if (metrics && metrics.acquisitionPrice > 0) {
-          const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.closingCosts + metrics.holdingCosts;
+          const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.totalClosingCosts + metrics.totalHoldingCosts;
           const arv = parseFloat(prop.arvAtTimePurchased || '0');
           const cashCollected = parseFloat(prop.totalProfits || '0');
           const capitalRequired = metrics.totalCashInvested || allInCost * 0.2; // Fallback to 20% down
@@ -1063,7 +843,7 @@ export default function AssetManagement() {
       let propertiesWithCoC = 0;
       
       properties.forEach((prop: Property) => {
-        const metrics = calculatePropertyMetrics(prop);
+        const metrics = calculatePropertyKPIs(prop);
         if (metrics && metrics.cashOnCashReturn > 0) {
           totalCoCReturn += metrics.cashOnCashReturn;
           propertiesWithCoC++;
@@ -4020,7 +3800,7 @@ export default function AssetManagement() {
                       
                       if (!salePrice || !noiAtSale) return null;
                       
-                      const calculations = calculatePropertyMetrics(salesDataProperty);
+                      const calculations = calculatePropertyKPIs(salesDataProperty);
                       const acquisitionDate = new Date(salesDataProperty.acquisitionDate || '2025-01-01');
                       const saleDateObj = new Date(salesFormData.saleDate);
                       
@@ -4127,7 +3907,7 @@ export default function AssetManagement() {
                         return;
                       }
                       
-                      const calculations = calculatePropertyMetrics(salesDataProperty);
+                      const calculations = calculatePropertyKPIs(salesDataProperty);
                       const acquisitionDate = new Date(salesDataProperty.acquisitionDate || '2025-01-01');
                       const saleDateObj = new Date(salesFormData.saleDate);
                       

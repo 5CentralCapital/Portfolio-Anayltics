@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiService from '../services/api';
 import BankAccountManager from '../components/BankAccountManager';
+import { useCalculations } from '../contexts/CalculationsContext';
 import { 
   Building, 
   DollarSign, 
@@ -260,6 +261,7 @@ const EditableValue = ({
 };
 
 export default function EntityDashboard() {
+  const { calculatePropertyKPIs, calculatePortfolioMetrics, formatCurrency, formatPercentage } = useCalculations();
   const [userEntities, setUserEntities] = useState<string[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [selectedPropertyModal, setSelectedPropertyModal] = useState<Property | null>(null);
