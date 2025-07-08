@@ -903,7 +903,7 @@ export default function DealAnalyzer() {
       const totalClosingCosts = Object.values(closingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
       const totalHoldingCosts = Object.values(holdingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
       const downPayment = (assumptions.purchasePrice || 0) * (1 - (assumptions.loanPercentage || 0.8));
-      const initialCapital = downPayment + totalRehabCosts + totalClosingCosts + totalHoldingCosts;
+      const initialCapital = downPayment + totalClosingCosts + totalHoldingCosts;
 
       // Calculate cash flow (annual) with detailed calculations
       const totalAnnualRent = rentRoll.reduce((sum, unit) => {

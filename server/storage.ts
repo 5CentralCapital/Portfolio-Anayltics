@@ -1062,7 +1062,8 @@ export class DatabaseStorage implements IStorage {
       closingCosts = Object.values(dealData.closingCosts).reduce((sum: number, cost: any) => sum + (cost || 0), 0);
     }
     
-    return downPayment + totalRehabCosts + closingCosts;
+    // Exclude rehab costs since they're financed through the loan
+    return downPayment + closingCosts;
   }
 
   private calculateAnnualCashFlow(dealData: any, noi: number): number {

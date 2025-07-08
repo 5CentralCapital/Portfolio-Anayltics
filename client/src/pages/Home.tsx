@@ -92,16 +92,16 @@ const Home = () => {
     }
   ];
 
-  // Value propositions with enhanced descriptions
+  // Value propositions with dynamic statistics
   const valueProps = [
     {
       title: 'Exceptional Returns',
-      description: 'Consistently deliver 400%+ cash-on-cash returns through strategic value-add renovations, operational improvements, and market timing expertise.',
+      description: `Consistently deliver ${portfolioMetricsData.avgEquityMultiple.toFixed(1)}x+ equity multiples through strategic value-add renovations, operational improvements, and market timing expertise.`,
       icon: TrendingUp
     },
     {
       title: 'Proven Track Record',
-      description: 'Successfully completed 11 property transactions across Connecticut and Florida with documented performance metrics and transparent reporting.',
+      description: `Successfully acquired ${portfolioMetricsData.totalUnits} units across ${properties.length} properties in Connecticut and Florida with documented performance metrics and transparent reporting.`,
       icon: Award
     },
     {
