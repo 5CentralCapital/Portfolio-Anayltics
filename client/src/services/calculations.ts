@@ -324,8 +324,13 @@ export class CalculationService {
   
   /**
    * Calculate portfolio-wide metrics from multiple properties
+   * DEPRECATED: Use individual calculatePropertyKPIs and aggregate in components
    */
   static calculatePortfolioMetrics(properties: any[]): PortfolioMetrics {
+    // This method is deprecated - use calculatePropertyKPIs for each property
+    // and aggregate in components for better consistency
+    console.warn('calculatePortfolioMetrics is deprecated. Use calculatePropertyKPIs instead.');
+    
     // Filter only cashflowing properties for most metrics
     const cashflowingProperties = properties.filter(p => p.status === 'Cashflowing');
     const allProperties = properties.filter(p => ['Under Contract', 'Rehabbing', 'Cashflowing'].includes(p.status));

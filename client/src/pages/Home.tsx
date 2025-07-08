@@ -9,7 +9,7 @@ import FAQSection from '../components/FAQSection';
 import { useCalculations } from '../contexts/CalculationsContext';
 
 const Home = () => {
-  const { calculatePortfolioMetrics, formatCurrency, formatPercentage } = useCalculations();
+  const { calculatePropertyKPIs, formatCurrency, formatPercentage } = useCalculations();
 
   // Fetch portfolio properties data 
   const { data: propertiesResponse } = useQuery({
@@ -28,8 +28,37 @@ const Home = () => {
     return [];
   })();
 
-  // Calculate portfolio metrics using centralized service
-  const portfolioMetricsData = calculatePortfolioMetrics(properties);
+  // Calculate portfolio metrics using centralized calculation service
+  const portfolioMetricsData = properties.reduce((totals, property) => {
+    const kpis = calculatePropertyKPIs(property);
+    return {
+      totalAUM: totals.totalAUM + kpis.arv,
+      totalUnits: totals.totalUnits + parseInt(property.apartments || '0'),
+      totalEquity: totals.totalEquity + kpis.currentEquityValue,
+      avgCashOnCashReturn: totals.avgCashOnCashReturn + kpis.cashOnCashReturn,
+      totalMonthlyCashFlow: totals.totalMonthlyCashFlow + kpis.monthlyCashFlow,
+      totalAnnualCashFlow: totals.totalAnnualCashFlow + kpis.annualCashFlow,
+      pricePerUnit: 0, // Will calculate after
+      totalProperties: totals.totalProperties + 1
+    };
+  }, {
+    totalAUM: 0,
+    totalUnits: 0,
+    totalEquity: 0,
+    avgCashOnCashReturn: 0,
+    totalMonthlyCashFlow: 0,
+    totalAnnualCashFlow: 0,
+    pricePerUnit: 0,
+    totalProperties: 0
+  });
+
+  // Calculate averages and derived metrics
+  portfolioMetricsData.avgCashOnCashReturn = properties.length > 0 
+    ? portfolioMetricsData.avgCashOnCashReturn / properties.length 
+    : 0;
+  portfolioMetricsData.pricePerUnit = portfolioMetricsData.totalUnits > 0 
+    ? portfolioMetricsData.totalAUM / portfolioMetricsData.totalUnits 
+    : 0;
   
   // Calculate additional metrics for display
   const soldProperties = properties.filter((p: any) => p.status === 'Sold');
