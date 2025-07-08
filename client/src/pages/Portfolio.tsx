@@ -201,6 +201,30 @@ const Portfolio = () => {
     return `${value.toFixed(1)}%`;
   };
 
+  // Function to get property image
+  const getPropertyImage = (address: string) => {
+    // Clean address for filename matching
+    const cleanAddress = address.trim();
+    
+    // Map of property addresses to their image files
+    const imageMap: { [key: string]: string } = {
+      '1 Harmony St': '/1 Harmony St.jpeg',
+      '145 Crystal Ave': '/145 Crystal Ave.jpg', 
+      '149 Crystal Ave': '/149 Crystal Ave.jpeg',
+      '157 Crystal Ave': '/157 Crystal Ave.jpeg',
+      '175 Crystal Ave': '/175 Crystal Ave.jpeg',
+      '25 Huntington Pl': '/25 Huntington Pl.jpeg',
+      '29 Brainard St': '/29 Brainard St.jpeg',
+      '3408 E DR MLK BLVD': '/3408 E DR MLK BLVD.jpeg',
+      '3408 E Dr MLK BLVD': '/3408 E Dr MLK BLVD.jpeg',
+      '35 Linden St': '/35 Linden St.jpeg',
+      '41 Stuart Ave': '/41 Stuart Ave.jpeg',
+      '52 Summit Ave': '/52 Summit Ave.jpeg'
+    };
+
+    return imageMap[cleanAddress] || null;
+  };
+
   // Separate properties by status
   const underContractProperties = properties.filter((p: Property) => p.status === 'Under Contract');
   const rehabbingProperties = properties.filter((p: Property) => p.status === 'Rehabbing');
@@ -469,30 +493,46 @@ const Portfolio = () => {
               {underContractProperties.map((property: Property) => (
                 <div
                   key={property.id}
-                  className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                  className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                   onDoubleClick={() => setShowKPIModal(property)}
                   title="Double-click to view financial KPIs"
                 >
-                  <div className="mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{property.address} • {property.apartments} Units</h3>
-                    <p className="text-gray-600 text-sm">{property.city}, {property.state}</p>
-                    {property.acquisitionDate && (
-                      <p className="text-gray-500 text-xs mt-1">
-                        Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
-                        {(() => {
-                          if (property.acquisitionDate) {
-                            const yearsHeld = (new Date().getTime() - new Date(property.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
-                            return ` • ${yearsHeld.toFixed(1)} years held`;
-                          }
-                          return '';
-                        })()}
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 gap-2 text-sm">
-                    <div className="flex justify-between">
-                      <p className="text-gray-500">Purchase Price</p>
-                      <p className="font-semibold">{formatCurrency(parseFloat(property.acquisitionPrice || '0'))}</p>
+                  {/* Property Image */}
+                  {getPropertyImage(property.address) && (
+                    <div className="h-48 overflow-hidden">
+                      <img 
+                        src={getPropertyImage(property.address)!} 
+                        alt={property.address}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="p-6">
+                    <div className="mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{property.address} • {property.apartments} Units</h3>
+                      <p className="text-gray-600 text-sm">{property.city}, {property.state}</p>
+                      {property.acquisitionDate && (
+                        <p className="text-gray-500 text-xs mt-1">
+                          Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
+                          {(() => {
+                            if (property.acquisitionDate) {
+                              const yearsHeld = (new Date().getTime() - new Date(property.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
+                              return ` • ${yearsHeld.toFixed(1)} years held`;
+                            }
+                            return '';
+                          })()}
+                        </p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <p className="text-gray-500">Purchase Price</p>
+                        <p className="font-semibold">{formatCurrency(parseFloat(property.acquisitionPrice || '0'))}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -515,38 +555,54 @@ const Portfolio = () => {
               {rehabbingProperties.map((property: Property) => (
                 <div
                   key={property.id}
-                  className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                  className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                   onDoubleClick={() => setShowKPIModal(property)}
                   title="Double-click to view financial KPIs"
                 >
-                  <div className="mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{property.address} • {property.apartments} Units</h3>
-                    <p className="text-gray-600 text-sm">{property.city}, {property.state}</p>
-                    {property.acquisitionDate && (
-                      <p className="text-gray-500 text-xs mt-1">
-                        Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
-                        {(() => {
-                          if (property.acquisitionDate) {
-                            const yearsHeld = (new Date().getTime() - new Date(property.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
-                            return ` • ${yearsHeld.toFixed(1)} years held`;
-                          }
-                          return '';
-                        })()}
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex justify-between">
-                      <p className="text-gray-500">Purchase Price</p>
-                      <p className="font-semibold">{formatCurrency(parseFloat(property.acquisitionPrice || '0'))}</p>
+                  {/* Property Image */}
+                  {getPropertyImage(property.address) && (
+                    <div className="h-48 overflow-hidden">
+                      <img 
+                        src={getPropertyImage(property.address)!} 
+                        alt={property.address}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
                     </div>
-                    <div className="flex justify-between">
-                      <p className="text-gray-500">ARV</p>
-                      <p className="font-semibold">{formatCurrency(parseFloat(property.arvAtTimePurchased || '0'))}</p>
+                  )}
+                  
+                  <div className="p-6">
+                    <div className="mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{property.address} • {property.apartments} Units</h3>
+                      <p className="text-gray-600 text-sm">{property.city}, {property.state}</p>
+                      {property.acquisitionDate && (
+                        <p className="text-gray-500 text-xs mt-1">
+                          Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
+                          {(() => {
+                            if (property.acquisitionDate) {
+                              const yearsHeld = (new Date().getTime() - new Date(property.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
+                              return ` • ${yearsHeld.toFixed(1)} years held`;
+                            }
+                            return '';
+                          })()}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex justify-between">
-                      <p className="text-gray-500">Rehab Cost</p>
-                      <p className="font-semibold">{formatCurrency(parseFloat(property.rehabCosts || '0'))}</p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex justify-between">
+                        <p className="text-gray-500">Purchase Price</p>
+                        <p className="font-semibold">{formatCurrency(parseFloat(property.acquisitionPrice || '0'))}</p>
+                      </div>
+                      <div className="flex justify-between">
+                        <p className="text-gray-500">ARV</p>
+                        <p className="font-semibold">{formatCurrency(parseFloat(property.arvAtTimePurchased || '0'))}</p>
+                      </div>
+                      <div className="flex justify-between">
+                        <p className="text-gray-500">Rehab Cost</p>
+                        <p className="font-semibold">{formatCurrency(parseFloat(property.rehabCosts || '0'))}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -569,56 +625,72 @@ const Portfolio = () => {
               {cashflowingProperties.map((property: Property) => (
                 <div
                   key={property.id}
-                  className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                  className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                   onDoubleClick={() => setShowKPIModal(property)}
                   title="Double-click to view financial KPIs"
                 >
-                  <div className="mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{property.address} • {property.apartments} Units</h3>
-                    <p className="text-gray-600 text-sm">{property.city}, {property.state}</p>
-                    {property.acquisitionDate && (
-                      <p className="text-gray-500 text-xs mt-1">
-                        Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
+                  {/* Property Image */}
+                  {getPropertyImage(property.address) && (
+                    <div className="h-48 overflow-hidden">
+                      <img 
+                        src={getPropertyImage(property.address)!} 
+                        alt={property.address}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="p-6">
+                    <div className="mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{property.address} • {property.apartments} Units</h3>
+                      <p className="text-gray-600 text-sm">{property.city}, {property.state}</p>
+                      {property.acquisitionDate && (
+                        <p className="text-gray-500 text-xs mt-1">
+                          Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
+                          {(() => {
+                            if (property.acquisitionDate) {
+                              const yearsHeld = (new Date().getTime() - new Date(property.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
+                              return ` • ${yearsHeld.toFixed(1)} years held`;
+                            }
+                            return '';
+                          })()}
+                        </p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex justify-between">
+                        <p className="text-gray-500">Purchase Price</p>
+                        <p className="font-semibold">{formatCurrency(parseFloat(property.acquisitionPrice || '0'))}</p>
+                      </div>
+                      <div className="flex justify-between">
+                        <p className="text-gray-500">ARV</p>
+                        <p className="font-semibold">{formatCurrency(parseFloat(property.arvAtTimePurchased || '0'))}</p>
+                      </div>
+                      <div className="flex justify-between">
+                        <p className="text-gray-500">Annual Cash Flow</p>
                         {(() => {
-                          if (property.acquisitionDate) {
-                            const yearsHeld = (new Date().getTime() - new Date(property.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
-                            return ` • ${yearsHeld.toFixed(1)} years held`;
-                          }
-                          return '';
+                          const kpis = calculatePropertyKPIs(property);
+                          return (
+                            <p className={`font-semibold ${kpis?.annualCashFlow && kpis.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {kpis ? formatCurrency(kpis.annualCashFlow) : 'N/A'}
+                            </p>
+                          );
                         })()}
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex justify-between">
-                      <p className="text-gray-500">Purchase Price</p>
-                      <p className="font-semibold">{formatCurrency(parseFloat(property.acquisitionPrice || '0'))}</p>
-                    </div>
-                    <div className="flex justify-between">
-                      <p className="text-gray-500">ARV</p>
-                      <p className="font-semibold">{formatCurrency(parseFloat(property.arvAtTimePurchased || '0'))}</p>
-                    </div>
-                    <div className="flex justify-between">
-                      <p className="text-gray-500">Annual Cash Flow</p>
-                      {(() => {
-                        const kpis = calculatePropertyKPIs(property);
-                        return (
-                          <p className={`font-semibold ${kpis?.annualCashFlow && kpis.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {kpis ? formatCurrency(kpis.annualCashFlow) : 'N/A'}
-                          </p>
-                        );
-                      })()}
-                    </div>
-                    <div className="flex justify-between">
-                      <p className="text-gray-500">Equity Multiple</p>
-                      {(() => {
-                        const kpis = calculatePropertyKPIs(property);
-                        return (
-                          <p className={`font-semibold ${kpis?.equityMultiple && kpis.equityMultiple >= 1 ? 'text-blue-600' : 'text-red-600'}`}>
-                            {kpis ? `${kpis.equityMultiple.toFixed(2)}x` : 'N/A'}
-                          </p>
-                        );
-                      })()}
+                      </div>
+                      <div className="flex justify-between">
+                        <p className="text-gray-500">Equity Multiple</p>
+                        {(() => {
+                          const kpis = calculatePropertyKPIs(property);
+                          return (
+                            <p className={`font-semibold ${kpis?.equityMultiple && kpis.equityMultiple >= 1 ? 'text-blue-600' : 'text-red-600'}`}>
+                              {kpis ? `${kpis.equityMultiple.toFixed(2)}x` : 'N/A'}
+                            </p>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -641,43 +713,59 @@ const Portfolio = () => {
               {soldPropertiesFromDB.map((property: Property) => (
                 <div
                   key={property.id}
-                  className="bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow"
+                  className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                   onDoubleClick={() => setShowKPIModal(property)}
                   title="Double-click to view financial KPIs"
                 >
-                  <div className="mb-3">
-                    <h3 className="text-md font-semibold text-gray-900 mb-1">{property.address} • {property.apartments} Units</h3>
-                    <p className="text-sm text-gray-600">{property.city}, {property.state}</p>
-                    {property.acquisitionDate && (
-                      <p className="text-gray-500 text-xs mt-1">
-                        Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
-                        {(() => {
-                          if (property.acquisitionDate) {
-                            let endDate = property.saleDate ? new Date(property.saleDate) : new Date();
-                            const yearsHeld = (endDate.getTime() - new Date(property.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
-                            return ` • ${yearsHeld.toFixed(1)} years held`;
-                          }
-                          return '';
-                        })()}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Capital Invested</span>
-                      <span className="font-semibold text-blue-700">{formatCurrency(parseFloat(property.initialCapitalRequired || '0'))}</span>
+                  {/* Property Image */}
+                  {getPropertyImage(property.address) && (
+                    <div className="h-32 overflow-hidden">
+                      <img 
+                        src={getPropertyImage(property.address)!} 
+                        alt={property.address}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Total Profit</span>
-                      <span className="font-semibold text-green-600">{formatCurrency(parseFloat(property.totalProfits || '0'))}</span>
+                  )}
+                  
+                  <div className="p-4">
+                    <div className="mb-3">
+                      <h3 className="text-md font-semibold text-gray-900 mb-1">{property.address} • {property.apartments} Units</h3>
+                      <p className="text-sm text-gray-600">{property.city}, {property.state}</p>
+                      {property.acquisitionDate && (
+                        <p className="text-gray-500 text-xs mt-1">
+                          Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
+                          {(() => {
+                            if (property.acquisitionDate) {
+                              let endDate = property.saleDate ? new Date(property.saleDate) : new Date();
+                              const yearsHeld = (endDate.getTime() - new Date(property.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
+                              return ` • ${yearsHeld.toFixed(1)} years held`;
+                            }
+                            return '';
+                          })()}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Equity Multiple</span>
-                      <span className="font-semibold text-purple-600">{parseFloat(property.cashOnCashReturn || '0').toFixed(1)}x</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Sale Price</span>
-                      <span className="font-semibold text-orange-600">{formatCurrency(parseFloat(property.salePrice || '0'))}</span>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Capital Invested</span>
+                        <span className="font-semibold text-blue-700">{formatCurrency(parseFloat(property.initialCapitalRequired || '0'))}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Total Profit</span>
+                        <span className="font-semibold text-green-600">{formatCurrency(parseFloat(property.totalProfits || '0'))}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Equity Multiple</span>
+                        <span className="font-semibold text-purple-600">{parseFloat(property.cashOnCashReturn || '0').toFixed(1)}x</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Sale Price</span>
+                        <span className="font-semibold text-orange-600">{formatCurrency(parseFloat(property.salePrice || '0'))}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
