@@ -22,7 +22,7 @@ export function DocumentManualReview({ processingResult, onSave, onCancel }: Doc
   const { toast } = useToast();
 
   // Fetch properties for dropdown
-  const { data: properties = [], isLoading: propertiesLoading } = useQuery({
+  const { data: propertiesData, isLoading: propertiesLoading } = useQuery({
     queryKey: ['/api/properties'],
     queryFn: async () => {
       const response = await fetch('/api/properties', {
@@ -33,9 +33,12 @@ export function DocumentManualReview({ processingResult, onSave, onCancel }: Doc
       });
       if (!response.ok) throw new Error('Failed to fetch properties');
       const data = await response.json();
-      return Array.isArray(data) ? data : [];
+      return data;
     }
   });
+
+  // Ensure properties is always an array
+  const properties = Array.isArray(propertiesData) ? propertiesData : [];
 
   const handleSave = () => {
     if (!selectedPropertyId) {
@@ -320,23 +323,198 @@ export function DocumentManualReview({ processingResult, onSave, onCancel }: Doc
           </div>
         );
 
+      case 'insurance_policy':
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="insuranceCompany">Insurance Company</Label>
+                <Input
+                  id="insuranceCompany"
+                  value={editedData.insuranceCompany || ''}
+                  onChange={(e) => setEditedData({
+                    ...editedData,
+                    insuranceCompany: e.target.value
+                  })}
+                  placeholder="State Farm"
+                />
+              </div>
+              <div>
+                <Label htmlFor="policyNumber">Policy Number</Label>
+                <Input
+                  id="policyNumber"
+                  value={editedData.policyNumber || ''}
+                  onChange={(e) => setEditedData({
+                    ...editedData,
+                    policyNumber: e.target.value
+                  })}
+                  placeholder="SF123456789"
+                />
+              </div>
+              <div>
+                <Label htmlFor="coverageAmount">Coverage Amount</Label>
+                <Input
+                  id="coverageAmount"
+                  type="number"
+                  value={editedData.coverageAmount || ''}
+                  onChange={(e) => setEditedData({
+                    ...editedData,
+                    coverageAmount: parseFloat(e.target.value) || 0
+                  })}
+                  placeholder="250000"
+                />
+              </div>
+              <div>
+                <Label htmlFor="annualPremium">Annual Premium</Label>
+                <Input
+                  id="annualPremium"
+                  type="number"
+                  value={editedData.annualPremium || ''}
+                  onChange={(e) => setEditedData({
+                    ...editedData,
+                    annualPremium: parseFloat(e.target.value) || 0
+                  })}
+                  placeholder="1200"
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'vendor_invoice':
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="vendorName">Vendor/Contractor</Label>
+                <Input
+                  id="vendorName"
+                  value={editedData.vendorName || ''}
+                  onChange={(e) => setEditedData({
+                    ...editedData,
+                    vendorName: e.target.value
+                  })}
+                  placeholder="ABC Plumbing"
+                />
+              </div>
+              <div>
+                <Label htmlFor="invoiceNumber">Invoice Number</Label>
+                <Input
+                  id="invoiceNumber"
+                  value={editedData.invoiceNumber || ''}
+                  onChange={(e) => setEditedData({
+                    ...editedData,
+                    invoiceNumber: e.target.value
+                  })}
+                  placeholder="INV-001"
+                />
+              </div>
+              <div>
+                <Label htmlFor="invoiceAmount">Invoice Amount</Label>
+                <Input
+                  id="invoiceAmount"
+                  type="number"
+                  value={editedData.invoiceAmount || ''}
+                  onChange={(e) => setEditedData({
+                    ...editedData,
+                    invoiceAmount: parseFloat(e.target.value) || 0
+                  })}
+                  placeholder="350"
+                />
+              </div>
+              <div>
+                <Label htmlFor="serviceDate">Service Date</Label>
+                <Input
+                  id="serviceDate"
+                  type="date"
+                  value={editedData.serviceDate || ''}
+                  onChange={(e) => setEditedData({
+                    ...editedData,
+                    serviceDate: e.target.value
+                  })}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="workDescription">Work Description</Label>
+              <Textarea
+                id="workDescription"
+                value={editedData.workDescription || ''}
+                onChange={(e) => setEditedData({
+                  ...editedData,
+                  workDescription: e.target.value
+                })}
+                rows={3}
+                placeholder="Description of work performed..."
+              />
+            </div>
+          </div>
+        );
+
       default:
         return (
-          <div>
-            <Label>Raw Data (JSON)</Label>
-            <Textarea
-              value={JSON.stringify(editedData, null, 2)}
-              onChange={(e) => {
-                try {
-                  setEditedData(JSON.parse(e.target.value));
-                } catch (error) {
-                  // Keep the text as is if invalid JSON
-                }
-              }}
-              rows={10}
-              className="font-mono text-sm"
-              placeholder="Edit the extracted data..."
-            />
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="font-medium text-blue-800 mb-2">Unknown Document Type</h4>
+              <p className="text-sm text-blue-600">
+                This document type isn't specifically recognized. You can still extract and store key information below.
+              </p>
+            </div>
+            
+            {/* Key-Value pairs for flexible data entry */}
+            <div className="space-y-3">
+              <Label>Key Information</Label>
+              {Object.entries(editedData || {}).map(([key, value], index) => (
+                <div key={index} className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder="Field name (e.g., 'Total Amount')"
+                    value={key}
+                    onChange={(e) => {
+                      const newData = { ...editedData };
+                      delete newData[key];
+                      newData[e.target.value] = value;
+                      setEditedData(newData);
+                    }}
+                  />
+                  <Input
+                    placeholder="Value"
+                    value={value?.toString() || ''}
+                    onChange={(e) => setEditedData({
+                      ...editedData,
+                      [key]: e.target.value
+                    })}
+                  />
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setEditedData({
+                  ...editedData,
+                  [`field_${Object.keys(editedData || {}).length + 1}`]: ''
+                })}
+              >
+                Add Field
+              </Button>
+            </div>
+            
+            <div>
+              <Label>Raw Extracted Data (Advanced)</Label>
+              <Textarea
+                value={JSON.stringify(editedData, null, 2)}
+                onChange={(e) => {
+                  try {
+                    setEditedData(JSON.parse(e.target.value));
+                  } catch (error) {
+                    // Keep the text as is if invalid JSON
+                  }
+                }}
+                rows={6}
+                className="font-mono text-sm"
+                placeholder="Advanced JSON editing..."
+              />
+            </div>
           </div>
         );
     }

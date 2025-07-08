@@ -14,7 +14,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 export interface DocumentClassification {
-  type: 'lease' | 'llc_document' | 'mortgage_statement' | 'unknown';
+  type: 'lease' | 'llc_document' | 'mortgage_statement' | 'insurance_policy' | 'tax_document' | 'property_deed' | 'inspection_report' | 'vendor_invoice' | 'unknown';
   confidence: number;
   subtype?: string;
 }
@@ -597,6 +597,86 @@ export class AIDocumentProcessor {
     }
 
     return actions;
+  }
+
+  /**
+   * Extract data from documents without specific templates
+   */
+  private async extractGenericDocumentData(filePath: string, documentType: string, model: string = 'gpt-4o'): Promise<any> {
+    try {
+      const content = await this.prepareDocumentContent(filePath);
+
+      let prompt = '';
+      switch (documentType) {
+        case 'insurance_policy':
+          prompt = `Extract insurance policy information. Return JSON with: {"insuranceCompany": "string", "policyNumber": "string", "coverageAmount": number, "annualPremium": number, "effectiveDate": "YYYY-MM-DD", "expirationDate": "YYYY-MM-DD", "coverageType": "string"}`;
+          break;
+        case 'vendor_invoice':
+          prompt = `Extract vendor invoice information. Return JSON with: {"vendorName": "string", "invoiceNumber": "string", "invoiceAmount": number, "serviceDate": "YYYY-MM-DD", "workDescription": "string", "dueDate": "YYYY-MM-DD"}`;
+          break;
+        case 'tax_document':
+          prompt = `Extract tax document information. Return JSON with: {"taxYear": "string", "assessedValue": number, "taxAmount": number, "dueDate": "YYYY-MM-DD", "propertyDescription": "string"}`;
+          break;
+        default:
+          prompt = `Extract key information from this document. Return JSON with any relevant data you can identify such as dates, amounts, names, addresses, etc. Use descriptive field names.`;
+      }
+
+      // Check if it's a Gemini model
+      if (model.startsWith('gemini-')) {
+        try {
+          return await this.extractGenericDataWithGemini(filePath, prompt, model);
+        } catch (error) {
+          console.warn('Gemini generic extraction failed, falling back to OpenAI:', error.message);
+          // Fallback to OpenAI
+        }
+      }
+
+      const response = await openai.chat.completions.create({
+        model: model.startsWith('gemini-') ? 'gpt-4o' : model,
+        messages: [
+          {
+            role: "system",
+            content: prompt
+          },
+          {
+            role: "user",
+            content: content
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.1
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      return result;
+    } catch (error) {
+      console.warn('Generic document extraction failed:', error.message);
+      // Return basic structure with document content
+      return {
+        documentContent: await this.prepareDocumentContent(filePath),
+        extractionError: error.message
+      };
+    }
+  }
+
+  /**
+   * Extract generic data using Gemini
+   */
+  private async extractGenericDataWithGemini(filePath: string, prompt: string, model: string = 'gemini-2.5-flash'): Promise<any> {
+    const content = await this.prepareDocumentContent(filePath);
+
+    const response = await gemini.models.generateContent({
+      model: model,
+      contents: [{
+        role: "user",
+        parts: [{ text: `${prompt}\n\nDocument content:\n${content}` }]
+      }],
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    return JSON.parse(response.text || '{}');
   }
 }
 
