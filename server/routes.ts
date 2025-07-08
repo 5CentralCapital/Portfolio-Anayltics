@@ -13,6 +13,7 @@ import {
 } from './plaid';
 import { federalReserveService } from './fed-api';
 import { censusService } from './census-api';
+import statementUploadRoutes from './statement-upload.routes';
 import { 
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
@@ -1060,6 +1061,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to generate investment analysis' });
     }
   });
+
+  // Statement upload routes
+  app.use('/api/statements', statementUploadRoutes);
 
   return httpServer;
 }

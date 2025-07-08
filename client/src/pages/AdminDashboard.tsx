@@ -26,7 +26,8 @@ import {
   ArrowUp,
   ArrowDown,
   Calculator,
-  MapPin
+  MapPin,
+  CreditCard
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
@@ -37,6 +38,7 @@ import EntityDashboard from './EntityDashboard';
 import FinancialDashboard from './FinancialDashboard';
 import AssetManagement from './AssetManagement';
 import NetWorthTracker from './NetWorthTracker';
+import StatementUpload from '../components/StatementUpload';
 import OnboardingTour from '../components/OnboardingTour';
 
 interface DashboardData {
@@ -247,6 +249,7 @@ const AdminDashboard: React.FC = () => {
               { id: 'dashboard', label: 'Dashboard', icon: Users },
               { id: 'properties', label: 'Asset Management', icon: Building },
               { id: 'deal-analyzer', label: 'Deal Analyzer', icon: Calculator },
+              { id: 'debt-management', label: 'Debt Management', icon: CreditCard },
               { id: 'roadmap', label: 'Roadmap', icon: MapPin },
               { id: 'net-worth', label: 'Net Worth', icon: DollarSign },
               { id: 'reports', label: 'Reports', icon: PieChart },
@@ -283,6 +286,10 @@ const AdminDashboard: React.FC = () => {
 
         {activeTab === 'deal-analyzer' && (
           <DealAnalyzer />
+        )}
+
+        {activeTab === 'debt-management' && (
+          <StatementUpload />
         )}
 
         {activeTab === 'roadmap' && (
