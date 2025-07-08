@@ -6,8 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DocumentUpload } from '@/components/DocumentUpload';
 import StatementUpload from '@/components/StatementUpload';
-import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Upload, Eye, CreditCard } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Upload, Eye, CreditCard, Trash2, FolderOpen, Loader2 } from 'lucide-react';
+import { useQuery, useMutation, queryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProcessingHistory {
   id: number;
@@ -37,6 +38,56 @@ function DocumentManagement() {
   const [selectedEntity, setSelectedEntity] = useState<string>('none');
   const [historyFilter, setHistoryFilter] = useState<string>('all');
   const [selectedModel, setSelectedModel] = useState<string>('gpt-4o');
+  const { toast } = useToast();
+
+  // Add mutations for apply updates and delete
+  const applyUpdatesMutation = useMutation({
+    mutationFn: async (processingId: number) => {
+      const response = await fetch(`/api/ai-documents/apply-updates/${processingId}`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Failed to apply updates');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Updates Applied",
+        description: "Document data has been successfully integrated with property records.",
+      });
+      refetchHistory();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Apply Failed",
+        description: error.message || "Failed to apply document updates.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteDocumentMutation = useMutation({
+    mutationFn: async (processingId: number) => {
+      const response = await fetch(`/api/ai-documents/delete/${processingId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete document');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Document Deleted",
+        description: "Document and its data have been permanently removed.",
+      });
+      refetchHistory();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete document.",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Fetch properties for dropdown
   const { data: properties = [] } = useQuery<Property[]>({
@@ -154,49 +205,41 @@ function DocumentManagement() {
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Processed</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-              <FileText className="h-8 w-8 text-blue-500" />
+          <CardContent className="p-6 text-center">
+            <div className="space-y-2">
+              <FileText className="h-8 w-8 text-blue-500 mx-auto" />
+              <p className="text-sm font-medium text-gray-600">Total Processed</p>
+              <p className="text-2xl font-bold">{stats.total}</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Successful</p>
-                <p className="text-2xl font-bold text-green-600">{stats.successful}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+          <CardContent className="p-6 text-center">
+            <div className="space-y-2">
+              <CheckCircle className="h-8 w-8 text-green-500 mx-auto" />
+              <p className="text-sm font-medium text-gray-600">Successful</p>
+              <p className="text-2xl font-bold text-green-600">{stats.successful}</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pending Review</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-              </div>
-              <Clock className="h-8 w-8 text-yellow-500" />
+          <CardContent className="p-6 text-center">
+            <div className="space-y-2">
+              <Clock className="h-8 w-8 text-yellow-500 mx-auto" />
+              <p className="text-sm font-medium text-gray-600">Pending Review</p>
+              <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Applied</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.applied}</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-blue-500" />
+          <CardContent className="p-6 text-center">
+            <div className="space-y-2">
+              <TrendingUp className="h-8 w-8 text-blue-500 mx-auto" />
+              <p className="text-sm font-medium text-gray-600">Applied</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.applied}</p>
             </div>
           </CardContent>
         </Card>
@@ -215,7 +258,7 @@ function DocumentManagement() {
 
           {/* Property/Entity Selection */}
           <Card>
-            <CardHeader>
+            <CardHeader className="text-center">
               <CardTitle>Target Property/Entity</CardTitle>
               <CardDescription>
                 Select the property or entity to associate with the uploaded document
@@ -223,8 +266,8 @@ function DocumentManagement() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Property</label>
+                <div className="text-center">
+                  <label className="text-sm font-medium block mb-2">Property</label>
                   <Select value={selectedProperty} onValueChange={setSelectedProperty}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select property (optional)" />
@@ -240,8 +283,8 @@ function DocumentManagement() {
                   </Select>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium">Entity</label>
+                <div className="text-center">
+                  <label className="text-sm font-medium block mb-2">Entity</label>
                   <Select value={selectedEntity} onValueChange={setSelectedEntity}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select entity (optional)" />
@@ -269,8 +312,8 @@ function DocumentManagement() {
 
         <TabsContent value="debt-statements" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="text-center">
+              <CardTitle className="flex items-center justify-center gap-2">
                 <CreditCard className="h-5 w-5" />
                 Debt Statement Upload
               </CardTitle>
@@ -288,7 +331,7 @@ function DocumentManagement() {
           {/* Filters */}
           <Card>
             <CardContent className="p-4">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center gap-4">
                 <Select value={historyFilter} onValueChange={setHistoryFilter}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Filter documents" />
@@ -343,6 +386,10 @@ function DocumentManagement() {
                             {item.appliedAt && (
                               <p>Applied: {new Date(item.appliedAt).toLocaleDateString()}</p>
                             )}
+                            <div className="flex items-center gap-1 text-xs">
+                              <FolderOpen className="h-3 w-3" />
+                              <span>File: /uploads/{item.fileName}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -351,16 +398,38 @@ function DocumentManagement() {
                         {item.success && !item.appliedAt && (
                           <Button 
                             size="sm" 
-                            onClick={() => {
-                              // Apply updates logic would go here
-                              console.log('Apply updates for:', item.id);
-                            }}
+                            onClick={() => applyUpdatesMutation.mutate(item.id)}
+                            disabled={applyUpdatesMutation.isPending}
                           >
-                            Apply Updates
+                            {applyUpdatesMutation.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                Applying...
+                              </>
+                            ) : (
+                              'Apply Updates'
+                            )}
                           </Button>
                         )}
                         <Button variant="outline" size="sm" onClick={() => handleDownload(item.id)}>
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to delete "${item.fileName}"? This action cannot be undone.`)) {
+                              deleteDocumentMutation.mutate(item.id);
+                            }
+                          }}
+                          disabled={deleteDocumentMutation.isPending}
+                          className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+                        >
+                          {deleteDocumentMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     </div>

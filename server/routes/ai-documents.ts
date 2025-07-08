@@ -607,4 +607,61 @@ router.post('/manual-review', async (req, res) => {
   }
 });
 
+/**
+ * Delete a processed document and its file
+ */
+router.delete('/delete/:id', async (req: Request, res: Response) => {
+  try {
+    const processingId = parseInt(req.params.id);
+    
+    if (isNaN(processingId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid processing ID'
+      });
+    }
+
+    // Get the document record to find the file path
+    const [document] = await db.select()
+      .from(documentProcessingHistory)
+      .where(eq(documentProcessingHistory.id, processingId));
+
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        message: 'Document not found'
+      });
+    }
+
+    // Delete the file from uploads directory
+    const fs = require('fs').promises;
+    const path = require('path');
+    const filePath = path.join(process.cwd(), 'uploads', document.fileName);
+    
+    try {
+      await fs.unlink(filePath);
+    } catch (fileError) {
+      console.warn('File deletion warning:', fileError.message);
+      // Continue with database deletion even if file doesn't exist
+    }
+
+    // Delete the database record
+    await db.delete(documentProcessingHistory)
+      .where(eq(documentProcessingHistory.id, processingId));
+
+    res.json({
+      success: true,
+      message: 'Document deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Document deletion error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete document',
+      error: error.message
+    });
+  }
+});
+
 export default router;
