@@ -82,6 +82,7 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
         const geminiResponse = await fetch('/api/gemini/models');
         if (geminiResponse.ok) {
           const geminiData = await geminiResponse.json();
+          console.log('Gemini models data:', geminiData);
           setGeminiModels(geminiData);
         }
       } catch (error) {
@@ -92,6 +93,10 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
           { id: 'gpt-4o-mini', displayName: 'GPT-4o Mini (Fast)' },
           { id: 'gpt-4-turbo', displayName: 'GPT-4 Turbo' },
           { id: 'gpt-3.5-turbo', displayName: 'GPT-3.5 Turbo' }
+        ]);
+        setGeminiModels([
+          { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Fast multimodal processing' },
+          { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'Highest accuracy' }
         ]);
       }
     };
@@ -319,8 +324,8 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
                   {/* OpenAI Models */}
                   {availableModels.length > 0 && (
                     <>
-                      <SelectItem value="openai-header" disabled className="font-semibold text-xs text-gray-500 uppercase">
-                        OpenAI Models
+                      <SelectItem value="openai-header" disabled>
+                        <div className="font-semibold text-xs text-gray-500 uppercase">OpenAI Models</div>
                       </SelectItem>
                       {availableModels.map((model) => (
                         <SelectItem key={model.id} value={model.id}>
@@ -333,8 +338,8 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
                   {/* Gemini Models */}
                   {geminiModels.length > 0 && (
                     <>
-                      <SelectItem value="gemini-header" disabled className="font-semibold text-xs text-gray-500 uppercase mt-2">
-                        Gemini Models
+                      <SelectItem value="gemini-header" disabled>
+                        <div className="font-semibold text-xs text-gray-500 uppercase">Gemini Models</div>
                       </SelectItem>
                       {geminiModels.map((model) => (
                         <SelectItem key={model.id} value={model.id}>

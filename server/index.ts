@@ -32,7 +32,7 @@ app.use('/api/ai-documents', aiDocumentRoutes);
 app.use('/api/openai/models', openaiModelsRoutes);
 
 // Register Gemini models routes
-app.use('/api/gemini/models', geminiModelsRoutes);
+app.use('/api/gemini', geminiModelsRoutes);
 
 app.use((req, res, next) => {
   const start = Date.now();
