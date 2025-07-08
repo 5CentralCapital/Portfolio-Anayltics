@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target, BarChart3, Save, Download, Upload, FileDown, Database, X, Trash2 } from 'lucide-react';
+import AddressAutocomplete from '../components/AddressAutocomplete';
+import { AddressComponents } from '../services/googlePlaces';
 
 // Load saved state function
 const loadSavedState = (key: string, defaultValue: any) => {
@@ -848,12 +850,31 @@ export default function DealAnalyzer() {
     setImportingToProperties(true);
     
     try {
-      // Extract city and state from address
-      const addressParts = propertyAddress.split(',');
-      const city = addressParts.length > 1 ? addressParts[addressParts.length - 2].trim() : '';
-      const stateZip = addressParts.length > 2 ? addressParts[addressParts.length - 1].trim() : '';
-      const state = stateZip.split(' ')[0] || '';
-      const zipCode = stateZip.split(' ')[1] || '';
+      // Extract city and state from address - use stored components if available
+      let city = '';
+      let state = '';
+      let zipCode = '';
+      
+      try {
+        const storedComponents = localStorage.getItem('dealAnalyzer_addressComponents');
+        if (storedComponents) {
+          const components: AddressComponents = JSON.parse(storedComponents);
+          city = components.city || '';
+          state = components.state || '';
+          zipCode = components.zipCode || '';
+        }
+      } catch (e) {
+        console.log('Could not parse stored address components, falling back to parsing');
+      }
+      
+      // Fallback to manual parsing if no components stored
+      if (!city || !state) {
+        const addressParts = propertyAddress.split(',');
+        city = city || (addressParts.length > 1 ? addressParts[addressParts.length - 2].trim() : '');
+        const stateZip = addressParts.length > 2 ? addressParts[addressParts.length - 1].trim() : '';
+        state = state || stateZip.split(' ')[0] || '';
+        zipCode = zipCode || stateZip.split(' ')[1] || '';
+      }
 
       // Calculate rehab costs from detailed sections
       const exteriorTotal = rehabBudgetSections.exterior.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
@@ -1134,19 +1155,35 @@ export default function DealAnalyzer() {
             <div className="text-lg text-gray-600">•</div>
             <div>
               {editingAddress ? (
-                <input
-                  type="text"
-                  value={propertyAddress}
-                  onChange={(e) => setPropertyAddress(e.target.value)}
-                  onBlur={() => setEditingAddress(false)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === 'Escape') {
-                      setEditingAddress(false);
-                    }
-                  }}
-                  className="text-lg text-gray-600 border-b border-blue-300 bg-transparent outline-none"
-                  autoFocus
-                />
+                <div className="w-80">
+                  <AddressAutocomplete
+                    value={propertyAddress}
+                    onChange={(address, components) => {
+                      setPropertyAddress(address);
+                      // Save parsed components for potential use in property import
+                      if (components) {
+                        // Store address components for later use
+                        localStorage.setItem('dealAnalyzer_addressComponents', JSON.stringify(components));
+                      }
+                    }}
+                    placeholder="Enter property address..."
+                    className="text-lg text-gray-600 border-b border-blue-300 bg-transparent"
+                  />
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      onClick={() => setEditingAddress(false)}
+                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                    >
+                      Done
+                    </button>
+                    <button
+                      onClick={() => setEditingAddress(false)}
+                      className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <p 
                   className="text-lg text-gray-600 cursor-pointer hover:text-blue-600" 

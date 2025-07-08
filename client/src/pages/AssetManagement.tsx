@@ -24,6 +24,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 // Remove toast for now and focus on fixing the save functionality
 import apiService from '../services/api';
+import AddressAutocomplete from '../components/AddressAutocomplete';
+import { AddressComponents } from '../services/googlePlaces';
 
 // Utility functions
 const formatCurrency = (amount: number | string) => {

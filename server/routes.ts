@@ -309,6 +309,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Google Places API key endpoint for client
+  app.get('/api/google-places-key', (req, res) => {
+    try {
+      // Return the API key for client-side use
+      res.json({ apiKey: process.env.GOOGLE_PLACES_API_KEY });
+    } catch (error) {
+      console.error('Error fetching Google Places API key:', error);
+      res.status(500).json({ error: 'Failed to fetch API key' });
+    }
+  });
+
   // Dashboard data route with dynamic calculations
   app.get("/api/dashboard", authenticateUser, async (req: any, res) => {
     try {
