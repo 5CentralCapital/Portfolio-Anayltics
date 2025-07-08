@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiService from '../services/api';
+import BankAccountManager from '../components/BankAccountManager';
 import { 
   Building, 
   DollarSign, 
@@ -696,21 +697,9 @@ export default function EntityDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column - Cash Balance and Milestones */}
         <div className="space-y-6">
-          {/* Cash Balance */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 card-hover slide-in-up">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Cash Balance</h3>
-              <Banknote className="w-5 h-5 text-green-600 icon-pulse" />
-            </div>
-            <div className="text-center">
-              <EditableValue 
-                value={cashBalance} 
-                onSave={setCashBalance}
-                format="currency"
-                className="text-3xl font-bold text-green-600"
-              />
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Available Operating Capital</p>
-            </div>
+          {/* Bank Account Manager */}
+          <div className="card-hover slide-in-up">
+            <BankAccountManager />
           </div>
 
           {/* Upcoming Milestones */}

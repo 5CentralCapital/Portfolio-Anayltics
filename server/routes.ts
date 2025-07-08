@@ -5,6 +5,13 @@ import { storage } from "./storage";
 import { kpiService } from "./kpi.service";
 import { calculationService } from "./calculation.service";
 import { 
+  createLinkToken, 
+  exchangePublicToken, 
+  getAccountBalances, 
+  getTransactions, 
+  getAccountInfo 
+} from './plaid';
+import { 
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
   insertDealClosingCostsSchema, insertDealHoldingCostsSchema, insertDealLoansSchema,
@@ -317,6 +324,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching Google Places API key:', error);
       res.status(500).json({ error: 'Failed to fetch API key' });
+    }
+  });
+
+  // Plaid API endpoints
+  app.post('/api/plaid/create-link-token', authenticateUser, async (req: any, res) => {
+    try {
+      const userId = req.user.id.toString();
+      const linkTokenData = await createLinkToken(userId);
+      res.json(linkTokenData);
+    } catch (error) {
+      console.error('Error creating link token:', error);
+      res.status(500).json({ error: 'Failed to create link token' });
+    }
+  });
+
+  app.post('/api/plaid/exchange-public-token', authenticateUser, async (req: any, res) => {
+    try {
+      const { public_token, metadata } = req.body;
+      const userId = req.user.id;
+      
+      // Exchange public token for access token
+      const exchangeData = await exchangePublicToken(public_token);
+      const { access_token, item_id } = exchangeData;
+      
+      // Get account information
+      const accountInfo = await getAccountInfo(access_token);
+      const accounts = accountInfo.accounts;
+      
+      // Save bank account information to database
+      for (const account of accounts) {
+        await storage.createBankAccount({
+          userId: userId,
+          entityId: null, // User can assign to entity later
+          accessToken: access_token,
+          itemId: item_id,
+          accountId: account.account_id,
+          accountName: account.name,
+          accountType: account.type,
+          accountSubtype: account.subtype,
+          institutionName: metadata.institution.name,
+          institutionId: metadata.institution.institution_id,
+          mask: account.mask,
+          currentBalance: account.balances.current,
+          availableBalance: account.balances.available,
+        });
+      }
+      
+      res.json({ 
+        access_token, 
+        item_id, 
+        accounts: accounts.length,
+        institution: metadata.institution.name
+      });
+    } catch (error) {
+      console.error('Error exchanging public token:', error);
+      res.status(500).json({ error: 'Failed to exchange public token' });
+    }
+  });
+
+  app.get('/api/plaid/accounts', authenticateUser, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const bankAccounts = await storage.getBankAccounts(userId);
+      res.json(bankAccounts);
+    } catch (error) {
+      console.error('Error fetching bank accounts:', error);
+      res.status(500).json({ error: 'Failed to fetch bank accounts' });
+    }
+  });
+
+  app.post('/api/plaid/refresh-balances', authenticateUser, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const bankAccounts = await storage.getBankAccounts(userId);
+      
+      for (const account of bankAccounts) {
+        if (account.accessToken && account.isActive) {
+          try {
+            const balanceData = await getAccountBalances(account.accessToken);
+            const updatedAccount = balanceData.accounts.find(acc => acc.account_id === account.accountId);
+            
+            if (updatedAccount) {
+              await storage.updateBankAccountBalance(account.id, {
+                currentBalance: updatedAccount.balances.current,
+                availableBalance: updatedAccount.balances.available,
+                lastUpdated: new Date(),
+              });
+            }
+          } catch (error) {
+            console.error(`Error updating balance for account ${account.accountId}:`, error);
+          }
+        }
+      }
+      
+      const refreshedAccounts = await storage.getBankAccounts(userId);
+      res.json(refreshedAccounts);
+    } catch (error) {
+      console.error('Error refreshing balances:', error);
+      res.status(500).json({ error: 'Failed to refresh balances' });
+    }
+  });
+
+  app.get('/api/plaid/transactions/:accountId', authenticateUser, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const accountId = req.params.accountId;
+      const { start_date, end_date } = req.query;
+      
+      const account = await storage.getBankAccount(userId, parseInt(accountId));
+      if (!account) {
+        return res.status(404).json({ error: 'Bank account not found' });
+      }
+      
+      const startDate = start_date as string || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const endDate = end_date as string || new Date().toISOString().split('T')[0];
+      
+      const transactionData = await getTransactions(account.accessToken, startDate, endDate);
+      const accountTransactions = transactionData.transactions.filter(t => t.account_id === account.accountId);
+      
+      res.json({
+        transactions: accountTransactions,
+        total_transactions: accountTransactions.length
+      });
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      res.status(500).json({ error: 'Failed to fetch transactions' });
     }
   });
 

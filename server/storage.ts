@@ -5,7 +5,8 @@ import {
   dealHoldingCosts, dealLoans, dealOtherIncome, dealComps,
   propertyAssumptions, propertyUnitTypes, propertyRentRoll, propertyExpenses,
   propertyRehabBudget, propertyClosingCosts, propertyHoldingCosts,
-  propertyExitAnalysis, propertyIncomeOther, propertyLoans
+  propertyExitAnalysis, propertyIncomeOther, propertyLoans,
+  bankAccountsTable, transactionsTable
 } from "@shared/schema";
 import type { 
   User, 
@@ -53,7 +54,11 @@ import type {
   PropertyExitAnalysis,
   InsertPropertyExitAnalysis,
   PropertyIncomeOther,
-  InsertPropertyIncomeOther
+  InsertPropertyIncomeOther,
+  BankAccount,
+  NewBankAccount,
+  Transaction,
+  NewTransaction
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -86,6 +91,16 @@ export interface IStorage {
   // Authentication helpers
   validatePassword(plainPassword: string, hashedPassword: string): Promise<boolean>;
   hashPassword(password: string): Promise<string>;
+  
+  // Bank account operations
+  getBankAccounts(userId: number): Promise<BankAccount[]>;
+  getBankAccount(userId: number, accountId: number): Promise<BankAccount | undefined>;
+  createBankAccount(bankAccount: NewBankAccount): Promise<BankAccount>;
+  updateBankAccountBalance(accountId: number, balanceData: any): Promise<BankAccount | undefined>;
+  
+  // Transaction operations
+  getTransactions(userId: number, accountId?: number): Promise<Transaction[]>;
+  createTransaction(transaction: NewTransaction): Promise<Transaction>;
   
   // Deal analysis operations
   getDeals(): Promise<Deal[]>;
@@ -1351,6 +1366,50 @@ export class DatabaseStorage implements IStorage {
       console.error(`Error importing normalized data for property ${propertyId}:`, error);
       throw error;
     }
+  }
+
+  // Bank account operations
+  async getBankAccounts(userId: number): Promise<BankAccount[]> {
+    return await db.select().from(bankAccountsTable).where(eq(bankAccountsTable.userId, userId));
+  }
+
+  async getBankAccount(userId: number, accountId: number): Promise<BankAccount | undefined> {
+    const result = await db.select().from(bankAccountsTable)
+      .where(and(eq(bankAccountsTable.userId, userId), eq(bankAccountsTable.id, accountId)));
+    return result[0];
+  }
+
+  async createBankAccount(bankAccount: NewBankAccount): Promise<BankAccount> {
+    const result = await db.insert(bankAccountsTable).values(bankAccount).returning();
+    return result[0];
+  }
+
+  async updateBankAccountBalance(accountId: number, balanceData: any): Promise<BankAccount | undefined> {
+    const result = await db.update(bankAccountsTable)
+      .set({
+        currentBalance: balanceData.currentBalance,
+        availableBalance: balanceData.availableBalance,
+        lastUpdated: balanceData.lastUpdated || new Date()
+      })
+      .where(eq(bankAccountsTable.id, accountId))
+      .returning();
+    return result[0];
+  }
+
+  // Transaction operations
+  async getTransactions(userId: number, accountId?: number): Promise<Transaction[]> {
+    let query = db.select().from(transactionsTable).where(eq(transactionsTable.userId, userId));
+    
+    if (accountId) {
+      query = query.where(eq(transactionsTable.bankAccountId, accountId));
+    }
+    
+    return await query.orderBy(desc(transactionsTable.date));
+  }
+
+  async createTransaction(transaction: NewTransaction): Promise<Transaction> {
+    const result = await db.insert(transactionsTable).values(transaction).returning();
+    return result[0];
   }
 }
 
