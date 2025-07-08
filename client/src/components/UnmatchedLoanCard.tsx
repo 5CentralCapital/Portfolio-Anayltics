@@ -325,11 +325,23 @@ const UnmatchedLoanCard: React.FC<UnmatchedLoanCardProps> = ({ loan, onSave }) =
             />
           </div>
 
-          <div className="md:col-span-2">
+          <div>
+            <Label htmlFor="escrow-balance">Escrow Balance</Label>
+            <Input
+              id="escrow-balance"
+              type="number"
+              step="0.01"
+              value={editedLoan.escrowBalance || 0}
+              onChange={(e) => setEditedLoan({...editedLoan, escrowBalance: parseFloat(e.target.value) || 0})}
+              className="text-green-600 font-medium"
+            />
+          </div>
+
+          <div>
             <Label htmlFor="property-address">Property Address</Label>
             <Input
               id="property-address"
-              value={editedLoan.propertyAddress || ''}
+              value={editedLoan.propertyAddress || editedLoan.address || ''}
               onChange={(e) => setEditedLoan({...editedLoan, propertyAddress: e.target.value})}
             />
           </div>

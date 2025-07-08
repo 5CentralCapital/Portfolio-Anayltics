@@ -463,14 +463,14 @@ Escrow Balance: $2,500.00`;
                       </div>
                     )}
 
-                    {/* Unmatched Loans */}
+                    {/* Unmatched Loans - Side by Side Manual Review */}
                     {results.data.unmatched.length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-orange-600 mb-2 flex items-center gap-2">
+                      <div className="col-span-full">
+                        <h4 className="font-medium text-orange-600 mb-4 flex items-center gap-2">
                           <AlertCircle className="h-4 w-4" />
-                          Needs Manual Review ({results.data.unmatched.length})
+                          Manual Review Required ({results.data.unmatched.length})
                         </h4>
-                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                        <div className={`grid gap-6 ${results.data.unmatched.length === 1 ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-2'}`}>
                           {results.data.unmatched.map((loan, index) => (
                             <UnmatchedLoanCard 
                               key={index} 

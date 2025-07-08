@@ -6,7 +6,7 @@
 import { Router } from 'express';
 import { db } from './db';
 import { propertyLoans, properties } from '@shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNotNull, desc } from 'drizzle-orm';
 // Authentication middleware
 function authenticateSession(req: any, res: any, next: any) {
   // First try session-based authentication
