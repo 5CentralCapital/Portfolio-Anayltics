@@ -12,6 +12,7 @@ import {
   getAccountInfo 
 } from './plaid';
 import { federalReserveService } from './fed-api';
+import { censusService } from './census-api';
 import { 
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
