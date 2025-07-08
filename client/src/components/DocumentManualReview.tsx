@@ -22,7 +22,7 @@ export function DocumentManualReview({ processingResult, onSave, onCancel }: Doc
   const { toast } = useToast();
 
   // Fetch properties for dropdown
-  const { data: propertiesData, isLoading: propertiesLoading } = useQuery({
+  const { data: propertiesData, isLoading: propertiesLoading, error: propertiesError } = useQuery({
     queryKey: ['/api/properties'],
     queryFn: async () => {
       const response = await fetch('/api/properties', {
@@ -31,17 +31,28 @@ export function DocumentManualReview({ processingResult, onSave, onCancel }: Doc
           'Content-Type': 'application/json'
         }
       });
-      if (!response.ok) throw new Error('Failed to fetch properties');
+      if (!response.ok) {
+        if (response.status === 401) {
+          return []; // Return empty array for auth issues
+        }
+        throw new Error('Failed to fetch properties');
+      }
       const data = await response.json();
       return data;
-    }
+    },
+    retry: false // Don't retry auth failures
   });
 
   // Ensure properties is always an array
   const properties = Array.isArray(propertiesData) ? propertiesData : [];
 
+  // Debug logging
+  console.log('Properties data:', propertiesData);
+  console.log('Properties array:', properties);
+  console.log('Properties error:', propertiesError);
+
   const handleSave = () => {
-    if (!selectedPropertyId) {
+    if (!selectedPropertyId || selectedPropertyId === 'none') {
       toast({
         title: "Error",
         description: "Please select a property",
@@ -53,7 +64,7 @@ export function DocumentManualReview({ processingResult, onSave, onCancel }: Doc
     const reviewedData = {
       ...processingResult,
       extractedData: editedData,
-      propertyId: parseInt(selectedPropertyId),
+      propertyId: selectedPropertyId === 'none' ? null : parseInt(selectedPropertyId),
       manualReview: true,
       confidence: 1.0 // Manual review means 100% confidence
     };
@@ -465,14 +476,16 @@ export function DocumentManualReview({ processingResult, onSave, onCancel }: Doc
             <div className="space-y-3">
               <Label>Key Information</Label>
               {Object.entries(editedData || {}).map(([key, value], index) => (
-                <div key={index} className="grid grid-cols-2 gap-2">
+                <div key={`field-${index}`} className="grid grid-cols-2 gap-2">
                   <Input
                     placeholder="Field name (e.g., 'Total Amount')"
                     value={key}
                     onChange={(e) => {
                       const newData = { ...editedData };
                       delete newData[key];
-                      newData[e.target.value] = value;
+                      if (e.target.value) {
+                        newData[e.target.value] = value;
+                      }
                       setEditedData(newData);
                     }}
                   />
@@ -550,17 +563,27 @@ export function DocumentManualReview({ processingResult, onSave, onCancel }: Doc
               <SelectValue placeholder="Select property" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No property selected</SelectItem>
+              <SelectItem value="none">No property selected</SelectItem>
               {propertiesLoading && (
                 <SelectItem value="loading" disabled>Loading properties...</SelectItem>
               )}
-              {properties.map((property: any) => (
+              {propertiesError && (
+                <SelectItem value="error" disabled>Authentication required</SelectItem>
+              )}
+              {properties.length > 0 ? properties.map((property: any) => (
                 <SelectItem key={property.id} value={property.id.toString()}>
-                  {property.address} ({property.apartments} units)
+                  {property.address || 'No address'} ({property.apartments || 0} units)
                 </SelectItem>
-              ))}
+              )) : !propertiesLoading && !propertiesError && (
+                <SelectItem value="no-props" disabled>No properties available</SelectItem>
+              )}
             </SelectContent>
           </Select>
+          {propertiesError && (
+            <p className="text-sm text-orange-600 mt-1">
+              Please log in to see your properties, or continue without assigning to a property.
+            </p>
+          )}
         </div>
 
         {/* Document-specific fields */}
