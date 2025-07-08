@@ -132,11 +132,19 @@ export class CalculationService {
       const currentEquityValue = arv - loanAmount;
       
       // Calculate return metrics with validation
-      // Equity Multiple = Current Equity Value / Total Invested Capital
-      const totalInvestedCapital = capitalRequired; // capital required includes all invested capital
-      const equityMultiple = totalInvestedCapital > 0 
-        ? Math.max(0, currentEquityValue / totalInvestedCapital)
-        : 0;
+      // Calculate equity multiple based on property status
+      let equityMultiple = 0;
+      if (property.status === 'Sold') {
+        // For sold properties: total profit / capital invested
+        const totalProfit = parseFloat(property.totalProfits || '0');
+        const capitalInvested = parseFloat(property.initialCapitalRequired || '0');
+        equityMultiple = capitalInvested > 0 ? totalProfit / capitalInvested : 0;
+      } else {
+        // For active properties: (all-in cost + cashflow collected so far) / capital invested
+        const cashflowCollected = parseFloat(property.cashFlow || '0'); // Annual cash flow from property
+        const capitalInvested = parseFloat(property.initialCapitalRequired || '0');
+        equityMultiple = capitalInvested > 0 ? (allInCost + cashflowCollected) / capitalInvested : 0;
+      }
         
       const cashOnCashReturn = capitalRequired > 0 
         ? (annualCashFlow / capitalRequired) * 100 
