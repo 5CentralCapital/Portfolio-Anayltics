@@ -105,10 +105,10 @@ export class CalculationService {
       const monthlyNOI = effectiveGrossIncome / 12 - monthlyExpenses;
       const netOperatingIncome = monthlyNOI * 12;
       
-      // Calculate project costs
-      const totalRehab = CalculationService.calculateTotalRehab(dealData.rehabBudget);
-      const totalClosingCosts = CalculationService.calculateClosingCosts(dealData.closingCosts);
-      const totalHoldingCosts = CalculationService.calculateHoldingCosts(dealData.holdingCosts);
+      // Calculate project costs (use Deal Analyzer data first, fallback to property fields)
+      const totalRehab = CalculationService.calculateTotalRehab(dealData.rehabBudget) || parseFloat(property.rehabCosts || '0');
+      const totalClosingCosts = CalculationService.calculateClosingCosts(dealData.closingCosts) || parseFloat(property.closingCosts || '0');
+      const totalHoldingCosts = CalculationService.calculateHoldingCosts(dealData.holdingCosts) || parseFloat(property.holdingCosts || '0');
       const allInCost = purchasePrice + totalRehab + totalClosingCosts + totalHoldingCosts;
       
       // Calculate loan and equity
