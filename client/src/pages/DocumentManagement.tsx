@@ -1,0 +1,370 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DocumentUpload } from '@/components/DocumentUpload';
+import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Upload, Eye } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+
+interface ProcessingHistory {
+  id: number;
+  fileName: string;
+  documentType: string;
+  confidence: number;
+  success: boolean;
+  errors?: string[];
+  warnings?: string[];
+  suggestedActions?: string[];
+  propertyId?: number;
+  entityId?: number;
+  processedAt: string;
+  appliedAt?: string;
+  extractedData?: string;
+}
+
+interface Property {
+  id: number;
+  address: string;
+  apartments: number;
+  status: string;
+}
+
+function DocumentManagement() {
+  const [selectedProperty, setSelectedProperty] = useState<number | undefined>();
+  const [selectedEntity, setSelectedEntity] = useState<number | undefined>();
+  const [historyFilter, setHistoryFilter] = useState<string>('all');
+
+  // Fetch properties for dropdown
+  const { data: properties = [] } = useQuery<Property[]>({
+    queryKey: ['/api/properties'],
+    queryFn: async () => {
+      const response = await fetch('/api/properties');
+      if (!response.ok) throw new Error('Failed to fetch properties');
+      return response.json();
+    }
+  });
+
+  // Fetch processing history
+  const { data: processingHistory = [], refetch: refetchHistory } = useQuery<ProcessingHistory[]>({
+    queryKey: ['/api/ai-documents/history', selectedProperty, selectedEntity],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedProperty) params.append('propertyId', selectedProperty.toString());
+      if (selectedEntity) params.append('entityId', selectedEntity.toString());
+      
+      const response = await fetch(`/api/ai-documents/history?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch processing history');
+      return response.json();
+    }
+  });
+
+  const filteredHistory = processingHistory.filter(item => {
+    switch (historyFilter) {
+      case 'success':
+        return item.success;
+      case 'pending':
+        return item.success && !item.appliedAt;
+      case 'applied':
+        return item.appliedAt;
+      case 'errors':
+        return !item.success;
+      default:
+        return true;
+    }
+  });
+
+  const getDocumentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'lease':
+        return <FileText className="h-4 w-4 text-blue-500" />;
+      case 'llc_document':
+        return <FileText className="h-4 w-4 text-green-500" />;
+      case 'mortgage_statement':
+        return <FileText className="h-4 w-4 text-purple-500" />;
+      default:
+        return <FileText className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getStatusBadge = (item: ProcessingHistory) => {
+    if (!item.success) {
+      return <Badge variant="destructive">Failed</Badge>;
+    }
+    if (item.appliedAt) {
+      return <Badge variant="default">Applied</Badge>;
+    }
+    return <Badge variant="secondary">Pending Review</Badge>;
+  };
+
+  const handleProcessingComplete = () => {
+    refetchHistory();
+  };
+
+  // Statistics calculation
+  const stats = {
+    total: processingHistory.length,
+    successful: processingHistory.filter(item => item.success).length,
+    pending: processingHistory.filter(item => item.success && !item.appliedAt).length,
+    applied: processingHistory.filter(item => item.appliedAt).length
+  };
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold">AI Document Processing</h1>
+        <p className="text-gray-600 mt-2">
+          Automatically extract and update property information from documents using AI
+        </p>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Processed</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
+              </div>
+              <FileText className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Successful</p>
+                <p className="text-2xl font-bold text-green-600">{stats.successful}</p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Pending Review</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+              </div>
+              <Clock className="h-8 w-8 text-yellow-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Applied</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.applied}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <Tabs defaultValue="upload" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="upload">Upload Document</TabsTrigger>
+          <TabsTrigger value="history">Processing History</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="upload" className="space-y-6">
+          {/* Property/Entity Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Target Property/Entity</CardTitle>
+              <CardDescription>
+                Select the property or entity to associate with the uploaded document
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Property</label>
+                  <Select value={selectedProperty?.toString()} onValueChange={(value) => setSelectedProperty(value ? Number(value) : undefined)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select property (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">No property selected</SelectItem>
+                      {properties.map(property => (
+                        <SelectItem key={property.id} value={property.id.toString()}>
+                          {property.address} ({property.apartments} units)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Entity</label>
+                  <Select value={selectedEntity?.toString()} onValueChange={(value) => setSelectedEntity(value ? Number(value) : undefined)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select entity (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">No entity selected</SelectItem>
+                      <SelectItem value="1">5Central Capital</SelectItem>
+                      <SelectItem value="2">The House Doctors</SelectItem>
+                      <SelectItem value="3">Arcadia Vision Group</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Document Upload */}
+          <DocumentUpload 
+            propertyId={selectedProperty}
+            entityId={selectedEntity}
+            onProcessingComplete={handleProcessingComplete}
+          />
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-6">
+          {/* Filters */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <Select value={historyFilter} onValueChange={setHistoryFilter}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Documents</SelectItem>
+                    <SelectItem value="success">Successful Only</SelectItem>
+                    <SelectItem value="pending">Pending Review</SelectItem>
+                    <SelectItem value="applied">Applied Updates</SelectItem>
+                    <SelectItem value="errors">Failed Processing</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button variant="outline" onClick={() => refetchHistory()}>
+                  Refresh
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Processing History */}
+          <div className="space-y-4">
+            {filteredHistory.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No documents found</h3>
+                  <p className="text-gray-500">
+                    {historyFilter === 'all' 
+                      ? 'No documents have been processed yet. Upload your first document above.'
+                      : 'No documents match the current filter. Try adjusting your filter criteria.'
+                    }
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              filteredHistory.map(item => (
+                <Card key={item.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3 flex-1">
+                        {getDocumentTypeIcon(item.documentType)}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium truncate">{item.fileName}</h3>
+                            {getStatusBadge(item)}
+                          </div>
+                          <div className="text-sm text-gray-600 space-y-1">
+                            <p>Type: <span className="capitalize">{item.documentType.replace('_', ' ')}</span></p>
+                            <p>Confidence: {Math.round(item.confidence * 100)}%</p>
+                            <p>Processed: {new Date(item.processedAt).toLocaleDateString()}</p>
+                            {item.appliedAt && (
+                              <p>Applied: {new Date(item.appliedAt).toLocaleDateString()}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {item.success && !item.appliedAt && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => {
+                              // Apply updates logic would go here
+                              console.log('Apply updates for:', item.id);
+                            }}
+                          >
+                            Apply Updates
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Errors/Warnings */}
+                    {item.errors && item.errors.length > 0 && (
+                      <div className="mt-3 p-2 bg-red-50 rounded text-sm">
+                        <div className="flex items-center gap-1 text-red-700 font-medium mb-1">
+                          <AlertCircle className="h-4 w-4" />
+                          Errors
+                        </div>
+                        <ul className="list-disc list-inside text-red-600">
+                          {item.errors.map((error, index) => (
+                            <li key={index}>{error}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {item.warnings && item.warnings.length > 0 && (
+                      <div className="mt-3 p-2 bg-yellow-50 rounded text-sm">
+                        <div className="flex items-center gap-1 text-yellow-700 font-medium mb-1">
+                          <AlertCircle className="h-4 w-4" />
+                          Warnings
+                        </div>
+                        <ul className="list-disc list-inside text-yellow-600">
+                          {item.warnings.map((warning, index) => (
+                            <li key={index}>{warning}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Suggested Actions */}
+                    {item.suggestedActions && item.suggestedActions.length > 0 && (
+                      <div className="mt-3 p-2 bg-blue-50 rounded text-sm">
+                        <div className="flex items-center gap-1 text-blue-700 font-medium mb-1">
+                          <CheckCircle className="h-4 w-4" />
+                          Suggested Actions
+                        </div>
+                        <ul className="list-disc list-inside text-blue-600">
+                          {item.suggestedActions.map((action, index) => (
+                            <li key={index}>{action}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+export default DocumentManagement;

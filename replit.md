@@ -216,6 +216,7 @@ Changelog:
 - July 8, 2025. Added property image functionality to 4809 N Grady Ave property card - stored image path in dealAnalyzerData field and updated PropertyCard and FeaturedDealCard components with new image mapping for attached_assets path - property cards now display user-uploaded images
 - July 8, 2025. Fixed Portfolio page image display by updating getPropertyImage function to check dealAnalyzerData for dynamic images stored in database - images now display correctly from attached_assets directory
 - July 8, 2025. Fixed Entity Dashboard equity multiple calculation inconsistency by using correct field names (totalClosingCosts, totalHoldingCosts) to match Asset Management calculation exactly - resolved field name mismatch that was causing incorrect equity multiple calculations
+- July 8, 2025. Implemented comprehensive AI-powered document processing system using OpenAI API - created AIDocumentProcessor service supporting lease, LLC document, and mortgage statement analysis with automatic classification, structured data extraction, confidence scoring, and property record updates - added DocumentUpload component with drag-and-drop interface, processing results display, and manual review workflow - integrated AI Documents tab into admin dashboard with upload functionality, processing history, and document management capabilities - includes PDF parsing, image document support, and comprehensive error handling with suggested actions
 
 ## User Preferences
 

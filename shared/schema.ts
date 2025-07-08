@@ -709,6 +709,26 @@ export type InsertDealOtherIncome = z.infer<typeof insertDealOtherIncomeSchema>;
 export type DealComps = typeof dealComps.$inferSelect;
 export type InsertDealComps = z.infer<typeof insertDealCompsSchema>;
 
+// Document Processing History - AI-powered document processing
+export const documentProcessingHistory = pgTable('document_processing_history', {
+  id: serial('id').primaryKey(),
+  fileName: text('file_name').notNull(),
+  filePath: text('file_path'),
+  documentType: text('document_type'),
+  extractedData: text('extracted_data'),
+  confidence: decimal('confidence', { precision: 3, scale: 2 }),
+  success: boolean('success').default(false),
+  errors: text('errors').array(),
+  warnings: text('warnings').array(),
+  suggestedActions: text('suggested_actions').array(),
+  propertyId: integer('property_id').references(() => properties.id),
+  entityId: integer('entity_id'),
+  userId: integer('user_id').references(() => users.id),
+  processedAt: timestamp('processed_at').defaultNow(),
+  appliedAt: timestamp('applied_at'),
+  appliedBy: integer('applied_by').references(() => users.id)
+});
+
 // Bank Accounts and Transactions
 export const bankAccountsTable = pgTable('bank_accounts', {
   id: serial('id').primaryKey(),
@@ -759,3 +779,7 @@ export type BankAccount = typeof bankAccountsTable.$inferSelect;
 export type Transaction = typeof transactionsTable.$inferSelect;
 export type NewBankAccount = typeof bankAccountsTable.$inferInsert;
 export type NewTransaction = typeof transactionsTable.$inferInsert;
+
+// Document Processing types
+export type DocumentProcessingHistory = typeof documentProcessingHistory.$inferSelect;
+export type InsertDocumentProcessingHistory = typeof documentProcessingHistory.$inferInsert;

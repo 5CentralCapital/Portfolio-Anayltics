@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
 import propertyLoansRoutes from "./property-loans.routes";
+import aiDocumentRoutes from "./routes/ai-documents";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
@@ -21,6 +22,9 @@ app.use(session({
 
 // Register property loans routes
 app.use('/api', propertyLoansRoutes);
+
+// Register AI document processing routes
+app.use('/api/ai-documents', aiDocumentRoutes);
 
 app.use((req, res, next) => {
   const start = Date.now();
