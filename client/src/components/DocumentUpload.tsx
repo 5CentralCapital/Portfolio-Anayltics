@@ -29,7 +29,7 @@ interface ProcessingResult {
 
 export function DocumentUpload({ propertyId, entityId, onProcessingComplete }: DocumentUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState<string>('');
+  const [documentType, setDocumentType] = useState<string>('auto');
   const [autoApply, setAutoApply] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -77,7 +77,7 @@ export function DocumentUpload({ propertyId, entityId, onProcessingComplete }: D
       
       if (propertyId) formData.append('propertyId', propertyId.toString());
       if (entityId) formData.append('entityId', entityId.toString());
-      if (documentType) formData.append('documentType', documentType);
+      if (documentType && documentType !== 'auto') formData.append('documentType', documentType);
       formData.append('autoApply', autoApply.toString());
 
       // Simulate upload progress
@@ -226,7 +226,7 @@ export function DocumentUpload({ propertyId, entityId, onProcessingComplete }: D
                   <SelectValue placeholder="Auto-detect document type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Auto-detect</SelectItem>
+                  <SelectItem value="auto">Auto-detect</SelectItem>
                   <SelectItem value="lease">Lease Agreement</SelectItem>
                   <SelectItem value="llc_document">LLC Document</SelectItem>
                   <SelectItem value="mortgage_statement">Mortgage Statement</SelectItem>

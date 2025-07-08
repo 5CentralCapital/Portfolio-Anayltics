@@ -33,8 +33,8 @@ interface Property {
 }
 
 function DocumentManagement() {
-  const [selectedProperty, setSelectedProperty] = useState<number | undefined>();
-  const [selectedEntity, setSelectedEntity] = useState<number | undefined>();
+  const [selectedProperty, setSelectedProperty] = useState<string>('none');
+  const [selectedEntity, setSelectedEntity] = useState<string>('none');
   const [historyFilter, setHistoryFilter] = useState<string>('all');
 
   // Fetch properties for dropdown
@@ -54,8 +54,8 @@ function DocumentManagement() {
     queryFn: async () => {
       try {
         const params = new URLSearchParams();
-        if (selectedProperty) params.append('propertyId', selectedProperty.toString());
-        if (selectedEntity) params.append('entityId', selectedEntity.toString());
+        if (selectedProperty && selectedProperty !== 'none') params.append('propertyId', selectedProperty);
+        if (selectedEntity && selectedEntity !== 'none') params.append('entityId', selectedEntity);
         
         const response = await fetch(`/api/ai-documents/history?${params}`);
         if (!response.ok) {
@@ -203,7 +203,7 @@ function DocumentManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Property</label>
-                  <Select value={selectedProperty?.toString() || "none"} onValueChange={(value) => setSelectedProperty(value === "none" ? undefined : Number(value))}>
+                  <Select value={selectedProperty} onValueChange={setSelectedProperty}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select property (optional)" />
                     </SelectTrigger>
@@ -220,7 +220,7 @@ function DocumentManagement() {
 
                 <div>
                   <label className="text-sm font-medium">Entity</label>
-                  <Select value={selectedEntity?.toString() || "none"} onValueChange={(value) => setSelectedEntity(value === "none" ? undefined : Number(value))}>
+                  <Select value={selectedEntity} onValueChange={setSelectedEntity}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select entity (optional)" />
                     </SelectTrigger>
@@ -238,8 +238,8 @@ function DocumentManagement() {
 
           {/* Document Upload */}
           <DocumentUpload 
-            propertyId={selectedProperty}
-            entityId={selectedEntity}
+            propertyId={selectedProperty === 'none' ? undefined : Number(selectedProperty)}
+            entityId={selectedEntity === 'none' ? undefined : Number(selectedEntity)}
             onProcessingComplete={handleProcessingComplete}
           />
         </TabsContent>
@@ -268,7 +268,7 @@ function DocumentManagement() {
               <div className="flex items-center gap-4">
                 <Select value={historyFilter} onValueChange={setHistoryFilter}>
                   <SelectTrigger className="w-48">
-                    <SelectValue />
+                    <SelectValue placeholder="Filter documents" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Documents</SelectItem>
