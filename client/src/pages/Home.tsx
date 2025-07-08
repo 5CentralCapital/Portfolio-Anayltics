@@ -1,18 +1,57 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, TrendingUp, Shield, Target, DollarSign, Building, Users, Award } from 'lucide-react';
+import { ArrowRight, TrendingUp, Shield, Target, DollarSign, Building, Users, Award, Home as HomeIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import MetricsCard from '../components/MetricsCard';
 import ValuePropCard from '../components/ValuePropCard';
 import FeaturedDealCard from '../components/FeaturedDealCard';
 import FAQSection from '../components/FAQSection';
+import { useCalculations } from '../contexts/CalculationsContext';
 
 const Home = () => {
-  // Updated portfolio metrics to match actual data
+  const { calculatePortfolioMetrics, formatCurrency, formatPercentage } = useCalculations();
+
+  // Fetch portfolio properties data 
+  const { data: propertiesResponse } = useQuery({
+    queryKey: ['/api/public/portfolio'],
+    queryFn: async () => {
+      const response = await fetch('/api/public/portfolio');
+      if (!response.ok) throw new Error('Failed to fetch properties');
+      return response.json();
+    }
+  });
+
+  const properties = (() => {
+    if (!propertiesResponse) return [];
+    if (Array.isArray(propertiesResponse)) return propertiesResponse;
+    if (propertiesResponse.data && Array.isArray(propertiesResponse.data)) return propertiesResponse.data;
+    return [];
+  })();
+
+  // Calculate portfolio metrics using centralized service
+  const portfolioMetricsData = calculatePortfolioMetrics(properties);
+  
+  // Calculate additional metrics for display
+  const soldProperties = properties.filter((p: any) => p.status === 'Sold');
+  let totalAnnualizedReturn = 0;
+  let propertiesWithReturn = 0;
+
+  soldProperties.forEach((property: any) => {
+    if (property.annualizedReturn) {
+      const annReturn = parseFloat(property.annualizedReturn || '0');
+      if (annReturn > 0) {
+        totalAnnualizedReturn += annReturn;
+        propertiesWithReturn++;
+      }
+    }
+  });
+
+  const avgAnnualizedReturn = propertiesWithReturn > 0 ? totalAnnualizedReturn / propertiesWithReturn : 0;
+
   const metrics = [
     { 
       title: 'Total Portfolio Value', 
-      value: '$4.2M', 
+      value: formatCurrency(portfolioMetricsData.totalAUM), 
       icon: DollarSign, 
       subtitle: 'Current Asset Values',
       trend: '+15% YoY',
@@ -20,7 +59,7 @@ const Home = () => {
     },
     { 
       title: 'Total Units', 
-      value: '37', 
+      value: portfolioMetricsData.totalUnits.toString(), 
       icon: Building, 
       subtitle: 'All Properties Combined',
       trend: 'Across 2 States',
@@ -28,7 +67,7 @@ const Home = () => {
     },
     { 
       title: 'Total Equity Created', 
-      value: '$2.42M', 
+      value: formatCurrency(portfolioMetricsData.totalEquity), 
       icon: TrendingUp, 
       subtitle: 'Value Added Through Strategy',
       trend: '57% of Portfolio Value',
@@ -36,7 +75,7 @@ const Home = () => {
     },
     { 
       title: 'Avg Cash-on-Cash', 
-      value: '458.8%', 
+      value: formatPercentage(portfolioMetricsData.avgCashOnCashReturn), 
       icon: Award, 
       subtitle: 'All Properties Performance',
       trend: 'Exceptional Returns',
@@ -44,7 +83,7 @@ const Home = () => {
     },
     { 
       title: 'Avg Annualized Return', 
-      value: '115.6%', 
+      value: formatPercentage(avgAnnualizedReturn), 
       icon: Target, 
       subtitle: 'Including Appreciation',
       trend: 'Compound Growth',
