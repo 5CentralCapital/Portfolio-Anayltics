@@ -542,9 +542,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all properties for public portfolio display
       const properties = await storage.getProperties();
       
-      // Filter to only include properties that should be public
+      // Include all properties (Under Contract, Rehabbing, Cashflowing, Sold) for portfolio page display
       const publicProperties = properties.filter(p => 
-        p.status === 'Cashflowing' || p.status === 'Sold' || p.status === 'Rehabbing'
+        p.status === 'Under Contract' || p.status === 'Cashflowing' || p.status === 'Sold' || p.status === 'Rehabbing'
       );
       
       res.json(publicProperties);
