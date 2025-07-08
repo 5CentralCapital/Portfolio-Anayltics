@@ -140,6 +140,37 @@ router.get('/history', async (req: Request, res: Response) => {
   }
 });
 
+// Download original document from processing history
+router.get('/download/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const [record] = await db.select()
+      .from(documentProcessingHistory)
+      .where(eq(documentProcessingHistory.id, Number(id)));
+    
+    if (!record) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    
+    const filePath = record.filePath;
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Original file not found' });
+    }
+    
+    // Set appropriate headers for file download
+    res.setHeader('Content-Disposition', `attachment; filename="${record.fileName}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    
+    // Stream the file
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error('Failed to download document:', error);
+    res.status(500).json({ error: 'Failed to download document' });
+  }
+});
+
 /**
  * Apply extracted document data to property/entity records
  */
@@ -245,13 +276,13 @@ async function updatePropertyFromLease(propertyId: number, leaseData: any, appro
       .from(propertyRentRoll)
       .where(eq(propertyRentRoll.propertyId, propertyId));
 
-    // Update or create rent roll entry
+    // Update or create rent roll entry with correct field mapping for property modal
     const rentRollData = {
       propertyId,
       unit: leaseData.unitNumber || '1',
       currentRent: leaseData.monthlyRent,
       proFormaRent: leaseData.monthlyRent,
-      tenantName: leaseData.tenantNames[0],
+      tenantName: Array.isArray(leaseData.tenantNames) ? leaseData.tenantNames[0] : leaseData.tenantNames,
       leaseStart: leaseData.leaseStartDate,
       leaseEnd: leaseData.leaseEndDate
     };
@@ -379,30 +410,108 @@ router.post('/manual-review', async (req, res) => {
     // Integrate extracted data based on document type
     switch (processingResult.documentType) {
       case 'lease':
-        // Update rent roll with lease data
-        if (extractedData.tenantNames && extractedData.monthlyRent) {
-          const existingDealData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : {};
-          const rentRoll = existingDealData.rentRoll || [];
+        // Update rent roll with lease data - handle comprehensive lease information
+        const existingDealData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : {};
+        const rentRoll = existingDealData.rentRoll || [];
+        
+        // Extract tenant and lease information from various possible field structures
+        let tenantName = '';
+        let monthlyRent = 0;
+        let leaseStart = '';
+        let leaseEnd = '';
+        let securityDeposit = 0;
+        let unitNumber = '';
+        let propertyAddress = '';
+        
+        // Handle different data structures from comprehensive extraction
+        if (extractedData.tenant?.name) {
+          tenantName = extractedData.tenant.name;
+        } else if (extractedData.tenantNames) {
+          tenantName = Array.isArray(extractedData.tenantNames) ? extractedData.tenantNames.join(', ') : extractedData.tenantNames;
+        }
+        
+        if (extractedData.lease_details?.monthly_rent) {
+          monthlyRent = extractedData.lease_details.monthly_rent;
+        } else if (extractedData.financial_details?.monthly_rent) {
+          monthlyRent = extractedData.financial_details.monthly_rent;
+        } else if (extractedData.monthlyRent) {
+          monthlyRent = extractedData.monthlyRent;
+        }
+        
+        if (extractedData.lease_details?.lease_start_date) {
+          leaseStart = extractedData.lease_details.lease_start_date;
+        } else if (extractedData.lease?.start_date) {
+          leaseStart = extractedData.lease.start_date;
+        } else if (extractedData.leaseStartDate) {
+          leaseStart = extractedData.leaseStartDate;
+        }
+        
+        if (extractedData.lease_details?.lease_end_date) {
+          leaseEnd = extractedData.lease_details.lease_end_date;
+        } else if (extractedData.lease?.end_date) {
+          leaseEnd = extractedData.lease.end_date;
+        } else if (extractedData.leaseEndDate) {
+          leaseEnd = extractedData.leaseEndDate;
+        }
+        
+        if (extractedData.lease_details?.security_deposit) {
+          securityDeposit = extractedData.lease_details.security_deposit;
+        } else if (extractedData.financial_details?.security_deposit) {
+          securityDeposit = extractedData.financial_details.security_deposit;
+        } else if (extractedData.securityDeposit) {
+          securityDeposit = extractedData.securityDeposit;
+        }
+        
+        if (extractedData.tenant?.address) {
+          propertyAddress = extractedData.tenant.address;
+        } else if (extractedData.propertyAddress) {
+          propertyAddress = extractedData.propertyAddress;
+        }
+        
+        // Extract unit number from property address if available
+        if (propertyAddress && propertyAddress.includes('#')) {
+          const unitMatch = propertyAddress.match(/#(\w+)/);
+          if (unitMatch) {
+            unitNumber = `Unit ${unitMatch[1]}`;
+          }
+        }
+        
+        if (tenantName && monthlyRent > 0) {
+          // Find existing rent roll entry for this unit or create new one
+          let existingEntryIndex = -1;
+          if (unitNumber) {
+            existingEntryIndex = rentRoll.findIndex(entry => 
+              entry.unit === unitNumber || 
+              entry.unit === unitNumber.replace('Unit ', '#')
+            );
+          }
           
-          // Add new rent roll entry
-          const newRentEntry = {
-            id: rentRoll.length + 1,
-            unit: extractedData.unitNumber || `Unit ${rentRoll.length + 1}`,
-            type: extractedData.unitType || 'Apartment',
-            tenant: Array.isArray(extractedData.tenantNames) ? extractedData.tenantNames.join(', ') : extractedData.tenantNames,
-            leaseStart: extractedData.leaseStartDate || '',
-            leaseEnd: extractedData.leaseEndDate || '',
-            currentRent: extractedData.monthlyRent || 0,
-            marketRent: extractedData.monthlyRent || 0,
+          const rentEntry = {
+            id: existingEntryIndex >= 0 ? rentRoll[existingEntryIndex].id : rentRoll.length + 1,
+            unit: unitNumber || `Unit ${rentRoll.length + 1}`,
+            unitNumber: unitNumber || `Unit ${rentRoll.length + 1}`,
+            unitTypeId: rentRoll[existingEntryIndex]?.unitTypeId || 1,
+            tenantName: tenantName, // Use tenantName field that property modal expects
+            leaseFrom: leaseStart || '',
+            leaseTo: leaseEnd || '',
+            currentRent: monthlyRent,
+            proFormaRent: monthlyRent, // Use proFormaRent field expected by modal
+            marketRent: monthlyRent,
             sqft: extractedData.squareFootage || 0,
-            deposit: extractedData.securityDeposit || 0
+            deposit: securityDeposit,
+            isRealData: true // Mark as real data to override assumptions
           };
           
-          rentRoll.push(newRentEntry);
-          existingDealData.rentRoll = rentRoll;
+          if (existingEntryIndex >= 0) {
+            rentRoll[existingEntryIndex] = rentEntry;
+            integrationResults.push(`Updated rent roll for ${rentEntry.unit}: ${tenantName} - $${monthlyRent}/month`);
+          } else {
+            rentRoll.push(rentEntry);
+            integrationResults.push(`Added tenant ${tenantName} to rent roll - $${monthlyRent}/month`);
+          }
           
+          existingDealData.rentRoll = rentRoll;
           updatedProperty.dealAnalyzerData = JSON.stringify(existingDealData);
-          integrationResults.push(`Added tenant ${newRentEntry.tenant} to rent roll`);
         }
         break;
 

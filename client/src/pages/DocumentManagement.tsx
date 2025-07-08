@@ -100,6 +100,25 @@ function DocumentManagement() {
     }
   };
 
+  const handleDownload = async (documentId: number) => {
+    try {
+      const response = await fetch(`/api/ai-documents/download/${documentId}`);
+      if (!response.ok) throw new Error('Failed to download document');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = response.headers.get('content-disposition')?.split('filename=')[1]?.replace(/"/g, '') || 'document';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
+
   const getStatusBadge = (item: ProcessingHistory) => {
     if (!item.success) {
       return <Badge variant="destructive">Failed</Badge>;
@@ -340,7 +359,7 @@ function DocumentManagement() {
                             Apply Updates
                           </Button>
                         )}
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleDownload(item.id)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                       </div>
