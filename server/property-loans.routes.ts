@@ -38,8 +38,7 @@ router.get('/property/:propertyId/loans', authenticateSession, async (req, res) 
 
     const loans = await db.select()
       .from(propertyLoans)
-      .where(eq(propertyLoans.propertyId, propertyId))
-      .orderBy(propertyLoans.createdAt);
+      .where(eq(propertyLoans.propertyId, propertyId));
 
     res.json(loans);
   } catch (error) {

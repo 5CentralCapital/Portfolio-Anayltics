@@ -283,6 +283,90 @@ class DocumentParserService {
   }
 
   /**
+   * Parse mortgage statement format (Field/Value pairs)
+   */
+  private parseMortgageStatementFormat(data: any[], fileName: string): ParsedLoanData {
+    // Convert Field/Value pairs to object
+    const statementData: any = {};
+    for (const row of data) {
+      if (row.Field && row.Value !== undefined) {
+        statementData[row.Field] = row.Value;
+      }
+    }
+
+    // Map mortgage statement fields to our loan data structure
+    const loanData: ParsedLoanData = {
+      loanId: statementData['Loan Number'] || statementData['Account Number'] || '',
+      lenderName: this.extractLenderName(fileName) || 'Unknown Lender',
+      statementDate: this.extractDate(statementData['Statement Date']) || new Date().toISOString().split('T')[0],
+      
+      // Current balance - try multiple field names
+      currentBalance: this.parseAmount(
+        statementData['Outstanding Principal Balance'] || 
+        statementData['Current Balance'] || 
+        statementData['Principal Balance'] ||
+        statementData['Balance'] || 0
+      ),
+      
+      principalBalance: this.parseAmount(
+        statementData['Outstanding Principal Balance'] || 
+        statementData['Principal Balance'] || 0
+      ),
+      
+      interestRate: this.parseRate(
+        statementData['Interest Rate'] || 
+        statementData['Rate'] || 0
+      ),
+      
+      monthlyPayment: this.parseAmount(
+        statementData['Regular Monthly Payment'] || 
+        statementData['Monthly Payment'] || 
+        statementData['Payment Amount'] || 0
+      ),
+      
+      nextPaymentDate: this.extractDate(
+        statementData['Payment Due Date'] || 
+        statementData['Due Date'] || 
+        statementData['Next Payment Date']
+      ) || '',
+      
+      nextPaymentAmount: this.parseAmount(
+        statementData['Amount Due'] || 
+        statementData['Total Amount Due'] || 
+        statementData['Payment Due'] || 0
+      ),
+      
+      lastPaymentDate: this.extractDate(
+        statementData['Last Payment Date']
+      ),
+      
+      lastPaymentAmount: this.parseAmount(
+        statementData['Last Payment Amount']
+      ),
+      
+      escrowBalance: this.parseAmount(
+        statementData['Escrow Balance'] || 
+        statementData['Escrow Account Balance'] || 0
+      ),
+      
+      // Additional mortgage-specific fields
+      additionalInfo: {
+        fileName,
+        prepaymentPenalty: statementData['Prepayment Penalty'],
+        deferredBalance: this.parseAmount(statementData['Deferred Balance'] || 0),
+        replacementReserveBalance: this.parseAmount(statementData['Replacement Reserve Balance'] || 0),
+        pastDueAmount: this.parseAmount(statementData['Past Due Amount'] || 0),
+        unappliedFunds: this.parseAmount(statementData['Unapplied Funds'] || 0),
+        lateFeeAfterDate: this.extractDate(statementData['Late Fee After Date']),
+        maxLateFee: this.parseAmount(statementData['Max Late Fee'] || 0),
+        rawData: statementData
+      }
+    };
+
+    return loanData;
+  }
+
+  /**
    * Parse structured data (CSV/Excel)
    */
   private async parseStructuredData(data: any[], fileName: string): Promise<ParseResult> {
@@ -290,20 +374,60 @@ class DocumentParserService {
     const errors: string[] = [];
     const warnings: string[] = [];
 
+    // Check if this is a mortgage statement format (Field/Value pairs)
+    if (data.length > 0 && data[0].Field && data[0].Value !== undefined) {
+      try {
+        const loanData = this.parseMortgageStatementFormat(data, fileName);
+        
+        // Validate required fields
+        if (!loanData.currentBalance || loanData.currentBalance <= 0) {
+          warnings.push('Missing or invalid current balance');
+        }
+        if (!loanData.monthlyPayment || loanData.monthlyPayment <= 0) {
+          warnings.push('Missing or invalid monthly payment');
+        }
+        if (!loanData.loanId) {
+          warnings.push('Missing loan number/ID');
+        }
+
+        if (loanData.currentBalance > 0) {
+          parsedData.push(loanData);
+        }
+
+        return {
+          success: parsedData.length > 0,
+          data: parsedData,
+          errors: errors.length > 0 ? errors : undefined,
+          warnings: warnings.length > 0 ? warnings : undefined,
+          fileName,
+          parsedCount: parsedData.length
+        };
+      } catch (error) {
+        errors.push(`Mortgage statement parsing error: ${error.message}`);
+      }
+    }
+
+    // Handle standard tabular format
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       try {
         const loanData: ParsedLoanData = {
           lenderName: this.extractLenderName(JSON.stringify(row)),
-          statementDate: this.extractDate(row.date || row.Date || row.DATE) || new Date().toISOString().split('T')[0],
-          currentBalance: this.parseAmount(row.balance || row.Balance || row.BALANCE || row.current_balance || row['Current Balance']),
+          statementDate: this.extractDate(row.date || row.Date || row.DATE || row['Statement Date']) || new Date().toISOString().split('T')[0],
+          currentBalance: this.parseAmount(row.balance || row.Balance || row.BALANCE || row.current_balance || row['Current Balance'] || row['Outstanding Principal Balance']),
           principalBalance: this.parseAmount(row.principal || row.Principal || row.PRINCIPAL || row.principal_balance || row['Principal Balance']),
           interestRate: this.parseRate(row.rate || row.Rate || row.RATE || row.interest_rate || row['Interest Rate']),
-          monthlyPayment: this.parseAmount(row.payment || row.Payment || row.PAYMENT || row.monthly_payment || row['Monthly Payment']),
-          nextPaymentDate: this.extractDate(row.next_payment || row.due_date || row['Next Payment'] || row['Due Date']) || '',
-          nextPaymentAmount: this.parseAmount(row.next_amount || row.due_amount || row['Next Amount'] || row['Due Amount']),
-          loanId: row.loan_id || row.account || row.Account || row.ACCOUNT || row['Loan ID'] || row['Account Number'],
-          propertyAddress: row.property || row.Property || row.PROPERTY || row.address || row.Address || row.ADDRESS
+          monthlyPayment: this.parseAmount(row.payment || row.Payment || row.PAYMENT || row.monthly_payment || row['Monthly Payment'] || row['Regular Monthly Payment']),
+          nextPaymentDate: this.extractDate(row.next_payment || row.due_date || row['Next Payment'] || row['Due Date'] || row['Payment Due Date']) || '',
+          nextPaymentAmount: this.parseAmount(row.next_amount || row.due_amount || row['Next Amount'] || row['Due Amount'] || row['Amount Due']),
+          loanId: row.loan_id || row.account || row.Account || row.ACCOUNT || row['Loan ID'] || row['Account Number'] || row['Loan Number'],
+          propertyAddress: row.property || row.Property || row.PROPERTY || row.address || row.Address || row.ADDRESS,
+          escrowBalance: this.parseAmount(row.escrow || row.Escrow || row['Escrow Balance']),
+          additionalInfo: {
+            fileName,
+            rowIndex: i,
+            rawData: row
+          }
         };
 
         if (loanData.currentBalance > 0) {

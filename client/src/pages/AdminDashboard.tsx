@@ -39,6 +39,7 @@ import FinancialDashboard from './FinancialDashboard';
 import AssetManagement from './AssetManagement';
 import NetWorthTracker from './NetWorthTracker';
 import StatementUpload from '../components/StatementUpload';
+import CSVTemplateDownload from '../components/CSVTemplateDownload';
 import OnboardingTour from '../components/OnboardingTour';
 
 interface DashboardData {
@@ -289,7 +290,16 @@ const AdminDashboard: React.FC = () => {
         )}
 
         {activeTab === 'debt-management' && (
-          <StatementUpload />
+          <div className="p-6 space-y-6">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Debt Management</h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">Upload and manage lender statements with enhanced CSV templates</p>
+              </div>
+            </div>
+            <CSVTemplateDownload />
+            <StatementUpload />
+          </div>
         )}
 
         {activeTab === 'roadmap' && (
