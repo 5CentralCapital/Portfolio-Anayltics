@@ -481,7 +481,7 @@ const Portfolio = () => {
                       <p className="font-semibold">{property.apartments}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Acquisition Price</p>
+                      <p className="text-gray-500">Purchase Price</p>
                       <p className="font-semibold">{formatCurrency(parseFloat(property.acquisitionPrice || '0'))}</p>
                     </div>
                   </div>
@@ -517,7 +517,15 @@ const Portfolio = () => {
                       <p className="font-semibold">{property.apartments}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Rehab Budget</p>
+                      <p className="text-gray-500">Purchase Price</p>
+                      <p className="font-semibold">{formatCurrency(parseFloat(property.acquisitionPrice || '0'))}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">ARV</p>
+                      <p className="font-semibold">{formatCurrency(parseFloat(property.arvAtTimePurchased || '0'))}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Rehab Cost</p>
                       <p className="font-semibold">{formatCurrency(parseFloat(property.rehabCosts || '0'))}</p>
                     </div>
                   </div>
@@ -548,6 +556,18 @@ const Portfolio = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{property.address}</h3>
                   <p className="text-gray-600 mb-4">{property.city}, {property.state}</p>
                   <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">Units</p>
+                      <p className="font-semibold">{property.apartments}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Purchase Price</p>
+                      <p className="font-semibold">{formatCurrency(parseFloat(property.acquisitionPrice || '0'))}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">ARV</p>
+                      <p className="font-semibold">{formatCurrency(parseFloat(property.arvAtTimePurchased || '0'))}</p>
+                    </div>
                     <div>
                       <p className="text-gray-500">Annual Cash Flow</p>
                       {(() => {
@@ -598,6 +618,10 @@ const Portfolio = () => {
                   <h3 className="text-md font-semibold text-gray-900 mb-2">{property.address}</h3>
                   <p className="text-sm text-gray-600 mb-3">{property.city}, {property.state}</p>
                   <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Units</span>
+                      <span className="font-semibold text-gray-700">{property.apartments}</span>
+                    </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Capital Invested</span>
                       <span className="font-semibold text-blue-700">{formatCurrency(parseFloat(property.initialCapitalRequired || '0'))}</span>
