@@ -238,7 +238,7 @@ const entities = [
   'Arcadia Vision Group'
 ];
 
-const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
+const PropertyCard = ({ property, onStatusChange, onDoubleClick, onDelete }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void; onDelete?: (property: Property) => void }) => {
   // Use same calculation function as modal Overview tab
   const calculatedMetrics = calculatePropertyMetrics(property);
   
@@ -266,6 +266,18 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
             <option value="Cashflowing">Cashflowing</option>
             <option value="Sold">Sold</option>
           </select>
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(property);
+              }}
+              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all-smooth button-pulse"
+              title="Delete property"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -425,7 +437,7 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
   );
 };
 
-const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
+const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick, onDelete }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void; onDelete?: (property: Property) => void }) => {
   // Use centralized calculations for accurate metrics
   const calculatedMetrics = calculatePropertyMetrics(property);
   
@@ -437,16 +449,30 @@ const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { propert
       <div className="mb-3">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-tight">{property.address}</h3>
-          <select 
-            value={property.status} 
-            onChange={(e) => onStatusChange(property.id, e.target.value)}
-            className="px-1 py-0.5 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all-smooth hover:border-purple-400"
-          >
-            <option value="Under Contract">Under Contract</option>
-            <option value="Rehabbing">Rehabbing</option>
-            <option value="Cashflowing">Cashflowing</option>
-            <option value="Sold">Sold</option>
-          </select>
+          <div className="flex items-center gap-1">
+            <select 
+              value={property.status} 
+              onChange={(e) => onStatusChange(property.id, e.target.value)}
+              className="px-1 py-0.5 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all-smooth hover:border-purple-400"
+            >
+              <option value="Under Contract">Under Contract</option>
+              <option value="Rehabbing">Rehabbing</option>
+              <option value="Cashflowing">Cashflowing</option>
+              <option value="Sold">Sold</option>
+            </select>
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(property);
+                }}
+                className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all-smooth"
+                title="Delete property"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            )}
+          </div>
         </div>
         <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{property.city}, {property.state}</p>
         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 mt-1">
@@ -754,6 +780,35 @@ export default function AssetManagement() {
     }
   });
 
+  const deletePropertyMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiService.deleteProperty(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
+      console.log('Property deleted successfully');
+      
+      // Close modals if the deleted property was open
+      if (showPropertyDetailModal) {
+        closeDetailModal();
+      }
+    },
+    onError: (error) => {
+      console.error('Failed to delete property:', error);
+      alert('Failed to delete property. Please try again.');
+    }
+  });
+
+  const handleDeleteProperty = (property: Property) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${property.address}? This action cannot be undone.`
+    );
+    
+    if (confirmDelete) {
+      deletePropertyMutation.mutate(property.id);
+    }
+  };
+
   const handleStatusChange = (id: number, status: string) => {
     const property = properties.find(p => p.id === id);
     if (property) {
@@ -1041,6 +1096,16 @@ export default function AssetManagement() {
                         <option value="Cashflowing">Cashflowing</option>
                         <option value="Sold">Sold</option>
                       </select>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProperty(property);
+                        }}
+                        className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all-smooth button-pulse"
+                        title="Delete property"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1094,16 +1159,28 @@ export default function AssetManagement() {
                               </span>
                             </div>
                           </div>
-                          <select 
-                            value={property.status} 
-                            onChange={(e) => handleStatusChange(property.id, e.target.value)}
-                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-                          >
-                            <option value="Under Contract">Under Contract</option>
-                            <option value="Rehabbing">Rehabbing</option>
-                            <option value="Cashflowing">Cashflowing</option>
-                            <option value="Sold">Sold</option>
-                          </select>
+                          <div className="flex items-center gap-3">
+                            <select 
+                              value={property.status} 
+                              onChange={(e) => handleStatusChange(property.id, e.target.value)}
+                              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                            >
+                              <option value="Under Contract">Under Contract</option>
+                              <option value="Rehabbing">Rehabbing</option>
+                              <option value="Cashflowing">Cashflowing</option>
+                              <option value="Sold">Sold</option>
+                            </select>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteProperty(property);
+                              }}
+                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all-smooth button-pulse"
+                              title="Delete property"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -1223,7 +1300,7 @@ export default function AssetManagement() {
           {properties.filter((p: Property) => p.status === 'Cashflowing').length > 0 ? (
             <div className="grid gap-4 stagger-children">
               {properties.filter((p: Property) => p.status === 'Cashflowing').map((property: Property) => (
-                <PropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} />
+                <PropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} onDelete={handleDeleteProperty} />
               ))}
             </div>
           ) : (
@@ -1245,7 +1322,7 @@ export default function AssetManagement() {
           {properties.filter((p: Property) => p.status === 'Sold').length > 0 ? (
             <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-3 stagger-children">
               {properties.filter((p: Property) => p.status === 'Sold').map((property: Property) => (
-                <SoldPropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} />
+                <SoldPropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} onDelete={handleDeleteProperty} />
               ))}
             </div>
           ) : (

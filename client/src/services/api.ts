@@ -168,6 +168,12 @@ class ApiService {
     });
   }
 
+  async deleteProperty(id: number) {
+    return this.request(`/properties/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   async exportData(type: string, format: string = 'json', startDate?: string, endDate?: string) {
     const params = new URLSearchParams();
     params.append('type', type);

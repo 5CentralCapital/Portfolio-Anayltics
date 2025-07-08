@@ -532,6 +532,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/properties/:id", authenticateUser, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Verify property exists and user has access
+      const property = await storage.getProperty(id);
+      if (!property) {
+        return res.status(404).json({ error: "Property not found" });
+      }
+      
+      // Check if user has access to this property through entity ownership
+      const userEntities = await storage.getUserEntityOwnership(req.user.id);
+      const userEntityNames = userEntities.map(e => e.entityName);
+      
+      if (!userEntityNames.includes(property.entity || '')) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const deleted = await storage.deleteProperty(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Property not found" });
+      }
+      
+      res.json({ message: "Property deleted successfully" });
+    } catch (error) {
+      console.error("Delete property error:", error);
+      res.status(500).json({ error: "Failed to delete property" });
+    }
+  });
+
   // Company metrics routes
   app.post("/api/metrics", async (req, res) => {
     try {
