@@ -131,7 +131,8 @@ const LiveDebtDataSection: React.FC<LiveDebtDataSectionProps> = ({
 
   const formatPercentage = (rate: string | number) => {
     const num = typeof rate === 'string' ? parseFloat(rate) : rate;
-    return `${(num * 100).toFixed(2)}%`;
+    // Interest rates are already stored as percentages (e.g., 8.49), not decimals (0.0849)
+    return `${num.toFixed(2)}%`;
   };
 
   const getSyncStatusBadge = (status: string) => {
