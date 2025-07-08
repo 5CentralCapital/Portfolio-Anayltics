@@ -116,21 +116,70 @@ class DocumentParserService {
   }
 
   /**
-   * Parse PDF document - currently redirects to alternative formats
+   * Parse PDF document
    */
   private async parsePDF(filePath: string, fileName: string): Promise<ParseResult> {
-    return {
-      success: false,
-      errors: [`PDF parsing is currently unavailable. Please use one of these alternatives:`],
-      fileName,
-      parsedCount: 0,
-      warnings: [
-        '1. Convert PDF to CSV format with columns: Lender, Property Address, Current Balance, Monthly Payment, Interest Rate, Loan ID',
-        '2. Copy text from PDF and save as .txt file',
-        '3. Use Excel format (.xlsx) with the same column structure',
-        '4. Download the sample CSV template from the upload area'
-      ]
-    };
+    try {
+      // Read file buffer
+      const dataBuffer = await fs.readFile(filePath);
+      
+      // Try to extract text from PDF buffer
+      let textContent = '';
+      
+      try {
+        // Use dynamic import with error handling
+        const pdfParse = await import('pdf-parse');
+        const pdf = pdfParse.default || pdfParse;
+        
+        // Create options to skip test file loading
+        const options = {
+          // Skip loading test files
+          pagerender: null,
+          max: 0,
+          version: 'v1.10.100'
+        };
+        
+        const pdfData = await pdf(dataBuffer, options);
+        textContent = pdfData.text;
+      } catch (pdfError) {
+        // If pdf-parse fails, try basic text extraction
+        // Convert buffer to string and look for text patterns
+        const bufferString = dataBuffer.toString('utf8', 0, Math.min(dataBuffer.length, 10000));
+        
+        // Look for readable text patterns
+        const textMatches = bufferString.match(/[a-zA-Z0-9\s\$\.\,\-]{10,}/g);
+        if (textMatches && textMatches.length > 0) {
+          textContent = textMatches.join('\n');
+        } else {
+          throw new Error('Could not extract text from PDF. File may be encrypted or image-based.');
+        }
+      }
+      
+      if (!textContent || textContent.trim().length === 0) {
+        return {
+          success: false,
+          errors: ['PDF appears to be empty or contains only images. Please use a text-based PDF.'],
+          fileName,
+          parsedCount: 0,
+          warnings: ['For image-based PDFs, please use OCR software first or manually enter data using the CSV template.']
+        };
+      }
+      
+      // Parse the extracted text content
+      return await this.parseTextContent(textContent, fileName);
+      
+    } catch (error) {
+      return {
+        success: false,
+        errors: [`PDF parsing failed: ${error.message}`],
+        fileName,
+        parsedCount: 0,
+        warnings: [
+          'Tip: Ensure your PDF contains selectable text (not scanned images)',
+          'Alternative: Copy text from PDF and save as .txt file'
+        ]
+      };
+    }
   }
 
   /**
