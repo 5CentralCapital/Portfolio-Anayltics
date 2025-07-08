@@ -27,6 +27,7 @@ import AddressAutocomplete from '../components/AddressAutocomplete';
 import { Star, StarOff } from 'lucide-react';
 import { AddressComponents } from '../services/googlePlaces';
 import { useCalculations } from '@/contexts/CalculationsContext';
+import LiveDebtDataSection from '../components/LiveDebtDataSection';
 
 // Helper function for loan calculations
 const calculateLoanPayment = (amount: number, interestRate: number, termYears: number, paymentType: string) => {
@@ -2976,11 +2977,25 @@ export default function AssetManagement() {
                   case 'financing':
                     return (
                       <div className="space-y-6">
+                        {/* Live Debt Data Section */}
+                        <LiveDebtDataSection 
+                          propertyId={showPropertyDetailModal.id}
+                          dealAnalyzerData={dealAnalyzerData}
+                          isEditing={isEditing}
+                          onUpdate={() => {
+                            // Refresh property data
+                            propertiesQuery.refetch();
+                          }}
+                        />
+
                         {dealAnalyzerData?.assumptions ? (
                           <>
-                            {/* Loan Management Header */}
-                            <div className="flex justify-between items-center">
-                              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Property Financing</h2>
+                            {/* Deal Analyzer Loans Header */}
+                            <div className="flex justify-between items-center border-t pt-6">
+                              <div>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Deal Analyzer Loans</h2>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Analysis and modeling loans</p>
+                              </div>
                               {isEditing && (
                                 <button
                                   onClick={() => {
@@ -3016,7 +3031,7 @@ export default function AssetManagement() {
                                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
                                 >
                                   <Plus className="h-4 w-4 mr-2" />
-                                  Add Loan
+                                  Add Analysis Loan
                                 </button>
                               )}
                             </div>

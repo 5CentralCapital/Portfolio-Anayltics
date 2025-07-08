@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
+import propertyLoansRoutes from "./property-loans.routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
@@ -17,6 +18,9 @@ app.use(session({
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
+
+// Register property loans routes
+app.use('/api', propertyLoansRoutes);
 
 app.use((req, res, next) => {
   const start = Date.now();

@@ -35,7 +35,7 @@ const UnmatchedLoanCard: React.FC<UnmatchedLoanCardProps> = ({ loan, onSave }) =
   const queryClient = useQueryClient();
   
   // Fetch properties for dropdown
-  const { data: properties } = useQuery({
+  const { data: properties = [] } = useQuery({
     queryKey: ['/api/properties'],
     queryFn: () => apiRequest('/api/properties')
   });
