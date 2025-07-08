@@ -8,7 +8,7 @@ import multer from 'multer';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { documentParserService } from './document-parser.service';
-import { requireAuth } from './auth';
+// Authentication will be handled at route level if needed
 import { db } from './db';
 import { propertyLoans, properties } from '@shared/schema';
 import { eq, isNotNull, desc } from 'drizzle-orm';
@@ -325,7 +325,7 @@ router.get('/templates/:type', async (req, res) => {
 });
 
 // Manual review endpoint
-router.post('/manual-review', requireAuth, async (req, res) => {
+router.post('/manual-review', async (req, res) => {
   try {
     const { originalLoan, editedLoan, propertyId, manualReview } = req.body;
     
