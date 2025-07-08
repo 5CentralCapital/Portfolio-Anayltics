@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
 import { useToast } from '../hooks/use-toast';
+import UnmatchedLoanCard from './UnmatchedLoanCard';
 
 interface UploadResult {
   fileName: string;
@@ -471,12 +472,15 @@ Escrow Balance: $2,500.00`;
                         </h4>
                         <div className="space-y-2 max-h-40 overflow-y-auto">
                           {results.data.unmatched.map((loan, index) => (
-                            <div key={index} className="text-sm bg-orange-50 p-2 rounded">
-                              <div className="font-medium">{loan.address || 'Unknown Property'}</div>
-                              <div className="text-gray-600">
-                                {loan.lender} • {formatCurrency(loan.balance)} • {loan.loanId || 'No ID'}
-                              </div>
-                            </div>
+                            <UnmatchedLoanCard 
+                              key={index} 
+                              loan={loan} 
+                              onSave={() => {
+                                // Refresh results after saving
+                                setResults(null);
+                                setSelectedFiles([]);
+                              }}
+                            />
                           ))}
                         </div>
                       </div>

@@ -8,6 +8,7 @@ import multer from 'multer';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { documentParserService } from './document-parser.service';
+import { requireAuth } from './auth';
 import { db } from './db';
 import { propertyLoans, properties } from '@shared/schema';
 import { eq, isNotNull, desc } from 'drizzle-orm';
@@ -318,6 +319,53 @@ router.get('/templates/:type', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to generate template',
+      error: error.message
+    });
+  }
+});
+
+// Manual review endpoint
+router.post('/manual-review', requireAuth, async (req, res) => {
+  try {
+    const { originalLoan, editedLoan, propertyId, manualReview } = req.body;
+    
+    // Create or update the loan record
+    const loanData = {
+      propertyId: propertyId,
+      loanName: `${editedLoan.lender} Loan`,
+      loanType: 'acquisition' as const,
+      originalAmount: editedLoan.balance.toString(),
+      currentBalance: editedLoan.balance.toString(),
+      interestRate: editedLoan.interestRate?.toString() || '0',
+      termYears: 30,
+      monthlyPayment: editedLoan.monthlyPayment?.toString() || '0',
+      paymentType: 'principal_and_interest' as const,
+      maturityDate: editedLoan.nextPaymentDate || new Date().toISOString().split('T')[0],
+      isActive: true,
+      lender: editedLoan.lender,
+      externalLoanId: editedLoan.loanId,
+      principalBalance: editedLoan.balance.toString(),
+      nextPaymentDate: editedLoan.nextPaymentDate || null,
+      nextPaymentAmount: editedLoan.monthlyPayment?.toString() || '0',
+      escrowBalance: '0',
+      lastSyncDate: new Date().toISOString(),
+      syncStatus: 'manual_review_complete',
+      syncError: null
+    };
+
+    await db.insert(propertyLoans).values(loanData);
+
+    res.json({
+      success: true,
+      message: 'Manual review saved successfully',
+      loanId: loanData.externalLoanId
+    });
+
+  } catch (error) {
+    console.error('Manual review error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save manual review',
       error: error.message
     });
   }

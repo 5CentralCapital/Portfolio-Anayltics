@@ -312,73 +312,146 @@ class DocumentParserService {
    */
   private async parseTextContent(text: string, fileName: string): Promise<ParseResult> {
     const lenderName = this.extractLenderName(text);
-    const patterns = this.getLenderPatterns(lenderName);
     
-    // Try multiple extraction methods
-    let currentBalance = this.parseAmount(this.extractWithPattern(text, patterns.currentBalance));
-    let monthlyPayment = this.parseAmount(this.extractWithPattern(text, patterns.monthlyPayment));
-    let interestRate = this.parseAmount(this.extractWithPattern(text, patterns.interestRate));
+    // Enhanced extraction with specific patterns
+    let currentBalance = 0;
+    let monthlyPayment = 0;
+    let interestRate = 0;
+    let propertyAddress = '';
+    let loanId = '';
     
-    // If standard patterns fail, try broader patterns
-    if (!currentBalance || currentBalance <= 0) {
-      const broadBalancePattern = /\$?([0-9,]+\.?\d*)/g;
-      const amounts = [];
-      let match;
-      while ((match = broadBalancePattern.exec(text)) !== null) {
+    // Current Balance patterns - more specific
+    const balancePatterns = [
+      /current\s+balance[:\s]*\$?([\d,]+\.?\d*)/i,
+      /outstanding\s+balance[:\s]*\$?([\d,]+\.?\d*)/i,
+      /principal\s+balance[:\s]*\$?([\d,]+\.?\d*)/i,
+      /loan\s+balance[:\s]*\$?([\d,]+\.?\d*)/i,
+      /balance[:\s]*\$?([\d,]+\.?\d*)/i
+    ];
+    
+    // Monthly Payment patterns
+    const paymentPatterns = [
+      /monthly\s+payment[:\s]*\$?([\d,]+\.?\d*)/i,
+      /payment\s+amount[:\s]*\$?([\d,]+\.?\d*)/i,
+      /total\s+payment[:\s]*\$?([\d,]+\.?\d*)/i,
+      /payment[:\s]*\$?([\d,]+\.?\d*)/i
+    ];
+    
+    // Interest Rate patterns
+    const ratePatterns = [
+      /interest\s+rate[:\s]*([\d.]+)%?/i,
+      /rate[:\s]*([\d.]+)%/i,
+      /([\d.]+)%\s*interest/i
+    ];
+    
+    // Property Address patterns
+    const addressPatterns = [
+      /property\s+address[:\s]*(.+?)(?:\n|$)/i,
+      /subject\s+property[:\s]*(.+?)(?:\n|$)/i,
+      /address[:\s]*(.+?)(?:\n|$)/i,
+      /(\d+\s+[^,\n]+(?:st|street|ave|avenue|dr|drive|blvd|boulevard|rd|road|ln|lane|ct|court|pl|place)[^,\n]*(?:,\s*[^,\n]+)*)/i
+    ];
+    
+    // Loan ID patterns
+    const loanIdPatterns = [
+      /loan\s+(?:number|id|#)[:\s]*([a-zA-Z0-9]+)/i,
+      /account\s+(?:number|id|#)[:\s]*([a-zA-Z0-9]+)/i,
+      /loan\s*#?\s*([a-zA-Z0-9]{6,})/i
+    ];
+    
+    // Extract current balance
+    for (const pattern of balancePatterns) {
+      const match = text.match(pattern);
+      if (match) {
         const amount = this.parseAmount(match[1]);
-        if (amount > 1000) { // Only consider amounts > $1000 as potential balances
-          amounts.push(amount);
+        if (amount >= 1000) { // Reasonable minimum for a loan balance
+          currentBalance = amount;
+          break;
         }
       }
-      if (amounts.length > 0) {
-        currentBalance = amounts[0]; // Use the first significant amount found
+    }
+    
+    // Extract monthly payment
+    for (const pattern of paymentPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const amount = this.parseAmount(match[1]);
+        if (amount >= 100 && amount <= 50000) { // Reasonable payment range
+          monthlyPayment = amount;
+          break;
+        }
       }
     }
     
-    // If monthly payment not found, try to extract from payment-related text
-    if (!monthlyPayment || monthlyPayment <= 0) {
-      const paymentPattern = /payment[\s:]*\$?([0-9,]+\.?\d*)/i;
-      const paymentMatch = text.match(paymentPattern);
-      if (paymentMatch) {
-        monthlyPayment = this.parseAmount(paymentMatch[1]);
+    // Extract interest rate
+    for (const pattern of ratePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const rate = this.parseRate(match[1]);
+        if (rate > 0 && rate <= 20) { // Reasonable interest rate range
+          interestRate = rate;
+          break;
+        }
       }
     }
     
-    // If interest rate not found, try broader pattern
-    if (!interestRate || interestRate <= 0) {
-      const ratePattern = /([0-9.]+)%/g;
-      const rateMatch = text.match(ratePattern);
-      if (rateMatch && rateMatch[0]) {
-        interestRate = this.parseAmount(rateMatch[0].replace('%', ''));
+    // Extract property address
+    for (const pattern of addressPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        propertyAddress = match[1].trim();
+        break;
+      }
+    }
+    
+    // Extract loan ID
+    for (const pattern of loanIdPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        loanId = match[1].trim();
+        break;
       }
     }
     
     const parsedData: ParsedLoanData = {
       lenderName,
       statementDate: new Date().toISOString().split('T')[0],
-      currentBalance: currentBalance || 0,
-      principalBalance: currentBalance || 0,
-      interestRate: interestRate || 0,
-      monthlyPayment: monthlyPayment || 0,
-      nextPaymentDate: this.extractWithPattern(text, patterns.nextPaymentDate) || new Date().toISOString().split('T')[0],
-      nextPaymentAmount: monthlyPayment || 0,
-      loanId: this.extractWithPattern(text, patterns.loanId) || 'UNKNOWN'
+      currentBalance,
+      principalBalance: currentBalance,
+      interestRate,
+      monthlyPayment,
+      nextPaymentDate: '',
+      nextPaymentAmount: monthlyPayment,
+      propertyAddress,
+      loanId: loanId || 'UNKNOWN',
+      lastPaymentDate: '',
+      lastPaymentAmount: monthlyPayment,
+      escrowBalance: 0,
+      additionalInfo: {
+        originalText: text.substring(0, 500),
+        extractedLines: text.split('\n').length,
+        fileName
+      }
     };
 
     const errors: string[] = [];
     const warnings: string[] = [];
 
     if (!parsedData.currentBalance || parsedData.currentBalance <= 0) {
-      errors.push('Could not extract valid current balance. Please ensure your PDF contains readable text with dollar amounts.');
+      errors.push('Could not extract valid current balance from the document');
     }
 
     if (!parsedData.monthlyPayment || parsedData.monthlyPayment <= 0) {
       warnings.push('Could not extract monthly payment amount');
     }
 
+    if (!parsedData.propertyAddress) {
+      warnings.push('Could not extract property address');
+    }
+
     return {
       success: errors.length === 0,
-      data: parsedData.currentBalance > 0 ? [parsedData] : undefined,
+      data: parsedData.currentBalance > 0 ? [parsedData] : [],
       errors: errors.length > 0 ? errors : undefined,
       warnings: warnings.length > 0 ? warnings : undefined,
       fileName,
