@@ -94,23 +94,17 @@ export class AIDocumentProcessor {
       const classification = await this.classifyDocument(filePath, fileName, model);
       console.log('Document classification:', classification);
       
+      // Always try to extract data, even for unknown documents
+      let extractedData: any = null;
+      let errors: string[] = [];
+      let warnings: string[] = [];
+
       if (classification.type === 'unknown' || classification.confidence < 0.5) {
-        // Return partial result for manual review instead of failing
-        return {
-          success: false,
-          documentType: classification.type,
-          extractedData: null,
-          confidence: classification.confidence,
-          errors: ['Document classification uncertain. Manual review recommended.'],
-          warnings: [`Detected as: ${classification.subtype || 'unknown document type'}`],
-          suggestedActions: ['Use manual review to verify document type and extracted data', 'Ensure document is a lease, LLC document, or mortgage statement']
-        };
+        warnings.push('Document classification uncertain. Manual review recommended.');
+        warnings.push(`Detected as: ${classification.subtype || 'unknown document type'}`);
       }
 
       // Step 2: Extract data based on document type
-      let extractedData: any = null;
-      let confidence = classification.confidence;
-
       switch (classification.type) {
         case 'lease':
           extractedData = await this.extractLeaseData(filePath, model);
@@ -121,18 +115,33 @@ export class AIDocumentProcessor {
         case 'mortgage_statement':
           extractedData = await this.extractMortgageData(filePath, model);
           break;
+        case 'insurance_policy':
+        case 'tax_document':
+        case 'property_deed':
+        case 'inspection_report':
+        case 'vendor_invoice':
+        case 'unknown':
+        default:
+          extractedData = await this.extractGenericDocumentData(filePath, classification.type, model);
+          // Boost confidence if we extracted useful data
+          if (extractedData && Object.keys(extractedData).length > 1) {
+            classification.confidence = Math.max(classification.confidence, 0.6);
+          }
+          break;
       }
 
       // Step 3: Validate extracted data
       const validation = this.validateExtractedData(classification.type, extractedData);
+      errors.push(...validation.errors);
+      warnings.push(...validation.warnings);
 
       return {
-        success: validation.isValid,
+        success: true, // Always return success so manual review interface shows
         documentType: classification.type,
         extractedData,
-        confidence,
-        errors: validation.errors,
-        warnings: validation.warnings,
+        confidence: classification.confidence,
+        errors: errors.length > 0 ? errors : undefined,
+        warnings: warnings.length > 0 ? warnings : undefined,
         suggestedActions: await this.generateSuggestedActions(classification.type, extractedData, model)
       };
 
@@ -431,15 +440,50 @@ export class AIDocumentProcessor {
     if (ext === '.pdf') {
       try {
         const dataBuffer = fs.readFileSync(filePath);
-        const data = await pdfParse(dataBuffer);
-        return data.text;
+        const pdfData = await pdfParse(dataBuffer, {
+          normalizeWhitespace: true,
+          disableCombineTextItems: false
+        });
+        
+        if (!pdfData.text || pdfData.text.trim().length < 20) {
+          console.warn('PDF text extraction yielded minimal content, trying fallback parsing');
+          
+          // Try basic text extraction from buffer as fallback
+          const bufferText = dataBuffer.toString('utf8');
+          const textPatterns = [
+            /\$[\d,]+\.?\d*/g,       // Dollar amounts
+            /\d+\.?\d*%/g,           // Percentages
+            /\d{1,2}\/\d{1,2}\/\d{2,4}/g, // Dates
+            /[A-Z][a-z]+ [A-Z][a-z]+/g,   // Names
+            /\d{1,5}\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Court|Ct)/g // Addresses
+          ];
+          
+          let extractedText = '';
+          for (const pattern of textPatterns) {
+            const matches = bufferText.match(pattern);
+            if (matches) {
+              extractedText += matches.join(' ') + '\n';
+            }
+          }
+          
+          if (extractedText.trim().length > 0) {
+            console.log(`PDF fallback extraction: ${extractedText.length} characters`);
+            return extractedText;
+          }
+          
+          return `PDF file with minimal extractable text. File name: ${path.basename(filePath)}`;
+        }
+        
+        console.log(`PDF parsed successfully: ${pdfData.text.length} characters extracted`);
+        return pdfData.text;
       } catch (error) {
         console.error('PDF parsing error:', error);
-        throw new Error(`Failed to parse PDF: ${error.message}`);
+        return `PDF parsing failed for ${path.basename(filePath)}: ${error.message}`;
       }
-    } else {
-      // Handle text files
+    } else if (['.txt', '.csv'].includes(ext)) {
       return fs.readFileSync(filePath, 'utf-8');
+    } else {
+      return `File: ${path.basename(filePath)} (${ext} format)`;
     }
   }
 

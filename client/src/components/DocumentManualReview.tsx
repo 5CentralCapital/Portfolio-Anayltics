@@ -43,8 +43,9 @@ export function DocumentManualReview({ processingResult, onSave, onCancel }: Doc
     retry: false // Don't retry auth failures
   });
 
-  // Ensure properties is always an array
-  const properties = Array.isArray(propertiesData) ? propertiesData : [];
+  // Ensure properties is always an array - extract from data field if present
+  const properties = Array.isArray(propertiesData?.data) ? propertiesData.data : 
+                     Array.isArray(propertiesData) ? propertiesData : [];
 
   // Debug logging
   console.log('Properties data:', propertiesData);
