@@ -142,22 +142,22 @@ const Portfolio = () => {
       
       const capitalRequired = downPayment + closingCosts + holdingCosts;
       
-      // Calculate total invested capital exactly like Admin dashboard
+      // Use the same capital required calculation as Asset Management
       const totalInvested = parseFloat(property.initialCapitalRequired || '0');
-      const totalInvestedCapital = totalInvested > 0 ? totalInvested : (acquisitionPrice + totalRehab + closingCosts + holdingCosts);
+      const finalTotalInvestedCapital = totalInvested > 0 ? totalInvested : capitalRequired;
       
       // Calculate ARV and equity metrics using correct formula: (ARV - all in costs + cash collected) / capital required
       const arv = parseFloat(property.arvAtTimePurchased || '0');
       const cashCollected = parseFloat(property.totalProfits || '0'); // This represents cash flow collected over time
-      const equityMultiple = capitalRequired > 0 ? (arv - allInCost + cashCollected) / capitalRequired : 0;
+      const equityMultiple = finalTotalInvestedCapital > 0 ? (arv - allInCost + cashCollected) / finalTotalInvestedCapital : 0;
       
       console.log('Portfolio Equity Multiple Calculation for', property.address, {
         arv,
         allInCost,
         cashCollected,
-        capitalRequired,
+        finalTotalInvestedCapital,
         equityMultiple,
-        calculation: `(${arv} - ${allInCost} + ${cashCollected}) / ${capitalRequired} = ${equityMultiple}`
+        calculation: `(${arv} - ${allInCost} + ${cashCollected}) / ${finalTotalInvestedCapital} = ${equityMultiple}`
       });
       
       // Calculate cash-on-cash return
@@ -176,7 +176,7 @@ const Portfolio = () => {
         totalRehab,
         allInCost,
         capitalRequired,
-        totalInvestedCapital,
+        totalInvestedCapital: finalTotalInvestedCapital,
         arv,
         cashCollected,
         equityMultiple,
