@@ -754,19 +754,19 @@ const Portfolio = () => {
             <div>
               <h4 className="text-lg font-semibold text-primary mb-3">Geographic Focus</h4>
               <ul className="space-y-2 text-gray-700">
-                <li>• <strong>Connecticut:</strong> {portfolioProperties.filter(p => p.state === 'CT').length} properties</li>
-                <li>• <strong>Florida:</strong> {portfolioProperties.filter(p => p.state === 'FL').length} property</li>
-                <li>• Primary markets: New London, Norwich, Tampa, Stonington</li>
+                <li>• <strong>Connecticut:</strong> {properties.filter((p: any) => p.state === 'CT').length} properties</li>
+                <li>• <strong>Florida:</strong> {properties.filter((p: any) => p.state === 'FL').length} properties</li>
+                <li>• Primary markets: {[...new Set(properties.map((p: any) => p.city))].filter(Boolean).join(', ')}</li>
                 <li>• Focus on emerging neighborhoods with growth potential</li>
               </ul>
             </div>
             <div>
               <h4 className="text-lg font-semibold text-primary mb-3">Performance Highlights</h4>
               <ul className="space-y-2 text-gray-700">
-                <li>• Exceptional average cash-on-cash returns: 458.8%</li>
-                <li>• Strong annualized performance: 115.6% average</li>
-                <li>• Total equity created: $2.42M across portfolio</li>
-                <li>• Diversified across 37 units in two states</li>
+                <li>• Exceptional average cash-on-cash returns: {formatPercentage(metrics.avgCoCReturn)}</li>
+                <li>• Strong annualized performance: {formatPercentage(metrics.avgAnnualizedReturn)} average</li>
+                <li>• Total equity created: {formatCurrency(metrics.totalEquityCreated)} across portfolio</li>
+                <li>• Diversified across {metrics.totalUnits} units in two states</li>
               </ul>
             </div>
           </div>
