@@ -95,7 +95,7 @@ const StatementUpload: React.FC = () => {
     files.forEach(file => {
       const extension = '.' + file.name.split('.').pop()?.toLowerCase();
       if (!allowedTypes.includes(extension)) {
-        errors.push(`${file.name}: Unsupported file type. Allowed: CSV, Excel, TXT (PDF temporarily disabled)`);
+        errors.push(`${file.name}: Unsupported file type. Allowed: PDF, CSV, Excel, TXT`);
       }
       if (file.size > maxSize) {
         errors.push(`${file.name}: File size too large (max 10MB)`);
@@ -162,10 +162,10 @@ const StatementUpload: React.FC = () => {
           title: "Upload successful",
           description: `Processed ${selectedFiles.length} file(s) and updated loan data`,
         });
-      } else if (results?.errors?.some(err => err.includes('PDF parsing temporarily disabled'))) {
+      } else if (results?.errors?.some(err => err.includes('PDF text extraction failed'))) {
         toast({
-          title: "PDF Format Not Supported",
-          description: "Please use CSV, Excel, or text format instead. Download templates from the upload area.",
+          title: "PDF Processing Issue",
+          description: "PDF may be encrypted or image-based. Try copying text to a .txt file or use CSV format.",
           variant: "default"
         });
       } else {
@@ -265,10 +265,8 @@ Escrow Balance: $2,500.00`;
             Upload Lender Statements
           </CardTitle>
           <CardDescription>
-            Upload your monthly lender statements in CSV, Excel, or text format. 
+            Upload your monthly lender statements in PDF, CSV, Excel, or text format. 
             The system will automatically parse and update your loan data.
-            <br />
-            <span className="text-orange-600 font-medium">Note: PDF format temporarily disabled - please use CSV/Excel instead.</span>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -288,9 +286,7 @@ Escrow Balance: $2,500.00`;
               Drag and drop files here, or click to select
             </p>
             <p className="text-sm text-gray-500 mb-4">
-              <span className="text-green-600 font-medium">✅ CSV, Excel, and text files</span> (max 10MB each)
-              <br />
-              <span className="text-orange-600">⚠️ PDF temporarily disabled</span>
+              Supports PDF, CSV, Excel, and text files (max 10MB each)
             </p>
             
             <input

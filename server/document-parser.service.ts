@@ -116,34 +116,88 @@ class DocumentParserService {
   }
 
   /**
-   * Parse PDF document - simplified approach
+   * Parse PDF document
    */
   private async parsePDF(filePath: string, fileName: string): Promise<ParseResult> {
     try {
-      // For now, provide clear instructions for alternative formats
-      // This avoids the pdf-parse library issues while still being helpful
-      return {
-        success: false,
-        errors: ['PDF parsing temporarily disabled due to technical issues'],
-        fileName,
-        parsedCount: 0,
-        warnings: [
-          'Please use one of these working alternatives:',
-          '1. Open your PDF and copy/paste the text into a .txt file',
-          '2. Export/save your PDF as a CSV file with columns: Lender, Property Address, Current Balance, Monthly Payment, Interest Rate',
-          '3. Use the CSV template download and fill in your data manually',
-          '4. Convert your PDF to Excel format (.xlsx) with the same column structure'
-        ]
-      };
+      // Read file buffer
+      const dataBuffer = await fs.readFile(filePath);
+      
+      // Try to extract text from PDF
+      let textContent = '';
+      
+      try {
+        // Import pdf-parse and handle it properly
+        const pdfParseModule = await import('pdf-parse');
+        const pdfParse = pdfParseModule.default;
+        
+        // Extract text from PDF
+        const pdfData = await pdfParse(dataBuffer);
+        textContent = pdfData.text;
+        
+        if (!textContent || textContent.trim().length === 0) {
+          return {
+            success: false,
+            errors: ['PDF appears to be empty or contains only images'],
+            fileName,
+            parsedCount: 0,
+            warnings: [
+              'This PDF may be image-based or encrypted',
+              'Try using a text-based PDF or copy/paste the text into a .txt file'
+            ]
+          };
+        }
+        
+        // Parse the extracted text content
+        return await this.parseTextContent(textContent, fileName);
+        
+      } catch (pdfError) {
+        // If pdf-parse fails, try basic text extraction from buffer
+        const bufferText = dataBuffer.toString('utf8');
+        
+        // Look for readable text patterns in the buffer
+        const textPatterns = [
+          /BT\s+([^ET]*)\s+ET/g,  // PDF text objects
+          /Tj\s*\((.*?)\)/g,       // Text show operators
+          /\((.*?)\)\s*Tj/g,       // Text in parentheses
+          /\$[\d,]+\.?\d*/g,       // Dollar amounts
+          /\d+\.?\d*%/g,           // Percentages
+          /\d{1,2}\/\d{1,2}\/\d{2,4}/g // Dates
+        ];
+        
+        let extractedText = '';
+        for (const pattern of textPatterns) {
+          const matches = bufferText.match(pattern);
+          if (matches) {
+            extractedText += matches.join(' ') + '\n';
+          }
+        }
+        
+        if (extractedText.trim().length > 0) {
+          return await this.parseTextContent(extractedText, fileName);
+        }
+        
+        return {
+          success: false,
+          errors: [`PDF text extraction failed: ${pdfError.message}`],
+          fileName,
+          parsedCount: 0,
+          warnings: [
+            'This PDF may be encrypted, password-protected, or image-based',
+            'Try: 1) Copy text from PDF and save as .txt file, 2) Use CSV/Excel format instead'
+          ]
+        };
+      }
+      
     } catch (error) {
       return {
         success: false,
-        errors: [`Error processing PDF: ${error.message}`],
+        errors: [`PDF processing error: ${error.message}`],
         fileName,
         parsedCount: 0,
         warnings: [
-          'Please use CSV, Excel, or text format instead',
-          'Download templates from the upload area for proper format'
+          'PDF file may be corrupted or in an unsupported format',
+          'Alternative: Convert to CSV or text format'
         ]
       };
     }

@@ -1,0 +1,15 @@
+WELLS FARGO MORTGAGE STATEMENT
+Statement Date: January 15, 2025
+Property Address: 1 Harmony St, Hartford, CT 06106
+Loan Number: WF123456789
+
+ACCOUNT SUMMARY
+Current Balance: $245,000.00
+Monthly Payment: $1,200.00
+Interest Rate: 4.5%
+Next Payment Due: February 15, 2025
+
+PAYMENT BREAKDOWN
+Principal: $800.00
+Interest: $400.00
+Total Payment: $1,200.00
