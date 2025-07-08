@@ -26,54 +26,24 @@ import apiService from '../services/api';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { Star, StarOff } from 'lucide-react';
 import { AddressComponents } from '../services/googlePlaces';
+import { useCalculations } from '@/contexts/CalculationsContext';
 
-// Utility functions
-const formatCurrency = (amount: number | string) => {
-  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  if (isNaN(numAmount)) return '$0';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(numAmount);
-};
-
-const formatPercentage = (value: number | string) => {
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(numValue)) return '0.0%';
-  return `${numValue.toFixed(1)}%`;
-};
-
-// Calculate property metrics using Deal Analyzer data
-const calculatePropertyMetrics = (property: Property) => {
-  try {
-    const dealAnalyzerData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : null;
+// Helper function for loan calculations
+const calculateLoanPayment = (amount: number, interestRate: number, termYears: number, paymentType: string) => {
+  if (amount <= 0 || interestRate <= 0) return 0;
+  
+  const monthlyRate = interestRate / 12;
+  
+  if (paymentType === 'interest-only') {
+    return amount * monthlyRate;
+  } else {
+    // Full amortization
+    const numPayments = termYears * 12;
+    if (numPayments <= 0) return 0;
     
-    if (!dealAnalyzerData) {
-      return null;
-    }
-
-    // Calculate gross rental income from rent roll
-    const grossRentMonthly = dealAnalyzerData.rentRoll?.reduce((sum: number, unit: any) => {
-      return sum + (unit.proFormaRent || unit.currentRent || 0);
-    }, 0) || 0;
-
-    // Calculate total expenses
-    const expenses = dealAnalyzerData.expenses || {};
-    const totalExpenses = Object.values(expenses).reduce((sum: number, val: any) => {
-      const expense = typeof val === 'object' ? val.amount || 0 : val || 0;
-      return sum + expense;
-    }, 0);
-
-    // Calculate vacancy
-    const assumptions = dealAnalyzerData.assumptions || {};
-    const vacancyRate = assumptions.vacancyRate || 0.05;
-    const vacancy = grossRentMonthly * vacancyRate;
-
-    // Calculate NOI
-    const netRevenue = grossRentMonthly - vacancy;
-    const noi = netRevenue - totalExpenses;
+    return amount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+  }
+};
 
     // Get active loan using the same method as financing tab
     const getPropertyLoanData = () => {

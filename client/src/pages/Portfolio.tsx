@@ -4,9 +4,11 @@ import MetricsCard from '../components/MetricsCard';
 import { Building, DollarSign, TrendingUp, Home, Award, FileText, Wrench, Calculator, ShoppingCart, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Property } from '@shared/schema';
+import { useCalculations } from '@/contexts/CalculationsContext';
 
 const Portfolio = () => {
   const [showKPIModal, setShowKPIModal] = useState<Property | null>(null);
+  const { calculatePropertyKPIs, calculatePortfolioMetrics, formatCurrency, formatPercentage } = useCalculations();
 
   // Fetch properties from public endpoint
   const { data: propertiesResponse, isLoading, error } = useQuery({
@@ -25,181 +27,7 @@ const Portfolio = () => {
     return [];
   })();
 
-  // Calculate property KPIs using centralized calculation logic
-  const calculatePropertyKPIs = (property: Property) => {
-    if (!property.dealAnalyzerData) {
-      // Return basic metrics from property fields if no deal data (matching Admin dashboard exactly)
-      const acquisitionPrice = parseFloat(property.acquisitionPrice || '0');
-      const totalRehab = parseFloat(property.rehabCosts || '0');
-      const allInCost = acquisitionPrice + totalRehab;
-      const totalInvestedCapital = parseFloat(property.initialCapitalRequired || '0');
-      const arv = parseFloat(property.arvAtTimePurchased || '0');
-      const cashCollected = parseFloat(property.totalProfits || '0');
-      const capitalRequired = totalInvestedCapital; // Use same value for simple case
-      const equityMultiple = capitalRequired > 0 ? (arv - allInCost + cashCollected) / capitalRequired : 0;
-      
-      return {
-        grossRent: 0,
-        effectiveGrossIncome: 0,
-        monthlyExpenses: 0,
-        monthlyNOI: 0,
-        annualNOI: 0,
-        monthlyDebtService: 0,
-        monthlyCashFlow: parseFloat(property.cashFlow || '0'),
-        annualCashFlow: parseFloat(property.cashFlow || '0') * 12,
-        acquisitionPrice,
-        totalRehab,
-        allInCost,
-        capitalRequired: totalInvestedCapital,
-        totalInvestedCapital,
-        arv,
-        cashCollected,
-        equityMultiple,
-        cocReturn: property.cashOnCashReturn ? parseFloat(property.cashOnCashReturn) : 0
-      };
-    }
-    
-    try {
-      const dealData = JSON.parse(property.dealAnalyzerData);
-      
-      // Get gross rental income
-      const grossRent = dealData.rentRoll?.reduce((sum: number, unit: any) => {
-        return sum + (parseFloat(unit.proFormaRent || unit.currentRent || '0'));
-      }, 0) || 0;
-      
-      // Calculate vacancy loss
-      const vacancyRate = dealData.assumptions?.vacancyRate || 0.05;
-      const vacancy = grossRent * vacancyRate;
-      const effectiveGrossIncome = grossRent - vacancy;
-      
-      // Calculate monthly operating expenses
-      let monthlyExpenses = 0;
-      if (dealData.expenses) {
-        Object.entries(dealData.expenses).forEach(([key, value]: [string, any]) => {
-          if (value && typeof value === 'object' && 'amount' in value) {
-            const amount = parseFloat(value.amount || '0');
-            const isPercentage = value.isPercentage || false;
-            
-            if (isPercentage) {
-              monthlyExpenses += (effectiveGrossIncome * 12 * (amount / 100)) / 12;
-            } else {
-              monthlyExpenses += amount;
-            }
-          } else {
-            monthlyExpenses += parseFloat(value || '0');
-          }
-        });
-      }
-      
-      // Calculate NOI
-      const monthlyNOI = effectiveGrossIncome - monthlyExpenses;
-      const annualNOI = monthlyNOI * 12;
-      
-      // Get debt service from active loan
-      const activeLoan = dealData.loans?.find((loan: any) => loan.isActive) || dealData.loans?.[0];
-      const monthlyDebtService = activeLoan?.monthlyPayment || 0;
-      
-      // Calculate cash flow
-      const monthlyCashFlow = monthlyNOI - monthlyDebtService;
-      const annualCashFlow = monthlyCashFlow * 12;
-      
-      // Calculate investment metrics
-      const acquisitionPrice = parseFloat(property.acquisitionPrice || '0');
-      
-      // Calculate total rehab from budget
-      let totalRehab = 0;
-      if (dealData.rehabBudget) {
-        Object.values(dealData.rehabBudget).forEach((category: any) => {
-          if (typeof category === 'object') {
-            Object.values(category).forEach((item: any) => {
-              if (typeof item === 'object' && item.cost) {
-                totalRehab += parseFloat(item.cost || '0');
-              }
-            });
-          }
-        });
-      }
-      
-      const allInCost = acquisitionPrice + totalRehab;
-      
-      // Calculate capital required
-      const loanPercentage = dealData.assumptions?.loanPercentage || 0.85;
-      const downPayment = (acquisitionPrice + totalRehab) * (1 - loanPercentage);
-      
-      let closingCosts = 0;
-      if (dealData.closingCosts) {
-        Object.values(dealData.closingCosts).forEach((cost: any) => {
-          closingCosts += parseFloat(cost || '0');
-        });
-      }
-      
-      let holdingCosts = 0;
-      if (dealData.holdingCosts) {
-        Object.values(dealData.holdingCosts).forEach((cost: any) => {
-          holdingCosts += parseFloat(cost || '0');
-        });
-      }
-      
-      const capitalRequired = downPayment + closingCosts + holdingCosts;
-      
-      // Use the same capital required calculation as Asset Management
-      const totalInvested = parseFloat(property.initialCapitalRequired || '0');
-      const finalTotalInvestedCapital = totalInvested > 0 ? totalInvested : capitalRequired;
-      
-      // Calculate ARV and equity metrics using correct formula: (ARV - all in costs + cash collected) / capital required
-      const arv = parseFloat(property.arvAtTimePurchased || '0');
-      const cashCollected = parseFloat(property.totalProfits || '0'); // This represents cash flow collected over time
-      const equityMultiple = finalTotalInvestedCapital > 0 ? (arv - allInCost + cashCollected) / finalTotalInvestedCapital : 0;
-      
-      console.log('Portfolio Equity Multiple Calculation for', property.address, {
-        arv,
-        allInCost,
-        cashCollected,
-        finalTotalInvestedCapital,
-        equityMultiple,
-        calculation: `(${arv} - ${allInCost} + ${cashCollected}) / ${finalTotalInvestedCapital} = ${equityMultiple}`
-      });
-      
-      // Calculate cash-on-cash return
-      const cocReturn = capitalRequired > 0 ? (annualCashFlow / capitalRequired) * 100 : 0;
-      
-      return {
-        grossRent,
-        effectiveGrossIncome,
-        monthlyExpenses,
-        monthlyNOI,
-        annualNOI,
-        monthlyDebtService,
-        monthlyCashFlow,
-        annualCashFlow,
-        acquisitionPrice,
-        totalRehab,
-        allInCost,
-        capitalRequired,
-        totalInvestedCapital: finalTotalInvestedCapital,
-        arv,
-        cashCollected,
-        equityMultiple,
-        cocReturn
-      };
-    } catch (error) {
-      console.error('Error calculating KPIs for', property.address, error);
-      return null;
-    }
-  };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatPercentage = (value: number) => {
-    return `${value.toFixed(1)}%`;
-  };
 
   // Function to get property image
   const getPropertyImage = (address: string) => {
@@ -415,69 +243,33 @@ const Portfolio = () => {
   const currentProperties = portfolioProperties.filter(p => p.status === 'Currently Own');
   const fallbackSoldProperties = portfolioProperties.filter(p => p.status === 'Sold');
 
-  // Calculate portfolio aggregate metrics dynamically from properties
-  const calculatePortfolioMetrics = () => {
-    // Total Portfolio Value - sum of ARVs for all properties
-    const totalPortfolioValue = properties.reduce((sum: number, property: Property) => {
-      const arv = parseFloat(property.arvAtTimePurchased || '0');
-      return sum + arv;
-    }, 0);
+  // Calculate portfolio metrics using centralized service
+  const portfolioMetricsData = calculatePortfolioMetrics(properties);
+  
+  // Calculate additional metrics for display
+  const soldProperties = properties.filter((p: Property) => p.status === 'Sold');
+  let totalAnnualizedReturn = 0;
+  let propertiesWithReturn = 0;
 
-    // Total Units - sum of all apartments
-    const totalUnits = properties.reduce((sum: number, property: Property) => {
-      return sum + (property.apartments || 0);
-    }, 0);
-
-    // Total Equity Created - sum of (ARV - acquisition price - rehab costs) for all properties
-    const totalEquityCreated = properties.reduce((sum: number, property: Property) => {
-      const arv = parseFloat(property.arvAtTimePurchased || '0');
-      const acquisition = parseFloat(property.acquisitionPrice || '0');
-      const rehab = parseFloat(property.rehabCosts || '0');
-      const equity = arv - acquisition - rehab;
-      return sum + (equity > 0 ? equity : 0);
-    }, 0);
-
-    // Average Cash-on-Cash Return
-    let totalCoCReturn = 0;
-    let propertiesWithCoC = 0;
-    
-    properties.forEach((property: Property) => {
-      const kpis = calculatePropertyKPIs(property);
-      if (kpis && kpis.cocReturn > 0) {
-        totalCoCReturn += kpis.cocReturn;
-        propertiesWithCoC++;
+  soldProperties.forEach((property: Property) => {
+    if (property.annualizedReturn) {
+      const annReturn = parseFloat(property.annualizedReturn || '0');
+      if (annReturn > 0) {
+        totalAnnualizedReturn += annReturn;
+        propertiesWithReturn++;
       }
-    });
-    
-    const avgCoCReturn = propertiesWithCoC > 0 ? totalCoCReturn / propertiesWithCoC : 0;
+    }
+  });
 
-    // Average Annualized Return - for sold properties
-    const soldProperties = properties.filter((p: Property) => p.status === 'Sold');
-    let totalAnnualizedReturn = 0;
-    let propertiesWithReturn = 0;
+  const avgAnnualizedReturn = propertiesWithReturn > 0 ? totalAnnualizedReturn / propertiesWithReturn : 0;
 
-    soldProperties.forEach((property: Property) => {
-      if (property.annualizedReturn) {
-        const annReturn = parseFloat(property.annualizedReturn || '0');
-        if (annReturn > 0) {
-          totalAnnualizedReturn += annReturn;
-          propertiesWithReturn++;
-        }
-      }
-    });
-
-    const avgAnnualizedReturn = propertiesWithReturn > 0 ? totalAnnualizedReturn / propertiesWithReturn : 0;
-
-    return {
-      totalPortfolioValue,
-      totalUnits,
-      totalEquityCreated,
-      avgCoCReturn,
-      avgAnnualizedReturn
-    };
+  const metrics = {
+    totalPortfolioValue: portfolioMetricsData.totalAUM,
+    totalUnits: portfolioMetricsData.totalUnits,
+    totalEquityCreated: portfolioMetricsData.totalEquity,
+    avgCoCReturn: portfolioMetricsData.avgCashOnCashReturn,
+    avgAnnualizedReturn
   };
-
-  const metrics = calculatePortfolioMetrics();
 
   const portfolioMetrics = [
     { 

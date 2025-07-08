@@ -1,0 +1,94 @@
+Objective: Create a unified calculation system that eliminates inconsistencies between Portfolio.tsx, Asset Management, Entity Dashboard, and Deal Analyzer. Replace multiple calculation approaches with a single source of truth.
+
+Key Issues to Address:
+
+Multiple Calculation Systems:
+
+Portfolio.tsx has inline KPI calculations
+Asset Management uses different formulas
+Entity Dashboard aggregates incorrectly
+Deal Analyzer uses separate logic
+Inconsistent Equity Multiple Calculations:
+
+Portfolio shows: (arv - allInCost + cashCollected) / capitalRequired
+Should be standardized across all components
+Data Source Conflicts:
+
+Some components use property.dealAnalyzerData JSON
+Others use individual property fields
+Server has both KPI service and calculation service
+Implementation Requirements:
+
+1. Create Centralized Calculation Service (client/src/services/calculations.ts):
+
+export interface PropertyKPIs {
+  // Revenue metrics
+  grossRentalIncome: number;
+  effectiveGrossIncome: number;
+  netOperatingIncome: number;
+  
+  // Investment metrics
+  capitalRequired: number;
+  allInCost: number;
+  arv: number;
+  equityMultiple: number;
+  cashOnCashReturn: number;
+  
+  // Cash flow metrics
+  monthlyCashFlow: number;
+  annualCashFlow: number;
+  monthlyDebtService: number;
+  
+  // Performance ratios
+  dscr: number;
+  capRate: number;
+  breakEvenOccupancy: number;
+}
+export interface PortfolioMetrics {
+  totalAUM: number;
+  totalUnits: number;
+  totalEquity: number;
+  avgEquityMultiple: number;
+  totalCashFlow: number;
+}
+2. Standardize Calculation Methods:
+
+Use consistent equity multiple formula: (currentEquityValue) / (totalInvestedCapital)
+Standardize cash-on-cash return: (annualCashFlow) / (actualEquityInvested)
+Unified ARV calculation: NOI / marketCapRate
+3. Update All Components to Use Centralized Service:
+
+Portfolio.tsx: Replace calculatePropertyKPIs with centralized service
+Asset Management: Remove inline calculations, use service
+Entity Dashboard: Use aggregated metrics from service
+Deal Analyzer: Maintain detailed calculations but sync with service
+4. Database Integration:
+
+Utilize existing server/calculation.service.ts for server-side calculations
+Ensure client-side service matches server-side formulas
+Use server/kpi.service.ts for Deal Analyzer specific calculations
+5. Error Prevention:
+
+Add validation for negative/zero values
+Handle missing data gracefully
+Consistent number formatting across all displays
+6. State Management:
+
+Create React context for portfolio-wide calculations
+Implement caching for expensive calculations
+Add real-time updates when property data changes
+Specific Files to Create/Update:
+
+client/src/services/calculations.ts - Main calculation service
+client/src/contexts/CalculationsContext.tsx - React context
+Update client/src/pages/Portfolio.tsx - Remove inline calculations
+Update client/src/pages/AssetManagement.tsx - Use centralized service
+Update client/src/pages/EntityDashboard.tsx - Use aggregated metrics
+Ensure server/calculation.service.ts and server/kpi.service.ts are aligned
+Testing Requirements:
+
+Verify all KPIs match across Portfolio, Asset Management, and Entity Dashboard
+Test edge cases (negative NOI, zero equity, etc.)
+Ensure performance with multiple properties
+Validate against existing property data
+This will eliminate calculation inconsistencies and provide a single source of truth for all financial metrics across your application.

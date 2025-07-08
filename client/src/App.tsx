@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { CalculationsProvider } from './contexts/CalculationsContext';
 import Navigation from './components/Navigation';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -38,33 +39,35 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="min-h-screen bg-white flex flex-col">
-          <Navigation />
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/portfolio" element={<Portfolio />} />
-              <Route path="/portfolio-cards" element={<PortfolioCards />} />
-              <Route path="/deals" element={<Portfolio />} /> {/* Redirect old URL */}
-              <Route path="/founder" element={<Founder />} />
-              <Route path="/vision" element={<Vision />} />
-              <Route path="/goals" element={<Vision />} /> {/* Redirect old URL */}
-              <Route path="/investor" element={<Investor />} />
-              <Route path="/investor-portal" element={<InvestorPortal />} />
-              <Route path="/admin-login" element={<AdminLogin />} />
-              <Route path="/admin-dashboard" element={<AdminDashboard />} />
-              <Route path="/account-setup" element={<AccountSetup />} />
-              <Route path="/deals" element={<DealsList />} />
-              <Route path="/deal-analysis/:id" element={<DealAnalysis />} />
-              <Route path="/deal-demo" element={<DealAnalyzer />} />
-              <Route path="/demo-deal" element={<DealAnalyzer />} />
-              <Route path="/demodeal" element={<DealAnalyzer />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      </Router>
+      <CalculationsProvider>
+        <Router>
+          <div className="min-h-screen bg-white flex flex-col">
+            <Navigation />
+            <main className="flex-grow">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/portfolio" element={<Portfolio />} />
+                <Route path="/portfolio-cards" element={<PortfolioCards />} />
+                <Route path="/deals" element={<Portfolio />} /> {/* Redirect old URL */}
+                <Route path="/founder" element={<Founder />} />
+                <Route path="/vision" element={<Vision />} />
+                <Route path="/goals" element={<Vision />} /> {/* Redirect old URL */}
+                <Route path="/investor" element={<Investor />} />
+                <Route path="/investor-portal" element={<InvestorPortal />} />
+                <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/admin-dashboard" element={<AdminDashboard />} />
+                <Route path="/account-setup" element={<AccountSetup />} />
+                <Route path="/deals" element={<DealsList />} />
+                <Route path="/deal-analysis/:id" element={<DealAnalysis />} />
+                <Route path="/deal-demo" element={<DealAnalyzer />} />
+                <Route path="/demo-deal" element={<DealAnalyzer />} />
+                <Route path="/demodeal" element={<DealAnalyzer />} />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
+        </Router>
+      </CalculationsProvider>
     </QueryClientProvider>
   );
 }
