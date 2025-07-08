@@ -34,7 +34,7 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<string>('auto');
   const [selectedModel, setSelectedModel] = useState<string>(model);
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string>(propertyId?.toString() || '');
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>(propertyId?.toString() || 'none');
   const [autoApply, setAutoApply] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -128,7 +128,9 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
       const formData = new FormData();
       formData.append('document', selectedFile);
       
-      if (selectedPropertyId && selectedPropertyId !== '') formData.append('propertyId', selectedPropertyId);
+      if (selectedPropertyId && selectedPropertyId !== 'none' && selectedPropertyId !== 'loading' && selectedPropertyId !== 'error') {
+        formData.append('propertyId', selectedPropertyId);
+      }
       if (entityId) formData.append('entityId', entityId.toString());
       if (documentType && documentType !== 'auto') formData.append('documentType', documentType);
       formData.append('model', selectedModel);
@@ -321,12 +323,12 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
                   <SelectValue placeholder="Select property" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No property selected</SelectItem>
+                  <SelectItem value="none">No property selected</SelectItem>
                   {propertiesLoading && (
-                    <SelectItem value="" disabled>Loading properties...</SelectItem>
+                    <SelectItem value="loading" disabled>Loading properties...</SelectItem>
                   )}
                   {propertiesError && (
-                    <SelectItem value="" disabled>Error loading properties</SelectItem>
+                    <SelectItem value="error" disabled>Error loading properties</SelectItem>
                   )}
                   {safeProperties.map((property: any) => (
                     <SelectItem key={property.id} value={property.id.toString()}>
