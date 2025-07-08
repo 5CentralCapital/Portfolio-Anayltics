@@ -24,7 +24,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiService from '../services/api';
 import AddressAutocomplete from '../components/AddressAutocomplete';
-import PropertyModal from '../components/PropertyModal';
+
+import { Star, StarOff } from 'lucide-react';
 import { AddressComponents } from '../services/googlePlaces';
 
 // Utility functions
@@ -518,7 +519,40 @@ const calculateLoanPayment = (amount: number, interestRate: number, termYears: n
 
 export default function AssetManagement() {
   const queryClient = useQueryClient();
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  // Feature/unfeature property mutation
+  const featureMutation = useMutation({
+    mutationFn: async ({ id, isFeatured }: { id: number; isFeatured: boolean }) => {
+      const response = await fetch(`/api/properties/${id}/featured`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isFeatured }),
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to update property');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/properties/featured'] });
+    }
+  });
+
+  // Delete property mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/properties/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to delete property');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/properties/featured'] });
+      setShowPropertyDetailModal(null);
+    }
+  });
   const [rehabLineItems, setRehabLineItems] = useState<Record<number, RehabLineItem[]>>({});
   const [showRehabModal, setShowRehabModal] = useState<Property | null>(null);
   const [showPropertyDetailModal, setShowPropertyDetailModal] = useState<Property | null>(null);
@@ -829,8 +863,10 @@ export default function AssetManagement() {
       }
     }
     
-    // Open PropertyModal for feature/delete management  
-    setSelectedProperty(property);
+    // Show comprehensive property detail modal with all Deal Analyzer tabs
+    setShowPropertyDetailModal(property);
+    setEditingModalProperty({ ...property });
+    setPropertyDetailTab('overview');
   };
 
   const savePropertyChanges = () => {
@@ -868,9 +904,7 @@ export default function AssetManagement() {
     }
   };
 
-  const closePropertyModal = () => {
-    setSelectedProperty(null);
-  };
+
 
   const closeDetailModal = () => {
     setShowPropertyDetailModal(null);
@@ -1389,19 +1423,67 @@ export default function AssetManagement() {
       </div>
 
       {/* Property Financial Breakdown Modal */}
-      {selectedProperty && (
+      {showPropertyDetailModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Property Financial Analysis - {selectedProperty.address}
+                Property Financial Analysis - {showPropertyDetailModal?.address}
               </h2>
-              <button
-                onClick={closePropertyModal}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-              >
-                <X className="h-6 w-6" />
-              </button>
+              <div className="flex items-center space-x-2">
+                {/* Feature Toggle Button */}
+                <button
+                  onClick={() => {
+                    if (showPropertyDetailModal) {
+                      featureMutation.mutate({ 
+                        id: showPropertyDetailModal.id, 
+                        isFeatured: !showPropertyDetailModal.isFeatured 
+                      });
+                      // Update local state
+                      setShowPropertyDetailModal({
+                        ...showPropertyDetailModal,
+                        isFeatured: !showPropertyDetailModal.isFeatured
+                      });
+                    }
+                  }}
+                  disabled={featureMutation.isPending}
+                  className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-colors text-sm ${
+                    showPropertyDetailModal?.isFeatured
+                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  title={showPropertyDetailModal?.isFeatured ? 'Remove from featured' : 'Add to featured'}
+                >
+                  {showPropertyDetailModal?.isFeatured ? (
+                    <StarOff className="h-4 w-4" />
+                  ) : (
+                    <Star className="h-4 w-4" />
+                  )}
+                  <span>{showPropertyDetailModal?.isFeatured ? 'Unfeature' : 'Feature'}</span>
+                </button>
+
+                {/* Delete Button */}
+                <button
+                  onClick={() => {
+                    if (showPropertyDetailModal && confirm(`Are you sure you want to delete ${showPropertyDetailModal.address}? This action cannot be undone.`)) {
+                      deleteMutation.mutate(showPropertyDetailModal.id);
+                    }
+                  }}
+                  disabled={deleteMutation.isPending}
+                  className="flex items-center space-x-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm"
+                  title="Delete property"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete</span>
+                </button>
+
+                <button
+                  onClick={closeDetailModal}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
             </div>
 
             <div className="grid lg:grid-cols-2 gap-6">
@@ -4093,12 +4175,7 @@ export default function AssetManagement() {
         </div>
       )}
 
-      {/* Property Modal for Feature/Delete Management */}
-      <PropertyModal 
-        property={selectedProperty}
-        isOpen={!!selectedProperty}
-        onClose={() => setSelectedProperty(null)}
-      />
+
     </div>
   );
 }
