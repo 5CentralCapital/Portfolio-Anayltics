@@ -34,10 +34,10 @@ const UnmatchedLoanCard: React.FC<UnmatchedLoanCardProps> = ({ loan, onSave }) =
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch properties for dropdown
+  // Fetch properties for dropdown (public endpoint)
   const { data: propertiesData, isLoading: propertiesLoading, error: propertiesError } = useQuery({
-    queryKey: ['/api/properties'],
-    queryFn: () => apiRequest('/api/properties')
+    queryKey: ['/api/properties/public'],
+    queryFn: () => apiRequest('/api/properties/public')
   });
 
   // Ensure properties is always an array

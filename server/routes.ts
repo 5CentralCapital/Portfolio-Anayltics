@@ -642,6 +642,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all properties for debt matching (public endpoint)
+  app.get("/api/properties/public", async (req: any, res) => {
+    try {
+      // Get all properties for debt matching without authentication
+      const properties = await db.select({
+        id: schema.properties.id,
+        propertyName: schema.properties.propertyName,
+        address: schema.properties.address,
+        city: schema.properties.city,
+        state: schema.properties.state,
+        status: schema.properties.status
+      })
+      .from(schema.properties)
+      .orderBy(schema.properties.propertyName);
+      
+      res.json(properties);
+    } catch (error) {
+      console.error("Public properties error:", error);
+      res.status(500).json({ error: "Failed to load properties" });
+    }
+  });
+
   app.post("/api/properties", authenticateUser, async (req: any, res) => {
     try {
       const propertyData = insertPropertySchema.parse(req.body);
