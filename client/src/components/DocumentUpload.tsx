@@ -178,7 +178,7 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
       if (result.success) {
         toast({
           title: "Document processed successfully",
-          description: `Extracted ${result.documentType} data with ${Math.round(result.confidence * 100)}% confidence.`
+          description: `Extracted ${result.documentType || 'document'} data with ${Math.round(result.confidence * 100)}% confidence.`
         });
 
         // Show manual review for low confidence or if requested
@@ -479,7 +479,7 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="font-medium">Document Type:</span>
-                <span className="ml-2 capitalize">{processingResult.documentType.replace('_', ' ')}</span>
+                <span className="ml-2 capitalize">{processingResult.documentType?.replace('_', ' ') || 'Unknown'}</span>
               </div>
               <div>
                 <span className="font-medium">Confidence:</span>

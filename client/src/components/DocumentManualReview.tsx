@@ -649,14 +649,14 @@ export function DocumentManualReview({ processingResult, onSave, onCancel }: Doc
           Manual Review & Correction
         </CardTitle>
         <CardDescription>
-          Review and edit the extracted {processingResult.documentType} data before applying to your property records.
+          Review and edit the extracted {processingResult.documentType || 'document'} data before applying to your property records.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Document Info */}
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="bg-orange-100 text-orange-800">
-            {processingResult.documentType.replace('_', ' ').toUpperCase()}
+            {processingResult.documentType?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
           </Badge>
           <Badge variant="outline">
             {Math.round(processingResult.confidence * 100)}% Confidence
