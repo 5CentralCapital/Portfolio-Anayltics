@@ -185,20 +185,53 @@ const StatementUpload: React.FC = () => {
     }
   };
 
-  const downloadTemplate = async (type: 'csv' | 'excel') => {
+  const downloadTemplate = (type: 'csv' | 'text') => {
     try {
-      const response = await fetch(`/api/statements/templates/${type}`);
-      const blob = await response.blob();
+      let content = '';
+      let filename = '';
+      let mimeType = '';
+
+      if (type === 'csv') {
+        content = "Lender,Property Address,Current Balance,Monthly Payment,Interest Rate,Loan ID,Statement Date\nWells Fargo,1 Harmony St,245000,1200,4.5%,WF123456789,2025-01-01\nChase,3408 E DR MLK BLVD,189000,980,4.2%,CH987654321,2025-01-01\nQuicken,157 Crystal Ave,156000,850,4.8%,QL555666777,2025-01-01";
+        filename = 'loan_statement_template.csv';
+        mimeType = 'text/csv';
+      } else {
+        content = `WELLS FARGO MORTGAGE STATEMENT
+
+Property Address: 1 Harmony St
+Loan Number: WF123456789
+Statement Date: January 1, 2025
+
+Current Balance: $245,000.00
+Monthly Payment: $1,200.00
+Interest Rate: 4.5%
+Next Payment Due: February 1, 2025
+Next Payment Amount: $1,200.00
+
+Principal Balance: $245,000.00
+Escrow Balance: $2,500.00`;
+        filename = 'loan_statement_template.txt';
+        mimeType = 'text/plain';
+      }
+
+      const blob = new Blob([content], { type: mimeType });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `loan-statement-template.${type === 'excel' ? 'xlsx' : 'csv'}`;
+      a.download = filename;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Template downloaded",
+        description: `Downloaded ${filename} template`,
+      });
     } catch (error) {
       toast({
         title: "Download failed",
-        description: "Could not download template file",
+        description: "Could not download template",
         variant: "destructive"
       });
     }
@@ -313,10 +346,10 @@ const StatementUpload: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => downloadTemplate('excel')}
+                onClick={() => downloadTemplate('text')}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Excel Template
+                Text Template
               </Button>
             </div>
             
