@@ -46,15 +46,23 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
   const { toast } = useToast();
 
   // Fetch properties for dropdown
-  const { data: properties = [] } = useQuery({
+  const { data: properties = [], isLoading: propertiesLoading, error: propertiesError } = useQuery({
     queryKey: ['/api/properties'],
     queryFn: async () => {
-      const response = await fetch('/api/properties');
+      const response = await fetch('/api/properties', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) throw new Error('Failed to fetch properties');
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     }
   });
+
+  // Ensure properties is always an array
+  const safeProperties = Array.isArray(properties) ? properties : [];
 
   // Fetch all available OpenAI models
   useEffect(() => {
@@ -314,7 +322,13 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">No property selected</SelectItem>
-                  {properties.map((property: any) => (
+                  {propertiesLoading && (
+                    <SelectItem value="" disabled>Loading properties...</SelectItem>
+                  )}
+                  {propertiesError && (
+                    <SelectItem value="" disabled>Error loading properties</SelectItem>
+                  )}
+                  {safeProperties.map((property: any) => (
                     <SelectItem key={property.id} value={property.id.toString()}>
                       {property.address} ({property.apartments} units)
                     </SelectItem>
