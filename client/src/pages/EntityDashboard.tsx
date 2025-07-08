@@ -262,7 +262,9 @@ export default function EntityDashboard() {
 
   // Calculate collective metrics for all entities - match Asset Management exactly
   const collectiveMetrics = {
-    totalUnits: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0) : 0,
+    totalUnits: Array.isArray(properties) ? properties
+      .filter((prop: Property) => prop.status !== 'Sold')
+      .reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0) : 0,
 
     // AUM = Total ARV of active properties only (exclude sold)
     totalAUM: Array.isArray(properties) ? properties
@@ -320,25 +322,28 @@ export default function EntityDashboard() {
         return sum + (isNaN(cashFlow) ? 0 : cashFlow);
       }, 0) : 0,
 
-    // Price/Unit = AUM / Total Units
+    // Price/Unit = AUM / Total Units (active properties only)
     pricePerUnit: (() => {
       if (!Array.isArray(properties) || properties.length === 0) return 0;
-      const totalAUM = properties.reduce((sum: number, prop: Property) => {
+      const activeProperties = properties.filter((prop: Property) => prop.status !== 'Sold');
+      const totalAUM = activeProperties.reduce((sum: number, prop: Property) => {
         const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
         return sum + (isNaN(arv) ? 0 : arv);
       }, 0);
-      const totalUnits = properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0);
+      const totalUnits = activeProperties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0);
       return totalUnits > 0 ? totalAUM / totalUnits : 0;
     })(),
 
-    // Average Equity Multiple using calculatePropertyMetrics function
+    // Average Equity Multiple using calculatePropertyMetrics function (active properties only)
     avgEquityMultiple: (() => {
       if (!Array.isArray(properties) || properties.length === 0) return 0;
 
       let totalEquityMultiple = 0;
       let propertiesWithMetrics = 0;
 
-      properties.forEach((prop: Property) => {
+      properties
+        .filter((prop: Property) => prop.status !== 'Sold')
+        .forEach((prop: Property) => {
         const metrics = calculatePropertyKPIs(prop);
         if (metrics && metrics.acquisitionPrice > 0) {
           const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.closingCosts + metrics.holdingCosts;
@@ -357,14 +362,16 @@ export default function EntityDashboard() {
       return propertiesWithMetrics > 0 ? totalEquityMultiple / propertiesWithMetrics : 0;
     })(),
 
-    // Average Cash-on-Cash Return using calculatePropertyMetrics function
+    // Average Cash-on-Cash Return using calculatePropertyMetrics function (active properties only)
     avgCoCReturn: (() => {
       if (!Array.isArray(properties) || properties.length === 0) return 0;
 
       let totalCoCReturn = 0;
       let propertiesWithCoC = 0;
 
-      properties.forEach((prop: Property) => {
+      properties
+        .filter((prop: Property) => prop.status !== 'Sold')
+        .forEach((prop: Property) => {
         const metrics = calculatePropertyKPIs(prop);
         if (metrics && metrics.cashOnCashReturn > 0) {
           totalCoCReturn += metrics.cashOnCashReturn;
@@ -378,11 +385,11 @@ export default function EntityDashboard() {
 
   // Function to calculate metrics for a specific entity - match Asset Management structure
   const calculateEntityMetrics = (entityProperties: Property[]) => {
-    const properties = entityProperties;
+    const properties = entityProperties.filter((prop: Property) => prop.status !== 'Sold');
 
     const totalUnits = Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0) : 0;
 
-    // AUM = Total ARV of all properties in this entity
+    // AUM = Total ARV of active properties in this entity only
     const totalAUM = Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => {
       const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
       return sum + (isNaN(arv) ? 0 : arv);
@@ -392,7 +399,7 @@ export default function EntityDashboard() {
     // Calculate total debt using actual loan data from Deal Analyzer
     let totalDebt = 0;
     properties.forEach((prop: Property) => {
-      if (prop.status === 'Cashflowing' || prop.status === 'Rehabbing') {
+      if (prop.status === 'Cashflowing' || prop.status === 'Rehabbing' || prop.status === 'Under Contract') {
         if (prop.dealAnalyzerData) {
           try {
             const dealData = JSON.parse(prop.dealAnalyzerData);
@@ -416,7 +423,7 @@ export default function EntityDashboard() {
     });
     const totalEquity = totalAUM - totalDebt;
 
-    // Current Monthly Income from cashflowing properties
+    // Current Monthly Income from cashflowing properties (already filtered to exclude sold)
     const currentMonthlyIncome = Array.isArray(properties) ? properties
       .filter((prop: Property) => prop.status === 'Cashflowing')
       .reduce((sum: number, prop: Property) => {
