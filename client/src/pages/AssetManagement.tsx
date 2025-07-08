@@ -947,30 +947,34 @@ export default function AssetManagement() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mt-4">
-            <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mt-4">
+            <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0">
               <div className="text-2xl font-bold text-white">0</div>
               <div className="text-sm text-white/80">Total Units</div>
             </div>
-            <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+            <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0">
               <div className="text-2xl font-bold text-white">$0</div>
-              <div className="text-sm text-white/80">Total AUM</div>
+              <div className="text-sm text-white/80">AUM</div>
             </div>
-            <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
-              <div className="text-2xl font-bold text-white">$0</div>
-              <div className="text-sm text-white/80">Price/Unit</div>
-            </div>
-            <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+            <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0">
               <div className="text-2xl font-bold text-white">$0</div>
               <div className="text-sm text-white/80">Total Equity</div>
             </div>
-            <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+            <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0">
               <div className="text-2xl font-bold text-white">$0</div>
-              <div className="text-sm text-white/80">Monthly Cash Flow</div>
+              <div className="text-sm text-white/80">Monthly Income</div>
+            </div>
+            <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0">
+              <div className="text-2xl font-bold text-white">$0</div>
+              <div className="text-sm text-white/80">Price/Unit</div>
+            </div>
+            <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0">
+              <div className="text-2xl font-bold text-white">0.0x</div>
+              <div className="text-sm text-white/80">Avg Equity Multiple</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-white">0.0%</div>
-              <div className="text-sm text-white/80">Avg CoC Return</div>
+              <div className="text-sm text-white/80">Avg CoC</div>
             </div>
           </div>
         </div>
@@ -987,36 +991,113 @@ export default function AssetManagement() {
   // Calculate metrics with safe operations
   const metrics = {
     totalUnits: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0) : 0,
+    
+    // AUM = Total ARV of all properties owned
     totalAUM: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => {
-      const acquisition = parseFloat((prop.acquisitionPrice || '0').toString().replace(/[^0-9.-]/g, ''));
-      const rehab = parseFloat((prop.rehabCosts || '0').toString().replace(/[^0-9.-]/g, ''));
-      return sum + (isNaN(acquisition) ? 0 : acquisition) + (isNaN(rehab) ? 0 : rehab);
+      const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
+      return sum + (isNaN(arv) ? 0 : arv);
     }, 0) : 0,
-    totalEquity: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => {
-      const profits = parseFloat((prop.totalProfits || '0').toString().replace(/[^0-9.-]/g, ''));
-      return sum + (isNaN(profits) ? 0 : profits);
-    }, 0) : 0,
-    totalCashFlow: Array.isArray(properties) ? properties
+    
+    // Total Equity = AUM - current debt (calculate debt from Deal Analyzer data)
+    totalEquity: (() => {
+      if (!Array.isArray(properties)) return 0;
+      
+      let totalAUM = 0;
+      let totalDebt = 0;
+      
+      properties.forEach((prop: Property) => {
+        const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
+        totalAUM += isNaN(arv) ? 0 : arv;
+        
+        // Calculate current debt from Deal Analyzer data
+        if (prop.dealAnalyzerData) {
+          try {
+            const dealData = JSON.parse(prop.dealAnalyzerData);
+            const loans = dealData?.loans || [];
+            
+            // Find active loan or calculate from assumptions
+            const activeLoan = loans.find((loan: any) => loan.isActive);
+            if (activeLoan) {
+              totalDebt += activeLoan.loanAmount || 0;
+            } else if (dealData?.assumptions) {
+              // Use assumption-based calculation for current debt
+              const loanPercentage = dealData.assumptions.loanPercentage || 0.8;
+              const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+              const rehabCosts = parseFloat(prop.rehabCosts || '0');
+              totalDebt += (purchasePrice + rehabCosts) * loanPercentage;
+            }
+          } catch (e) {
+            // Fallback to basic calculation if parsing fails
+            const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+            totalDebt += purchasePrice * 0.8; // Assume 80% LTV
+          }
+        }
+      });
+      
+      return totalAUM - totalDebt;
+    })(),
+    
+    // Current Monthly Income = Sum of all monthly cash flows from cashflowing properties
+    currentMonthlyIncome: Array.isArray(properties) ? properties
       .filter((prop: Property) => prop.status === 'Cashflowing')
       .reduce((sum: number, prop: Property) => {
         const cashFlow = parseFloat((prop.cashFlow || '0').toString().replace(/[^0-9.-]/g, ''));
         return sum + (isNaN(cashFlow) ? 0 : cashFlow);
       }, 0) : 0,
-    avgCoCReturn: Array.isArray(properties) && properties.length > 0 
-      ? properties.reduce((sum: number, prop: Property) => {
-          const cocReturn = parseFloat((prop.cashOnCashReturn || '0').toString().replace(/[^0-9.-]/g, ''));
-          return sum + (isNaN(cocReturn) ? 0 : cocReturn);
-        }, 0) / properties.length 
-      : 0,
+    
+    // Price/Unit = AUM / Total Units
     pricePerUnit: (() => {
       if (!Array.isArray(properties) || properties.length === 0) return 0;
-      const totalValue = properties.reduce((sum: number, prop: Property) => {
-        const acquisition = parseFloat((prop.acquisitionPrice || '0').toString().replace(/[^0-9.-]/g, ''));
-        const rehab = parseFloat((prop.rehabCosts || '0').toString().replace(/[^0-9.-]/g, ''));
-        return sum + (isNaN(acquisition) ? 0 : acquisition) + (isNaN(rehab) ? 0 : rehab);
+      const totalAUM = properties.reduce((sum: number, prop: Property) => {
+        const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
+        return sum + (isNaN(arv) ? 0 : arv);
       }, 0);
       const totalUnits = properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0);
-      return totalUnits > 0 ? totalValue / totalUnits : 0;
+      return totalUnits > 0 ? totalAUM / totalUnits : 0;
+    })(),
+    
+    // Average Equity Multiple using calculatePropertyMetrics function
+    avgEquityMultiple: (() => {
+      if (!Array.isArray(properties) || properties.length === 0) return 0;
+      
+      let totalEquityMultiple = 0;
+      let propertiesWithMetrics = 0;
+      
+      properties.forEach((prop: Property) => {
+        const metrics = calculatePropertyMetrics(prop);
+        if (metrics && metrics.acquisitionPrice > 0) {
+          const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.closingCosts + metrics.holdingCosts;
+          const arv = parseFloat(prop.arvAtTimePurchased || '0');
+          const cashCollected = parseFloat(prop.totalProfits || '0');
+          const capitalRequired = metrics.totalCashInvested || allInCost * 0.2; // Fallback to 20% down
+          
+          if (capitalRequired > 0) {
+            const equityMultiple = (arv - allInCost + cashCollected) / capitalRequired;
+            totalEquityMultiple += equityMultiple;
+            propertiesWithMetrics++;
+          }
+        }
+      });
+      
+      return propertiesWithMetrics > 0 ? totalEquityMultiple / propertiesWithMetrics : 0;
+    })(),
+    
+    // Average Cash-on-Cash Return using calculatePropertyMetrics function
+    avgCoCReturn: (() => {
+      if (!Array.isArray(properties) || properties.length === 0) return 0;
+      
+      let totalCoCReturn = 0;
+      let propertiesWithCoC = 0;
+      
+      properties.forEach((prop: Property) => {
+        const metrics = calculatePropertyMetrics(prop);
+        if (metrics && metrics.cashOnCashReturn > 0) {
+          totalCoCReturn += metrics.cashOnCashReturn;
+          propertiesWithCoC++;
+        }
+      });
+      
+      return propertiesWithCoC > 0 ? totalCoCReturn / propertiesWithCoC : 0;
     })()
   };
 
@@ -1031,30 +1112,34 @@ export default function AssetManagement() {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mt-4 stagger-children">
-          <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mt-4 stagger-children">
+          <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
             <div className="text-2xl font-bold text-white">{metrics.totalUnits}</div>
             <div className="text-sm text-white/80">Total Units</div>
           </div>
-          <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
+          <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
             <div className="text-2xl font-bold text-white">{formatCurrency(metrics.totalAUM)}</div>
-            <div className="text-sm text-white/80">Total AUM</div>
+            <div className="text-sm text-white/80">AUM</div>
           </div>
-          <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
-            <div className="text-2xl font-bold text-white">{formatCurrency(metrics.pricePerUnit)}</div>
-            <div className="text-sm text-white/80">Price/Unit</div>
-          </div>
-          <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
+          <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
             <div className="text-2xl font-bold text-white">{formatCurrency(metrics.totalEquity)}</div>
             <div className="text-sm text-white/80">Total Equity</div>
           </div>
-          <div className="text-center border-r border-white/20 last:border-r-0 pr-6 last:pr-0">
-            <div className="text-2xl font-bold text-white">{formatCurrency(metrics.totalCashFlow)}</div>
-            <div className="text-sm text-white/80">Monthly Cash Flow</div>
+          <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
+            <div className="text-2xl font-bold text-white">{formatCurrency(metrics.currentMonthlyIncome)}</div>
+            <div className="text-sm text-white/80">Monthly Income</div>
+          </div>
+          <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
+            <div className="text-2xl font-bold text-white">{formatCurrency(metrics.pricePerUnit)}</div>
+            <div className="text-sm text-white/80">Price/Unit</div>
+          </div>
+          <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
+            <div className="text-2xl font-bold text-white">{metrics.avgEquityMultiple.toFixed(1)}x</div>
+            <div className="text-sm text-white/80">Avg Equity Multiple</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-white">{formatPercentage(metrics.avgCoCReturn)}</div>
-            <div className="text-sm text-white/80">Avg CoC Return</div>
+            <div className="text-sm text-white/80">Avg CoC</div>
           </div>
         </div>
       </div>
