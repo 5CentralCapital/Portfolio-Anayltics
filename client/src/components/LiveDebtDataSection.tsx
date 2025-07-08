@@ -266,7 +266,7 @@ const LiveDebtDataSection: React.FC<LiveDebtDataSectionProps> = ({
                 )}
               </div>
 
-              <div className="grid md:grid-cols-4 gap-6">
+              <div className="grid md:grid-cols-5 gap-6">
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Current Balance</p>
@@ -292,11 +292,29 @@ const LiveDebtDataSection: React.FC<LiveDebtDataSectionProps> = ({
                   </div>
                   
                   <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Escrow Balance</p>
+                    <p className="font-medium text-green-600 dark:text-green-400">
+                      {formatCurrency(loan.escrowBalance || 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Lender</p>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {loan.lender || 'Not specified'}
                     </p>
                   </div>
+                  
+                  {loan.pastDueAmount > 0 && (
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Past Due</p>
+                      <p className="font-medium text-red-600 dark:text-red-400">
+                        {formatCurrency(loan.pastDueAmount)}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3">

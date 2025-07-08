@@ -336,14 +336,49 @@ const UnmatchedLoanCard: React.FC<UnmatchedLoanCardProps> = ({ loan, onSave }) =
         </div>
 
         {editedLoan.additionalInfo && (
-          <div className="mt-4">
-            <Label>Original Document Info</Label>
-            <Textarea
-              value={JSON.stringify(editedLoan.additionalInfo, null, 2)}
-              readOnly
-              className="mt-1 text-xs bg-gray-100"
-              rows={3}
-            />
+          <div className="mt-6 col-span-full">
+            <Label className="text-lg font-semibold text-gray-900">Comprehensive Mortgage Statement Details</Label>
+            
+            {/* Payment Information Section */}
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-900 mb-3">Payment Information</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div><span className="font-medium">Monthly Payment:</span> ${editedLoan.monthlyPayment?.toLocaleString() || 'N/A'}</div>
+                <div><span className="font-medium">Interest Rate:</span> {editedLoan.interestRate}%</div>
+                <div><span className="font-medium">Next Payment:</span> {editedLoan.nextPaymentDate || 'N/A'}</div>
+                <div><span className="font-medium">Amount Due:</span> ${editedLoan.nextPaymentAmount?.toLocaleString() || 'N/A'}</div>
+                <div><span className="font-medium">Last Payment:</span> {editedLoan.lastPaymentDate || 'N/A'}</div>
+                <div><span className="font-medium">Last Amount:</span> ${editedLoan.lastPaymentAmount?.toLocaleString() || 'N/A'}</div>
+                <div><span className="font-medium">Past Due:</span> <span className="text-red-600">${editedLoan.additionalInfo?.pastDueAmount?.toLocaleString() || '0'}</span></div>
+                <div><span className="font-medium">Late Fee:</span> ${editedLoan.additionalInfo?.maxLateFee?.toLocaleString() || '0'}</div>
+              </div>
+            </div>
+
+            {/* Account Balances Section */}
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <h4 className="font-semibold text-green-900 mb-3">Account Balances</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div><span className="font-medium">Principal Balance:</span> ${editedLoan.balance?.toLocaleString() || 'N/A'}</div>
+                <div><span className="font-medium">Escrow Balance:</span> <span className="text-green-600">${editedLoan.escrowBalance?.toLocaleString() || '0'}</span></div>
+                <div><span className="font-medium">Unapplied Funds:</span> ${editedLoan.additionalInfo?.unappliedFunds?.toLocaleString() || '0'}</div>
+                <div><span className="font-medium">Deferred Balance:</span> ${editedLoan.additionalInfo?.deferredBalance?.toLocaleString() || '0'}</div>
+                <div><span className="font-medium">Reserve Balance:</span> ${editedLoan.additionalInfo?.replacementReserveBalance?.toLocaleString() || '0'}</div>
+                <div><span className="font-medium">Total Due:</span> ${editedLoan.additionalInfo?.totalAmountDue?.toLocaleString() || 'N/A'}</div>
+              </div>
+            </div>
+
+            {/* Loan Terms Section */}
+            <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <h4 className="font-semibold text-purple-900 mb-3">Loan Terms</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div><span className="font-medium">Remaining Term:</span> {editedLoan.remainingTerm || 'N/A'} months</div>
+                <div><span className="font-medium">Prepayment Penalty:</span> {editedLoan.additionalInfo?.prepaymentPenalty || 'N/A'}</div>
+                <div><span className="font-medium">Original Amount:</span> ${editedLoan.additionalInfo?.originalLoanAmount?.toLocaleString() || 'N/A'}</div>
+                <div><span className="font-medium">Loan Type:</span> {editedLoan.additionalInfo?.loanType || 'N/A'}</div>
+                <div><span className="font-medium">Maturity Date:</span> {editedLoan.additionalInfo?.maturityDate || 'N/A'}</div>
+                <div><span className="font-medium">Late Fee After:</span> {editedLoan.additionalInfo?.lateFeeAfterDate || 'N/A'}</div>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
