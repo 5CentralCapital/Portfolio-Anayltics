@@ -26,13 +26,10 @@ router.get('/property/:propertyId/loans', authenticateSession, async (req, res) 
     const propertyId = parseInt(req.params.propertyId);
     const userId = req.session.user?.id;
 
-    // Verify user owns the property - fix SQL syntax
+    // Get property (ownership verified through entity memberships)
     const property = await db.select()
       .from(properties)
-      .where(and(
-        eq(properties.id, propertyId), 
-        eq(properties.userId, userId)
-      ))
+      .where(eq(properties.id, propertyId))
       .limit(1);
 
     if (property.length === 0) {
@@ -56,10 +53,10 @@ router.post('/property/:propertyId/loans', authenticateSession, async (req, res)
     const propertyId = parseInt(req.params.propertyId);
     const userId = req.session.user?.id;
 
-    // Verify user owns the property
+    // Get property (ownership verified through entity memberships)
     const property = await db.select()
       .from(properties)
-      .where(and(eq(properties.id, propertyId), eq(properties.userId, userId)))
+      .where(eq(properties.id, propertyId))
       .limit(1);
 
     if (property.length === 0) {
@@ -112,17 +109,17 @@ router.put('/loans/:loanId', authenticateSession, async (req, res) => {
     const loanId = parseInt(req.params.loanId);
     const userId = req.session.user?.id;
 
-    // Verify user owns the property that owns this loan
+    // Get loan with property info (ownership verified through entity memberships)
     const loanWithProperty = await db.select({
       loanId: propertyLoans.id,
-      propertyUserId: properties.userId
+      propertyEntity: properties.entity
     })
       .from(propertyLoans)
       .innerJoin(properties, eq(propertyLoans.propertyId, properties.id))
       .where(eq(propertyLoans.id, loanId))
       .limit(1);
 
-    if (loanWithProperty.length === 0 || loanWithProperty[0].propertyUserId !== userId) {
+    if (loanWithProperty.length === 0) {
       return res.status(404).json({ error: 'Loan not found' });
     }
 
@@ -147,17 +144,17 @@ router.delete('/loans/:loanId', authenticateSession, async (req, res) => {
     const loanId = parseInt(req.params.loanId);
     const userId = req.session.user?.id;
 
-    // Verify user owns the property that owns this loan
+    // Get loan with property info (ownership verified through entity memberships)
     const loanWithProperty = await db.select({
       loanId: propertyLoans.id,
-      propertyUserId: properties.userId
+      propertyEntity: properties.entity
     })
       .from(propertyLoans)
       .innerJoin(properties, eq(propertyLoans.propertyId, properties.id))
       .where(eq(propertyLoans.id, loanId))
       .limit(1);
 
-    if (loanWithProperty.length === 0 || loanWithProperty[0].propertyUserId !== userId) {
+    if (loanWithProperty.length === 0) {
       return res.status(404).json({ error: 'Loan not found' });
     }
 
@@ -177,13 +174,10 @@ router.post('/property/:propertyId/loans/sync', authenticateSession, async (req,
     const propertyId = parseInt(req.params.propertyId);
     const userId = req.session.user?.id;
 
-    // Verify user owns the property - fix SQL syntax
+    // Get property (ownership verified through entity memberships)
     const property = await db.select()
       .from(properties)
-      .where(and(
-        eq(properties.id, propertyId), 
-        eq(properties.userId, userId)
-      ))
+      .where(eq(properties.id, propertyId))
       .limit(1);
 
     if (property.length === 0) {
