@@ -346,7 +346,7 @@ export default function EntityDashboard() {
         .forEach((prop: Property) => {
         const metrics = calculatePropertyKPIs(prop);
         if (metrics && metrics.acquisitionPrice > 0) {
-          const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.closingCosts + metrics.holdingCosts;
+          const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.totalClosingCosts + metrics.totalHoldingCosts;
           const arv = parseFloat(prop.arvAtTimePurchased || '0');
           const cashCollected = parseFloat(prop.totalProfits || '0');
           const capitalRequired = metrics.capitalRequired || 0; // Use calculated capital from centralized service
@@ -434,23 +434,15 @@ export default function EntityDashboard() {
     // Price/Unit
     const pricePerUnit = totalUnits > 0 ? totalAUM / totalUnits : 0;
 
-    // Average Equity Multiple
+    // Average Equity Multiple - use centralized calculation service
     let totalEquityMultiple = 0;
     let propertiesWithMetrics = 0;
 
     properties.forEach((prop: Property) => {
       const metrics = calculatePropertyKPIs(prop);
-      if (metrics && metrics.acquisitionPrice > 0) {
-        const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.closingCosts + metrics.holdingCosts;
-        const arv = parseFloat(prop.arvAtTimePurchased || '0');
-        const cashCollected = parseFloat(prop.totalProfits || '0');
-        const capitalRequired = metrics.capitalRequired || 0; // Use calculated capital from centralized service
-
-        if (capitalRequired > 0) {
-          const equityMultiple = (arv - allInCost + cashCollected) / capitalRequired;
-          totalEquityMultiple += equityMultiple;
-          propertiesWithMetrics++;
-        }
+      if (metrics && metrics.equityMultiple !== undefined) {
+        totalEquityMultiple += metrics.equityMultiple;
+        propertiesWithMetrics++;
       }
     });
 
@@ -697,7 +689,7 @@ export default function EntityDashboard() {
           const entityProperties = propertiesByEntity[entityName];
           const entityMetrics = calculateEntityMetrics(entityProperties);
           const entityPricePerUnit = entityMetrics.totalUnits > 0 ? entityMetrics.totalAUM / entityMetrics.totalUnits : 0;
-          const entityEquityMultiple = entityMetrics.totalAUM > 0 ? (entityMetrics.totalAUM + entityMetrics.totalProfits) / entityMetrics.totalAUM : 0;
+          const entityEquityMultiple = entityMetrics.avgEquityMultiple;
 
           return (
             <div key={entityName} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg fade-in card-hover transition-all-smooth">
