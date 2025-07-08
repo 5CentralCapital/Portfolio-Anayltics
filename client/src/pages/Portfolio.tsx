@@ -31,9 +31,21 @@ const Portfolio = () => {
 
 
   // Function to get property image
-  const getPropertyImage = (address: string) => {
+  const getPropertyImage = (address: string, property?: any) => {
     // Clean address for filename matching
     const cleanAddress = address.trim();
+    
+    // First check if property has dynamic image in dealAnalyzerData
+    if (property?.dealAnalyzerData) {
+      try {
+        const dealData = JSON.parse(property.dealAnalyzerData);
+        if (dealData.propertyImage) {
+          return dealData.propertyImage;
+        }
+      } catch (e) {
+        // Continue to fallback
+      }
+    }
     
     // Map of property addresses to their image files
     const imageMap: { [key: string]: string } = {
@@ -355,10 +367,10 @@ const Portfolio = () => {
                   title="Double-click to view financial KPIs"
                 >
                   {/* Property Image */}
-                  {getPropertyImage(property.address) && (
+                  {getPropertyImage(property.address, property) && (
                     <div className="h-48 overflow-hidden">
                       <img 
-                        src={getPropertyImage(property.address)!} 
+                        src={getPropertyImage(property.address, property)!} 
                         alt={property.address}
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -417,10 +429,10 @@ const Portfolio = () => {
                   title="Double-click to view financial KPIs"
                 >
                   {/* Property Image */}
-                  {getPropertyImage(property.address) && (
+                  {getPropertyImage(property.address, property) && (
                     <div className="h-48 overflow-hidden">
                       <img 
-                        src={getPropertyImage(property.address)!} 
+                        src={getPropertyImage(property.address, property)!} 
                         alt={property.address}
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -487,10 +499,10 @@ const Portfolio = () => {
                   title="Double-click to view financial KPIs"
                 >
                   {/* Property Image */}
-                  {getPropertyImage(property.address) && (
+                  {getPropertyImage(property.address, property) && (
                     <div className="h-48 overflow-hidden">
                       <img 
-                        src={getPropertyImage(property.address)!} 
+                        src={getPropertyImage(property.address, property)!} 
                         alt={property.address}
                         className="w-full h-full object-cover"
                         onError={(e) => {
