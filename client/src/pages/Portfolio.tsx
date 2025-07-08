@@ -296,7 +296,7 @@ const Portfolio = () => {
   const metrics = {
     totalPortfolioValue: portfolioMetricsData.totalAUM,
     totalUnits: portfolioMetricsData.totalUnits,
-    totalEquityCreated: portfolioMetricsData.totalEquity,
+    totalEquityCreated: portfolioMetricsData.totalEquityCreated,
     avgEquityMultiple: portfolioMetricsData.avgEquityMultiple,
     avgAnnualizedReturn
   };

@@ -51,6 +51,7 @@ export interface PortfolioMetrics {
   totalAUM: number;
   totalUnits: number;
   totalEquity: number;
+  totalEquityCreated: number;
   avgEquityMultiple: number;
   avgCashOnCashReturn: number;
   totalMonthlyCashFlow: number;
@@ -356,7 +357,17 @@ export class CalculationService {
     // Calculate AUM (total ARV of all active properties)
     const totalAUM = allPropertyKPIs.reduce((sum, kpis) => sum + kpis.arv, 0);
     
-    // Calculate total equity (AUM - total debt)
+    // Calculate total equity created (ARV - all-in costs for properties that required rehab)
+    const totalEquityCreated = allPropertyKPIs.reduce((sum, kpis) => {
+      // Only include properties that had rehab costs (value-add strategy)
+      if (kpis.totalRehab > 0) {
+        const equityCreated = kpis.arv - kpis.allInCost;
+        return sum + Math.max(0, equityCreated); // Don't include negative equity
+      }
+      return sum;
+    }, 0);
+    
+    // Calculate total current equity (AUM - total debt) for other metrics
     const totalDebt = allPropertyKPIs.reduce((sum, kpis) => sum + kpis.loanAmount, 0);
     const totalEquity = totalAUM - totalDebt;
     
@@ -380,6 +391,7 @@ export class CalculationService {
       totalAUM,
       totalUnits,
       totalEquity,
+      totalEquityCreated,
       avgEquityMultiple,
       avgCashOnCashReturn,
       totalMonthlyCashFlow,

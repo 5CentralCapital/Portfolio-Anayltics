@@ -7,6 +7,7 @@ import ValuePropCard from '../components/ValuePropCard';
 import FeaturedDealCard from '../components/FeaturedDealCard';
 import FAQSection from '../components/FAQSection';
 import { useCalculations } from '../contexts/CalculationsContext';
+import { CalculationService } from '../services/calculations';
 
 const Home = () => {
   const { calculatePropertyKPIs, formatCurrency, formatPercentage } = useCalculations();
@@ -28,38 +29,8 @@ const Home = () => {
     return [];
   })();
 
-  // Calculate portfolio metrics using centralized calculation service (exclude sold properties)
-  const activeProperties = properties.filter((property: any) => property.status !== 'Sold');
-  const portfolioMetricsData = activeProperties.reduce((totals, property) => {
-    const kpis = calculatePropertyKPIs(property);
-    return {
-      totalAUM: totals.totalAUM + kpis.arv,
-      totalUnits: totals.totalUnits + parseInt(property.apartments || '0'),
-      totalEquity: totals.totalEquity + kpis.currentEquityValue,
-      avgEquityMultiple: totals.avgEquityMultiple + kpis.equityMultiple,
-      totalMonthlyCashFlow: totals.totalMonthlyCashFlow + kpis.monthlyCashFlow,
-      totalAnnualCashFlow: totals.totalAnnualCashFlow + kpis.annualCashFlow,
-      pricePerUnit: 0, // Will calculate after
-      totalProperties: totals.totalProperties + 1
-    };
-  }, {
-    totalAUM: 0,
-    totalUnits: 0,
-    totalEquity: 0,
-    avgEquityMultiple: 0,
-    totalMonthlyCashFlow: 0,
-    totalAnnualCashFlow: 0,
-    pricePerUnit: 0,
-    totalProperties: 0
-  });
-
-  // Calculate averages and derived metrics
-  portfolioMetricsData.avgEquityMultiple = activeProperties.length > 0 
-    ? portfolioMetricsData.avgEquityMultiple / activeProperties.length 
-    : 0;
-  portfolioMetricsData.pricePerUnit = portfolioMetricsData.totalUnits > 0 
-    ? portfolioMetricsData.totalAUM / portfolioMetricsData.totalUnits 
-    : 0;
+  // Use centralized calculation service for consistency
+  const portfolioMetricsData = CalculationService.calculatePortfolioMetrics(properties);
   
   // Calculate additional metrics for display
   const soldProperties = properties.filter((p: any) => p.status === 'Sold');
@@ -97,7 +68,7 @@ const Home = () => {
     },
     { 
       title: 'Total Equity Created', 
-      value: formatCurrency(portfolioMetricsData.totalEquity), 
+      value: formatCurrency(portfolioMetricsData.totalEquityCreated), 
       icon: TrendingUp, 
       subtitle: 'Value Added Through Strategy',
       trend: '57% of Portfolio Value',
