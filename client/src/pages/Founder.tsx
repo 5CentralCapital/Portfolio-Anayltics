@@ -32,7 +32,7 @@ const Founder = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                 <div className="flex items-center space-x-2 text-gray-600">
                   <Award className="h-4 w-4" />
-                  <span>5+ years of experience in real estate investing</span>
+                  <span>51 units across $5.8M in acquisitions</span>
                 </div>
                 <div className="flex items-center space-x-2 text-gray-600">
                   <MapPin className="h-4 w-4" />
@@ -40,11 +40,11 @@ const Founder = () => {
                 </div>
                 <div className="flex items-center space-x-2 text-gray-600">
                   <Building className="h-4 w-4" />
-                  <span>11 properties transacted</span>
+                  <span>12 properties transacted</span>
                 </div>
                 <div className="flex items-center space-x-2 text-gray-600">
                   <TrendingUp className="h-4 w-4" />
-                  <span>458.8% average cash-on-cash returns</span>
+                  <span>4.9x average equity multiple</span>
                 </div>
               </div>
 
@@ -58,13 +58,13 @@ const Founder = () => {
                 </p>
                 <p>
                   Based in Tampa, Florida, Michael has developed deep expertise in both the Florida 
-                  and Connecticut multifamily markets. His portfolio spans 11 properties across 
+                  and Connecticut multifamily markets. His portfolio spans 12 properties across 
                   two states, demonstrating his ability to identify and execute profitable 
                   investments in diverse market conditions.
                 </p>
                 <p>
                   Michael's approach combines aggressive value creation with strategic financing, 
-                  consistently delivering cash-on-cash returns that far exceed industry standards. 
+                  consistently delivering equity multiples averaging 4.9x that far exceed industry standards. 
                   His focus on building long-term wealth through smart real estate leverage has 
                   positioned 5Central Capital as a leader in multifamily investment strategy.
                 </p>
@@ -84,7 +84,7 @@ const Founder = () => {
               <h3 className="text-lg font-semibold text-primary mb-4">Real Estate Investment</h3>
               <ul className="space-y-2 text-gray-700">
                 <li>• 5+ years of active real estate investing</li>
-                <li>• 11 properties successfully acquired and managed</li>
+                <li>• 12 properties successfully acquired and managed</li>
                 <li>• Expertise in multifamily and boarding house properties</li>
                 <li>• Proven track record in Connecticut and Florida markets</li>
                 <li>• Specialization in value-add renovation strategies</li>
@@ -97,7 +97,7 @@ const Founder = () => {
                 <li>• Cash-out refinancing and leverage optimization</li>
                 <li>• Portfolio management and performance tracking</li>
                 <li>• Market analysis and deal sourcing expertise</li>
-                <li>• Risk assessment and mitigation strategies</li>
+                <li>• 4.9x average equity multiple across all investments</li>
               </ul>
             </div>
           </div>
@@ -144,7 +144,7 @@ const Founder = () => {
             </h3>
             <ul className="space-y-3 text-gray-700">
               <li>• Focus on cash-flowing multifamily properties</li>
-              <li>• Target exceptional returns through value-add strategies</li>
+              <li>• Target exceptional equity multiples through value-add strategies</li>
               <li>• Use strategic financing to maximize leverage</li>
               <li>• Refinance and hold for long-term appreciation</li>
               <li>• Reinvest profits to accelerate portfolio growth</li>
