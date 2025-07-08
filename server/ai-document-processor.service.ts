@@ -664,11 +664,18 @@ export class AIDocumentProcessor {
           prompt = `Extract tax document information. Return JSON with: {"taxYear": "string", "assessedValue": number, "taxAmount": number, "dueDate": "YYYY-MM-DD", "propertyDescription": "string"}`;
           break;
         default:
-          prompt = `Extract key information from this document. Focus on real estate and financial data. Return JSON with any relevant data using these preferred field names when applicable:
-          - For lease-like documents: {"tenantNames": ["array"], "propertyAddress": "string", "monthlyRent": number, "leaseStartDate": "YYYY-MM-DD", "leaseEndDate": "YYYY-MM-DD"}
-          - For mortgage/loan documents: {"lenderName": "string", "currentBalance": number, "monthlyPayment": number, "interestRate": number, "propertyAddress": "string", "loanNumber": "string"}
-          - For company documents: {"entityName": "string", "members": [{"name": "string", "ownershipPercentage": number}]}
-          - For other data: Use descriptive field names. Include dates, amounts, names, addresses, account numbers, etc.`;
+          prompt = `Extract ALL available information from this document comprehensively. Include every piece of data you can identify. Return JSON with descriptive field names for ALL extracted data including:
+          - Names (people, companies, tenants, landlords, agents, etc.)
+          - Addresses (property addresses, mailing addresses, business addresses)
+          - Financial data (amounts, payments, balances, rates, percentages, fees)
+          - Dates (lease dates, statement dates, due dates, effective dates)
+          - Identification numbers (loan numbers, account numbers, case numbers, IDs)
+          - Legal information (terms, conditions, clauses, signatures)
+          - Property details (units, square footage, descriptions, conditions)
+          - Contact information (phone numbers, emails, websites)
+          - Any other relevant data found in the document
+          
+          Extract EVERYTHING - don't limit to specific categories. Use clear, descriptive field names.`;
       }
 
       // Check if it's a Gemini model
@@ -730,17 +737,10 @@ export class AIDocumentProcessor {
   }
 
   /**
-   * Intelligent field mapping to convert extracted data to expected formats
+   * Enhanced data processing to preserve all extracted fields
    */
   private async intelligentFieldMapping(extractedData: any, filePath: string, model: string = 'gpt-4o'): Promise<any> {
     if (!extractedData || typeof extractedData !== 'object') {
-      return extractedData;
-    }
-
-    const dataStr = JSON.stringify(extractedData);
-    
-    // If it already has expected fields, return as-is
-    if (dataStr.includes('tenantNames') || dataStr.includes('lenderName') || dataStr.includes('entityName')) {
       return extractedData;
     }
 
@@ -752,34 +752,40 @@ export class AIDocumentProcessor {
         messages: [
           {
             role: "system",
-            content: `You are a data mapping expert. Convert the extracted data to match expected real estate document field formats:
+            content: `You are a comprehensive data extraction expert. Your job is to extract EVERY piece of information from the document and organize it clearly. 
 
-            LEASE FORMAT: {"tenantNames": ["string"], "propertyAddress": "string", "monthlyRent": number, "leaseStartDate": "YYYY-MM-DD", "leaseEndDate": "YYYY-MM-DD", "securityDeposit": number}
-            
-            MORTGAGE FORMAT: {"lenderName": "string", "currentBalance": number, "monthlyPayment": number, "interestRate": number, "propertyAddress": "string", "loanNumber": "string", "statementDate": "YYYY-MM-DD"}
-            
-            LLC FORMAT: {"entityName": "string", "entityType": "string", "members": [{"name": "string", "ownershipPercentage": number, "role": "string"}], "formationDate": "YYYY-MM-DD"}
-            
-            Map the extracted data to the most appropriate format based on document content. If uncertain, use LEASE format as default.`
+            Extract ALL available data and organize it with descriptive field names. Include:
+            - All names, addresses, dates, amounts, numbers, percentages
+            - All contact information, identification numbers, reference numbers
+            - All terms, conditions, descriptions, specifications
+            - All legal information, signatures, parties involved
+            - All financial data including fees, deposits, payments, balances
+            - All property details, unit information, square footage
+            - Any other information found in the document
+
+            Return comprehensive JSON with ALL extracted data. Use clear, descriptive field names. Don't limit or filter - extract everything.`
           },
           {
             role: "user",
-            content: `Document content preview: ${content.substring(0, 500)}
+            content: `Extract all information from this document comprehensively:
             
-            Extracted data to map: ${JSON.stringify(extractedData)}
+            ${content}
             
-            Return mapped JSON in appropriate format:`
+            Return complete JSON with ALL available data:`
           }
         ],
         response_format: { type: "json_object" },
         temperature: 0.1
       });
 
-      const mappedData = JSON.parse(response.choices[0].message.content || '{}');
-      console.log('Intelligent field mapping result:', mappedData);
-      return mappedData;
+      const enhancedData = JSON.parse(response.choices[0].message.content || '{}');
+      console.log('Enhanced data extraction result:', enhancedData);
+      
+      // Merge original and enhanced data to ensure nothing is lost
+      const combinedData = { ...extractedData, ...enhancedData };
+      return combinedData;
     } catch (error) {
-      console.warn('Field mapping failed, returning original data:', error.message);
+      console.warn('Enhanced extraction failed, returning original data:', error.message);
       return extractedData;
     }
   }

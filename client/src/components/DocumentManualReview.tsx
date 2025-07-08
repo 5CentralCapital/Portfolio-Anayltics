@@ -91,6 +91,78 @@ export function DocumentManualReview({ processingResult, onSave, onCancel }: Doc
   };
 
   const renderDocumentData = () => {
+    // Dynamic rendering for all extracted fields
+    if (!editedData || typeof editedData !== 'object') {
+      return (
+        <div className="p-4 bg-gray-50 rounded">
+          <p className="text-gray-600">No data extracted from document</p>
+        </div>
+      );
+    }
+
+    const renderField = (key: string, value: any) => {
+      // Format field label
+      const label = key
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/^./, str => str.toUpperCase())
+        .trim();
+
+      if (Array.isArray(value)) {
+        return (
+          <div key={key}>
+            <Label htmlFor={key}>{label}</Label>
+            <Input
+              id={key}
+              value={value.join(', ')}
+              onChange={(e) => setEditedData({
+                ...editedData,
+                [key]: e.target.value.split(',').map(item => item.trim())
+              })}
+              placeholder={`Enter ${label.toLowerCase()}`}
+            />
+          </div>
+        );
+      } else if (typeof value === 'object' && value !== null) {
+        return (
+          <div key={key} className="col-span-2">
+            <Label>{label}</Label>
+            <div className="mt-2 p-3 bg-gray-50 rounded border">
+              <pre className="text-sm whitespace-pre-wrap">
+                {JSON.stringify(value, null, 2)}
+              </pre>
+            </div>
+          </div>
+        );
+      } else {
+        return (
+          <div key={key}>
+            <Label htmlFor={key}>{label}</Label>
+            <Input
+              id={key}
+              value={value?.toString() || ''}
+              onChange={(e) => setEditedData({
+                ...editedData,
+                [key]: e.target.value
+              })}
+              placeholder={`Enter ${label.toLowerCase()}`}
+            />
+          </div>
+        );
+      }
+    };
+
+    const fields = Object.entries(editedData);
+    
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          {fields.map(([key, value]) => renderField(key, value))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderLegacyDocumentData = () => {
     const { documentType } = processingResult;
 
     switch (documentType) {
