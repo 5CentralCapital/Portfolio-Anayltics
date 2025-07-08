@@ -141,10 +141,9 @@ export class CalculationService {
         const capitalInvested = parseFloat(property.initialCapitalRequired || '0');
         equityMultiple = capitalInvested > 0 ? totalProfit / capitalInvested : 0;
       } else {
-        // For active properties: (all-in cost + cashflow collected so far) / capital invested
-        const cashflowCollected = parseFloat(property.cashFlow || '0'); // Annual cash flow from property
+        // For active properties: (ARV - all in cost) / capital invested
         const capitalInvested = parseFloat(property.initialCapitalRequired || '0');
-        equityMultiple = capitalInvested > 0 ? (allInCost + cashflowCollected) / capitalInvested : 0;
+        equityMultiple = capitalInvested > 0 ? (arv - allInCost) / capitalInvested : 0;
       }
         
       const cashOnCashReturn = capitalRequired > 0 
