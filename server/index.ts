@@ -4,6 +4,7 @@ import { registerRoutes } from "./routes";
 import propertyLoansRoutes from "./property-loans.routes";
 import aiDocumentRoutes from "./routes/ai-documents";
 import openaiModelsRoutes from "./routes/openai-models";
+import geminiModelsRoutes from "./routes/gemini-models";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
@@ -29,6 +30,9 @@ app.use('/api/ai-documents', aiDocumentRoutes);
 
 // Register OpenAI models routes  
 app.use('/api/openai/models', openaiModelsRoutes);
+
+// Register Gemini models routes
+app.use('/api/gemini/models', geminiModelsRoutes);
 
 app.use((req, res, next) => {
   const start = Date.now();

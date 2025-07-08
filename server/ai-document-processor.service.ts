@@ -4,12 +4,14 @@
  */
 
 import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
 import path from "path";
 import pdfParse from "pdf-parse";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 export interface DocumentClassification {
   type: 'lease' | 'llc_document' | 'mortgage_statement' | 'unknown';
@@ -215,9 +217,21 @@ export class AIDocumentProcessor {
   }
 
   /**
-   * Classify text documents using OpenAI
+   * Classify text documents using AI (OpenAI or Gemini)
    */
   private async classifyTextDocument(filePath: string, model: string = 'gpt-4o'): Promise<DocumentClassification> {
+    // Check if it's a Gemini model
+    if (model.startsWith('gemini-')) {
+      return this.classifyTextDocumentWithGemini(filePath, model);
+    } else {
+      return this.classifyTextDocumentWithOpenAI(filePath, model);
+    }
+  }
+
+  /**
+   * Classify text documents using OpenAI
+   */
+  private async classifyTextDocumentWithOpenAI(filePath: string, model: string = 'gpt-4o'): Promise<DocumentClassification> {
     // Read first 2000 characters for classification
     const content = fs.readFileSync(filePath, 'utf-8').substring(0, 2000);
 
@@ -482,6 +496,68 @@ export class AIDocumentProcessor {
       errors,
       warnings
     };
+  }
+
+  /**
+   * Classify text documents using Gemini
+   */
+  private async classifyTextDocumentWithGemini(filePath: string, model: string = 'gemini-2.5-flash'): Promise<DocumentClassification> {
+    // Read first 2000 characters for classification
+    const content = fs.readFileSync(filePath, 'utf-8').substring(0, 2000);
+
+    const response = await gemini.models.generateContent({
+      model: model,
+      contents: [
+        {
+          role: "user",
+          parts: [{
+            text: `You are a document classifier for real estate property management. Classify documents as one of these types:
+            - lease: Residential/commercial lease agreements, rental agreements, tenant documents
+            - llc_document: LLC operating agreements, articles of organization, membership documents, corporate documents
+            - mortgage_statement: Monthly mortgage/loan statements, lender statements, payment documents
+            - unknown: Cannot determine or other document type
+            
+            Be generous with classification - if a document could reasonably be one of these types, classify it rather than marking as unknown.
+            
+            Analyze this document content and classify it. Content preview:
+            
+            ${content}
+            
+            Respond with JSON format:
+            {
+              "type": "lease|llc_document|mortgage_statement|unknown",
+              "confidence": 0.0-1.0,
+              "subtype": "brief description of document"
+            }`
+          }]
+        }
+      ],
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.1
+      }
+    });
+
+    const content_result = response.text;
+    console.log('Gemini classification response:', content_result);
+    
+    try {
+      const result = JSON.parse(content_result);
+      console.log('Gemini document classification result:', result);
+
+      return {
+        type: result.type || 'unknown',
+        confidence: Math.max(0, Math.min(1, result.confidence || 0)),
+        subtype: result.subtype
+      };
+    } catch (parseError) {
+      console.error('Failed to parse Gemini classification result:', parseError, 'Content:', content_result);
+      return {
+        type: 'unknown',
+        confidence: 0,
+        subtype: 'Failed to parse AI response'
+      };
+    }
   }
 
   /**

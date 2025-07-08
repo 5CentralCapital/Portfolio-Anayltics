@@ -40,6 +40,7 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
   const [uploadProgress, setUploadProgress] = useState(0);
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [availableModels, setAvailableModels] = useState<any[]>([]);
+  const [geminiModels, setGeminiModels] = useState<any[]>([]);
   const [showManualReview, setShowManualReview] = useState(false);
   const [editedData, setEditedData] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,16 +65,24 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
   // Ensure properties is always an array
   const safeProperties = Array.isArray(properties) ? properties : [];
 
-  // Fetch all available OpenAI models
+  // Fetch all available models (OpenAI and Gemini)
   useEffect(() => {
     const fetchModels = async () => {
       try {
-        const response = await fetch('/api/openai/models');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setAvailableModels(data.models);
+        // Fetch OpenAI models
+        const openaiResponse = await fetch('/api/openai/models');
+        if (openaiResponse.ok) {
+          const openaiData = await openaiResponse.json();
+          if (openaiData.success) {
+            setAvailableModels(openaiData.models);
           }
+        }
+
+        // Fetch Gemini models
+        const geminiResponse = await fetch('/api/gemini/models');
+        if (geminiResponse.ok) {
+          const geminiData = await geminiResponse.json();
+          setGeminiModels(geminiData);
         }
       } catch (error) {
         console.error('Failed to fetch models:', error);
@@ -307,11 +316,33 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
                   <SelectValue placeholder="Select AI model" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableModels.map((model) => (
-                    <SelectItem key={model.id} value={model.id}>
-                      {model.displayName}
-                    </SelectItem>
-                  ))}
+                  {/* OpenAI Models */}
+                  {availableModels.length > 0 && (
+                    <>
+                      <SelectItem value="openai-header" disabled className="font-semibold text-xs text-gray-500 uppercase">
+                        OpenAI Models
+                      </SelectItem>
+                      {availableModels.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.displayName}
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                  
+                  {/* Gemini Models */}
+                  {geminiModels.length > 0 && (
+                    <>
+                      <SelectItem value="gemini-header" disabled className="font-semibold text-xs text-gray-500 uppercase mt-2">
+                        Gemini Models
+                      </SelectItem>
+                      {geminiModels.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.name}: {model.description}
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>

@@ -197,13 +197,13 @@ function DocumentManagement() {
             <CardHeader>
               <CardTitle>AI Model Configuration</CardTitle>
               <CardDescription>
-                Choose the OpenAI model for document analysis and data extraction
+                Choose the AI model for document analysis and data extraction (OpenAI or Gemini)
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="text-sm font-medium">OpenAI Model</label>
+                  <label className="text-sm font-medium">AI Model</label>
                   <Select value={selectedModel} onValueChange={setSelectedModel}>
                     <SelectTrigger>
                       <SelectValue />
@@ -213,6 +213,9 @@ function DocumentManagement() {
                       <SelectItem value="gpt-4o-mini">GPT-4o Mini (Faster, Cost-effective)</SelectItem>
                       <SelectItem value="gpt-4-turbo">GPT-4 Turbo (Previous Generation)</SelectItem>
                       <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Budget Option)</SelectItem>
+                      <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (Fast, Multimodal)</SelectItem>
+                      <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro (Highest Accuracy)</SelectItem>
+                      <SelectItem value="gemini-2.0-flash-preview-image-generation">Gemini 2.0 Flash Preview (Latest)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
