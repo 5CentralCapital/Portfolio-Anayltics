@@ -191,6 +191,7 @@ Changelog:
 - June 23, 2025. Replaced Portfolio page with Asset Management property status system - properties now organized by status (Under Contract, Rehabbing, Cashflowing, Sold) with double-click KPI modal functionality displaying comprehensive financial metrics including revenue, expenses, cash flow, and investment summary using real Deal Analyzer data calculations
 - June 23, 2025. Fixed Portfolio page KPI calculations with centralized calculation logic - resolved TypeScript errors, implemented consistent financial metrics across all property displays, added public portfolio endpoint for unauthenticated access, and unified KPI modal display with comprehensive revenue, expenses, cash flow, and investment summary sections using authentic Deal Analyzer data
 - June 23, 2025. Fixed Asset Management KPI bar with corrected calculations and order: Total Units, AUM (total ARV), Total Equity (AUM - current debt), Current Monthly Income, Price/Unit (AUM / units), Avg Equity Multiple, and Avg CoC - updated to 7-column layout with proper debt calculations from Deal Analyzer loan data
+- June 23, 2025. Synchronized Entity Dashboard KPIs to match Asset Management structure exactly - updated both collectiveMetrics and calculateEntityMetrics functions to use identical 7-metric calculation logic (Total Units, AUM, Total Equity, Current Monthly Income, Price/Unit, Avg Equity Multiple, Avg CoC) with proper debt calculations from Deal Analyzer loan data and consistent status filtering for "Cashflowing" properties
 
 ## User Preferences
 

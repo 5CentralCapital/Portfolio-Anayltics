@@ -385,46 +385,213 @@ export default function EntityDashboard() {
     return `${num.toFixed(1)}%`;
   };
 
-  // Calculate collective metrics for all entities
+  // Calculate collective metrics for all entities - match Asset Management exactly
   const collectiveMetrics = {
-    totalProperties: properties.length,
-    totalUnits: properties.reduce((sum: number, prop: Property) => sum + prop.apartments, 0),
-    totalAUM: properties.reduce((sum: number, prop: Property) => {
-      const currentValue = prop.status === 'Currently Own' 
-        ? parseFloat(prop.arvAtTimePurchased || prop.acquisitionPrice)
-        : parseFloat(prop.salePrice || '0');
-      return sum + currentValue;
-    }, 0),
-    totalProfits: properties.reduce((sum: number, prop: Property) => sum + parseFloat(prop.totalProfits), 0),
-    totalCashFlow: properties
-      .filter((prop: Property) => prop.status === 'Currently Own')
-      .reduce((sum: number, prop: Property) => sum + parseFloat(prop.cashFlow), 0),
-    avgCoCReturn: properties.length > 0 
-      ? properties.reduce((sum: number, prop: Property) => sum + parseFloat(prop.cashOnCashReturn), 0) / properties.length 
-      : 0
+    totalUnits: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0) : 0,
+    
+    // AUM = Total ARV of all properties owned
+    totalAUM: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => {
+      const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
+      return sum + (isNaN(arv) ? 0 : arv);
+    }, 0) : 0,
+    
+    // Total Equity = AUM - current debt (calculate debt from Deal Analyzer data)
+    totalEquity: (() => {
+      if (!Array.isArray(properties)) return 0;
+      
+      let totalAUM = 0;
+      let totalDebt = 0;
+      
+      properties.forEach((prop: Property) => {
+        const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
+        totalAUM += isNaN(arv) ? 0 : arv;
+        
+        // Calculate current debt from Deal Analyzer data
+        if (prop.dealAnalyzerData) {
+          try {
+            const dealData = JSON.parse(prop.dealAnalyzerData);
+            const loans = dealData?.loans || [];
+            
+            // Find active loan or calculate from assumptions
+            const activeLoan = loans.find((loan: any) => loan.isActive);
+            if (activeLoan) {
+              totalDebt += activeLoan.loanAmount || 0;
+            } else if (dealData?.assumptions) {
+              // Use assumption-based calculation for current debt
+              const loanPercentage = dealData.assumptions.loanPercentage || 0.8;
+              const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+              const rehabCosts = parseFloat(prop.rehabCosts || '0');
+              totalDebt += (purchasePrice + rehabCosts) * loanPercentage;
+            }
+          } catch (e) {
+            // Fallback to basic calculation if parsing fails
+            const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+            totalDebt += purchasePrice * 0.8; // Assume 80% LTV
+          }
+        }
+      });
+      
+      return totalAUM - totalDebt;
+    })(),
+    
+    // Current Monthly Income = Sum of all monthly cash flows from cashflowing properties
+    currentMonthlyIncome: Array.isArray(properties) ? properties
+      .filter((prop: Property) => prop.status === 'Cashflowing')
+      .reduce((sum: number, prop: Property) => {
+        const cashFlow = parseFloat((prop.cashFlow || '0').toString().replace(/[^0-9.-]/g, ''));
+        return sum + (isNaN(cashFlow) ? 0 : cashFlow);
+      }, 0) : 0,
+    
+    // Price/Unit = AUM / Total Units
+    pricePerUnit: (() => {
+      if (!Array.isArray(properties) || properties.length === 0) return 0;
+      const totalAUM = properties.reduce((sum: number, prop: Property) => {
+        const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
+        return sum + (isNaN(arv) ? 0 : arv);
+      }, 0);
+      const totalUnits = properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0);
+      return totalUnits > 0 ? totalAUM / totalUnits : 0;
+    })(),
+    
+    // Average Equity Multiple using calculatePropertyMetrics function
+    avgEquityMultiple: (() => {
+      if (!Array.isArray(properties) || properties.length === 0) return 0;
+      
+      let totalEquityMultiple = 0;
+      let propertiesWithMetrics = 0;
+      
+      properties.forEach((prop: Property) => {
+        const metrics = calculatePropertyMetrics(prop);
+        if (metrics && metrics.acquisitionPrice > 0) {
+          const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.closingCosts + metrics.holdingCosts;
+          const arv = parseFloat(prop.arvAtTimePurchased || '0');
+          const cashCollected = parseFloat(prop.totalProfits || '0');
+          const capitalRequired = metrics.totalCashInvested || allInCost * 0.2; // Fallback to 20% down
+          
+          if (capitalRequired > 0) {
+            const equityMultiple = (arv - allInCost + cashCollected) / capitalRequired;
+            totalEquityMultiple += equityMultiple;
+            propertiesWithMetrics++;
+          }
+        }
+      });
+      
+      return propertiesWithMetrics > 0 ? totalEquityMultiple / propertiesWithMetrics : 0;
+    })(),
+    
+    // Average Cash-on-Cash Return using calculatePropertyMetrics function
+    avgCoCReturn: (() => {
+      if (!Array.isArray(properties) || properties.length === 0) return 0;
+      
+      let totalCoCReturn = 0;
+      let propertiesWithCoC = 0;
+      
+      properties.forEach((prop: Property) => {
+        const metrics = calculatePropertyMetrics(prop);
+        if (metrics && metrics.cashOnCashReturn > 0) {
+          totalCoCReturn += metrics.cashOnCashReturn;
+          propertiesWithCoC++;
+        }
+      });
+      
+      return propertiesWithCoC > 0 ? totalCoCReturn / propertiesWithCoC : 0;
+    })()
   };
 
-  const pricePerUnit = collectiveMetrics.totalUnits > 0 ? collectiveMetrics.totalAUM / collectiveMetrics.totalUnits : 0;
-  const equityMultiple = collectiveMetrics.totalAUM > 0 ? (collectiveMetrics.totalAUM + collectiveMetrics.totalProfits) / collectiveMetrics.totalAUM : 0;
-
-  // Function to calculate metrics for a specific entity
-  const calculateEntityMetrics = (entityProperties: Property[]) => ({
-    totalProperties: entityProperties.length,
-    totalUnits: entityProperties.reduce((sum: number, prop: Property) => sum + prop.apartments, 0),
-    totalAUM: entityProperties.reduce((sum: number, prop: Property) => {
-      const currentValue = prop.status === 'Currently Own' 
-        ? parseFloat(prop.arvAtTimePurchased || prop.acquisitionPrice)
-        : parseFloat(prop.salePrice || '0');
-      return sum + currentValue;
-    }, 0),
-    totalProfits: entityProperties.reduce((sum: number, prop: Property) => sum + parseFloat(prop.totalProfits), 0),
-    totalCashFlow: entityProperties
-      .filter((prop: Property) => prop.status === 'Currently Own')
-      .reduce((sum: number, prop: Property) => sum + parseFloat(prop.cashFlow), 0),
-    avgCoCReturn: entityProperties.length > 0 
-      ? entityProperties.reduce((sum: number, prop: Property) => sum + parseFloat(prop.cashOnCashReturn), 0) / entityProperties.length 
-      : 0
-  });
+  // Function to calculate metrics for a specific entity - match Asset Management structure
+  const calculateEntityMetrics = (entityProperties: Property[]) => {
+    const properties = entityProperties;
+    
+    const totalUnits = Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0) : 0;
+    
+    // AUM = Total ARV of all properties in this entity
+    const totalAUM = Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => {
+      const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
+      return sum + (isNaN(arv) ? 0 : arv);
+    }, 0) : 0;
+    
+    // Total Equity = AUM - current debt
+    let totalDebt = 0;
+    properties.forEach((prop: Property) => {
+      if (prop.dealAnalyzerData) {
+        try {
+          const dealData = JSON.parse(prop.dealAnalyzerData);
+          const loans = dealData?.loans || [];
+          
+          const activeLoan = loans.find((loan: any) => loan.isActive);
+          if (activeLoan) {
+            totalDebt += activeLoan.loanAmount || 0;
+          } else if (dealData?.assumptions) {
+            const loanPercentage = dealData.assumptions.loanPercentage || 0.8;
+            const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+            const rehabCosts = parseFloat(prop.rehabCosts || '0');
+            totalDebt += (purchasePrice + rehabCosts) * loanPercentage;
+          }
+        } catch (e) {
+          const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+          totalDebt += purchasePrice * 0.8; // Assume 80% LTV
+        }
+      }
+    });
+    const totalEquity = totalAUM - totalDebt;
+    
+    // Current Monthly Income from cashflowing properties
+    const currentMonthlyIncome = Array.isArray(properties) ? properties
+      .filter((prop: Property) => prop.status === 'Cashflowing')
+      .reduce((sum: number, prop: Property) => {
+        const cashFlow = parseFloat((prop.cashFlow || '0').toString().replace(/[^0-9.-]/g, ''));
+        return sum + (isNaN(cashFlow) ? 0 : cashFlow);
+      }, 0) : 0;
+    
+    // Price/Unit
+    const pricePerUnit = totalUnits > 0 ? totalAUM / totalUnits : 0;
+    
+    // Average Equity Multiple
+    let totalEquityMultiple = 0;
+    let propertiesWithMetrics = 0;
+    
+    properties.forEach((prop: Property) => {
+      const metrics = calculatePropertyMetrics(prop);
+      if (metrics && metrics.acquisitionPrice > 0) {
+        const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.closingCosts + metrics.holdingCosts;
+        const arv = parseFloat(prop.arvAtTimePurchased || '0');
+        const cashCollected = parseFloat(prop.totalProfits || '0');
+        const capitalRequired = metrics.totalCashInvested || allInCost * 0.2; // Fallback to 20% down
+        
+        if (capitalRequired > 0) {
+          const equityMultiple = (arv - allInCost + cashCollected) / capitalRequired;
+          totalEquityMultiple += equityMultiple;
+          propertiesWithMetrics++;
+        }
+      }
+    });
+    
+    const avgEquityMultiple = propertiesWithMetrics > 0 ? totalEquityMultiple / propertiesWithMetrics : 0;
+    
+    // Average Cash-on-Cash Return
+    let totalCoCReturn = 0;
+    let propertiesWithCoC = 0;
+    
+    properties.forEach((prop: Property) => {
+      const metrics = calculatePropertyMetrics(prop);
+      if (metrics && metrics.cashOnCashReturn > 0) {
+        totalCoCReturn += metrics.cashOnCashReturn;
+        propertiesWithCoC++;
+      }
+    });
+    
+    const avgCoCReturn = propertiesWithCoC > 0 ? totalCoCReturn / propertiesWithCoC : 0;
+    
+    return {
+      totalUnits,
+      totalAUM,
+      totalEquity,
+      currentMonthlyIncome,
+      pricePerUnit,
+      avgEquityMultiple,
+      avgCoCReturn
+    };
+  };
 
   const addMilestone = () => {
     const newMilestone: Milestone = {
@@ -481,39 +648,45 @@ export default function EntityDashboard() {
     <div className="space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       
 
-      {/* Portfolio KPI Bar - Continuous Gradient Style */}
+      {/* Portfolio KPI Bar - Continuous Gradient Style - Match Asset Management */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 fade-in card-hover" data-tour="kpi-bar">
         <h3 className="text-lg font-semibold mb-4 flex items-center text-gray-900 dark:text-white">
           <Calculator className="h-5 w-5 mr-2 icon-bounce" />
           Portfolio Key Metrics
         </h3>
         <div className="bg-gradient-to-r from-blue-600 via-blue-500 via-purple-500 to-purple-600 rounded-lg p-6 hover-glow transition-all-smooth">
-          <div className="flex justify-between items-center text-white">
-            <div className="text-center flex-1">
-              <div className="text-sm font-medium opacity-90">Total AUM</div>
-              <div className="text-2xl font-bold">{formatCurrency(collectiveMetrics.totalAUM)}</div>
-            </div>
-            <div className="text-center flex-1 border-l border-white/20 pl-4">
-              <div className="text-sm font-medium opacity-90">Price/Unit</div>
-              <div className="text-2xl font-bold">{formatCurrency(pricePerUnit)}</div>
-            </div>
-            <div className="text-center flex-1 border-l border-white/20 pl-4">
+          <div className="grid grid-cols-7 text-white">
+            <div className="text-center">
               <div className="text-sm font-medium opacity-90">Total Units</div>
               <div className="text-2xl font-bold">{collectiveMetrics.totalUnits}</div>
             </div>
-            <div className="text-center flex-1 border-l border-white/20 pl-4">
-              <div className="text-sm font-medium opacity-90">Properties</div>
-              <div className="text-2xl font-bold">{collectiveMetrics.totalProperties}</div>
+            <div className="text-center border-l border-white/20 pl-4">
+              <div className="text-sm font-medium opacity-90">AUM</div>
+              <div className="text-2xl font-bold">{formatCurrency(collectiveMetrics.totalAUM)}</div>
             </div>
-            <div className="text-center flex-1 border-l border-white/20 pl-4">
-              <div className="text-sm font-medium opacity-90">Equity Multiple</div>
-              <div className="text-2xl font-bold">{equityMultiple.toFixed(2)}x</div>
-            </div>
-            <div className="text-center flex-1 border-l border-white/20 pl-4">
-              <div className="text-sm font-medium opacity-90">Monthly Cash Flow</div>
+            <div className="text-center border-l border-white/20 pl-4">
+              <div className="text-sm font-medium opacity-90">Total Equity</div>
               <div className={`text-2xl font-bold ${
-                collectiveMetrics.totalCashFlow > 0 ? "" : "text-red-200"
-              }`}>{formatCurrency(collectiveMetrics.totalCashFlow)}</div>
+                collectiveMetrics.totalEquity >= 0 ? "" : "text-red-200"
+              }`}>{formatCurrency(collectiveMetrics.totalEquity)}</div>
+            </div>
+            <div className="text-center border-l border-white/20 pl-4">
+              <div className="text-sm font-medium opacity-90">Current Monthly Income</div>
+              <div className={`text-2xl font-bold ${
+                collectiveMetrics.currentMonthlyIncome > 0 ? "" : "text-red-200"
+              }`}>{formatCurrency(collectiveMetrics.currentMonthlyIncome)}</div>
+            </div>
+            <div className="text-center border-l border-white/20 pl-4">
+              <div className="text-sm font-medium opacity-90">Price/Unit</div>
+              <div className="text-2xl font-bold">{formatCurrency(collectiveMetrics.pricePerUnit)}</div>
+            </div>
+            <div className="text-center border-l border-white/20 pl-4">
+              <div className="text-sm font-medium opacity-90">Avg Equity Multiple</div>
+              <div className="text-2xl font-bold">{collectiveMetrics.avgEquityMultiple.toFixed(2)}x</div>
+            </div>
+            <div className="text-center border-l border-white/20 pl-4">
+              <div className="text-sm font-medium opacity-90">Avg CoC</div>
+              <div className="text-2xl font-bold">{collectiveMetrics.avgCoCReturn.toFixed(1)}%</div>
             </div>
           </div>
         </div>
