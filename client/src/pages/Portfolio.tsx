@@ -5,6 +5,7 @@ import { Building, DollarSign, TrendingUp, Home, Award, FileText, Wrench, Calcul
 import { useQuery } from '@tanstack/react-query';
 import { Property } from '@shared/schema';
 import { useCalculations } from '@/contexts/CalculationsContext';
+import { CalculationService } from '@/services/calculations';
 
 const Portfolio = () => {
   const [showKPIModal, setShowKPIModal] = useState<Property | null>(null);
