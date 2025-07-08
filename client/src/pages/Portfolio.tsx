@@ -146,18 +146,22 @@ const Portfolio = () => {
       const totalInvested = parseFloat(property.initialCapitalRequired || '0');
       const totalInvestedCapital = totalInvested > 0 ? totalInvested : (acquisitionPrice + totalRehab + closingCosts + holdingCosts);
       
-      // Calculate ARV and equity metrics using correct formula: (ARV - all in costs + cash collected) / capital required
+      // Calculate equity multiple using the same formula as Asset Management: (ARV - all in costs + cash collected) / capital required
       const arv = parseFloat(property.arvAtTimePurchased || '0');
-      const cashCollected = parseFloat(property.totalProfits || '0'); // This represents cash flow collected over time
-      const equityMultiple = capitalRequired > 0 ? (arv - allInCost + cashCollected) / capitalRequired : 0;
+      const cashCollected = parseFloat(property.totalProfits || '0');
+      
+      // Use the same capital required calculation as Asset Management
+      const totalInvestedCapital = totalInvested > 0 ? totalInvested : capitalRequired;
+      const equityMultiple = totalInvestedCapital > 0 ? (arv - allInCost + cashCollected) / totalInvestedCapital : 0;
       
       console.log('Portfolio Equity Multiple Calculation for', property.address, {
         arv,
         allInCost,
         cashCollected,
         capitalRequired,
+        totalInvestedCapital,
         equityMultiple,
-        calculation: `(${arv} - ${allInCost} + ${cashCollected}) / ${capitalRequired} = ${equityMultiple}`
+        calculation: `(${arv} - ${allInCost} + ${cashCollected}) / ${totalInvestedCapital} = ${equityMultiple}`
       });
       
       // Calculate cash-on-cash return
@@ -180,7 +184,8 @@ const Portfolio = () => {
         arv,
         cashCollected,
         equityMultiple,
-        cocReturn
+        cocReturn,
+        totalInvestedCapital
       };
     } catch (error) {
       console.error('Error calculating KPIs for', property.address, error);
@@ -441,15 +446,25 @@ const Portfolio = () => {
     let totalCoCReturn = 0;
     let propertiesWithCoC = 0;
     
+    let totalEquityMultiple = 0;
+    let propertiesWithEquityMultiple = 0;
+
     properties.forEach((property: Property) => {
       const kpis = calculatePropertyKPIs(property);
-      if (kpis && kpis.cocReturn > 0) {
-        totalCoCReturn += kpis.cocReturn;
-        propertiesWithCoC++;
+      if (kpis) {
+        if (kpis.cocReturn > 0) {
+          totalCoCReturn += kpis.cocReturn;
+          propertiesWithCoC++;
+        }
+        if (kpis.equityMultiple > 0) {
+          totalEquityMultiple += kpis.equityMultiple;
+          propertiesWithEquityMultiple++;
+        }
       }
     });
     
     const avgCoCReturn = propertiesWithCoC > 0 ? totalCoCReturn / propertiesWithCoC : 0;
+    const avgEquityMultiple = propertiesWithEquityMultiple > 0 ? totalEquityMultiple / propertiesWithEquityMultiple : 0;
 
     // Average Annualized Return - for sold properties
     const soldProperties = properties.filter((p: Property) => p.status === 'Sold');
@@ -473,7 +488,8 @@ const Portfolio = () => {
       totalUnits,
       totalEquityCreated,
       avgCoCReturn,
-      avgAnnualizedReturn
+      avgAnnualizedReturn,
+      avgEquityMultiple
     };
   };
 
@@ -509,6 +525,12 @@ const Portfolio = () => {
       value: formatPercentage(metrics.avgAnnualizedReturn), 
       icon: Home, 
       subtitle: 'Including Appreciation' 
+    },
+    { 
+      title: 'Avg Equity Multiple', 
+      value: `${metrics.avgEquityMultiple.toFixed(2)}x`, 
+      icon: TrendingUp, 
+      subtitle: 'Value Creation Multiple' 
     }
   ];
 
