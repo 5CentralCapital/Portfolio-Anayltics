@@ -75,11 +75,19 @@ router.post('/upload', upload.single('statement'), async (req, res) => {
     }
 
     if (!parseResult.success) {
-      return res.status(400).json({
+      return res.status(200).json({
         success: false,
-        message: 'Failed to parse document',
+        message: 'Document could not be processed',
         errors: parseResult.errors,
-        fileName
+        warnings: parseResult.warnings,
+        results: [{
+          fileName: fileName,
+          parsed: 0,
+          matched: 0,
+          unmatched: 0,
+          updated: 0,
+          errors: parseResult.errors || ['Parse failed']
+        }]
       });
     }
 

@@ -162,10 +162,10 @@ const StatementUpload: React.FC = () => {
           title: "Upload successful",
           description: `Processed ${selectedFiles.length} file(s) and updated loan data`,
         });
-      } else if (results?.errors?.some(err => err.includes('PDF parsing failed'))) {
+      } else if (results?.errors?.some(err => err.includes('PDF parsing temporarily disabled'))) {
         toast({
-          title: "PDF Processing Issue",
-          description: "PDF text extraction failed. Please ensure your PDF contains selectable text (not scanned images).",
+          title: "PDF Format Not Supported",
+          description: "Please use CSV, Excel, or text format instead. Download templates from the upload area.",
           variant: "default"
         });
       } else {
