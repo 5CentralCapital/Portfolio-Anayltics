@@ -36,7 +36,7 @@ const Home = () => {
       totalAUM: totals.totalAUM + kpis.arv,
       totalUnits: totals.totalUnits + parseInt(property.apartments || '0'),
       totalEquity: totals.totalEquity + kpis.currentEquityValue,
-      avgCashOnCashReturn: totals.avgCashOnCashReturn + kpis.cashOnCashReturn,
+      avgEquityMultiple: totals.avgEquityMultiple + kpis.equityMultiple,
       totalMonthlyCashFlow: totals.totalMonthlyCashFlow + kpis.monthlyCashFlow,
       totalAnnualCashFlow: totals.totalAnnualCashFlow + kpis.annualCashFlow,
       pricePerUnit: 0, // Will calculate after
@@ -46,7 +46,7 @@ const Home = () => {
     totalAUM: 0,
     totalUnits: 0,
     totalEquity: 0,
-    avgCashOnCashReturn: 0,
+    avgEquityMultiple: 0,
     totalMonthlyCashFlow: 0,
     totalAnnualCashFlow: 0,
     pricePerUnit: 0,
@@ -54,8 +54,8 @@ const Home = () => {
   });
 
   // Calculate averages and derived metrics
-  portfolioMetricsData.avgCashOnCashReturn = activeProperties.length > 0 
-    ? portfolioMetricsData.avgCashOnCashReturn / activeProperties.length 
+  portfolioMetricsData.avgEquityMultiple = activeProperties.length > 0 
+    ? portfolioMetricsData.avgEquityMultiple / activeProperties.length 
     : 0;
   portfolioMetricsData.pricePerUnit = portfolioMetricsData.totalUnits > 0 
     ? portfolioMetricsData.totalAUM / portfolioMetricsData.totalUnits 
@@ -104,8 +104,8 @@ const Home = () => {
       trendUp: true
     },
     { 
-      title: 'Avg Cash-on-Cash', 
-      value: formatPercentage(portfolioMetricsData.avgCashOnCashReturn), 
+      title: 'Avg Equity Multiple', 
+      value: `${portfolioMetricsData.avgEquityMultiple.toFixed(2)}x`, 
       icon: Award, 
       subtitle: 'All Properties Performance',
       trend: 'Exceptional Returns',

@@ -251,7 +251,7 @@ const Portfolio = () => {
       totalAUM: totals.totalAUM + kpis.arv,
       totalUnits: totals.totalUnits + parseInt(property.apartments || '0'),
       totalEquity: totals.totalEquity + kpis.currentEquityValue,
-      avgCashOnCashReturn: totals.avgCashOnCashReturn + kpis.cashOnCashReturn,
+      avgEquityMultiple: totals.avgEquityMultiple + kpis.equityMultiple,
       totalMonthlyCashFlow: totals.totalMonthlyCashFlow + kpis.monthlyCashFlow,
       totalAnnualCashFlow: totals.totalAnnualCashFlow + kpis.annualCashFlow,
       pricePerUnit: 0, // Will calculate after
@@ -261,7 +261,7 @@ const Portfolio = () => {
     totalAUM: 0,
     totalUnits: 0,
     totalEquity: 0,
-    avgCashOnCashReturn: 0,
+    avgEquityMultiple: 0,
     totalMonthlyCashFlow: 0,
     totalAnnualCashFlow: 0,
     pricePerUnit: 0,
@@ -269,8 +269,8 @@ const Portfolio = () => {
   });
 
   // Calculate averages and derived metrics
-  portfolioMetricsData.avgCashOnCashReturn = activeProperties.length > 0 
-    ? portfolioMetricsData.avgCashOnCashReturn / activeProperties.length 
+  portfolioMetricsData.avgEquityMultiple = activeProperties.length > 0 
+    ? portfolioMetricsData.avgEquityMultiple / activeProperties.length 
     : 0;
   portfolioMetricsData.pricePerUnit = portfolioMetricsData.totalUnits > 0 
     ? portfolioMetricsData.totalAUM / portfolioMetricsData.totalUnits 
@@ -297,7 +297,7 @@ const Portfolio = () => {
     totalPortfolioValue: portfolioMetricsData.totalAUM,
     totalUnits: portfolioMetricsData.totalUnits,
     totalEquityCreated: portfolioMetricsData.totalEquity,
-    avgCoCReturn: portfolioMetricsData.avgCashOnCashReturn,
+    avgEquityMultiple: portfolioMetricsData.avgEquityMultiple,
     avgAnnualizedReturn
   };
 
@@ -321,8 +321,8 @@ const Portfolio = () => {
       subtitle: 'Value Added Through Strategy' 
     },
     { 
-      title: 'Avg Cash-on-Cash', 
-      value: formatPercentage(metrics.avgCoCReturn), 
+      title: 'Avg Equity Multiple', 
+      value: `${metrics.avgEquityMultiple.toFixed(2)}x`, 
       icon: Award, 
       subtitle: 'All Properties Performance' 
     },
@@ -645,7 +645,14 @@ const Portfolio = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Equity Multiple</span>
-                        <span className="font-semibold text-purple-600">{parseFloat(property.cashOnCashReturn || '0').toFixed(1)}x</span>
+                        {(() => {
+                          const kpis = calculatePropertyKPIs(property);
+                          return (
+                            <span className="font-semibold text-purple-600">
+                              {kpis ? `${kpis.equityMultiple.toFixed(2)}x` : 'N/A'}
+                            </span>
+                          );
+                        })()}
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Sale Price</span>
@@ -793,7 +800,7 @@ const Portfolio = () => {
             <div>
               <h4 className="text-lg font-semibold text-primary mb-3">Performance Highlights</h4>
               <ul className="space-y-2 text-gray-700">
-                <li>• Exceptional average cash-on-cash returns: {formatPercentage(metrics.avgCoCReturn)}</li>
+                <li>• Exceptional average equity multiple: {metrics.avgEquityMultiple.toFixed(2)}x</li>
                 <li>• Strong annualized performance: {formatPercentage(metrics.avgAnnualizedReturn)} average</li>
                 <li>• Total equity created: {formatCurrency(metrics.totalEquityCreated)} across portfolio</li>
                 <li>• Diversified across {metrics.totalUnits} units in two states</li>
