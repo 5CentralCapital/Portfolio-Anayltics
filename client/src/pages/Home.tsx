@@ -233,8 +233,8 @@ const Home = () => {
                 </div>
               ))
             ) : featuredDeals.length > 0 ? (
-              featuredDeals.map((deal, index) => (
-                <FeaturedDealCard key={index} deal={deal} />
+              featuredDeals.map((property, index) => (
+                <FeaturedDealCard key={index} deal={property} />
               ))
             ) : (
               // Empty state
