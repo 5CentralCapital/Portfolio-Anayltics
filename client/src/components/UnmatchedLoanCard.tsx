@@ -35,10 +35,13 @@ const UnmatchedLoanCard: React.FC<UnmatchedLoanCardProps> = ({ loan, onSave }) =
   const queryClient = useQueryClient();
   
   // Fetch properties for dropdown
-  const { data: properties = [] } = useQuery({
+  const { data: propertiesData, isLoading: propertiesLoading, error: propertiesError } = useQuery({
     queryKey: ['/api/properties'],
     queryFn: () => apiRequest('/api/properties')
   });
+
+  // Ensure properties is always an array
+  const properties = Array.isArray(propertiesData) ? propertiesData : [];
 
   // Save manual review mutation
   const saveManualReviewMutation = useMutation({
@@ -162,11 +165,19 @@ const UnmatchedLoanCard: React.FC<UnmatchedLoanCardProps> = ({ loan, onSave }) =
                 <SelectValue placeholder="Choose a property" />
               </SelectTrigger>
               <SelectContent>
-                {properties?.map((property: any) => (
-                  <SelectItem key={property.id} value={property.id.toString()}>
-                    {property.address} - {property.propertyName}
-                  </SelectItem>
-                ))}
+                {propertiesLoading ? (
+                  <SelectItem value="loading" disabled>Loading properties...</SelectItem>
+                ) : propertiesError ? (
+                  <SelectItem value="error" disabled>Error loading properties</SelectItem>
+                ) : properties.length === 0 ? (
+                  <SelectItem value="empty" disabled>No properties available</SelectItem>
+                ) : (
+                  properties.map((property: any) => (
+                    <SelectItem key={property.id} value={property.id.toString()}>
+                      {property.address} - {property.propertyName}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>

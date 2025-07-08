@@ -329,7 +329,11 @@ router.post('/manual-review', async (req, res) => {
   try {
     const { originalLoan, editedLoan, propertyId, manualReview } = req.body;
     
-    // Create or update the loan record
+    if (!propertyId || !editedLoan) {
+      return res.status(400).json({ error: 'Property ID and edited loan data are required' });
+    }
+
+    // Create or update the loan record with simplified date handling
     const loanData = {
       propertyId: propertyId,
       loanName: `${editedLoan.lender} Loan`,
@@ -340,17 +344,17 @@ router.post('/manual-review', async (req, res) => {
       termYears: 30,
       monthlyPayment: editedLoan.monthlyPayment?.toString() || '0',
       paymentType: 'principal_and_interest' as const,
-      maturityDate: editedLoan.nextPaymentDate || new Date().toISOString().split('T')[0],
+      maturityDate: '2055-01-01', // Default future date
       isActive: true,
       lender: editedLoan.lender,
       externalLoanId: editedLoan.loanId,
       principalBalance: editedLoan.balance.toString(),
-      nextPaymentDate: editedLoan.nextPaymentDate || null,
+      nextPaymentDate: editedLoan.nextPaymentDate ? editedLoan.nextPaymentDate.split('T')[0] : null,
       nextPaymentAmount: editedLoan.monthlyPayment?.toString() || '0',
       escrowBalance: '0',
-      lastSyncDate: new Date().toISOString(),
-      syncStatus: 'manual_review_complete',
-      syncError: null
+      syncStatus: 'success',
+      syncError: null,
+      notes: `Manual review completed: ${JSON.stringify({ originalLoan, editedLoan, reviewedAt: new Date().toISOString() })}`
     };
 
     await db.insert(propertyLoans).values(loanData);
