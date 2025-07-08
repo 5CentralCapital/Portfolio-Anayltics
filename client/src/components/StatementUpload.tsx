@@ -95,7 +95,7 @@ const StatementUpload: React.FC = () => {
     files.forEach(file => {
       const extension = '.' + file.name.split('.').pop()?.toLowerCase();
       if (!allowedTypes.includes(extension)) {
-        errors.push(`${file.name}: Unsupported file type. Allowed: PDF, CSV, Excel, TXT`);
+        errors.push(`${file.name}: Unsupported file type. Allowed: CSV, Excel, TXT (PDF temporarily disabled)`);
       }
       if (file.size > maxSize) {
         errors.push(`${file.name}: File size too large (max 10MB)`);
@@ -265,8 +265,10 @@ Escrow Balance: $2,500.00`;
             Upload Lender Statements
           </CardTitle>
           <CardDescription>
-            Upload your monthly lender statements in PDF, CSV, or Excel format. 
+            Upload your monthly lender statements in CSV, Excel, or text format. 
             The system will automatically parse and update your loan data.
+            <br />
+            <span className="text-orange-600 font-medium">Note: PDF format temporarily disabled - please use CSV/Excel instead.</span>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -286,7 +288,9 @@ Escrow Balance: $2,500.00`;
               Drag and drop files here, or click to select
             </p>
             <p className="text-sm text-gray-500 mb-4">
-              Supports PDF, CSV, Excel, and text files (max 10MB each)
+              <span className="text-green-600 font-medium">✅ CSV, Excel, and text files</span> (max 10MB each)
+              <br />
+              <span className="text-orange-600">⚠️ PDF temporarily disabled</span>
             </p>
             
             <input
