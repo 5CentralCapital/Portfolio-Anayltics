@@ -40,14 +40,30 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Set available OpenAI models
+  // Fetch all available OpenAI models
   useEffect(() => {
-    setAvailableModels([
-      { id: 'gpt-4o', displayName: 'GPT-4o: Best accuracy for complex documents' },
-      { id: 'gpt-4o-mini', displayName: 'GPT-4o Mini: Good balance of speed and accuracy' },
-      { id: 'gpt-4-turbo', displayName: 'GPT-4 Turbo: High accuracy, slower processing' },
-      { id: 'gpt-3.5-turbo', displayName: 'GPT-3.5: Fastest processing, lower accuracy' }
-    ]);
+    const fetchModels = async () => {
+      try {
+        const response = await fetch('/api/openai/models');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setAvailableModels(data.models);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch models:', error);
+        // Set fallback models if API fails
+        setAvailableModels([
+          { id: 'gpt-4o', displayName: 'GPT-4o (Recommended)' },
+          { id: 'gpt-4o-mini', displayName: 'GPT-4o Mini (Fast)' },
+          { id: 'gpt-4-turbo', displayName: 'GPT-4 Turbo' },
+          { id: 'gpt-3.5-turbo', displayName: 'GPT-3.5 Turbo' }
+        ]);
+      }
+    };
+
+    fetchModels();
   }, []);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
