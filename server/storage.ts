@@ -211,8 +211,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    return result[0];
+    try {
+      const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching user by email:', error);
+      // Try once more after a brief delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      try {
+        const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+        return result[0];
+      } catch (retryError) {
+        console.error('Retry failed for getUserByEmail:', retryError);
+        throw retryError;
+      }
+    }
   }
 
   async createUser(user: InsertUser): Promise<User> {
@@ -221,9 +234,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserLastLogin(id: number): Promise<void> {
-    await db.update(users)
-      .set({ lastLogin: new Date(), updatedAt: new Date() })
-      .where(eq(users.id, id));
+    try {
+      await db.update(users)
+        .set({ lastLogin: new Date(), updatedAt: new Date() })
+        .where(eq(users.id, id));
+    } catch (error) {
+      console.error('Error updating user last login:', error);
+      // This is not critical for login flow, so don't throw
+    }
   }
 
   // Property operations
@@ -339,7 +357,12 @@ export class DatabaseStorage implements IStorage {
 
   // Authentication helpers
   async validatePassword(plainPassword: string, hashedPassword: string): Promise<boolean> {
-    return await bcrypt.compare(plainPassword, hashedPassword);
+    try {
+      return await bcrypt.compare(plainPassword, hashedPassword);
+    } catch (error) {
+      console.error('Error validating password:', error);
+      return false;
+    }
   }
 
   async hashPassword(password: string): Promise<string> {

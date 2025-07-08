@@ -70,7 +70,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Email and password are required" });
       }
 
-      const user = await storage.getUserByEmail(email);
+      // Add timeout wrapper for database operations
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Database operation timeout')), 8000);
+      });
+
+      let user;
+      try {
+        user = await Promise.race([
+          storage.getUserByEmail(email),
+          timeoutPromise
+        ]);
+      } catch (dbError) {
+        console.error('Database error during getUserByEmail:', dbError);
+        return res.status(503).json({ error: "Service temporarily unavailable. Please try again." });
+      }
+
       if (!user) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
@@ -84,7 +99,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Account is disabled" });
       }
 
-      await storage.updateUserLastLogin(user.id);
+      // Update last login (non-blocking, failures are logged but don't affect login)
+      storage.updateUserLastLogin(user.id).catch(err => 
+        console.error('Non-critical error updating last login:', err)
+      );
 
       // Set up session data
       (req as any).session.userId = user.id;
