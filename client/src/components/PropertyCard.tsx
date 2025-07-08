@@ -48,7 +48,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
       '41 Stuart Ave': '/41 Stuart Ave.jpeg',
       '52 Summit Ave': '/52 Summit Ave.jpeg',
       '175 Crystal Ave': '/175 Crystal Ave.jpeg',
-      '4809 N Grady Ave': '/attached_assets/2C9F98F9-F74A-4F5D-8924-D78EF4B5CBE5_1_105_c_1752009266797.jpeg',
+      '4809 N Grady Ave': '/attached_assets/4809 N Grady Ave_1752009463748.png',
       '35 Linden St': '/35 Linden St.jpeg',
       '157 Crystal Ave': '/157 Crystal Ave.jpeg'
     };

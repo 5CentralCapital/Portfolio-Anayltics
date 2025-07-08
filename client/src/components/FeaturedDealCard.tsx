@@ -28,7 +28,7 @@ const FeaturedDealCard: React.FC<FeaturedDealCardProps> = ({ deal }) => {
       '3408 E DR MLK BLVD': '/3408 E DR MLK BLVD.jpeg',
       '157 Crystal Ave': '/157 Crystal Ave.jpeg',
       '1 Harmony St': '/1 Harmony St.jpeg',
-      '4809 N Grady Ave': '/attached_assets/2C9F98F9-F74A-4F5D-8924-D78EF4B5CBE5_1_105_c_1752009266797.jpeg'
+      '4809 N Grady Ave': '/attached_assets/4809 N Grady Ave_1752009463748.png'
     };
     
     return imageMap[address] || null;
