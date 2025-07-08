@@ -52,7 +52,7 @@ export function DocumentManualReview({ processingResult, onSave, onCancel }: Doc
   console.log('Properties array:', properties);
   console.log('Properties error:', propertiesError);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedPropertyId || selectedPropertyId === 'none') {
       toast({
         title: "Error",
@@ -62,15 +62,50 @@ export function DocumentManualReview({ processingResult, onSave, onCancel }: Doc
       return;
     }
 
-    const reviewedData = {
-      ...processingResult,
-      extractedData: editedData,
-      propertyId: selectedPropertyId === 'none' ? null : parseInt(selectedPropertyId),
-      manualReview: true,
-      confidence: 1.0 // Manual review means 100% confidence
-    };
+    try {
+      const reviewedData = {
+        processingResult,
+        extractedData: editedData,
+        propertyId: parseInt(selectedPropertyId),
+        manualReview: true,
+        confidence: 1.0 // Manual review means 100% confidence
+      };
 
-    onSave(reviewedData);
+      // Save to backend and integrate with property records
+      const response = await fetch('/api/ai-documents/manual-review', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'credentials': 'include'
+        },
+        credentials: 'include',
+        body: JSON.stringify(reviewedData)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast({
+          title: "Updates applied successfully",
+          description: `Updated: ${result.integrationResults?.join(', ') || 'Property data updated'}`
+        });
+        
+        onSave(reviewedData);
+      } else {
+        toast({
+          title: "Error",
+          description: result.message || "Failed to save data",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save data to property records",
+        variant: "destructive"
+      });
+    }
   };
 
   const formatCurrency = (amount: number) => {

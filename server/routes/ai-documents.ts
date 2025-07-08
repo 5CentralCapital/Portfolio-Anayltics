@@ -349,4 +349,153 @@ async function updatePropertyFromMortgage(propertyId: number, mortgageData: any,
 
 
 
+// Save manual review and integrate with property records
+router.post('/manual-review', async (req, res) => {
+  try {
+    const { processingResult, extractedData, propertyId, manualReview, confidence } = req.body;
+    
+    console.log('Saving manual review:', { processingResult, extractedData, propertyId });
+    
+    if (!propertyId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Property ID is required'
+      });
+    }
+
+    // Get the property to update
+    const [property] = await db.select().from(properties).where(eq(properties.id, propertyId));
+    
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: 'Property not found'
+      });
+    }
+
+    let updatedProperty = { ...property };
+    let integrationResults: string[] = [];
+
+    // Integrate extracted data based on document type
+    switch (processingResult.documentType) {
+      case 'lease':
+        // Update rent roll with lease data
+        if (extractedData.tenantNames && extractedData.monthlyRent) {
+          const existingDealData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : {};
+          const rentRoll = existingDealData.rentRoll || [];
+          
+          // Add new rent roll entry
+          const newRentEntry = {
+            id: rentRoll.length + 1,
+            unit: extractedData.unitNumber || `Unit ${rentRoll.length + 1}`,
+            type: extractedData.unitType || 'Apartment',
+            tenant: Array.isArray(extractedData.tenantNames) ? extractedData.tenantNames.join(', ') : extractedData.tenantNames,
+            leaseStart: extractedData.leaseStartDate || '',
+            leaseEnd: extractedData.leaseEndDate || '',
+            currentRent: extractedData.monthlyRent || 0,
+            marketRent: extractedData.monthlyRent || 0,
+            sqft: extractedData.squareFootage || 0,
+            deposit: extractedData.securityDeposit || 0
+          };
+          
+          rentRoll.push(newRentEntry);
+          existingDealData.rentRoll = rentRoll;
+          
+          updatedProperty.dealAnalyzerData = JSON.stringify(existingDealData);
+          integrationResults.push(`Added tenant ${newRentEntry.tenant} to rent roll`);
+        }
+        break;
+
+      case 'mortgage_statement':
+        // Update loan information
+        if (extractedData.lenderName && extractedData.currentBalance) {
+          const existingDealData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : {};
+          const loans = existingDealData.loans || [];
+          
+          // Find existing loan or create new one
+          let loanIndex = loans.findIndex(loan => 
+            loan.name?.toLowerCase().includes(extractedData.lenderName?.toLowerCase()) ||
+            loan.lender?.toLowerCase().includes(extractedData.lenderName?.toLowerCase())
+          );
+          
+          if (loanIndex === -1) {
+            // Create new loan
+            const newLoan = {
+              id: loans.length + 1,
+              name: `${extractedData.lenderName} Loan`,
+              lender: extractedData.lenderName,
+              amount: extractedData.currentBalance,
+              currentBalance: extractedData.currentBalance,
+              interestRate: extractedData.interestRate || 0,
+              monthlyPayment: extractedData.monthlyPayment || 0,
+              loanNumber: extractedData.loanNumber || '',
+              isActive: true,
+              loanType: 'acquisition'
+            };
+            loans.push(newLoan);
+            integrationResults.push(`Added new loan from ${extractedData.lenderName}`);
+          } else {
+            // Update existing loan
+            loans[loanIndex] = {
+              ...loans[loanIndex],
+              currentBalance: extractedData.currentBalance,
+              interestRate: extractedData.interestRate || loans[loanIndex].interestRate,
+              monthlyPayment: extractedData.monthlyPayment || loans[loanIndex].monthlyPayment,
+              loanNumber: extractedData.loanNumber || loans[loanIndex].loanNumber
+            };
+            integrationResults.push(`Updated loan from ${extractedData.lenderName}`);
+          }
+          
+          existingDealData.loans = loans;
+          updatedProperty.dealAnalyzerData = JSON.stringify(existingDealData);
+        }
+        break;
+
+      case 'llc_document':
+        // Update entity information if relevant
+        if (extractedData.entityName) {
+          integrationResults.push(`Documented entity: ${extractedData.entityName}`);
+        }
+        break;
+
+      default:
+        // For unknown/other document types, store in notes or custom field
+        integrationResults.push(`Stored ${Object.keys(extractedData).length} data fields from document`);
+    }
+
+    // Update property with new data
+    if (integrationResults.length > 0) {
+      await db.update(properties)
+        .set(updatedProperty)
+        .where(eq(properties.id, propertyId));
+    }
+
+    // Store the document processing record for history
+    const documentRecord = {
+      propertyId,
+      documentType: processingResult.documentType,
+      extractedData: JSON.stringify(extractedData),
+      confidence,
+      manualReview: true,
+      integrationResults: integrationResults.join('; '),
+      processedAt: new Date().toISOString()
+    };
+
+    res.json({
+      success: true,
+      message: 'Document data integrated successfully',
+      integrationResults,
+      updatedFields: Object.keys(extractedData).length
+    });
+
+  } catch (error) {
+    console.error('Manual review save error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save manual review',
+      error: error.message
+    });
+  }
+});
+
 export default router;
