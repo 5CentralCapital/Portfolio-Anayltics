@@ -327,10 +327,17 @@ class DocumentParserService {
     // Process each loan group
     for (const loanNumber in loanGroups) {
       const statementData = loanGroups[loanNumber];
+      const interestRate = this.parseRate(statementData['Interest Rate']) || 0;
+      const monthlyPayment = this.parseAmount(statementData['Regular Monthly Payment']) || 0;
+      
       console.log(`Processing loan ${loanNumber}:`, {
         lender: statementData['Lender Name'],
-        balance: statementData['Outstanding Principal Balance'],
-        address: statementData['Property Address']
+        balance: this.parseAmount(statementData['Outstanding Principal Balance']),
+        address: statementData['Property Address'],
+        interestRate: interestRate,
+        monthlyPayment: monthlyPayment,
+        rawInterestRate: statementData['Interest Rate'],
+        rawMonthlyPayment: statementData['Regular Monthly Payment']
       });
       
       const loanData: ParsedLoanData = {
@@ -790,7 +797,19 @@ class DocumentParserService {
     if (!value) return null;
     
     try {
+      // Handle Excel serial dates (numbers like 45814)
+      if (typeof value === 'number' && value > 25000 && value < 100000) {
+        // Excel epoch is 1900-01-01, but Excel incorrectly treats 1900 as a leap year
+        const excelEpoch = new Date(1900, 0, 1);
+        const date = new Date(excelEpoch.getTime() + (value - 2) * 24 * 60 * 60 * 1000);
+        return date.toISOString().split('T')[0];
+      }
+      
+      // Handle regular date strings
       const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        return null;
+      }
       return date.toISOString().split('T')[0];
     } catch (error) {
       return null;

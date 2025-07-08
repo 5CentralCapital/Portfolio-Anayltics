@@ -121,7 +121,16 @@ router.post('/upload', upload.single('statement'), async (req, res) => {
           lender: u.lenderName,
           address: u.propertyAddress,
           balance: u.currentBalance,
-          loanId: u.loanId
+          loanId: u.loanId,
+          interestRate: u.interestRate,
+          monthlyPayment: u.monthlyPayment,
+          nextPaymentDate: u.nextPaymentDate,
+          nextPaymentAmount: u.nextPaymentAmount,
+          lastPaymentDate: u.lastPaymentDate,
+          lastPaymentAmount: u.lastPaymentAmount,
+          escrowBalance: u.escrowBalance,
+          remainingTerm: u.remainingTerm,
+          additionalInfo: u.additionalInfo
         }))
       }
     });

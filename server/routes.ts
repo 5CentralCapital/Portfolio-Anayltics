@@ -646,16 +646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/properties/public", async (req: any, res) => {
     try {
       // Get all properties for debt matching without authentication
-      const properties = await db.select({
-        id: schema.properties.id,
-        propertyName: schema.properties.propertyName,
-        address: schema.properties.address,
-        city: schema.properties.city,
-        state: schema.properties.state,
-        status: schema.properties.status
-      })
-      .from(schema.properties)
-      .orderBy(schema.properties.propertyName);
+      const properties = await storage.getProperties();
       
       res.json(properties);
     } catch (error) {

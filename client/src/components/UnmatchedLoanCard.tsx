@@ -227,8 +227,8 @@ const UnmatchedLoanCard: React.FC<UnmatchedLoanCardProps> = ({ loan, onSave }) =
   }
 
   return (
-    <Card className="border-l-4 border-l-blue-500 bg-blue-50">
-      <CardContent className="p-4">
+    <Card className="border-l-4 border-l-blue-500 bg-blue-50 max-w-4xl">
+      <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
           <h4 className="font-semibold text-gray-900">Manual Review</h4>
           <div className="flex items-center gap-2">
@@ -251,7 +251,7 @@ const UnmatchedLoanCard: React.FC<UnmatchedLoanCardProps> = ({ loan, onSave }) =
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <Label htmlFor="property-select">Select Property</Label>
             <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
