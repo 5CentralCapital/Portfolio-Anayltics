@@ -16,15 +16,18 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const response = await openai.models.list();
     
-    // Filter for GPT models only
-    const gptModels = response.data
-      .filter(model => model.id.includes('gpt'))
+    // Filter for GPT and reasoning models (o1)
+    const availableModels = response.data
+      .filter(model => model.id.includes('gpt') || model.id.includes('o1'))
       .sort((a, b) => a.id.localeCompare(b.id))
       .map(model => ({
         id: model.id,
         name: model.id,
         // Add friendly names for common models
-        displayName: model.id === 'gpt-4o' ? 'GPT-4o (Recommended)' :
+        displayName: model.id === 'o1' ? 'o1 (Reasoning Model)' :
+                    model.id === 'o1-preview' ? 'o1 Preview (Advanced Reasoning)' :
+                    model.id === 'o1-mini' ? 'o1 Mini (Fast Reasoning)' :
+                    model.id === 'gpt-4o' ? 'GPT-4o (Recommended)' :
                     model.id === 'gpt-4.1' ? 'GPT-4.1 (Newest)' :
                     model.id === 'gpt-4.5-preview' ? 'GPT-4.5 Preview (Advanced)' :
                     model.id === 'gpt-4o-mini' ? 'GPT-4o Mini (Fast)' :
@@ -36,7 +39,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      models: gptModels
+      models: availableModels
     });
 
   } catch (error: any) {
