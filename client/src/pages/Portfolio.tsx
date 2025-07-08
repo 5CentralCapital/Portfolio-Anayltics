@@ -415,35 +415,98 @@ const Portfolio = () => {
   const currentProperties = portfolioProperties.filter(p => p.status === 'Currently Own');
   const fallbackSoldProperties = portfolioProperties.filter(p => p.status === 'Sold');
 
-  // Portfolio aggregate metrics - Updated to match specified values
+  // Calculate portfolio aggregate metrics dynamically from properties
+  const calculatePortfolioMetrics = () => {
+    // Total Portfolio Value - sum of ARVs for all properties
+    const totalPortfolioValue = properties.reduce((sum: number, property: Property) => {
+      const arv = parseFloat(property.arvAtTimePurchased || '0');
+      return sum + arv;
+    }, 0);
+
+    // Total Units - sum of all apartments
+    const totalUnits = properties.reduce((sum: number, property: Property) => {
+      return sum + (property.apartments || 0);
+    }, 0);
+
+    // Total Equity Created - sum of (ARV - acquisition price - rehab costs) for all properties
+    const totalEquityCreated = properties.reduce((sum: number, property: Property) => {
+      const arv = parseFloat(property.arvAtTimePurchased || '0');
+      const acquisition = parseFloat(property.acquisitionPrice || '0');
+      const rehab = parseFloat(property.rehabCosts || '0');
+      const equity = arv - acquisition - rehab;
+      return sum + (equity > 0 ? equity : 0);
+    }, 0);
+
+    // Average Cash-on-Cash Return
+    let totalCoCReturn = 0;
+    let propertiesWithCoC = 0;
+    
+    properties.forEach((property: Property) => {
+      const kpis = calculatePropertyKPIs(property);
+      if (kpis && kpis.cocReturn > 0) {
+        totalCoCReturn += kpis.cocReturn;
+        propertiesWithCoC++;
+      }
+    });
+    
+    const avgCoCReturn = propertiesWithCoC > 0 ? totalCoCReturn / propertiesWithCoC : 0;
+
+    // Average Annualized Return - for sold properties
+    const soldProperties = properties.filter((p: Property) => p.status === 'Sold');
+    let totalAnnualizedReturn = 0;
+    let propertiesWithReturn = 0;
+
+    soldProperties.forEach((property: Property) => {
+      if (property.annualizedReturn) {
+        const annReturn = parseFloat(property.annualizedReturn || '0');
+        if (annReturn > 0) {
+          totalAnnualizedReturn += annReturn;
+          propertiesWithReturn++;
+        }
+      }
+    });
+
+    const avgAnnualizedReturn = propertiesWithReturn > 0 ? totalAnnualizedReturn / propertiesWithReturn : 0;
+
+    return {
+      totalPortfolioValue,
+      totalUnits,
+      totalEquityCreated,
+      avgCoCReturn,
+      avgAnnualizedReturn
+    };
+  };
+
+  const metrics = calculatePortfolioMetrics();
+
   const portfolioMetrics = [
     { 
       title: 'Total Portfolio Value', 
-      value: '$4.2M', 
+      value: formatCurrency(metrics.totalPortfolioValue), 
       icon: DollarSign, 
       subtitle: 'Current Asset Values' 
     },
     { 
       title: 'Total Units', 
-      value: '37', 
+      value: metrics.totalUnits.toString(), 
       icon: Building, 
       subtitle: 'All Properties Combined' 
     },
     { 
       title: 'Total Equity Created', 
-      value: '$2.42M', 
+      value: formatCurrency(metrics.totalEquityCreated), 
       icon: TrendingUp, 
       subtitle: 'Value Added Through Strategy' 
     },
     { 
       title: 'Avg Cash-on-Cash', 
-      value: '458.8%', 
+      value: formatPercentage(metrics.avgCoCReturn), 
       icon: Award, 
       subtitle: 'All Properties Performance' 
     },
     { 
       title: 'Avg Annualized Return', 
-      value: '115.6%', 
+      value: formatPercentage(metrics.avgAnnualizedReturn), 
       icon: Home, 
       subtitle: 'Including Appreciation' 
     }
