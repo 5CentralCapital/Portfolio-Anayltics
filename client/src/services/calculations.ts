@@ -141,10 +141,9 @@ export class CalculationService {
         const capitalInvested = parseFloat(property.initialCapitalRequired || '0');
         equityMultiple = capitalInvested > 0 ? totalProfit / capitalInvested : 0;
       } else {
-        // For active properties: current equity value / capital invested
+        // For active properties: (ARV - all in cost) / capital invested
         const capitalInvested = parseFloat(property.initialCapitalRequired || '0');
-        const currentEquityValue = arv - loanAmount; // Current equity = ARV - remaining debt
-        equityMultiple = capitalInvested > 0 ? currentEquityValue / capitalInvested : 0;
+        equityMultiple = capitalInvested > 0 ? (arv - allInCost) / capitalInvested : 0;
       }
         
       const cashOnCashReturn = capitalRequired > 0 
