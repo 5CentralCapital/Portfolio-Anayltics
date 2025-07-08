@@ -119,19 +119,21 @@ class DocumentParserService {
    * Parse PDF document (requires pdf-parse package)
    */
   private async parsePDF(filePath: string, fileName: string): Promise<ParseResult> {
-    // Note: You'll need to install pdf-parse: npm install pdf-parse
     try {
-      const pdf = require('pdf-parse');
+      // Dynamic import to avoid initialization issues
+      const pdf = (await import('pdf-parse')).default;
       const dataBuffer = await fs.readFile(filePath);
       const pdfData = await pdf(dataBuffer);
       
       return await this.parseTextContent(pdfData.text, fileName);
     } catch (error) {
+      // For now, return a helpful message for PDF files
       return {
         success: false,
-        errors: [`PDF parsing failed: ${error.message}. Please ensure pdf-parse is installed.`],
+        errors: [`PDF parsing is temporarily unavailable. Please convert to text format or use CSV/Excel files. Error: ${error.message}`],
         fileName,
-        parsedCount: 0
+        parsedCount: 0,
+        warnings: ['You can copy and paste the text content from your PDF into a .txt file as a workaround.']
       };
     }
   }
