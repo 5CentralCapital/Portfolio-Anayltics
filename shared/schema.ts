@@ -212,7 +212,7 @@ export const propertyIncomeOther = pgTable("property_income_other", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Property Loans - Multi-loan tracking with loan-specific terms
+// Property Loans - Multi-loan tracking with loan-specific terms and live data integration
 export const propertyLoans = pgTable("property_loans", {
   id: serial("id").primaryKey(),
   propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
@@ -228,6 +228,20 @@ export const propertyLoans = pgTable("property_loans", {
   isActive: boolean("is_active").default(true), // Active loan for debt service calculations
   lender: text("lender"),
   notes: text("notes"),
+  
+  // Live data integration fields
+  externalLoanId: text("external_loan_id"), // Lender's loan ID
+  principalBalance: decimal("principal_balance", { precision: 15, scale: 2 }),
+  nextPaymentDate: date("next_payment_date"),
+  nextPaymentAmount: decimal("next_payment_amount", { precision: 12, scale: 2 }),
+  lastPaymentDate: date("last_payment_date"),
+  lastPaymentAmount: decimal("last_payment_amount", { precision: 12, scale: 2 }),
+  escrowBalance: decimal("escrow_balance", { precision: 12, scale: 2 }),
+  remainingTerm: integer("remaining_term"), // Remaining months
+  lastSyncDate: timestamp("last_sync_date"), // When data was last synced from lender
+  syncStatus: text("sync_status", { enum: ["pending", "syncing", "success", "failed"] }).default("pending"),
+  syncError: text("sync_error"), // Error message if sync fails
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
