@@ -264,11 +264,13 @@ export default function EntityDashboard() {
   const collectiveMetrics = {
     totalUnits: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0) : 0,
 
-    // AUM = Total ARV of all properties owned
-    totalAUM: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => {
-      const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
-      return sum + (isNaN(arv) ? 0 : arv);
-    }, 0) : 0,
+    // AUM = Total ARV of active properties only (exclude sold)
+    totalAUM: Array.isArray(properties) ? properties
+      .filter((prop: Property) => prop.status !== 'Sold')
+      .reduce((sum: number, prop: Property) => {
+        const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
+        return sum + (isNaN(arv) ? 0 : arv);
+      }, 0) : 0,
 
     // Total Equity = AUM - current debt (calculate debt from Deal Analyzer data)
     totalEquity: (() => {
@@ -277,9 +279,11 @@ export default function EntityDashboard() {
       let totalAUM = 0;
       let totalDebt = 0;
 
-      properties.forEach((prop: Property) => {
-        const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
-        totalAUM += isNaN(arv) ? 0 : arv;
+      properties
+        .filter((prop: Property) => prop.status !== 'Sold')
+        .forEach((prop: Property) => {
+          const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
+          totalAUM += isNaN(arv) ? 0 : arv;
 
         // Calculate current debt from Deal Analyzer data
         if (prop.dealAnalyzerData) {
