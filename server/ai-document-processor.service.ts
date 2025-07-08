@@ -222,7 +222,13 @@ export class AIDocumentProcessor {
   private async classifyTextDocument(filePath: string, model: string = 'gpt-4o'): Promise<DocumentClassification> {
     // Check if it's a Gemini model
     if (model.startsWith('gemini-')) {
-      return this.classifyTextDocumentWithGemini(filePath, model);
+      try {
+        return await this.classifyTextDocumentWithGemini(filePath, model);
+      } catch (error) {
+        console.warn('Gemini classification failed, falling back to OpenAI:', error.message);
+        // Fallback to OpenAI if Gemini fails
+        return this.classifyTextDocumentWithOpenAI(filePath, 'gpt-4o');
+      }
     } else {
       return this.classifyTextDocumentWithOpenAI(filePath, model);
     }

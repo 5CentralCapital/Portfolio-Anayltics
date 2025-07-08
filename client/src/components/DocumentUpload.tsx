@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Upload, FileText, CheckCircle, AlertCircle, Loader2, Eye, Edit, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { DocumentManualReview } from './DocumentManualReview';
 
 interface DocumentUploadProps {
   propertyId?: number;
@@ -46,7 +47,7 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Fetch properties for dropdown
+  // Fetch properties for dropdown  
   const { data: properties = [], isLoading: propertiesLoading, error: propertiesError } = useQuery({
     queryKey: ['/api/properties'],
     queryFn: async () => {
@@ -56,8 +57,12 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
           'Content-Type': 'application/json'
         }
       });
-      if (!response.ok) throw new Error('Failed to fetch properties');
+      if (!response.ok) {
+        console.error('Properties fetch failed:', response.status, response.statusText);
+        throw new Error('Failed to fetch properties');
+      }
       const data = await response.json();
+      console.log('Properties data:', data);
       return Array.isArray(data) ? data : [];
     }
   });
@@ -423,70 +428,24 @@ export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProce
       </Card>
 
       {/* Manual Review Interface */}
-      {showManualReview && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Edit className="h-5 w-5" />
-              Manual Review & Correction
-            </CardTitle>
-            <CardDescription>
-              Review and edit the extracted data before applying to your property records.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="extracted-data">Extracted Data (JSON)</Label>
-              <Textarea
-                id="extracted-data"
-                value={JSON.stringify(editedData, null, 2)}
-                onChange={(e) => {
-                  try {
-                    setEditedData(JSON.parse(e.target.value));
-                  } catch (error) {
-                    // Keep the text as is if invalid JSON
-                  }
-                }}
-                rows={10}
-                className="font-mono text-sm"
-                placeholder="Edit the extracted data..."
-              />
-            </div>
+      {showManualReview && processingResult && (
+        <DocumentManualReview
+          processingResult={processingResult}
+          onSave={(reviewedData) => {
+            setProcessingResult(reviewedData);
+            setShowManualReview(false);
             
-            <div className="flex gap-2">
-              <Button 
-                onClick={() => setShowManualReview(false)}
-                variant="outline"
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={async () => {
-                  // Save the manually reviewed data
-                  if (processingResult) {
-                    const updatedResult = {
-                      ...processingResult,
-                      extractedData: editedData,
-                      confidence: 0.9, // Mark as high confidence after manual review
-                      success: true
-                    };
-                    setProcessingResult(updatedResult);
-                    setShowManualReview(false);
-                    
-                    toast({
-                      title: "Manual review completed",
-                      description: "Data has been updated and is ready to apply."
-                    });
-                  }
-                }}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                Save Review
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            toast({
+              title: "Manual review completed",
+              description: "Data has been reviewed and updated."
+            });
+
+            if (onProcessingComplete) {
+              onProcessingComplete(reviewedData);
+            }
+          }}
+          onCancel={() => setShowManualReview(false)}
+        />
       )}
 
       {/* Processing Results */}
