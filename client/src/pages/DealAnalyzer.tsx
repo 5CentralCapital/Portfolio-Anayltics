@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target, BarChart3, Save, Download, Upload, FileDown, Database, X, Trash2 } from 'lucide-react';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import { MarketRatesWidget } from '../components/MarketRatesWidget';
 import { AddressComponents } from '../services/googlePlaces';
 
 // Load saved state function
@@ -2129,6 +2130,9 @@ export default function DealAnalyzer() {
 
       {activeTab === 'sensitivity' && (
         <div className="space-y-6">
+          {/* Market Rates Widget */}
+          <MarketRatesWidget />
+          
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold mb-6 flex items-center">
               <TrendingUp className="h-5 w-5 mr-2 text-purple-600" />

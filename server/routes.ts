@@ -11,6 +11,7 @@ import {
   getTransactions, 
   getAccountInfo 
 } from './plaid';
+import { federalReserveService } from './fed-api';
 import { 
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
@@ -986,5 +987,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  // Federal Reserve API endpoints
+  app.get('/api/market-rates', async (req, res) => {
+    try {
+      const rates = await federalReserveService.getCurrentMarketRates();
+      res.json(rates);
+    } catch (error) {
+      console.error('Market rates error:', error);
+      res.status(500).json({ error: 'Failed to fetch market rates' });
+    }
+  });
+
+  app.get('/api/recommended-lending-rates', async (req, res) => {
+    try {
+      const rates = await federalReserveService.getRecommendedLendingRates();
+      res.json(rates);
+    } catch (error) {
+      console.error('Recommended lending rates error:', error);
+      res.status(500).json({ error: 'Failed to fetch recommended lending rates' });
+    }
+  });
+
   return httpServer;
 }
