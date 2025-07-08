@@ -155,16 +155,8 @@ const Home = () => {
     }
   });
 
-  // Convert properties to featured deals format for the component
-  const featuredDeals = featuredProperties.map((property: any) => ({
-    name: property.propertyName || property.address,
-    address: `${property.city}, ${property.state}`,
-    units: property.apartments,
-    purchasePrice: parseFloat(property.acquisitionPrice),
-    arv: parseFloat(property.arvAtTimePurchased),
-    cashOnCashReturn: parseFloat(property.cashOnCashReturn),
-    status: 'current' as const
-  }));
+  // Use properties directly - no conversion needed
+  const featuredDeals = featuredProperties || [];
 
   return (
     <div className="animate-fade-in">
@@ -233,7 +225,7 @@ const Home = () => {
                 </div>
               ))
             ) : featuredDeals.length > 0 ? (
-              featuredDeals.map((property, index) => (
+              featuredDeals.map((property: any, index: number) => (
                 <FeaturedDealCard key={index} deal={property} />
               ))
             ) : (
