@@ -207,13 +207,14 @@ export class CalculationService {
   }
 
   /**
-   * Calculate total invested capital (down payment + closing costs + rehab)
+   * Calculate total invested capital (down payment + closing costs + holding costs)
+   * Note: Rehab costs are excluded as they are financed through the loan
    */
   private calculateTotalInvestedCapital(assumptions: any, totalRehab: number, totalClosingCosts: number, totalHoldingCosts: number): number {
     const purchasePrice = Number(assumptions.purchasePrice);
     const loanPercentage = Number(assumptions.loanPercentage);
     const downPayment = purchasePrice * (1 - loanPercentage);
-    return downPayment + totalClosingCosts + totalRehab + totalHoldingCosts;
+    return downPayment + totalClosingCosts + totalHoldingCosts;
   }
 
   /**
