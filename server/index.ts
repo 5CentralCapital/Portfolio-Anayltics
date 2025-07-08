@@ -3,6 +3,7 @@ import session from "express-session";
 import { registerRoutes } from "./routes";
 import propertyLoansRoutes from "./property-loans.routes";
 import aiDocumentRoutes from "./routes/ai-documents";
+import openaiModelsRoutes from "./routes/openai-models";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
@@ -25,6 +26,9 @@ app.use('/api', propertyLoansRoutes);
 
 // Register AI document processing routes
 app.use('/api/ai-documents', aiDocumentRoutes);
+
+// Register OpenAI models routes  
+app.use('/api/openai/models', openaiModelsRoutes);
 
 app.use((req, res, next) => {
   const start = Date.now();

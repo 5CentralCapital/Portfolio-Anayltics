@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 interface DocumentUploadProps {
   propertyId?: number;
   entityId?: number;
+  model?: string;
   onProcessingComplete?: (result: any) => void;
 }
 
@@ -27,15 +28,44 @@ interface ProcessingResult {
   requiresReview?: boolean;
 }
 
-export function DocumentUpload({ propertyId, entityId, onProcessingComplete }: DocumentUploadProps) {
+export function DocumentUpload({ propertyId, entityId, model = 'gpt-4o', onProcessingComplete }: DocumentUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<string>('auto');
+  const [selectedModel, setSelectedModel] = useState<string>(model);
   const [autoApply, setAutoApply] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
+  const [availableModels, setAvailableModels] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Fetch available OpenAI models
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await fetch('/api/openai/models');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setAvailableModels(data.models);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch models:', error);
+        // Set default models if API fails
+        setAvailableModels([
+          { id: 'gpt-4o', displayName: 'GPT-4o (Latest)' },
+          { id: 'gpt-4o-mini', displayName: 'GPT-4o Mini (Fast)' },
+          { id: 'gpt-4-turbo', displayName: 'GPT-4 Turbo' },
+          { id: 'gpt-4', displayName: 'GPT-4' },
+          { id: 'gpt-3.5-turbo', displayName: 'GPT-3.5 Turbo' }
+        ]);
+      }
+    };
+
+    fetchModels();
+  }, []);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -78,6 +108,7 @@ export function DocumentUpload({ propertyId, entityId, onProcessingComplete }: D
       if (propertyId) formData.append('propertyId', propertyId.toString());
       if (entityId) formData.append('entityId', entityId.toString());
       if (documentType && documentType !== 'auto') formData.append('documentType', documentType);
+      formData.append('model', selectedModel);
       formData.append('autoApply', autoApply.toString());
 
       // Simulate upload progress
@@ -217,8 +248,8 @@ export function DocumentUpload({ propertyId, entityId, onProcessingComplete }: D
             />
           </div>
 
-          {/* Document Type Selection */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Document Type and Model Selection */}
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="document-type">Document Type (Optional)</Label>
               <Select value={documentType} onValueChange={setDocumentType}>
@@ -230,6 +261,22 @@ export function DocumentUpload({ propertyId, entityId, onProcessingComplete }: D
                   <SelectItem value="lease">Lease Agreement</SelectItem>
                   <SelectItem value="llc_document">LLC Document</SelectItem>
                   <SelectItem value="mortgage_statement">Mortgage Statement</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="ai-model">AI Model</Label>
+              <Select value={selectedModel} onValueChange={setSelectedModel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select AI model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableModels.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {model.displayName}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

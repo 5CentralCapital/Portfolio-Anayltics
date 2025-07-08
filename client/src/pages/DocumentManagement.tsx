@@ -36,6 +36,7 @@ function DocumentManagement() {
   const [selectedProperty, setSelectedProperty] = useState<string>('none');
   const [selectedEntity, setSelectedEntity] = useState<string>('none');
   const [historyFilter, setHistoryFilter] = useState<string>('all');
+  const [selectedModel, setSelectedModel] = useState<string>('gpt-4o');
 
   // Fetch properties for dropdown
   const { data: properties = [] } = useQuery<Property[]>({
@@ -191,6 +192,42 @@ function DocumentManagement() {
         </TabsList>
 
         <TabsContent value="ai-documents" className="space-y-6">
+          {/* AI Model Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Model Configuration</CardTitle>
+              <CardDescription>
+                Choose the OpenAI model for document analysis and data extraction
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">OpenAI Model</label>
+                  <Select value={selectedModel} onValueChange={setSelectedModel}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gpt-4o">GPT-4o (Latest, Recommended)</SelectItem>
+                      <SelectItem value="gpt-4o-mini">GPT-4o Mini (Faster, Cost-effective)</SelectItem>
+                      <SelectItem value="gpt-4-turbo">GPT-4 Turbo (Previous Generation)</SelectItem>
+                      <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Budget Option)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2 flex items-end">
+                  <div className="text-sm text-gray-600">
+                    <strong>GPT-4o:</strong> Best accuracy for complex documents<br/>
+                    <strong>GPT-4o Mini:</strong> Good balance of speed and accuracy<br/>
+                    <strong>GPT-4 Turbo:</strong> High accuracy, slower processing<br/>
+                    <strong>GPT-3.5:</strong> Fastest processing, lower accuracy
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Property/Entity Selection */}
           <Card>
             <CardHeader>
@@ -240,6 +277,7 @@ function DocumentManagement() {
           <DocumentUpload 
             propertyId={selectedProperty === 'none' ? undefined : Number(selectedProperty)}
             entityId={selectedEntity === 'none' ? undefined : Number(selectedEntity)}
+            model={selectedModel}
             onProcessingComplete={handleProcessingComplete}
           />
         </TabsContent>

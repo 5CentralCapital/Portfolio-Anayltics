@@ -84,12 +84,12 @@ export class AIDocumentProcessor {
   /**
    * Main entry point for document processing
    */
-  async processDocument(filePath: string, fileName: string): Promise<ProcessingResult> {
+  async processDocument(filePath: string, fileName: string, model: string = 'gpt-4o'): Promise<ProcessingResult> {
     try {
       console.log(`Processing document: ${fileName}`);
       
       // Step 1: Classify document type
-      const classification = await this.classifyDocument(filePath, fileName);
+      const classification = await this.classifyDocument(filePath, fileName, model);
       
       if (classification.type === 'unknown') {
         return {
@@ -107,13 +107,13 @@ export class AIDocumentProcessor {
 
       switch (classification.type) {
         case 'lease':
-          extractedData = await this.extractLeaseData(filePath);
+          extractedData = await this.extractLeaseData(filePath, model);
           break;
         case 'llc_document':
-          extractedData = await this.extractLLCData(filePath);
+          extractedData = await this.extractLLCData(filePath, model);
           break;
         case 'mortgage_statement':
-          extractedData = await this.extractMortgageData(filePath);
+          extractedData = await this.extractMortgageData(filePath, model);
           break;
       }
 
@@ -127,7 +127,7 @@ export class AIDocumentProcessor {
         confidence,
         errors: validation.errors,
         warnings: validation.warnings,
-        suggestedActions: await this.generateSuggestedActions(classification.type, extractedData)
+        suggestedActions: await this.generateSuggestedActions(classification.type, extractedData, model)
       };
 
     } catch (error) {
@@ -145,14 +145,14 @@ export class AIDocumentProcessor {
   /**
    * Classify document type using OpenAI
    */
-  private async classifyDocument(filePath: string, fileName: string): Promise<DocumentClassification> {
+  private async classifyDocument(filePath: string, fileName: string, model: string = 'gpt-4o'): Promise<DocumentClassification> {
     try {
       const isImage = /\.(jpg|jpeg|png|gif|bmp|tiff)$/i.test(fileName);
       
       if (isImage) {
-        return await this.classifyImageDocument(filePath);
+        return await this.classifyImageDocument(filePath, model);
       } else {
-        return await this.classifyTextDocument(filePath);
+        return await this.classifyTextDocument(filePath, model);
       }
     } catch (error) {
       console.error('Classification error:', error);
@@ -163,12 +163,12 @@ export class AIDocumentProcessor {
   /**
    * Classify image documents using OpenAI Vision
    */
-  private async classifyImageDocument(filePath: string): Promise<DocumentClassification> {
+  private async classifyImageDocument(filePath: string, model: string = 'gpt-4o'): Promise<DocumentClassification> {
     const imageBuffer = fs.readFileSync(filePath);
     const base64Image = imageBuffer.toString('base64');
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: model,
       messages: [
         {
           role: "user",
@@ -213,12 +213,12 @@ export class AIDocumentProcessor {
   /**
    * Classify text documents using OpenAI
    */
-  private async classifyTextDocument(filePath: string): Promise<DocumentClassification> {
+  private async classifyTextDocument(filePath: string, model: string = 'gpt-4o'): Promise<DocumentClassification> {
     // Read first 2000 characters for classification
     const content = fs.readFileSync(filePath, 'utf-8').substring(0, 2000);
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: model,
       messages: [
         {
           role: "system",
@@ -258,7 +258,7 @@ export class AIDocumentProcessor {
   /**
    * Extract lease data using OpenAI
    */
-  private async extractLeaseData(filePath: string): Promise<LeaseData> {
+  private async extractLeaseData(filePath: string, model: string = 'gpt-4o'): Promise<LeaseData> {
     const content = await this.prepareDocumentContent(filePath);
 
     const response = await openai.chat.completions.create({
@@ -304,7 +304,7 @@ export class AIDocumentProcessor {
   /**
    * Extract LLC document data using OpenAI
    */
-  private async extractLLCData(filePath: string): Promise<LLCDocumentData> {
+  private async extractLLCData(filePath: string, model: string = 'gpt-4o'): Promise<LLCDocumentData> {
     const content = await this.prepareDocumentContent(filePath);
 
     const response = await openai.chat.completions.create({
@@ -351,7 +351,7 @@ export class AIDocumentProcessor {
   /**
    * Extract mortgage statement data using OpenAI
    */
-  private async extractMortgageData(filePath: string): Promise<MortgageStatementData> {
+  private async extractMortgageData(filePath: string, model: string = 'gpt-4o'): Promise<MortgageStatementData> {
     const content = await this.prepareDocumentContent(filePath);
 
     const response = await openai.chat.completions.create({
@@ -481,7 +481,7 @@ export class AIDocumentProcessor {
   /**
    * Generate suggested actions based on extracted data
    */
-  private async generateSuggestedActions(documentType: string, data: any): Promise<string[]> {
+  private async generateSuggestedActions(documentType: string, data: any, model: string = 'gpt-4o'): Promise<string[]> {
     const actions: string[] = [];
 
     switch (documentType) {

@@ -61,14 +61,14 @@ router.post('/process', upload.single('document'), async (req: ProcessDocumentRe
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const { propertyId, entityId, documentType, autoApply } = req.body;
+    const { propertyId, entityId, documentType, autoApply, model } = req.body;
     const filePath = req.file.path;
     const fileName = req.file.originalname;
 
-    console.log(`Processing document: ${fileName} for property: ${propertyId}`);
+    console.log(`Processing document: ${fileName} for property: ${propertyId} using model: ${model || 'gpt-4o'}`);
 
     // Process document with AI
-    const result = await aiDocumentProcessor.processDocument(filePath, fileName);
+    const result = await aiDocumentProcessor.processDocument(filePath, fileName, model || 'gpt-4o');
 
     // Store processing result
     const processingRecord = await db.insert(documentProcessingHistory).values({
