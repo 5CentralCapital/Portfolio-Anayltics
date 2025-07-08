@@ -21,7 +21,7 @@ export async function createLinkToken(userId: string) {
         client_user_id: userId.toString(),
       },
       client_name: '5Central Capital Analytics',
-      products: ['transactions', 'accounts'] as const,
+      products: ['transactions'] as const,
       country_codes: ['US'] as const,
       language: 'en' as const,
       account_filters: {

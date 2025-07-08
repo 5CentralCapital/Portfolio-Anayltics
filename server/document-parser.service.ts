@@ -69,13 +69,32 @@ class DocumentParserService {
       }
     },
     generic: {
-      identifiers: ['Bank', 'Mortgage', 'Loan'],
+      identifiers: ['Bank', 'Mortgage', 'Loan', 'Financial', 'Credit'],
       patterns: {
-        currentBalance: /(?:Balance|Principal|Outstanding|Current Balance)[\s:]*\$?([0-9,]+\.?\d*)/i,
-        monthlyPayment: /(?:Payment|Monthly|Monthly Payment)[\s:]*\$?([0-9,]+\.?\d*)/i,
-        interestRate: /(?:Rate|Interest|APR|Interest Rate)[\s:]*([0-9.]+)%?/i,
-        nextPaymentDate: /(?:Due|Payment|Next|Due Date)[\s:]*([0-9\/\-]+)/i,
-        loanId: /(?:Number|ID|Account|Loan Number)[\s:]*([A-Z0-9-]+)/i
+        currentBalance: /(?:Balance|Principal|Outstanding|Current Balance|Total Balance|Remaining Balance|Loan Balance|Unpaid Balance)[\s:$]*([0-9,]+\.?\d*)/i,
+        monthlyPayment: /(?:Payment|Monthly|Monthly Payment|Principal & Interest|P&I|Regular Payment)[\s:$]*([0-9,]+\.?\d*)/i,
+        interestRate: /(?:Rate|Interest|APR|Interest Rate|Annual Rate|Note Rate)[\s:]*([0-9.]+)%?/i,
+        nextPaymentDate: /(?:Due|Payment|Next|Due Date|Next Payment Due|Payment Due)[\s:]*([0-9\/\-\s]+)/i,
+        loanId: /(?:Number|ID|Account|Loan Number|Account Number|Loan ID|Reference)[\s:]*([A-Z0-9-]+)/i
+      }
+    },
+    // Enhanced patterns for various formats
+    enhanced: {
+      identifiers: [''],
+      patterns: {
+        // Multiple balance patterns to catch different formats
+        currentBalance: [
+          /(?:Current|Outstanding|Principal|Unpaid|Remaining|Total)\s*(?:Balance|Amount)[\s:$]*([0-9,]+\.?\d*)/i,
+          /Balance[\s:$]*([0-9,]+\.?\d*)/i,
+          /\$\s*([0-9,]+\.?\d*)\s*(?:Balance|Outstanding|Principal)/i,
+          /([0-9,]+\.?\d*)\s*(?:Balance|Outstanding|Principal)/i
+        ],
+        // Multiple payment patterns
+        monthlyPayment: [
+          /(?:Monthly|Regular|Scheduled)\s*Payment[\s:$]*([0-9,]+\.?\d*)/i,
+          /Payment[\s:$]*([0-9,]+\.?\d*)/i,
+          /P&I[\s:$]*([0-9,]+\.?\d*)/i
+        ]
       }
     }
   };
@@ -371,6 +390,20 @@ class DocumentParserService {
       }
     }
     
+    // Fallback: Try to find any large dollar amounts as potential balance
+    if (currentBalance === 0) {
+      const allNumbers = text.match(/\$?[\d,]+\.?\d*/g);
+      if (allNumbers) {
+        for (const numStr of allNumbers) {
+          const amount = this.parseAmount(numStr);
+          if (amount >= 10000 && amount <= 10000000) { // Reasonable loan balance range
+            currentBalance = amount;
+            break;
+          }
+        }
+      }
+    }
+    
     // Extract monthly payment
     for (const pattern of paymentPatterns) {
       const match = text.match(pattern);
@@ -437,8 +470,23 @@ class DocumentParserService {
     const errors: string[] = [];
     const warnings: string[] = [];
 
+    // Enhanced debugging information
+    const debugInfo = {
+      lenderDetected: lenderName,
+      balanceFound: currentBalance,
+      paymentFound: monthlyPayment,
+      rateFound: interestRate,
+      addressFound: propertyAddress || 'None',
+      loanIdFound: loanId || 'None',
+      textLength: text.length,
+      hasNumbers: (text.match(/\d/g) || []).length > 0,
+      hasDollarSigns: text.includes('$'),
+      allNumbers: text.match(/[\d,]+\.?\d*/g) || [],
+      firstFewLines: text.split('\n').slice(0, 5).join(' | ')
+    };
+
     if (!parsedData.currentBalance || parsedData.currentBalance <= 0) {
-      errors.push('Could not extract valid current balance from the document');
+      errors.push(`Could not extract valid current balance. Debug: ${JSON.stringify(debugInfo)}`);
     }
 
     if (!parsedData.monthlyPayment || parsedData.monthlyPayment <= 0) {
@@ -448,6 +496,12 @@ class DocumentParserService {
     if (!parsedData.propertyAddress) {
       warnings.push('Could not extract property address');
     }
+
+    // Add debug info to additional info
+    parsedData.additionalInfo = {
+      ...parsedData.additionalInfo,
+      debugInfo
+    };
 
     return {
       success: errors.length === 0,
@@ -505,14 +559,35 @@ class DocumentParserService {
   }
 
   /**
-   * Parse amount from string
+   * Parse amount from string - Enhanced to handle various financial formats
    */
   private parseAmount(value: any): number {
-    if (typeof value === 'number') return value;
+    if (typeof value === 'number') return Math.abs(value);
     if (typeof value === 'string') {
-      const cleanValue = value.replace(/[$,]/g, '');
+      // Remove common currency symbols and spaces
+      let cleanValue = value.replace(/[$,\s]/g, '');
+      
+      // Handle parentheses for negative amounts (accounting format)
+      let isNegative = false;
+      if (cleanValue.includes('(') && cleanValue.includes(')')) {
+        isNegative = true;
+        cleanValue = cleanValue.replace(/[()]/g, '');
+      }
+      
+      // Handle negative signs
+      if (cleanValue.startsWith('-')) {
+        isNegative = true;
+        cleanValue = cleanValue.substring(1);
+      }
+      
+      // Handle various decimal formats
+      cleanValue = cleanValue.replace(/[^\d.]/g, '');
+      
       const parsed = parseFloat(cleanValue);
-      return isNaN(parsed) ? 0 : parsed;
+      if (isNaN(parsed)) return 0;
+      
+      // Return absolute value for loan balances (always positive)
+      return Math.abs(parsed);
     }
     return 0;
   }
