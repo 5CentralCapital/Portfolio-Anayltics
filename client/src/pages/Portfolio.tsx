@@ -473,14 +473,24 @@ const Portfolio = () => {
                   onDoubleClick={() => setShowKPIModal(property)}
                   title="Double-click to view financial KPIs"
                 >
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{property.address}</h3>
-                  <p className="text-gray-600 mb-4">{property.city}, {property.state}</p>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-500">Units</p>
-                      <p className="font-semibold">{property.apartments}</p>
-                    </div>
-                    <div>
+                  <div className="mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{property.address} • {property.apartments} Units</h3>
+                    <p className="text-gray-600 text-sm">{property.city}, {property.state}</p>
+                    {property.acquisitionDate && (
+                      <p className="text-gray-500 text-xs mt-1">
+                        Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
+                        {(() => {
+                          if (property.acquisitionDate) {
+                            const yearsHeld = (new Date().getTime() - new Date(property.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
+                            return ` • ${yearsHeld.toFixed(1)} years held`;
+                          }
+                          return '';
+                        })()}
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 text-sm">
+                    <div className="flex justify-between">
                       <p className="text-gray-500">Purchase Price</p>
                       <p className="font-semibold">{formatCurrency(parseFloat(property.acquisitionPrice || '0'))}</p>
                     </div>
@@ -509,22 +519,32 @@ const Portfolio = () => {
                   onDoubleClick={() => setShowKPIModal(property)}
                   title="Double-click to view financial KPIs"
                 >
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{property.address}</h3>
-                  <p className="text-gray-600 mb-4">{property.city}, {property.state}</p>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-500">Units</p>
-                      <p className="font-semibold">{property.apartments}</p>
-                    </div>
-                    <div>
+                  <div className="mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{property.address} • {property.apartments} Units</h3>
+                    <p className="text-gray-600 text-sm">{property.city}, {property.state}</p>
+                    {property.acquisitionDate && (
+                      <p className="text-gray-500 text-xs mt-1">
+                        Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
+                        {(() => {
+                          if (property.acquisitionDate) {
+                            const yearsHeld = (new Date().getTime() - new Date(property.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
+                            return ` • ${yearsHeld.toFixed(1)} years held`;
+                          }
+                          return '';
+                        })()}
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex justify-between">
                       <p className="text-gray-500">Purchase Price</p>
                       <p className="font-semibold">{formatCurrency(parseFloat(property.acquisitionPrice || '0'))}</p>
                     </div>
-                    <div>
+                    <div className="flex justify-between">
                       <p className="text-gray-500">ARV</p>
                       <p className="font-semibold">{formatCurrency(parseFloat(property.arvAtTimePurchased || '0'))}</p>
                     </div>
-                    <div>
+                    <div className="flex justify-between">
                       <p className="text-gray-500">Rehab Cost</p>
                       <p className="font-semibold">{formatCurrency(parseFloat(property.rehabCosts || '0'))}</p>
                     </div>
@@ -553,22 +573,32 @@ const Portfolio = () => {
                   onDoubleClick={() => setShowKPIModal(property)}
                   title="Double-click to view financial KPIs"
                 >
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{property.address}</h3>
-                  <p className="text-gray-600 mb-4">{property.city}, {property.state}</p>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-500">Units</p>
-                      <p className="font-semibold">{property.apartments}</p>
-                    </div>
-                    <div>
+                  <div className="mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{property.address} • {property.apartments} Units</h3>
+                    <p className="text-gray-600 text-sm">{property.city}, {property.state}</p>
+                    {property.acquisitionDate && (
+                      <p className="text-gray-500 text-xs mt-1">
+                        Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
+                        {(() => {
+                          if (property.acquisitionDate) {
+                            const yearsHeld = (new Date().getTime() - new Date(property.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
+                            return ` • ${yearsHeld.toFixed(1)} years held`;
+                          }
+                          return '';
+                        })()}
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex justify-between">
                       <p className="text-gray-500">Purchase Price</p>
                       <p className="font-semibold">{formatCurrency(parseFloat(property.acquisitionPrice || '0'))}</p>
                     </div>
-                    <div>
+                    <div className="flex justify-between">
                       <p className="text-gray-500">ARV</p>
                       <p className="font-semibold">{formatCurrency(parseFloat(property.arvAtTimePurchased || '0'))}</p>
                     </div>
-                    <div>
+                    <div className="flex justify-between">
                       <p className="text-gray-500">Annual Cash Flow</p>
                       {(() => {
                         const kpis = calculatePropertyKPIs(property);
@@ -579,7 +609,7 @@ const Portfolio = () => {
                         );
                       })()}
                     </div>
-                    <div>
+                    <div className="flex justify-between">
                       <p className="text-gray-500">Equity Multiple</p>
                       {(() => {
                         const kpis = calculatePropertyKPIs(property);
@@ -615,13 +645,24 @@ const Portfolio = () => {
                   onDoubleClick={() => setShowKPIModal(property)}
                   title="Double-click to view financial KPIs"
                 >
-                  <h3 className="text-md font-semibold text-gray-900 mb-2">{property.address}</h3>
-                  <p className="text-sm text-gray-600 mb-3">{property.city}, {property.state}</p>
+                  <div className="mb-3">
+                    <h3 className="text-md font-semibold text-gray-900 mb-1">{property.address} • {property.apartments} Units</h3>
+                    <p className="text-sm text-gray-600">{property.city}, {property.state}</p>
+                    {property.acquisitionDate && (
+                      <p className="text-gray-500 text-xs mt-1">
+                        Acquired: {new Date(property.acquisitionDate).toLocaleDateString()}
+                        {(() => {
+                          if (property.acquisitionDate) {
+                            let endDate = property.saleDate ? new Date(property.saleDate) : new Date();
+                            const yearsHeld = (endDate.getTime() - new Date(property.acquisitionDate).getTime()) / (1000 * 60 * 60 * 24 * 365);
+                            return ` • ${yearsHeld.toFixed(1)} years held`;
+                          }
+                          return '';
+                        })()}
+                      </p>
+                    )}
+                  </div>
                   <div className="space-y-2 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Units</span>
-                      <span className="font-semibold text-gray-700">{property.apartments}</span>
-                    </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Capital Invested</span>
                       <span className="font-semibold text-blue-700">{formatCurrency(parseFloat(property.initialCapitalRequired || '0'))}</span>
