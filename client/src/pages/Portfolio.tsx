@@ -48,7 +48,8 @@ const Portfolio = () => {
       '3408 E Dr MLK BLVD': '/3408 E Dr MLK BLVD.jpeg',
       '35 Linden St': '/35 Linden St.jpeg',
       '41 Stuart Ave': '/41 Stuart Ave.jpeg',
-      '52 Summit Ave': '/52 Summit Ave.jpeg'
+      '52 Summit Ave': '/52 Summit Ave.jpeg',
+      '4809 N Grady Ave': '/attached_assets/4809 N Grady Ave_1752009463748.png'
     };
 
     return imageMap[cleanAddress] || null;
