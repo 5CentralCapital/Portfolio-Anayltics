@@ -324,7 +324,7 @@ router.get('/templates/:type', async (req, res) => {
   }
 });
 
-// Manual review endpoint
+// Manual review endpoint - Enhanced to handle comprehensive mortgage data
 router.post('/manual-review', async (req, res) => {
   try {
     const { originalLoan, editedLoan, propertyId, manualReview } = req.body;
@@ -333,36 +333,62 @@ router.post('/manual-review', async (req, res) => {
       return res.status(400).json({ error: 'Property ID and edited loan data are required' });
     }
 
-    // Create or update the loan record with simplified date handling
+    // Extract additional info from enhanced parsing
+    const additionalInfo = editedLoan.additionalInfo || {};
+    
+    // Create comprehensive loan record with enhanced data
     const loanData = {
       propertyId: propertyId,
       loanName: `${editedLoan.lender} Loan`,
-      loanType: 'acquisition' as const,
-      originalAmount: editedLoan.balance.toString(),
-      currentBalance: editedLoan.balance.toString(),
-      interestRate: editedLoan.interestRate?.toString() || '0',
-      termYears: 30,
-      monthlyPayment: editedLoan.monthlyPayment?.toString() || '0',
+      loanType: (additionalInfo.loanType?.toLowerCase() || 'acquisition') as any,
+      originalAmount: (additionalInfo.originalLoanAmount || editedLoan.balance || 0).toString(),
+      currentBalance: (editedLoan.balance || editedLoan.currentBalance || 0).toString(),
+      interestRate: (editedLoan.interestRate || 0).toString(),
+      termYears: Math.floor((editedLoan.remainingTerm || 360) / 12),
+      monthlyPayment: (editedLoan.monthlyPayment || 0).toString(),
       paymentType: 'principal_and_interest' as const,
-      maturityDate: '2055-01-01', // Default future date
+      maturityDate: additionalInfo.maturityDate || '2055-01-01',
       isActive: true,
       lender: editedLoan.lender,
       externalLoanId: editedLoan.loanId,
-      principalBalance: editedLoan.balance.toString(),
+      principalBalance: (editedLoan.balance || editedLoan.currentBalance || 0).toString(),
       nextPaymentDate: editedLoan.nextPaymentDate ? editedLoan.nextPaymentDate.split('T')[0] : null,
-      nextPaymentAmount: editedLoan.monthlyPayment?.toString() || '0',
-      escrowBalance: '0',
+      nextPaymentAmount: (editedLoan.nextPaymentAmount || editedLoan.monthlyPayment || 0).toString(),
+      escrowBalance: (editedLoan.escrowBalance || additionalInfo.escrowBalance || 0).toString(),
+      remainingTerm: editedLoan.remainingTerm || null,
+      lastPaymentDate: editedLoan.lastPaymentDate ? editedLoan.lastPaymentDate.split('T')[0] : null,
+      lastPaymentAmount: (editedLoan.lastPaymentAmount || 0).toString(),
       syncStatus: 'success',
       syncError: null,
-      notes: `Manual review completed: ${JSON.stringify({ originalLoan, editedLoan, reviewedAt: new Date().toISOString() })}`
+      notes: `Manual review completed: ${JSON.stringify({ 
+        originalLoan, 
+        editedLoan: {
+          ...editedLoan,
+          additionalInfo: {
+            ...additionalInfo,
+            // Enhanced mortgage-specific fields
+            pastDueAmount: additionalInfo.pastDueAmount || 0,
+            unappliedFunds: additionalInfo.unappliedFunds || 0,
+            deferredBalance: additionalInfo.deferredBalance || 0,
+            replacementReserveBalance: additionalInfo.replacementReserveBalance || 0,
+            lateFeeAfterDate: additionalInfo.lateFeeAfterDate,
+            maxLateFee: additionalInfo.maxLateFee || 0,
+            prepaymentPenalty: additionalInfo.prepaymentPenalty || 'None',
+            totalAmountDue: additionalInfo.totalAmountDue || 0,
+            parseMethod: 'enhanced_mortgage_statement'
+          }
+        },
+        reviewedAt: new Date().toISOString() 
+      })}`
     };
 
     await db.insert(propertyLoans).values(loanData);
 
     res.json({
       success: true,
-      message: 'Manual review saved successfully',
-      loanId: loanData.externalLoanId
+      message: 'Manual review saved successfully with enhanced data',
+      loanId: loanData.externalLoanId,
+      enhancedFields: Object.keys(additionalInfo).length
     });
 
   } catch (error) {

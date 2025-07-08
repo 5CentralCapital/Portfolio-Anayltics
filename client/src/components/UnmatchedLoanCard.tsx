@@ -122,11 +122,105 @@ const UnmatchedLoanCard: React.FC<UnmatchedLoanCardProps> = ({ loan, onSave }) =
             </div>
           </div>
           
-          {loan.additionalInfo && (
-            <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded mt-2">
-              <strong>Raw Data:</strong> {JSON.stringify(loan.additionalInfo, null, 2)}
+          {/* Enhanced loan information display */}
+          <div className="space-y-4">
+            {/* Payment Information */}
+            <div className="bg-green-50 p-3 rounded">
+              <h5 className="font-medium text-green-800 mb-2">Payment Information</h5>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-gray-600">Monthly Payment:</span>
+                  <span className="font-medium ml-2">
+                    ${(loan.monthlyPayment || loan.additionalInfo?.monthlyPayment || 0).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Interest Rate:</span>
+                  <span className="font-medium ml-2">
+                    {loan.interestRate || loan.additionalInfo?.interestRate || 'N/A'}%
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Next Payment:</span>
+                  <span className="font-medium ml-2">
+                    {loan.nextPaymentDate || loan.additionalInfo?.nextPaymentDate || 'N/A'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Late Fee After:</span>
+                  <span className="font-medium ml-2">
+                    {loan.additionalInfo?.lateFeeAfterDate || 'N/A'}
+                  </span>
+                </div>
+              </div>
             </div>
-          )}
+
+            {/* Account Balances */}
+            <div className="bg-blue-50 p-3 rounded">
+              <h5 className="font-medium text-blue-800 mb-2">Account Balances</h5>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-gray-600">Principal Balance:</span>
+                  <span className="font-bold ml-2">${loan.balance.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Escrow Balance:</span>
+                  <span className="font-medium ml-2">
+                    ${(loan.additionalInfo?.escrowBalance || 0).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Unapplied Funds:</span>
+                  <span className="font-medium ml-2">
+                    ${(loan.additionalInfo?.unappliedFunds || 0).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Past Due:</span>
+                  <span className={`font-medium ml-2 ${(loan.additionalInfo?.pastDueAmount || 0) > 0 ? 'text-red-600' : 'text-gray-700'}`}>
+                    ${(loan.additionalInfo?.pastDueAmount || 0).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Loan Terms (if available) */}
+            {(loan.additionalInfo?.originalLoanAmount || loan.additionalInfo?.maturityDate || loan.additionalInfo?.prepaymentPenalty) && (
+              <div className="bg-purple-50 p-3 rounded">
+                <h5 className="font-medium text-purple-800 mb-2">Loan Terms</h5>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {loan.additionalInfo?.originalLoanAmount && (
+                    <div>
+                      <span className="text-gray-600">Original Amount:</span>
+                      <span className="font-medium ml-2">
+                        ${loan.additionalInfo.originalLoanAmount.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  {loan.additionalInfo?.maturityDate && (
+                    <div>
+                      <span className="text-gray-600">Maturity Date:</span>
+                      <span className="font-medium ml-2">{loan.additionalInfo.maturityDate}</span>
+                    </div>
+                  )}
+                  {loan.additionalInfo?.prepaymentPenalty && (
+                    <div>
+                      <span className="text-gray-600">Prepayment Penalty:</span>
+                      <span className="font-medium ml-2">{loan.additionalInfo.prepaymentPenalty}</span>
+                    </div>
+                  )}
+                  {loan.additionalInfo?.maxLateFee && (
+                    <div>
+                      <span className="text-gray-600">Max Late Fee:</span>
+                      <span className="font-medium ml-2">
+                        ${loan.additionalInfo.maxLateFee.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
