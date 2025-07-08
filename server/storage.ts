@@ -73,9 +73,11 @@ export interface IStorage {
   // Property operations
   getProperties(): Promise<Property[]>;
   getPropertiesForUser(userId: number): Promise<Property[]>;
+  getFeaturedProperties(): Promise<Property[]>;
   getProperty(id: number): Promise<Property | undefined>;
   createProperty(property: InsertProperty): Promise<Property>;
   updateProperty(id: number, property: Partial<InsertProperty>): Promise<Property | undefined>;
+  updatePropertyFeatured(id: number, isFeatured: boolean): Promise<Property | undefined>;
   deleteProperty(id: number): Promise<boolean>;
   
   // Company metrics operations
@@ -278,6 +280,13 @@ export class DatabaseStorage implements IStorage {
     return allProperties.filter(property => userEntityNames.includes(property.entity || ''));
   }
 
+  async getFeaturedProperties(): Promise<Property[]> {
+    return await db.select().from(properties)
+      .where(eq(properties.isFeatured, true))
+      .limit(6) // Limit to 6 featured properties
+      .orderBy(desc(properties.createdAt));
+  }
+
   async getProperty(id: number): Promise<Property | undefined> {
     const result = await db.select().from(properties).where(eq(properties.id, id)).limit(1);
     return result[0];
@@ -304,6 +313,14 @@ export class DatabaseStorage implements IStorage {
     
     const result = await db.update(properties)
       .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(properties.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updatePropertyFeatured(id: number, isFeatured: boolean): Promise<Property | undefined> {
+    const result = await db.update(properties)
+      .set({ isFeatured, updatedAt: new Date() })
       .where(eq(properties.id, id))
       .returning();
     return result[0];

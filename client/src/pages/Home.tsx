@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, TrendingUp, Shield, Target, DollarSign, Building, Users, Award } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import MetricsCard from '../components/MetricsCard';
 import ValuePropCard from '../components/ValuePropCard';
 import FeaturedDealCard from '../components/FeaturedDealCard';
@@ -75,36 +76,26 @@ const Home = () => {
     }
   ];
 
-  // Featured deals - updated with current properties and real photos
-  const featuredDeals = [
-    {
-      name: '3408 E Dr MLK BLVD',
-      address: 'Tampa, FL',
-      units: 10,
-      purchasePrice: 750000,
-      arv: 2000000,
-      cashOnCashReturn: 372.1,
-      status: 'current' as const
-    },
-    {
-      name: '157 Crystal Ave',
-      address: 'New London, CT',
-      units: 5,
-      purchasePrice: 376000,
-      arv: 700000,
-      cashOnCashReturn: 381.1,
-      status: 'current' as const
-    },
-    {
-      name: '1 Harmony St',
-      address: 'Stonington, CT',
-      units: 4,
-      purchasePrice: 1075000,
-      arv: 1500000,
-      cashOnCashReturn: 222.6,
-      status: 'current' as const
+  // Fetch featured properties from database
+  const { data: featuredProperties = [], isLoading: featuredLoading } = useQuery({
+    queryKey: ['/api/properties/featured'],
+    queryFn: async () => {
+      const response = await fetch('/api/properties/featured');
+      if (!response.ok) throw new Error('Failed to fetch featured properties');
+      return response.json();
     }
-  ];
+  });
+
+  // Convert properties to featured deals format for the component
+  const featuredDeals = featuredProperties.map((property: any) => ({
+    name: property.propertyName || property.address,
+    address: `${property.city}, ${property.state}`,
+    units: property.apartments,
+    purchasePrice: parseFloat(property.acquisitionPrice),
+    arv: parseFloat(property.arvAtTimePurchased),
+    cashOnCashReturn: parseFloat(property.cashOnCashReturn),
+    status: 'current' as const
+  }));
 
   return (
     <div className="animate-fade-in">
@@ -163,9 +154,27 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredDeals.map((deal, index) => (
-              <FeaturedDealCard key={index} deal={deal} />
-            ))}
+            {featuredLoading ? (
+              // Loading state
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="bg-white rounded-xl shadow-lg p-6 animate-pulse">
+                  <div className="h-32 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </div>
+              ))
+            ) : featuredDeals.length > 0 ? (
+              featuredDeals.map((deal, index) => (
+                <FeaturedDealCard key={index} deal={deal} />
+              ))
+            ) : (
+              // Empty state
+              <div className="col-span-full text-center py-12">
+                <Home className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-medium text-gray-900 mb-2">No Featured Properties</h3>
+                <p className="text-gray-600">Properties will appear here when marked as featured in the admin dashboard.</p>
+              </div>
+            )}
           </div>
 
           <div className="text-center mt-12">

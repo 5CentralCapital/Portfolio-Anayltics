@@ -67,6 +67,7 @@ export const properties = pgTable("properties", {
   cashOnCashReturn: decimal("cash_on_cash_return", { precision: 8, scale: 2 }).notNull(),
   annualizedReturn: decimal("annualized_return", { precision: 8, scale: 2 }).notNull(),
   dealAnalyzerData: text("deal_analyzer_data"), // Legacy JSON field - kept for backward compatibility
+  isFeatured: boolean("is_featured").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -628,6 +628,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get featured properties (public endpoint)
+  app.get("/api/properties/featured", async (req: any, res) => {
+    try {
+      const properties = await storage.getFeaturedProperties();
+      res.json(properties);
+    } catch (error) {
+      console.error("Featured properties error:", error);
+      res.status(500).json({ error: "Failed to load featured properties" });
+    }
+  });
+
   app.post("/api/properties", authenticateUser, async (req: any, res) => {
     try {
       const propertyData = insertPropertySchema.parse(req.body);
@@ -673,6 +684,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Update property error:", error);
       res.status(500).json({ error: "Failed to update property" });
+    }
+  });
+
+  // Toggle property featured status
+  app.patch("/api/properties/:id/featured", authenticateUser, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { isFeatured } = req.body;
+      
+      const property = await storage.updatePropertyFeatured(id, isFeatured);
+      if (!property) {
+        return res.status(404).json({ error: "Property not found" });
+      }
+      
+      res.json(property);
+    } catch (error) {
+      console.error("Update property featured status error:", error);
+      res.status(500).json({ error: "Failed to update property featured status" });
     }
   });
 

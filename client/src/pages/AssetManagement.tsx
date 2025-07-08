@@ -22,9 +22,9 @@ import {
   Trash2
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// Remove toast for now and focus on fixing the save functionality
 import apiService from '../services/api';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import PropertyModal from '../components/PropertyModal';
 import { AddressComponents } from '../services/googlePlaces';
 
 // Utility functions
@@ -240,7 +240,7 @@ const entities = [
   'Arcadia Vision Group'
 ];
 
-const PropertyCard = ({ property, onStatusChange, onDoubleClick, onDelete }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void; onDelete?: (property: Property) => void }) => {
+const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
   // Use same calculation function as modal Overview tab
   const calculatedMetrics = calculatePropertyMetrics(property);
   
@@ -268,18 +268,7 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick, onDelete }: { p
             <option value="Cashflowing">Cashflowing</option>
             <option value="Sold">Sold</option>
           </select>
-          {onDelete && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(property);
-              }}
-              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all-smooth button-pulse"
-              title="Delete property"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          )}
+
         </div>
       </div>
 
@@ -439,7 +428,7 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick, onDelete }: { p
   );
 };
 
-const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick, onDelete }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void; onDelete?: (property: Property) => void }) => {
+const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
   // Use centralized calculations for accurate metrics
   const calculatedMetrics = calculatePropertyMetrics(property);
   
@@ -462,18 +451,7 @@ const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick, onDelete }:
               <option value="Cashflowing">Cashflowing</option>
               <option value="Sold">Sold</option>
             </select>
-            {onDelete && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(property);
-                }}
-                className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all-smooth"
-                title="Delete property"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
-            )}
+
           </div>
         </div>
         <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{property.city}, {property.state}</p>
@@ -801,15 +779,7 @@ export default function AssetManagement() {
     }
   });
 
-  const handleDeleteProperty = (property: Property) => {
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${property.address}? This action cannot be undone.`
-    );
-    
-    if (confirmDelete) {
-      deletePropertyMutation.mutate(property.id);
-    }
-  };
+
 
   const handleStatusChange = (id: number, status: string) => {
     const property = properties.find(p => p.id === id);
@@ -859,10 +829,8 @@ export default function AssetManagement() {
       }
     }
     
-    // Show comprehensive property detail modal with all Deal Analyzer tabs
-    setShowPropertyDetailModal(property);
-    setEditingModalProperty({ ...property });
-    setPropertyDetailTab('overview');
+    // Open PropertyModal for feature/delete management  
+    setSelectedProperty(property);
   };
 
   const savePropertyChanges = () => {
@@ -1186,12 +1154,11 @@ export default function AssetManagement() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteProperty(property);
                         }}
-                        className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all-smooth button-pulse"
-                        title="Delete property"
+                        className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all-smooth"
+                        title="View Property Details"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <FileText className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
@@ -1260,12 +1227,11 @@ export default function AssetManagement() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDeleteProperty(property);
                               }}
-                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all-smooth button-pulse"
-                              title="Delete property"
+                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all-smooth"
+                              title="View Property Details"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <FileText className="h-4 w-4" />
                             </button>
                           </div>
                         </div>
@@ -1387,7 +1353,7 @@ export default function AssetManagement() {
           {properties.filter((p: Property) => p.status === 'Cashflowing').length > 0 ? (
             <div className="grid gap-4 stagger-children">
               {properties.filter((p: Property) => p.status === 'Cashflowing').map((property: Property) => (
-                <PropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} onDelete={handleDeleteProperty} />
+                <PropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} />
               ))}
             </div>
           ) : (
@@ -1409,7 +1375,7 @@ export default function AssetManagement() {
           {properties.filter((p: Property) => p.status === 'Sold').length > 0 ? (
             <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-3 stagger-children">
               {properties.filter((p: Property) => p.status === 'Sold').map((property: Property) => (
-                <SoldPropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} onDelete={handleDeleteProperty} />
+                <SoldPropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} />
               ))}
             </div>
           ) : (
@@ -4126,6 +4092,13 @@ export default function AssetManagement() {
           </div>
         </div>
       )}
+
+      {/* Property Modal for Feature/Delete Management */}
+      <PropertyModal 
+        property={selectedProperty}
+        isOpen={!!selectedProperty}
+        onClose={() => setSelectedProperty(null)}
+      />
     </div>
   );
 }
