@@ -123,6 +123,8 @@ export class AIDocumentProcessor {
         case 'unknown':
         default:
           extractedData = await this.extractGenericDocumentData(filePath, classification.type, model);
+          // Try intelligent mapping to expected document fields
+          extractedData = await this.intelligentFieldMapping(extractedData, filePath, model);
           // Boost confidence if we extracted useful data
           if (extractedData && Object.keys(extractedData).length > 1) {
             classification.confidence = Math.max(classification.confidence, 0.6);
@@ -662,7 +664,11 @@ export class AIDocumentProcessor {
           prompt = `Extract tax document information. Return JSON with: {"taxYear": "string", "assessedValue": number, "taxAmount": number, "dueDate": "YYYY-MM-DD", "propertyDescription": "string"}`;
           break;
         default:
-          prompt = `Extract key information from this document. Return JSON with any relevant data you can identify such as dates, amounts, names, addresses, etc. Use descriptive field names.`;
+          prompt = `Extract key information from this document. Focus on real estate and financial data. Return JSON with any relevant data using these preferred field names when applicable:
+          - For lease-like documents: {"tenantNames": ["array"], "propertyAddress": "string", "monthlyRent": number, "leaseStartDate": "YYYY-MM-DD", "leaseEndDate": "YYYY-MM-DD"}
+          - For mortgage/loan documents: {"lenderName": "string", "currentBalance": number, "monthlyPayment": number, "interestRate": number, "propertyAddress": "string", "loanNumber": "string"}
+          - For company documents: {"entityName": "string", "members": [{"name": "string", "ownershipPercentage": number}]}
+          - For other data: Use descriptive field names. Include dates, amounts, names, addresses, account numbers, etc.`;
       }
 
       // Check if it's a Gemini model
@@ -721,6 +727,61 @@ export class AIDocumentProcessor {
     });
 
     return JSON.parse(response.text || '{}');
+  }
+
+  /**
+   * Intelligent field mapping to convert extracted data to expected formats
+   */
+  private async intelligentFieldMapping(extractedData: any, filePath: string, model: string = 'gpt-4o'): Promise<any> {
+    if (!extractedData || typeof extractedData !== 'object') {
+      return extractedData;
+    }
+
+    const dataStr = JSON.stringify(extractedData);
+    
+    // If it already has expected fields, return as-is
+    if (dataStr.includes('tenantNames') || dataStr.includes('lenderName') || dataStr.includes('entityName')) {
+      return extractedData;
+    }
+
+    try {
+      const content = await this.prepareDocumentContent(filePath);
+      
+      const response = await openai.chat.completions.create({
+        model: model.startsWith('gemini-') ? 'gpt-4o' : model,
+        messages: [
+          {
+            role: "system",
+            content: `You are a data mapping expert. Convert the extracted data to match expected real estate document field formats:
+
+            LEASE FORMAT: {"tenantNames": ["string"], "propertyAddress": "string", "monthlyRent": number, "leaseStartDate": "YYYY-MM-DD", "leaseEndDate": "YYYY-MM-DD", "securityDeposit": number}
+            
+            MORTGAGE FORMAT: {"lenderName": "string", "currentBalance": number, "monthlyPayment": number, "interestRate": number, "propertyAddress": "string", "loanNumber": "string", "statementDate": "YYYY-MM-DD"}
+            
+            LLC FORMAT: {"entityName": "string", "entityType": "string", "members": [{"name": "string", "ownershipPercentage": number, "role": "string"}], "formationDate": "YYYY-MM-DD"}
+            
+            Map the extracted data to the most appropriate format based on document content. If uncertain, use LEASE format as default.`
+          },
+          {
+            role: "user",
+            content: `Document content preview: ${content.substring(0, 500)}
+            
+            Extracted data to map: ${JSON.stringify(extractedData)}
+            
+            Return mapped JSON in appropriate format:`
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.1
+      });
+
+      const mappedData = JSON.parse(response.choices[0].message.content || '{}');
+      console.log('Intelligent field mapping result:', mappedData);
+      return mappedData;
+    } catch (error) {
+      console.warn('Field mapping failed, returning original data:', error.message);
+      return extractedData;
+    }
   }
 }
 
