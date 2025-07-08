@@ -39,7 +39,6 @@ import EntityDashboard from './EntityDashboard';
 import FinancialDashboard from './FinancialDashboard';
 import AssetManagement from './AssetManagement';
 import NetWorthTracker from './NetWorthTracker';
-import StatementUpload from '../components/StatementUpload';
 import DocumentManagement from './DocumentManagement';
 import OnboardingTour from '../components/OnboardingTour';
 
@@ -251,8 +250,7 @@ const AdminDashboard: React.FC = () => {
               { id: 'dashboard', label: 'Dashboard', icon: Users },
               { id: 'properties', label: 'Asset Management', icon: Building },
               { id: 'deal-analyzer', label: 'Deal Analyzer', icon: Calculator },
-              { id: 'debt-management', label: 'Debt Management', icon: CreditCard },
-              { id: 'ai-documents', label: 'AI Documents', icon: FileText },
+              { id: 'documents', label: 'Documents', icon: FileText },
               { id: 'roadmap', label: 'Roadmap', icon: MapPin },
               { id: 'net-worth', label: 'Net Worth', icon: DollarSign },
               { id: 'reports', label: 'Reports', icon: PieChart },
@@ -291,19 +289,7 @@ const AdminDashboard: React.FC = () => {
           <DealAnalyzer />
         )}
 
-        {activeTab === 'debt-management' && (
-          <div className="p-6 space-y-6">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Debt Management</h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">Upload and manage lender statements for automated debt tracking</p>
-              </div>
-            </div>
-            <StatementUpload />
-          </div>
-        )}
-
-        {activeTab === 'ai-documents' && (
+        {activeTab === 'documents' && (
           <DocumentManagement />
         )}
 

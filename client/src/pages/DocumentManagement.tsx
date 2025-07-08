@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DocumentUpload } from '@/components/DocumentUpload';
-import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Upload, Eye } from 'lucide-react';
+import StatementUpload from '@/components/StatementUpload';
+import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Upload, Eye, CreditCard } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 interface ProcessingHistory {
@@ -42,7 +43,8 @@ function DocumentManagement() {
     queryFn: async () => {
       const response = await fetch('/api/properties');
       if (!response.ok) throw new Error('Failed to fetch properties');
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     }
   });
 
@@ -114,9 +116,9 @@ function DocumentManagement() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">AI Document Processing</h1>
+        <h1 className="text-3xl font-bold">Document Processing</h1>
         <p className="text-gray-600 mt-2">
-          Automatically extract and update property information from documents using AI
+          AI-powered document analysis and automated debt statement processing for comprehensive property management
         </p>
       </div>
 
@@ -172,13 +174,14 @@ function DocumentManagement() {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="upload" className="space-y-6">
+      <Tabs defaultValue="ai-documents" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="upload">Upload Document</TabsTrigger>
+          <TabsTrigger value="ai-documents">AI Documents</TabsTrigger>
+          <TabsTrigger value="debt-statements">Debt Statements</TabsTrigger>
           <TabsTrigger value="history">Processing History</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="upload" className="space-y-6">
+        <TabsContent value="ai-documents" className="space-y-6">
           {/* Property/Entity Selection */}
           <Card>
             <CardHeader>
@@ -197,7 +200,7 @@ function DocumentManagement() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">No property selected</SelectItem>
-                      {properties.map(property => (
+                      {Array.isArray(properties) && properties.map(property => (
                         <SelectItem key={property.id} value={property.id.toString()}>
                           {property.address} ({property.apartments} units)
                         </SelectItem>
@@ -230,6 +233,23 @@ function DocumentManagement() {
             entityId={selectedEntity}
             onProcessingComplete={handleProcessingComplete}
           />
+        </TabsContent>
+
+        <TabsContent value="debt-statements" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Debt Statement Upload
+              </CardTitle>
+              <CardDescription>
+                Upload mortgage statements and lender documents to automatically sync loan data with your properties
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StatementUpload />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="history" className="space-y-6">
