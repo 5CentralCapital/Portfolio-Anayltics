@@ -2107,6 +2107,52 @@ export default function AssetManagement() {
                 Property Analysis - {showPropertyDetailModal.address}
               </h2>
               <div className="flex items-center space-x-3">
+                {/* Feature Toggle Button */}
+                <button
+                  onClick={() => {
+                    if (showPropertyDetailModal) {
+                      featureMutation.mutate({ 
+                        id: showPropertyDetailModal.id, 
+                        isFeatured: !showPropertyDetailModal.isFeatured 
+                      });
+                      // Update local state
+                      setShowPropertyDetailModal({
+                        ...showPropertyDetailModal,
+                        isFeatured: !showPropertyDetailModal.isFeatured
+                      });
+                    }
+                  }}
+                  disabled={featureMutation.isPending}
+                  className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-colors text-sm ${
+                    showPropertyDetailModal?.isFeatured
+                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  title={showPropertyDetailModal?.isFeatured ? 'Remove from featured' : 'Add to featured'}
+                >
+                  {showPropertyDetailModal?.isFeatured ? (
+                    <StarOff className="h-4 w-4" />
+                  ) : (
+                    <Star className="h-4 w-4" />
+                  )}
+                  <span>{showPropertyDetailModal?.isFeatured ? 'Unfeature' : 'Feature'}</span>
+                </button>
+
+                {/* Delete Button */}
+                <button
+                  onClick={() => {
+                    if (showPropertyDetailModal && confirm(`Are you sure you want to delete ${showPropertyDetailModal.address}? This action cannot be undone.`)) {
+                      deleteMutation.mutate(showPropertyDetailModal.id);
+                    }
+                  }}
+                  disabled={deleteMutation.isPending}
+                  className="flex items-center space-x-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm"
+                  title="Delete property"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete</span>
+                </button>
+
                 {isEditing ? (
                   <>
                     <button
