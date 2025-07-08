@@ -24,7 +24,6 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiService from '../services/api';
 import AddressAutocomplete from '../components/AddressAutocomplete';
-
 import { Star, StarOff } from 'lucide-react';
 import { AddressComponents } from '../services/googlePlaces';
 
