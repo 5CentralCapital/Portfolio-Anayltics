@@ -205,9 +205,9 @@ function DocumentManagement() {
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-6 text-center">
-            <div className="space-y-2">
-              <FileText className="h-8 w-8 text-blue-500 mx-auto" />
+          <CardContent className="p-4 text-center">
+            <div className="space-y-1">
+              <FileText className="h-6 w-6 text-blue-500 mx-auto mb-2" />
               <p className="text-sm font-medium text-gray-600">Total Processed</p>
               <p className="text-2xl font-bold">{stats.total}</p>
             </div>
@@ -215,9 +215,9 @@ function DocumentManagement() {
         </Card>
 
         <Card>
-          <CardContent className="p-6 text-center">
-            <div className="space-y-2">
-              <CheckCircle className="h-8 w-8 text-green-500 mx-auto" />
+          <CardContent className="p-4 text-center">
+            <div className="space-y-1">
+              <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-2" />
               <p className="text-sm font-medium text-gray-600">Successful</p>
               <p className="text-2xl font-bold text-green-600">{stats.successful}</p>
             </div>
@@ -225,9 +225,9 @@ function DocumentManagement() {
         </Card>
 
         <Card>
-          <CardContent className="p-6 text-center">
-            <div className="space-y-2">
-              <Clock className="h-8 w-8 text-yellow-500 mx-auto" />
+          <CardContent className="p-4 text-center">
+            <div className="space-y-1">
+              <Clock className="h-6 w-6 text-yellow-500 mx-auto mb-2" />
               <p className="text-sm font-medium text-gray-600">Pending Review</p>
               <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
             </div>
@@ -235,9 +235,9 @@ function DocumentManagement() {
         </Card>
 
         <Card>
-          <CardContent className="p-6 text-center">
-            <div className="space-y-2">
-              <TrendingUp className="h-8 w-8 text-blue-500 mx-auto" />
+          <CardContent className="p-4 text-center">
+            <div className="space-y-1">
+              <TrendingUp className="h-6 w-6 text-blue-500 mx-auto mb-2" />
               <p className="text-sm font-medium text-gray-600">Applied</p>
               <p className="text-2xl font-bold text-blue-600">{stats.applied}</p>
             </div>
@@ -258,16 +258,16 @@ function DocumentManagement() {
 
           {/* Property/Entity Selection */}
           <Card>
-            <CardHeader className="text-center">
-              <CardTitle>Target Property/Entity</CardTitle>
-              <CardDescription>
+            <CardHeader className="text-center pb-3">
+              <CardTitle className="text-lg">Target Property/Entity</CardTitle>
+              <CardDescription className="text-sm">
                 Select the property or entity to associate with the uploaded document
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
-                  <label className="text-sm font-medium block mb-2">Property</label>
+                  <label className="text-sm font-medium block mb-1">Property</label>
                   <Select value={selectedProperty} onValueChange={setSelectedProperty}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select property (optional)" />
@@ -284,7 +284,7 @@ function DocumentManagement() {
                 </div>
 
                 <div className="text-center">
-                  <label className="text-sm font-medium block mb-2">Entity</label>
+                  <label className="text-sm font-medium block mb-1">Entity</label>
                   <Select value={selectedEntity} onValueChange={setSelectedEntity}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select entity (optional)" />
@@ -312,16 +312,16 @@ function DocumentManagement() {
 
         <TabsContent value="debt-statements" className="space-y-6">
           <Card>
-            <CardHeader className="text-center">
-              <CardTitle className="flex items-center justify-center gap-2">
+            <CardHeader className="text-center pb-3">
+              <CardTitle className="flex items-center justify-center gap-2 text-lg">
                 <CreditCard className="h-5 w-5" />
                 Debt Statement Upload
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Upload mortgage statements and lender documents to automatically sync loan data with your properties
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               <StatementUpload />
             </CardContent>
           </Card>
@@ -330,7 +330,7 @@ function DocumentManagement() {
         <TabsContent value="history" className="space-y-6">
           {/* Filters */}
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-center gap-4">
                 <Select value={historyFilter} onValueChange={setHistoryFilter}>
                   <SelectTrigger className="w-48">
@@ -449,19 +449,7 @@ function DocumentManagement() {
                       </div>
                     )}
 
-                    {item.warnings && item.warnings.length > 0 && (
-                      <div className="mt-3 p-2 bg-yellow-50 rounded text-sm">
-                        <div className="flex items-center gap-1 text-yellow-700 font-medium mb-1">
-                          <AlertCircle className="h-4 w-4" />
-                          Warnings
-                        </div>
-                        <ul className="list-disc list-inside text-yellow-600">
-                          {item.warnings.map((warning, index) => (
-                            <li key={index}>{warning}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+
 
                     {/* Suggested Actions */}
                     {item.suggestedActions && item.suggestedActions.length > 0 && (
