@@ -1,0 +1,15 @@
+CHASE MORTGAGE STATEMENT
+
+Property: 123 Main St, Hartford, CT
+Account Number: CH987654321
+Statement Date: December 31, 2024
+
+Outstanding Balance: $180,000.00
+Monthly Payment Amount: $950.00
+Interest Rate: 5.2%
+Next Payment Due: January 15, 2025
+
+Account Details:
+Current Balance: $180,000.00
+Payment: $950.00
+Rate: 5.2%

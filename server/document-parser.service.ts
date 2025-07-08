@@ -41,41 +41,41 @@ class DocumentParserService {
     wells_fargo: {
       identifiers: ['Wells Fargo', 'WELLS FARGO', 'wells fargo'],
       patterns: {
-        currentBalance: /(?:Current Balance|Outstanding Balance|Principal Balance).*?[\$]?([\d,]+\.?\d*)/i,
-        monthlyPayment: /(?:Monthly Payment|Payment Amount|Regular Payment).*?[\$]?([\d,]+\.?\d*)/i,
-        interestRate: /(?:Interest Rate|Annual Rate|APR).*?([\d]+\.?\d*%?)/i,
-        nextPaymentDate: /(?:Next Payment Due|Payment Due Date|Due Date).*?(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/i,
-        loanId: /(?:Loan Number|Account Number|Loan ID).*?([A-Z0-9-]+)/i
+        currentBalance: /(?:Current Balance|Outstanding Balance|Principal Balance|Balance)[\s:]*\$?([0-9,]+\.?\d*)/i,
+        monthlyPayment: /(?:Monthly Payment|Payment Amount|Regular Payment|Payment)[\s:]*\$?([0-9,]+\.?\d*)/i,
+        interestRate: /(?:Interest Rate|Annual Rate|APR|Rate)[\s:]*([0-9.]+)%?/i,
+        nextPaymentDate: /(?:Next Payment Due|Payment Due Date|Due Date)[\s:]*([0-9\/\-]+)/i,
+        loanId: /(?:Loan Number|Account Number|Loan ID)[\s:]*([A-Z0-9-]+)/i
       }
     },
     chase: {
       identifiers: ['Chase', 'CHASE', 'JPMorgan Chase'],
       patterns: {
-        currentBalance: /(?:Current Balance|Outstanding Balance).*?[\$]?([\d,]+\.?\d*)/i,
-        monthlyPayment: /(?:Monthly Payment|Payment Amount).*?[\$]?([\d,]+\.?\d*)/i,
-        interestRate: /(?:Interest Rate|Rate).*?([\d]+\.?\d*%?)/i,
-        nextPaymentDate: /(?:Next Payment Due|Due Date).*?(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/i,
-        loanId: /(?:Loan Number|Account).*?([A-Z0-9-]+)/i
+        currentBalance: /(?:Current Balance|Outstanding Balance|Balance)[\s:]*\$?([0-9,]+\.?\d*)/i,
+        monthlyPayment: /(?:Monthly Payment|Payment Amount|Payment)[\s:]*\$?([0-9,]+\.?\d*)/i,
+        interestRate: /(?:Interest Rate|Rate)[\s:]*([0-9.]+)%?/i,
+        nextPaymentDate: /(?:Next Payment Due|Due Date)[\s:]*([0-9\/\-]+)/i,
+        loanId: /(?:Loan Number|Account)[\s:]*([A-Z0-9-]+)/i
       }
     },
     quicken: {
       identifiers: ['Quicken Loans', 'QUICKEN', 'Rocket Mortgage'],
       patterns: {
-        currentBalance: /(?:Principal Balance|Current Balance).*?[\$]?([\d,]+\.?\d*)/i,
-        monthlyPayment: /(?:Monthly Payment|Payment).*?[\$]?([\d,]+\.?\d*)/i,
-        interestRate: /(?:Interest Rate|APR).*?([\d]+\.?\d*%?)/i,
-        nextPaymentDate: /(?:Next Payment|Due Date).*?(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/i,
-        loanId: /(?:Loan Number|Loan ID).*?([A-Z0-9-]+)/i
+        currentBalance: /(?:Principal Balance|Current Balance|Balance)[\s:]*\$?([0-9,]+\.?\d*)/i,
+        monthlyPayment: /(?:Monthly Payment|Payment)[\s:]*\$?([0-9,]+\.?\d*)/i,
+        interestRate: /(?:Interest Rate|APR|Rate)[\s:]*([0-9.]+)%?/i,
+        nextPaymentDate: /(?:Next Payment|Due Date)[\s:]*([0-9\/\-]+)/i,
+        loanId: /(?:Loan Number|Loan ID)[\s:]*([A-Z0-9-]+)/i
       }
     },
     generic: {
       identifiers: ['Bank', 'Mortgage', 'Loan'],
       patterns: {
-        currentBalance: /(?:Balance|Principal|Outstanding).*?[\$]?([\d,]+\.?\d*)/i,
-        monthlyPayment: /(?:Payment|Monthly).*?[\$]?([\d,]+\.?\d*)/i,
-        interestRate: /(?:Rate|Interest|APR).*?([\d]+\.?\d*%?)/i,
-        nextPaymentDate: /(?:Due|Payment|Next).*?(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/i,
-        loanId: /(?:Number|ID|Account).*?([A-Z0-9-]+)/i
+        currentBalance: /(?:Balance|Principal|Outstanding|Current Balance)[\s:]*\$?([0-9,]+\.?\d*)/i,
+        monthlyPayment: /(?:Payment|Monthly|Monthly Payment)[\s:]*\$?([0-9,]+\.?\d*)/i,
+        interestRate: /(?:Rate|Interest|APR|Interest Rate)[\s:]*([0-9.]+)%?/i,
+        nextPaymentDate: /(?:Due|Payment|Next|Due Date)[\s:]*([0-9\/\-]+)/i,
+        loanId: /(?:Number|ID|Account|Loan Number)[\s:]*([A-Z0-9-]+)/i
       }
     }
   };
@@ -293,23 +293,62 @@ class DocumentParserService {
     const lenderName = this.extractLenderName(text);
     const patterns = this.getLenderPatterns(lenderName);
     
+    // Try multiple extraction methods
+    let currentBalance = this.parseAmount(this.extractWithPattern(text, patterns.currentBalance));
+    let monthlyPayment = this.parseAmount(this.extractWithPattern(text, patterns.monthlyPayment));
+    let interestRate = this.parseAmount(this.extractWithPattern(text, patterns.interestRate));
+    
+    // If standard patterns fail, try broader patterns
+    if (!currentBalance || currentBalance <= 0) {
+      const broadBalancePattern = /\$?([0-9,]+\.?\d*)/g;
+      const amounts = [];
+      let match;
+      while ((match = broadBalancePattern.exec(text)) !== null) {
+        const amount = this.parseAmount(match[1]);
+        if (amount > 1000) { // Only consider amounts > $1000 as potential balances
+          amounts.push(amount);
+        }
+      }
+      if (amounts.length > 0) {
+        currentBalance = amounts[0]; // Use the first significant amount found
+      }
+    }
+    
+    // If monthly payment not found, try to extract from payment-related text
+    if (!monthlyPayment || monthlyPayment <= 0) {
+      const paymentPattern = /payment[\s:]*\$?([0-9,]+\.?\d*)/i;
+      const paymentMatch = text.match(paymentPattern);
+      if (paymentMatch) {
+        monthlyPayment = this.parseAmount(paymentMatch[1]);
+      }
+    }
+    
+    // If interest rate not found, try broader pattern
+    if (!interestRate || interestRate <= 0) {
+      const ratePattern = /([0-9.]+)%/g;
+      const rateMatch = text.match(ratePattern);
+      if (rateMatch && rateMatch[0]) {
+        interestRate = this.parseAmount(rateMatch[0].replace('%', ''));
+      }
+    }
+    
     const parsedData: ParsedLoanData = {
       lenderName,
       statementDate: new Date().toISOString().split('T')[0],
-      currentBalance: this.extractWithPattern(text, patterns.currentBalance),
-      principalBalance: this.extractWithPattern(text, patterns.currentBalance), // Fallback to current balance
-      interestRate: this.extractWithPattern(text, patterns.interestRate),
-      monthlyPayment: this.extractWithPattern(text, patterns.monthlyPayment),
-      nextPaymentDate: this.extractWithPattern(text, patterns.nextPaymentDate),
-      nextPaymentAmount: this.extractWithPattern(text, patterns.monthlyPayment), // Fallback to monthly payment
-      loanId: this.extractWithPattern(text, patterns.loanId)
+      currentBalance: currentBalance || 0,
+      principalBalance: currentBalance || 0,
+      interestRate: interestRate || 0,
+      monthlyPayment: monthlyPayment || 0,
+      nextPaymentDate: this.extractWithPattern(text, patterns.nextPaymentDate) || new Date().toISOString().split('T')[0],
+      nextPaymentAmount: monthlyPayment || 0,
+      loanId: this.extractWithPattern(text, patterns.loanId) || 'UNKNOWN'
     };
 
     const errors: string[] = [];
     const warnings: string[] = [];
 
     if (!parsedData.currentBalance || parsedData.currentBalance <= 0) {
-      errors.push('Could not extract valid current balance');
+      errors.push('Could not extract valid current balance. Please ensure your PDF contains readable text with dollar amounts.');
     }
 
     if (!parsedData.monthlyPayment || parsedData.monthlyPayment <= 0) {
