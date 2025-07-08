@@ -1499,20 +1499,20 @@ export default function AssetManagement() {
                     <div className="flex justify-between">
                       <span className="text-blue-700 dark:text-blue-300">Gross Rent (Annual)</span>
                       <span className="font-semibold text-blue-900 dark:text-blue-200">
-                        {formatCurrency(Number(selectedProperty.cashFlow) * 12)}
+                        {formatCurrency(Number(showPropertyDetailModal.cashFlow) * 12)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-blue-700 dark:text-blue-300">Vacancy Loss (5.0%)</span>
                       <span className="font-semibold text-red-600">
-                        -{formatCurrency(Number(selectedProperty.cashFlow) * 12 * 0.05)}
+                        -{formatCurrency(Number(showPropertyDetailModal.cashFlow) * 12 * 0.05)}
                       </span>
                     </div>
                     <div className="border-t border-blue-300 dark:border-blue-700 pt-2">
                       <div className="flex justify-between">
                         <span className="font-semibold text-blue-900 dark:text-blue-200">Net Revenue</span>
                         <span className="font-bold text-blue-900 dark:text-blue-200">
-                          {formatCurrency(Number(selectedProperty.cashFlow) * 12 * 0.95)}
+                          {formatCurrency(Number(showPropertyDetailModal.cashFlow) * 12 * 0.95)}
                         </span>
                       </div>
                     </div>
@@ -1527,7 +1527,7 @@ export default function AssetManagement() {
                   </h3>
                   <div className="space-y-3">
                     {(() => {
-                      const grossRent = Number(selectedProperty.cashFlow) * 12;
+                      const grossRent = Number(showPropertyDetailModal.cashFlow) * 12;
                       const propertyTax = grossRent * 0.12;
                       const insurance = grossRent * 0.06;
                       const maintenance = grossRent * 0.08;
@@ -1592,7 +1592,7 @@ export default function AssetManagement() {
                   </h3>
                   <div className="space-y-3">
                     {(() => {
-                      const grossRent = Number(selectedProperty.cashFlow) * 12;
+                      const grossRent = Number(showPropertyDetailModal.cashFlow) * 12;
                       const netRevenue = grossRent * 0.95;
                       const totalExpenses = grossRent * 0.448; 
                       const noi = netRevenue - totalExpenses;
@@ -1636,26 +1636,26 @@ export default function AssetManagement() {
                     <div className="flex justify-between">
                       <span className="text-purple-700 dark:text-purple-300">Total Cash Invested</span>
                       <span className="font-semibold text-purple-900 dark:text-purple-200">
-                        {formatCurrency(selectedProperty.initialCapitalRequired)}
+                        {formatCurrency(showPropertyDetailModal.initialCapitalRequired)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-purple-700 dark:text-purple-300">Annual Cash Flow</span>
-                      <span className={`font-semibold ${Number(selectedProperty.cashFlow) * 12 > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(Number(selectedProperty.cashFlow) * 12)}
+                      <span className={`font-semibold ${Number(showPropertyDetailModal.cashFlow) * 12 > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(Number(showPropertyDetailModal.cashFlow) * 12)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-purple-700 dark:text-purple-300">Cash-Out at Refi</span>
                       <span className="font-semibold text-purple-900 dark:text-purple-200">
-                        {formatCurrency(Number(selectedProperty.totalProfits))}
+                        {formatCurrency(Number(showPropertyDetailModal.totalProfits))}
                       </span>
                     </div>
                     <div className="border-t border-purple-300 dark:border-purple-700 pt-2">
                       <div className="flex justify-between">
                         <span className="font-semibold text-purple-900 dark:text-purple-200">Total Return</span>
-                        <span className={`font-bold ${Number(selectedProperty.totalProfits) > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatCurrency(Number(selectedProperty.totalProfits))}
+                        <span className={`font-bold ${Number(showPropertyDetailModal.totalProfits) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatCurrency(Number(showPropertyDetailModal.totalProfits))}
                         </span>
                       </div>
                     </div>
@@ -1670,9 +1670,9 @@ export default function AssetManagement() {
                   </h3>
                   <div className="space-y-3">
                     {(() => {
-                      const acquisitionPrice = Number(selectedProperty.acquisitionPrice);
+                      const acquisitionPrice = Number(showPropertyDetailModal.acquisitionPrice);
                       const ltcLoan = acquisitionPrice * 0.8;
-                      const arvLoan = Number(selectedProperty.arvAtTimePurchased) * 0.65;
+                      const arvLoan = Number(showPropertyDetailModal.arvAtTimePurchased) * 0.65;
                       const monthlyDebtService = acquisitionPrice * 0.055 / 12;
                       const interestRate = 8.75;
 
@@ -1715,39 +1715,39 @@ export default function AssetManagement() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-700 dark:text-gray-300">Units</span>
-                      <span className="font-semibold text-gray-900 dark:text-gray-200">{selectedProperty.apartments}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-200">{showPropertyDetailModal.apartments}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-700 dark:text-gray-300">Entity</span>
-                      <span className="font-semibold text-gray-900 dark:text-gray-200">{selectedProperty.entity || 'N/A'}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-200">{showPropertyDetailModal.entity || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-700 dark:text-gray-300">Status</span>
                       <span className={`font-semibold px-2 py-1 rounded-full text-xs ${
-                        selectedProperty.status === 'Cashflowing' 
+                        showPropertyDetailModal.status === 'Cashflowing' 
                           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : selectedProperty.status === 'Rehabbing'
+                          : showPropertyDetailModal.status === 'Rehabbing'
                           ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                          : selectedProperty.status === 'Under Contract'
+                          : showPropertyDetailModal.status === 'Under Contract'
                           ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-                          : selectedProperty.status === 'Sold'
+                          : showPropertyDetailModal.status === 'Sold'
                           ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
                           : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                       }`}>
-                        {selectedProperty.status}
+                        {showPropertyDetailModal.status}
                       </span>
                     </div>
-                    {selectedProperty.acquisitionDate && (
+                    {showPropertyDetailModal.acquisitionDate && (
                       <div className="flex justify-between">
                         <span className="text-gray-700 dark:text-gray-300">Acquisition Date</span>
                         <span className="font-semibold text-gray-900 dark:text-gray-200">
-                          {new Date(selectedProperty.acquisitionDate).toLocaleDateString()}
+                          {new Date(showPropertyDetailModal.acquisitionDate).toLocaleDateString()}
                         </span>
                       </div>
                     )}
                     <div className="flex justify-between">
                       <span className="text-gray-700 dark:text-gray-300">Cash-on-Cash Return</span>
-                      <span className="font-semibold text-blue-600">{formatPercentage(selectedProperty.cashOnCashReturn)}</span>
+                      <span className="font-semibold text-blue-600">{formatPercentage(showPropertyDetailModal.cashOnCashReturn)}</span>
                     </div>
                   </div>
                 </div>

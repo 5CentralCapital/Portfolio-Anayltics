@@ -237,62 +237,7 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Building className="h-8 w-8 text-primary" />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">5Central Capital</h1>
-                <p className="text-sm text-gray-500">Analytics Dashboard</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                title="Refresh Data"
-              >
-                <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
-              </button>
-              
-              <button
-                onClick={() => setShowOnboarding(true)}
-                className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                title="Restart Onboarding Tour"
-              >
-                <Users className="h-5 w-5" />
-              </button>
-              
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <span>Welcome, {user?.first_name}</span>
-                <span className="px-2 py-1 bg-primary text-white text-xs rounded-full">
-                  {user?.role}
-                </span>
-              </div>
-              
-              <button
-                onClick={() => navigate('/')}
-                className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                title="Back to Website"
-              >
-                <Home className="h-5 w-5" />
-              </button>
-              
-              <button
-                onClick={handleLogout}
-                className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                title="Logout"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+
 
       {/* Navigation Tabs */}
       <div className="bg-white border-b" data-tour="navigation">
