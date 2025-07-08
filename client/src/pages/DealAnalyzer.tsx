@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Building, Users, Wrench, Calculator, DollarSign, Calendar, AlertTriangle, TrendingUp, Home, Target, BarChart3, Save, Download, Upload, FileDown, Database, X, Trash2 } from 'lucide-react';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { MarketRatesWidget } from '../components/MarketRatesWidget';
+import CensusDemographicsWidget from '../components/CensusDemographicsWidget';
 import { AddressComponents } from '../services/googlePlaces';
 
 // Load saved state function
@@ -2132,6 +2133,40 @@ export default function DealAnalyzer() {
         <div className="space-y-6">
           {/* Market Rates Widget */}
           <MarketRatesWidget />
+          
+          {/* Census Demographics Widget */}
+          <CensusDemographicsWidget 
+            address={propertyAddress}
+            city={(() => {
+              try {
+                const storedComponents = localStorage.getItem('dealAnalyzer_addressComponents');
+                if (storedComponents) {
+                  const components: AddressComponents = JSON.parse(storedComponents);
+                  return components.city || '';
+                }
+              } catch (e) {
+                // Fallback to parsing address
+                const addressParts = propertyAddress.split(',');
+                return addressParts.length > 1 ? addressParts[addressParts.length - 2].trim() : '';
+              }
+              return '';
+            })()}
+            state={(() => {
+              try {
+                const storedComponents = localStorage.getItem('dealAnalyzer_addressComponents');
+                if (storedComponents) {
+                  const components: AddressComponents = JSON.parse(storedComponents);
+                  return components.state || '';
+                }
+              } catch (e) {
+                // Fallback to parsing address
+                const addressParts = propertyAddress.split(',');
+                const stateZip = addressParts.length > 2 ? addressParts[addressParts.length - 1].trim() : '';
+                return stateZip.split(' ')[0] || '';
+              }
+              return '';
+            })()}
+          />
           
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold mb-6 flex items-center">

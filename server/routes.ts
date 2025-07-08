@@ -1009,5 +1009,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Census API endpoints
+  app.get('/api/census/demographics', async (req, res) => {
+    try {
+      const { state, county, city } = req.query;
+      
+      if (!state) {
+        return res.status(400).json({ error: 'State parameter is required' });
+      }
+      
+      const demographicData = await censusService.getDemographicData(
+        state as string, 
+        county as string, 
+        city as string
+      );
+      
+      if (!demographicData) {
+        return res.status(404).json({ error: 'Demographic data not found for specified location' });
+      }
+      
+      res.json(demographicData);
+    } catch (error) {
+      console.error('Error fetching demographic data:', error);
+      res.status(500).json({ error: 'Failed to fetch demographic data' });
+    }
+  });
+
+  app.get('/api/census/investment-analysis', async (req, res) => {
+    try {
+      const { state, county, city } = req.query;
+      
+      if (!state) {
+        return res.status(400).json({ error: 'State parameter is required' });
+      }
+      
+      const demographicData = await censusService.getDemographicData(
+        state as string, 
+        county as string, 
+        city as string
+      );
+      
+      if (!demographicData) {
+        return res.status(404).json({ error: 'Unable to perform analysis - demographic data not available' });
+      }
+      
+      const investmentAnalysis = await censusService.getInvestmentRecommendations(demographicData);
+      res.json(investmentAnalysis);
+    } catch (error) {
+      console.error('Error generating investment analysis:', error);
+      res.status(500).json({ error: 'Failed to generate investment analysis' });
+    }
+  });
+
   return httpServer;
 }
