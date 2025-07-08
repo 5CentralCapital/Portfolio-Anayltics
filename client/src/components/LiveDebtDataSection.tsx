@@ -13,7 +13,8 @@ import {
   Trash2, 
   ArrowUpCircle,
   DollarSign,
-  Calendar
+  Calendar,
+  FileText
 } from 'lucide-react';
 
 interface LiveDebtDataSectionProps {
@@ -341,6 +342,107 @@ const LiveDebtDataSection: React.FC<LiveDebtDataSectionProps> = ({
                   <p className="text-sm text-red-800 dark:text-red-300">
                     <strong>Sync Error:</strong> {loan.syncError}
                   </p>
+                </div>
+              )}
+
+              {/* Enhanced Mortgage Statement Details */}
+              {loan.notes && loan.notes.includes('Manual review completed') && (
+                <div className="mt-4">
+                  <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Enhanced Statement Details
+                    </h4>
+                    {(() => {
+                      try {
+                        const reviewData = JSON.parse(loan.notes.replace('Manual review completed: ', ''));
+                        const additionalInfo = reviewData.editedLoan?.additionalInfo || {};
+                        
+                        return (
+                          <div className="grid md:grid-cols-3 gap-4 text-sm">
+                            {/* Payment Details */}
+                            <div className="space-y-2">
+                              <h5 className="font-medium text-gray-700 dark:text-gray-300">Payment Information</h5>
+                              {additionalInfo.pastDueAmount > 0 && (
+                                <div className="text-red-600">
+                                  <span className="text-gray-600">Past Due:</span> {formatCurrency(additionalInfo.pastDueAmount)}
+                                </div>
+                              )}
+                              {additionalInfo.lateFeeAfterDate && (
+                                <div>
+                                  <span className="text-gray-600">Late Fee After:</span> {new Date(additionalInfo.lateFeeAfterDate).toLocaleDateString()}
+                                </div>
+                              )}
+                              {additionalInfo.maxLateFee > 0 && (
+                                <div>
+                                  <span className="text-gray-600">Max Late Fee:</span> {formatCurrency(additionalInfo.maxLateFee)}
+                                </div>
+                              )}
+                              {additionalInfo.unappliedFunds > 0 && (
+                                <div>
+                                  <span className="text-gray-600">Unapplied Funds:</span> {formatCurrency(additionalInfo.unappliedFunds)}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Account Balances */}
+                            <div className="space-y-2">
+                              <h5 className="font-medium text-gray-700 dark:text-gray-300">Account Balances</h5>
+                              {loan.escrowBalance > 0 && (
+                                <div>
+                                  <span className="text-gray-600">Escrow Balance:</span> {formatCurrency(loan.escrowBalance)}
+                                </div>
+                              )}
+                              {additionalInfo.deferredBalance > 0 && (
+                                <div>
+                                  <span className="text-gray-600">Deferred Balance:</span> {formatCurrency(additionalInfo.deferredBalance)}
+                                </div>
+                              )}
+                              {additionalInfo.replacementReserveBalance > 0 && (
+                                <div>
+                                  <span className="text-gray-600">Reserve Balance:</span> {formatCurrency(additionalInfo.replacementReserveBalance)}
+                                </div>
+                              )}
+                              {additionalInfo.originalLoanAmount > 0 && (
+                                <div>
+                                  <span className="text-gray-600">Original Amount:</span> {formatCurrency(additionalInfo.originalLoanAmount)}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Loan Terms */}
+                            <div className="space-y-2">
+                              <h5 className="font-medium text-gray-700 dark:text-gray-300">Loan Terms</h5>
+                              {loan.remainingTerm && (
+                                <div>
+                                  <span className="text-gray-600">Remaining Term:</span> {loan.remainingTerm} months
+                                </div>
+                              )}
+                              {additionalInfo.prepaymentPenalty && (
+                                <div className={additionalInfo.prepaymentPenalty !== 'None' ? 'text-yellow-600' : ''}>
+                                  <span className="text-gray-600">Prepayment Penalty:</span> {additionalInfo.prepaymentPenalty}
+                                </div>
+                              )}
+                              {additionalInfo.maturityDate && (
+                                <div>
+                                  <span className="text-gray-600">Maturity Date:</span> {new Date(additionalInfo.maturityDate).toLocaleDateString()}
+                                </div>
+                              )}
+                              {additionalInfo.loanType && (
+                                <div>
+                                  <span className="text-gray-600">Loan Type:</span> {additionalInfo.loanType}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      } catch (error) {
+                        return (
+                          <p className="text-sm text-gray-500">Enhanced details available in loan notes</p>
+                        );
+                      }
+                    })()}
+                  </div>
                 </div>
               )}
 

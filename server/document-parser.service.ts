@@ -283,21 +283,60 @@ class DocumentParserService {
   }
 
   /**
-   * Parse mortgage statement format (Field/Value pairs)
+   * Parse mortgage statement format (Field/Value pairs) - Enhanced to handle multiple loans
    */
-  private parseMortgageStatementFormat(data: any[], fileName: string): ParsedLoanData {
-    // Convert Field/Value pairs to object
-    const statementData: any = {};
+  private parseMortgageStatementFormat(data: any[], fileName: string): ParsedLoanData[] {
+    const loans: ParsedLoanData[] = [];
+    
+    // Find all loan numbers first to determine loan boundaries
+    const loanNumbers: string[] = [];
     for (const row of data) {
-      if (row.Field && row.Value !== undefined) {
-        statementData[row.Field] = row.Value;
+      if (row.Field === 'Loan Number' && row.Value) {
+        loanNumbers.push(row.Value.toString());
       }
     }
+    
+    console.log('Found loan numbers:', loanNumbers);
+    
+    // Group data by loan number
+    const loanGroups: { [key: string]: any } = {};
+    let currentLoanNumber = '';
+    let currentLoanIndex = -1;
+    
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      if (row.Field && row.Value !== undefined) {
+        // Check if this is a new loan number
+        if (row.Field === 'Loan Number' && row.Value) {
+          currentLoanNumber = row.Value.toString();
+          currentLoanIndex = loanNumbers.indexOf(currentLoanNumber);
+          if (!loanGroups[currentLoanNumber]) {
+            loanGroups[currentLoanNumber] = {};
+          }
+        }
+        
+        // Add field to current loan group (only if we have a current loan)
+        if (currentLoanNumber && loanGroups[currentLoanNumber]) {
+          loanGroups[currentLoanNumber][row.Field] = row.Value;
+        }
+      }
+    }
+    
+    console.log('Loan groups:', Object.keys(loanGroups));
 
-    // Map mortgage statement fields to our loan data structure
-    const loanData: ParsedLoanData = {
-      loanId: statementData['Loan Number'] || statementData['Account Number'] || '',
-      lenderName: this.extractLenderName(fileName) || 'Unknown Lender',
+    // Process each loan group
+    for (const loanNumber in loanGroups) {
+      const statementData = loanGroups[loanNumber];
+      console.log(`Processing loan ${loanNumber}:`, {
+        lender: statementData['Lender Name'],
+        balance: statementData['Outstanding Principal Balance'],
+        address: statementData['Property Address']
+      });
+      
+      const loanData: ParsedLoanData = {
+        loanId: statementData['Loan Number'] || statementData['Account Number'] || '',
+        lenderName: statementData['Lender Name'] || this.extractLenderName(fileName) || 'Unknown Lender',
+        propertyAddress: statementData['Property Address'] || undefined,
       statementDate: this.extractDate(statementData['Statement Date']) || new Date().toISOString().split('T')[0],
       
       // Current balance - try multiple field names
@@ -349,21 +388,33 @@ class DocumentParserService {
         statementData['Escrow Account Balance'] || 0
       ),
       
-      // Additional mortgage-specific fields
-      additionalInfo: {
-        fileName,
-        prepaymentPenalty: statementData['Prepayment Penalty'],
-        deferredBalance: this.parseAmount(statementData['Deferred Balance'] || 0),
-        replacementReserveBalance: this.parseAmount(statementData['Replacement Reserve Balance'] || 0),
-        pastDueAmount: this.parseAmount(statementData['Past Due Amount'] || 0),
-        unappliedFunds: this.parseAmount(statementData['Unapplied Funds'] || 0),
-        lateFeeAfterDate: this.extractDate(statementData['Late Fee After Date']),
-        maxLateFee: this.parseAmount(statementData['Max Late Fee'] || 0),
-        rawData: statementData
-      }
-    };
+      remainingTerm: parseInt(
+        statementData['Remaining Term (Months)'] || 
+        statementData['Remaining Term'] || '0'
+      ) || undefined,
+      
+        // Additional mortgage-specific fields
+        additionalInfo: {
+          fileName,
+          prepaymentPenalty: statementData['Prepayment Penalty'],
+          deferredBalance: this.parseAmount(statementData['Deferred Balance'] || 0),
+          replacementReserveBalance: this.parseAmount(statementData['Replacement Reserve Balance'] || 0),
+          pastDueAmount: this.parseAmount(statementData['Past Due Amount'] || 0),
+          unappliedFunds: this.parseAmount(statementData['Unapplied Funds'] || 0),
+          lateFeeAfterDate: this.extractDate(statementData['Late Fee After Date']),
+          maxLateFee: this.parseAmount(statementData['Max Late Fee'] || 0),
+          totalAmountDue: this.parseAmount(statementData['Total Amount Due'] || 0),
+          originalLoanAmount: this.parseAmount(statementData['Original Loan Amount'] || 0),
+          loanType: statementData['Loan Type'],
+          maturityDate: this.extractDate(statementData['Maturity Date']),
+          rawData: statementData
+        }
+      };
+      
+      loans.push(loanData);
+    }
 
-    return loanData;
+    return loans;
   }
 
   /**
@@ -377,21 +428,24 @@ class DocumentParserService {
     // Check if this is a mortgage statement format (Field/Value pairs)
     if (data.length > 0 && data[0].Field && data[0].Value !== undefined) {
       try {
-        const loanData = this.parseMortgageStatementFormat(data, fileName);
+        const loanDataArray = this.parseMortgageStatementFormat(data, fileName);
         
-        // Validate required fields
-        if (!loanData.currentBalance || loanData.currentBalance <= 0) {
-          warnings.push('Missing or invalid current balance');
-        }
-        if (!loanData.monthlyPayment || loanData.monthlyPayment <= 0) {
-          warnings.push('Missing or invalid monthly payment');
-        }
-        if (!loanData.loanId) {
-          warnings.push('Missing loan number/ID');
-        }
+        // Process each loan
+        for (const loanData of loanDataArray) {
+          // Validate required fields
+          if (!loanData.currentBalance || loanData.currentBalance <= 0) {
+            warnings.push(`Loan ${loanData.loanId}: Missing or invalid current balance`);
+          }
+          if (!loanData.monthlyPayment || loanData.monthlyPayment <= 0) {
+            warnings.push(`Loan ${loanData.loanId}: Missing or invalid monthly payment`);
+          }
+          if (!loanData.loanId) {
+            warnings.push('Missing loan number/ID');
+          }
 
-        if (loanData.currentBalance > 0) {
-          parsedData.push(loanData);
+          if (loanData.currentBalance > 0) {
+            parsedData.push(loanData);
+          }
         }
 
         return {
