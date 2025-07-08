@@ -44,122 +44,8 @@ interface Property {
   dealAnalyzerData?: string;
 }
 
-// Calculate property metrics using Deal Analyzer data - identical to Asset Management
-const calculatePropertyMetrics = (property: Property) => {
-  try {
-    const dealAnalyzerData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : null;
+// Removed local calculatePropertyMetrics - now using centralized calculation service
 
-    if (!dealAnalyzerData) {
-      return null;
-    }
-
-    // Calculate gross rental income from rent roll
-    const grossRentMonthly = dealAnalyzerData.rentRoll?.reduce((sum: number, unit: any) => {
-      return sum + (unit.proFormaRent || unit.currentRent || 0);
-    }, 0) || 0;
-
-    // Calculate total expenses
-    const expenses = dealAnalyzerData.expenses || {};
-    const totalExpenses = Object.values(expenses).reduce((sum: number, val: any) => {
-      const expense = typeof val === 'object' ? val.amount || 0 : val || 0;
-      return sum + expense;
-    }, 0);
-
-    // Calculate vacancy
-    const assumptions = dealAnalyzerData.assumptions || {};
-    const vacancyRate = assumptions.vacancyRate || 0.05;
-    const vacancy = grossRentMonthly * vacancyRate;
-
-    // Calculate NOI
-    const netRevenue = grossRentMonthly - vacancy;
-    const noi = netRevenue - totalExpenses;
-
-    // Calculate debt service from active loan
-    const loans = dealAnalyzerData.loans || [];
-    const activeLoan = loans.find((loan: any) => loan.isActive);
-    let monthlyDebtService = 0;
-
-    if (activeLoan) {
-      const principal = activeLoan.amount || 0;
-      const annualRate = activeLoan.interestRate || 0; // Already in decimal format (0.1075 = 10.75%)
-      const monthlyRate = annualRate / 12;
-      const termMonths = (activeLoan.termYears || 30) * 12;
-
-      if (activeLoan.paymentType === 'interest-only') {
-        monthlyDebtService = principal * monthlyRate;
-      } else {
-        // Full amortization
-        if (monthlyRate > 0) {
-          monthlyDebtService = principal * (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / 
-                             (Math.pow(1 + monthlyRate, termMonths) - 1);
-        }
-      }
-    }
-
-    // Calculate cash flow
-    const monthlyCashFlow = noi - monthlyDebtService;
-    const annualCashFlow = monthlyCashFlow * 12;
-
-    // Calculate investment metrics
-    const totalInvested = parseFloat(property.initialCapitalRequired || '0');
-    const cashOnCashReturn = totalInvested > 0 ? (annualCashFlow / totalInvested) * 100 : 0;
-
-    // Calculate total invested capital (acquisition + rehab + closing + holding costs)
-    const acquisitionPrice = parseFloat(property.acquisitionPrice || '0');
-    const rehabCosts = parseFloat(property.rehabCosts || '0');
-    const closingCosts = dealAnalyzerData.closingCosts ? 
-      Object.values(dealAnalyzerData.closingCosts).reduce((sum: number, val: any) => sum + (val || 0), 0) : 0;
-    const holdingCosts = dealAnalyzerData.holdingCosts ? 
-      Object.values(dealAnalyzerData.holdingCosts).reduce((sum: number, val: any) => sum + (val || 0), 0) : 0;
-
-    const totalInvestedCapital = totalInvested > 0 ? totalInvested : (acquisitionPrice + rehabCosts + closingCosts + holdingCosts);
-
-    // Calculate ARV and equity metrics
-    const arv = parseFloat(property.arvAtTimePurchased || '0');
-    const currentEquity = arv - (activeLoan?.remainingBalance || activeLoan?.amount || 0);
-    const totalProfit = parseFloat(property.totalProfits || '0');
-    const equityMultiple = totalInvestedCapital > 0 ? (currentEquity + totalProfit) / totalInvestedCapital : 0;
-
-    return {
-      grossRentMonthly,
-      totalExpenses,
-      vacancy,
-      netRevenue,
-      noi,
-      monthlyDebtService,
-      monthlyCashFlow,
-      annualCashFlow,
-      cashOnCashReturn,
-      grossRentAnnual: grossRentMonthly * 12,
-      vacancyAnnual: vacancy * 12,
-      netRevenueAnnual: netRevenue * 12,
-      totalInvestedCapital,
-      totalProfit,
-      equityMultiple,
-      currentEquity
-    };
-  } catch (error) {
-    console.error('Error calculating property metrics:', error);
-    return null;
-  }
-};
-
-// Helper functions for formatting - identical to Asset Management
-const formatCurrency = (value: string | number) => {
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(numValue)) return '$0';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(numValue);
-};
-
-const formatPercentage = (value: number) => {
-  if (isNaN(value)) return '0%';
-  return `${value.toFixed(1)}%`;
-};
 
 interface EntityMember {
   id: number;
@@ -372,21 +258,7 @@ export default function EntityDashboard() {
 
   const [cashBalance, setCashBalance] = useState(450000);
 
-  // Helper functions
-  const formatCurrency = (amount: string | number) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(num);
-  };
-
-  const formatPercentage = (value: string | number) => {
-    const num = typeof value === 'string' ? parseFloat(value) : value;
-    return `${num.toFixed(1)}%`;
-  };
+  // Removed local helper functions - now using centralized calculation service
 
   // Calculate collective metrics for all entities - match Asset Management exactly
   const collectiveMetrics = {
@@ -464,7 +336,7 @@ export default function EntityDashboard() {
       let propertiesWithMetrics = 0;
 
       properties.forEach((prop: Property) => {
-        const metrics = calculatePropertyMetrics(prop);
+        const metrics = calculatePropertyKPIs(prop);
         if (metrics && metrics.acquisitionPrice > 0) {
           const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.closingCosts + metrics.holdingCosts;
           const arv = parseFloat(prop.arvAtTimePurchased || '0');
@@ -490,7 +362,7 @@ export default function EntityDashboard() {
       let propertiesWithCoC = 0;
 
       properties.forEach((prop: Property) => {
-        const metrics = calculatePropertyMetrics(prop);
+        const metrics = calculatePropertyKPIs(prop);
         if (metrics && metrics.cashOnCashReturn > 0) {
           totalCoCReturn += metrics.cashOnCashReturn;
           propertiesWithCoC++;
@@ -557,7 +429,7 @@ export default function EntityDashboard() {
     let propertiesWithMetrics = 0;
 
     properties.forEach((prop: Property) => {
-      const metrics = calculatePropertyMetrics(prop);
+      const metrics = calculatePropertyKPIs(prop);
       if (metrics && metrics.acquisitionPrice > 0) {
         const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.closingCosts + metrics.holdingCosts;
         const arv = parseFloat(prop.arvAtTimePurchased || '0');
@@ -579,7 +451,7 @@ export default function EntityDashboard() {
     let propertiesWithCoC = 0;
 
     properties.forEach((prop: Property) => {
-      const metrics = calculatePropertyMetrics(prop);
+      const metrics = calculatePropertyKPIs(prop);
       if (metrics && metrics.cashOnCashReturn > 0) {
         totalCoCReturn += metrics.cashOnCashReturn;
         propertiesWithCoC++;

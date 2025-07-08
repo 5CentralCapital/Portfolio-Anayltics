@@ -91,13 +91,13 @@ export class CalculationService {
       const loanPercentage = parseFloat(assumptions.loanPercentage || '0.75');
       
       // Calculate rental income
-      const grossRentalIncome = this.calculateGrossRentalIncome(dealData.rentRoll, dealData.unitTypes);
+      const grossRentalIncome = CalculationService.calculateGrossRentalIncome(dealData.rentRoll, dealData.unitTypes);
       const vacancyLoss = grossRentalIncome * vacancyRate;
-      const totalOtherIncome = this.calculateOtherIncome(dealData.otherIncome);
+      const totalOtherIncome = CalculationService.calculateOtherIncome(dealData.otherIncome);
       const effectiveGrossIncome = grossRentalIncome - vacancyLoss + totalOtherIncome;
       
       // Calculate expenses
-      const monthlyExpenses = this.calculateMonthlyExpenses(dealData.expenses, effectiveGrossIncome);
+      const monthlyExpenses = CalculationService.calculateMonthlyExpenses(dealData.expenses, effectiveGrossIncome);
       const annualExpenses = monthlyExpenses * 12;
       
       // Calculate NOI
@@ -105,9 +105,9 @@ export class CalculationService {
       const netOperatingIncome = monthlyNOI * 12;
       
       // Calculate project costs
-      const totalRehab = this.calculateTotalRehab(dealData.rehabBudget);
-      const totalClosingCosts = this.calculateClosingCosts(dealData.closingCosts);
-      const totalHoldingCosts = this.calculateHoldingCosts(dealData.holdingCosts);
+      const totalRehab = CalculationService.calculateTotalRehab(dealData.rehabBudget);
+      const totalClosingCosts = CalculationService.calculateClosingCosts(dealData.closingCosts);
+      const totalHoldingCosts = CalculationService.calculateHoldingCosts(dealData.holdingCosts);
       const allInCost = purchasePrice + totalRehab + totalClosingCosts + totalHoldingCosts;
       
       // Calculate loan and equity
@@ -116,7 +116,7 @@ export class CalculationService {
       const capitalRequired = downPayment + totalClosingCosts + totalHoldingCosts;
       
       // Calculate debt service
-      const monthlyDebtService = this.calculateMonthlyDebtService(dealData.loans, loanAmount);
+      const monthlyDebtService = CalculationService.calculateMonthlyDebtService(dealData.loans, loanAmount);
       const annualDebtService = monthlyDebtService * 12;
       
       // Calculate cash flow
@@ -206,7 +206,7 @@ export class CalculationService {
       };
     } catch (error) {
       console.error('Error calculating property KPIs:', error);
-      return this.getDefaultKPIs();
+      return CalculationService.getDefaultKPIs();
     }
   }
   
@@ -335,8 +335,8 @@ export class CalculationService {
     const allProperties = properties.filter(p => ['Under Contract', 'Rehabbing', 'Cashflowing'].includes(p.status));
     
     // Calculate individual property KPIs
-    const propertyKPIs = cashflowingProperties.map(property => this.calculatePropertyKPIs(property));
-    const allPropertyKPIs = allProperties.map(property => this.calculatePropertyKPIs(property));
+    const propertyKPIs = cashflowingProperties.map(property => CalculationService.calculatePropertyKPIs(property));
+    const allPropertyKPIs = allProperties.map(property => CalculationService.calculatePropertyKPIs(property));
     
     // Calculate total units (from all active properties)
     const totalUnits = allProperties.reduce((sum, property) => {
