@@ -144,7 +144,7 @@ export class KPIService {
     const netOperatingIncome = effectiveGrossIncome - adjustedOperatingExpenses;
 
     // Initial loan calculation: loan percentage of (purchase price + total rehab cost)
-    const loanPercentage = Number(deal.loanPercentage) || 0.80; // Default to 80% if not specified
+    const loanPercentage = Number(deal.loanPercentage) || 0; // Use stored loan percentage
     const initialLoanAmount = (Number(deal.purchasePrice) + totalRehab) * loanPercentage;
     
     // Debt service calculations using active loan or fall back to initial loan
@@ -170,13 +170,9 @@ export class KPIService {
       }
       annualDebtService = monthlyDebtService * 12;
     } else {
-      // Fall back to initial loan calculation if no loans defined
-      const monthlyRate = 0.055 / 12; // Default 5.5% rate
-      const totalPayments = 30 * 12; // Default 30-year amortization
-      const numerator = monthlyRate * Math.pow(1 + monthlyRate, totalPayments);
-      const denominator = Math.pow(1 + monthlyRate, totalPayments) - 1;
-      monthlyDebtService = initialLoanAmount * (numerator / denominator);
-      annualDebtService = monthlyDebtService * 12;
+      // No loans defined - don't make assumptions
+      monthlyDebtService = 0;
+      annualDebtService = 0;
     }
 
     // Key ratios and metrics
@@ -212,11 +208,13 @@ export class KPIService {
     const totalReturn = exitValue - allInCost + totalCashFlow;
     const irr = Math.pow(totalReturn / capitalRequired, 1 / holdYears) - 1;
     
-    // Updated equity multiple calculation: (ARV - all in cost) / capital required
-    const equityMultiple = capitalRequired > 0 ? (arv - allInCost) / capitalRequired : 0;
+    // Equity Multiple = Current Equity Value / Total Invested Capital
+    const currentLoanBalance = initialLoanAmount; // Simplified - use initial loan amount
+    const currentEquityValue = arv - currentLoanBalance;
+    const equityMultiple = capitalRequired > 0 ? currentEquityValue / capitalRequired : 0;
 
     // Refinance calculations using editable LTV
-    const refiLTV = Number(deal.refinanceLTV) || 0.75; // Use editable LTV or default to 75%
+    const refiLTV = Number(deal.refinanceLTV) || 0; // Use stored refinance LTV
     const newLoanAmount = arv * refiLTV;
     const existingLoanBalance = activeLoan ? Number(activeLoan.loanAmount) * 0.9 : initialLoanAmount * 0.9; // Assume 10% paid down
     const cashOut = Math.max(0, newLoanAmount - existingLoanBalance);

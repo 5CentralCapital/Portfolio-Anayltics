@@ -183,7 +183,7 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
                 const grossRent = dealData.rentRoll?.reduce((sum: number, unit: any) => sum + (unit.proFormaRent || unit.currentRent || 0), 0) || 0;
                 
                 // Calculate vacancy
-                const vacancyRate = dealData.assumptions?.vacancyRate || 0.05;
+                const vacancyRate = dealData.assumptions?.vacancyRate || 0;
                 const vacancy = grossRent * vacancyRate;
                 const netRevenue = grossRent - vacancy;
                 
@@ -822,7 +822,7 @@ export default function AssetManagement() {
           const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.totalClosingCosts + metrics.totalHoldingCosts;
           const arv = parseFloat(prop.arvAtTimePurchased || '0');
           const cashCollected = parseFloat(prop.totalProfits || '0');
-          const capitalRequired = metrics.totalCashInvested || allInCost * 0.2; // Fallback to 20% down
+          const capitalRequired = metrics.capitalRequired || 0; // Use calculated capital from centralized service
           
           if (capitalRequired > 0) {
             const equityMultiple = (arv - allInCost + cashCollected) / capitalRequired;

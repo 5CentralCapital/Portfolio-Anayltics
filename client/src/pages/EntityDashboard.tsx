@@ -293,15 +293,14 @@ export default function EntityDashboard() {
               totalDebt += activeLoan.loanAmount || 0;
             } else if (dealData?.assumptions) {
               // Use assumption-based calculation for current debt
-              const loanPercentage = dealData.assumptions.loanPercentage || 0.8;
+              const loanPercentage = dealData.assumptions.loanPercentage || 0;
               const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
               const rehabCosts = parseFloat(prop.rehabCosts || '0');
               totalDebt += (purchasePrice + rehabCosts) * loanPercentage;
             }
           } catch (e) {
-            // Fallback to basic calculation if parsing fails
-            const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
-            totalDebt += purchasePrice * 0.8; // Assume 80% LTV
+            // If parsing fails, don't assume debt
+            // Debt information should come from actual data
           }
         }
       });
@@ -341,7 +340,7 @@ export default function EntityDashboard() {
           const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.closingCosts + metrics.holdingCosts;
           const arv = parseFloat(prop.arvAtTimePurchased || '0');
           const cashCollected = parseFloat(prop.totalProfits || '0');
-          const capitalRequired = metrics.totalCashInvested || allInCost * 0.2; // Fallback to 20% down
+          const capitalRequired = metrics.capitalRequired || 0; // Use calculated capital from centralized service
 
           if (capitalRequired > 0) {
             const equityMultiple = (arv - allInCost + cashCollected) / capitalRequired;
@@ -434,7 +433,7 @@ export default function EntityDashboard() {
         const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.closingCosts + metrics.holdingCosts;
         const arv = parseFloat(prop.arvAtTimePurchased || '0');
         const cashCollected = parseFloat(prop.totalProfits || '0');
-        const capitalRequired = metrics.totalCashInvested || allInCost * 0.2; // Fallback to 20% down
+        const capitalRequired = metrics.capitalRequired || 0; // Use calculated capital from centralized service
 
         if (capitalRequired > 0) {
           const equityMultiple = (arv - allInCost + cashCollected) / capitalRequired;

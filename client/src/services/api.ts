@@ -33,7 +33,7 @@ class ApiService {
     };
 
     try {
-      console.log(`Making API request to: ${url}`);
+      // Making API request
       const response = await fetch(url, config);
       
       if (!response.ok) {

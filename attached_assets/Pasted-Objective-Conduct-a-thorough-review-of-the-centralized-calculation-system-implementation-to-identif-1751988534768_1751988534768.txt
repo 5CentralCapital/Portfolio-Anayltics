@@ -1,0 +1,127 @@
+Objective: Conduct a thorough review of the centralized calculation system implementation to identify and eliminate errors, remnant code, static data, and inconsistencies across the real estate application.
+
+Key Areas to Review:
+
+1. Centralized Calculation Service (client/src/services/calculations.ts)
+✅ Verify PropertyKPIs interface completeness and accuracy
+✅ Ensure PortfolioMetrics interface matches usage across components
+✅ Review calculatePropertyKPIs() method for mathematical accuracy
+✅ Check calculatePortfolioMetrics() aggregation logic
+✅ Validate all helper methods (rental income, expenses, debt service calculations)
+✅ Remove any hardcoded values or static assumptions
+✅ Ensure consistent number formatting and validation
+2. Server-Side Calculation Services
+✅ Review server/calculation.service.ts for alignment with client service
+✅ Verify server/kpi.service.ts formulas match Deal Analyzer requirements
+✅ Check database integration and normalized data usage
+✅ Ensure proper error handling for missing/invalid data
+✅ Remove any duplicate calculation logic
+3. Component Integration Issues
+✅ Portfolio.tsx: Remove inline calculatePropertyKPIs function - should use centralized service
+✅ AssetManagement.tsx: Verify all calculations use useCalculations hook
+✅ EntityDashboard.tsx: Check aggregation logic matches centralized service
+✅ Deal Analyzer: Ensure KPI calculations sync with centralized service
+4. Static Data and Hardcoded Values to Remove
+❌ Remove static cap rates (7%, 5.5%, etc.)
+❌ Remove hardcoded vacancy rates
+❌ Remove fixed rental amounts
+❌ Remove static expense ratios
+❌ Remove placeholder loan terms
+❌ Remove mock property data
+5. Database Schema Consistency
+✅ Verify propertyPerformanceMetrics table usage
+✅ Check propertyAssumptions default values
+✅ Ensure propertyCashFlow tracking accuracy
+✅ Validate loan calculations with propertyLoans table
+6. Error-Prone Calculations to Fix
+✅ Equity Multiple: Should be (currentEquityValue) / (totalInvestedCapital)
+✅ Cash-on-Cash Return: Should be (annualCashFlow) / (actualEquityInvested)
+✅ Total Equity: Should aggregate current property equity values
+✅ ARV Calculations: Should use NOI/capRate or market data
+✅ Debt Service: Should use actual loan terms, not estimates
+7. Context Integration
+✅ Verify CalculationsContext.tsx properly wraps all components
+✅ Check useCalculations hook usage consistency
+✅ Ensure no components bypass the centralized service
+8. Performance and Caching
+✅ Review calculation frequency and caching strategy
+✅ Check for unnecessary recalculations
+✅ Ensure database queries are optimized
+9. Testing and Validation
+✅ Verify calculations match across all components
+✅ Test edge cases (negative NOI, zero equity, etc.)
+✅ Validate portfolio aggregation accuracy
+✅ Check number formatting consistency
+10. Code Cleanup Tasks
+✅ Remove unused imports and functions
+✅ Eliminate duplicate interfaces or types
+✅ Remove commented-out calculation code
+✅ Clean up console.log statements
+✅ Standardize error handling patterns
+11. Cross-Page Data Consistency Review
+Since this should be single source of truth, data must match across ALL pages:
+
+Portfolio Page (client/src/pages/Portfolio.tsx)
+✅ Verify KPI bar uses centralized calculatePortfolioMetrics()
+✅ Check property cards use centralized calculatePropertyKPIs()
+✅ Ensure modal calculations match other pages exactly
+✅ Remove any inline calculation functions
+✅ Validate equity multiple and cash-on-cash calculations
+Asset Management Page (client/src/pages/AssetManagement.tsx)
+✅ Verify KPI bar calculations match Portfolio page exactly
+✅ Check PropertyCard component uses centralized calculations
+✅ Ensure SoldPropertyCard calculations are consistent
+✅ Validate modal financial breakdowns match other pages
+✅ Remove any local calculatePropertyMetrics functions
+Entity Dashboard Page (client/src/pages/EntityDashboard.tsx)
+✅ Verify collective metrics match Asset Management KPI bar
+✅ Check entity-specific calculations use centralized service
+✅ Ensure property modal calculations match other pages
+✅ Validate financial statements use consistent data
+✅ Remove any local calculation helper functions
+Deal Analyzer Page (client/src/pages/DealAnalyzer.tsx)
+✅ Ensure imported properties maintain calculation consistency
+✅ Verify KPI calculations align with property detail modals
+✅ Check sensitivity analysis uses centralized formulas
+✅ Validate exit strategy calculations match property modals
+Financial Dashboard and Other Pages
+✅ Review any remaining pages with financial calculations
+✅ Ensure all use centralized calculation service
+✅ Verify data consistency across navigation flows
+Specific Files to Review:
+client/src/services/calculations.ts - Main calculation service
+client/src/contexts/CalculationsContext.tsx - Context provider
+client/src/pages/Portfolio.tsx - Remove inline calculations
+client/src/pages/AssetManagement.tsx - Verify centralized usage
+client/src/pages/EntityDashboard.tsx - Check aggregation logic
+client/src/pages/DealAnalyzer.tsx - Ensure import consistency
+server/calculation.service.ts - Server-side calculations
+server/kpi.service.ts - Deal Analyzer KPIs
+shared/schema.ts - Database schema consistency
+Expected Outcomes:
+✅ Single source of truth for all calculations
+✅ Consistent KPIs across Portfolio, Asset Management, Entity Dashboard, and Deal Analyzer
+✅ No hardcoded financial assumptions
+✅ Proper error handling and validation
+✅ Optimized performance with minimal recalculations
+✅ Clean, maintainable codebase
+Cross-Page Validation Steps:
+Load same property across different pages - verify identical KPIs in:
+Portfolio property modal
+Asset Management property detail modal
+Entity Dashboard property breakdown
+Deal Analyzer import results
+Test portfolio aggregation - ensure KPI bars match between:
+Portfolio page header
+Asset Management KPI bar
+Entity Dashboard collective metrics
+Verify Deal Analyzer import - check that imported properties maintain calculation consistency
+Test real-time updates - ensure changes in one location update consistently across all pages
+Check edge cases - test scenarios with negative values, zero equity, missing data across all pages
+Critical Success Criteria:
+✅ Zero calculation discrepancies between pages for same property
+✅ Identical portfolio metrics across all dashboard views
+✅ Consistent formatting and display of financial data
+✅ Single calculation pathway - no alternative or backup calculations
+✅ Real-time consistency - updates propagate to all views immediately
+This comprehensive review should eliminate all calculation inconsistencies and create a robust, centralized financial calculation system for your real estate application with guaranteed data consistency across all pages and components.

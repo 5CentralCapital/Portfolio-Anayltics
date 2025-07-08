@@ -65,7 +65,7 @@ async function broadcastKPIUpdate(dealId: number) {
       }
     });
   } catch (error) {
-    console.error('Error broadcasting KPI update:', error);
+    // Error broadcasting KPI update
   }
 }
 

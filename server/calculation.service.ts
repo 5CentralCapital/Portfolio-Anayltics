@@ -117,7 +117,9 @@ export class CalculationService {
 
     // Calculate ratios and returns
     const capRate = currentArv > 0 ? netOperatingIncome / currentArv : 0;
-    const cashOnCashReturn = totalInvestedCapital > 0 ? beforeTaxCashFlow / totalInvestedCapital : 0;
+    // Cash-on-Cash Return = Annual Cash Flow / Total Invested Capital (as percentage)
+    const cashOnCashReturn = totalInvestedCapital > 0 ? (beforeTaxCashFlow / totalInvestedCapital) * 100 : 0;
+    // Equity Multiple = Current Equity Value / Total Invested Capital
     const equityMultiple = totalInvestedCapital > 0 ? currentEquityValue / totalInvestedCapital : 0;
     const dscr = annualDebtService > 0 ? netOperatingIncome / annualDebtService : 0;
     const loanToValue = currentArv > 0 ? currentLoanBalance / currentArv : 0;
@@ -136,7 +138,7 @@ export class CalculationService {
       totalOperatingExpenses,
       netOperatingIncome,
       beforeTaxCashFlow,
-      afterTaxCashFlow: beforeTaxCashFlow * 0.75, // Simplified tax assumption
+      afterTaxCashFlow: beforeTaxCashFlow, // No tax assumptions - use actual tax calculations if needed
       capRate,
       cashOnCashReturn,
       equityMultiple,
@@ -170,8 +172,8 @@ export class CalculationService {
         propertyId,
         unitCount: 1,
         purchasePrice: "0",
-        vacancyRate: "0.05",
-        marketCapRate: "0.055"
+        vacancyRate: "0",
+        marketCapRate: "0"
       }).returning();
       return newAssumptions;
     }

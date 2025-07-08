@@ -363,7 +363,9 @@ export default function DealAnalyzer() {
     const finishingsTotal = (rehabBudgetSections?.finishings || []).reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
     
     const rehabSubtotal = exteriorTotal + generalInteriorTotal + kitchensTotal + bathroomsTotal + finishingsTotal;
-    const contingency = rehabSubtotal * 0.10; // 10% buffer
+    // Use contingency rate from assumptions or default to 10%
+    const contingencyRate = assumptions.contingencyRate || 0.10;
+    const contingency = rehabSubtotal * contingencyRate;
     const totalRehab = rehabSubtotal + contingency;
     const totalClosingCosts = Object.values(closingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
     const totalHoldingCosts = Object.values(holdingCosts || {}).reduce((sum, cost) => sum + (Number(cost) || 0), 0);
@@ -387,8 +389,9 @@ export default function DealAnalyzer() {
     const vacancyLoss = grossRent * assumptions.vacancyRate;
     const netRevenue = grossRent - vacancyLoss;
     
-    // Expense calculations
-    const managementFee = netRevenue * 0.08; // 8% management fee
+    // Expense calculations - use management fee from assumptions
+    const managementFeeRate = assumptions.managementFee || 0;
+    const managementFee = netRevenue * managementFeeRate;
     const totalExpenses = Object.values(expenses).reduce((sum, exp) => sum + exp, 0) + managementFee;
     const noi = netRevenue - totalExpenses;
     
@@ -401,8 +404,11 @@ export default function DealAnalyzer() {
     
     // Post-refi debt service (using refinance interest rate assumption)
     const refiRate = assumptions.refinanceInterestRate / 12;
-    const refiPayments = 30 * 12;
-    const monthlyDebtService = refinanceLoan * (refiRate * Math.pow(1 + refiRate, refiPayments)) / (Math.pow(1 + refiRate, refiPayments) - 1);
+    const refiTermYears = assumptions.refinanceTermYears || assumptions.loanTermYears || 0;
+    const refiPayments = refiTermYears * 12;
+    const monthlyDebtService = refiPayments > 0 && refiRate > 0 
+      ? refinanceLoan * (refiRate * Math.pow(1 + refiRate, refiPayments)) / (Math.pow(1 + refiRate, refiPayments) - 1)
+      : 0;
     const annualDebtService = monthlyDebtService * 12;
     const netCashFlow = noi - annualDebtService;
     
@@ -411,8 +417,10 @@ export default function DealAnalyzer() {
     const actualEquityInvested = totalCashInvested - cashOut; // Net equity after refinance cash-out
     const cashOnCashReturn = actualEquityInvested > 0 ? netCashFlow / actualEquityInvested : 0;
     
-    // Equity multiple: (ARV - all in cost) / capital required
-    const equityMultiple = capitalRequired > 0 ? (arv - allInCost) / capitalRequired : 0;
+    // Equity Multiple = Current Equity Value / Total Invested Capital
+    const currentLoanBalance = refinanceLoan; // Use refinance loan as current balance
+    const currentEquityValue = arv - currentLoanBalance;
+    const equityMultiple = capitalRequired > 0 ? currentEquityValue / capitalRequired : 0;
     
     const breakEvenOccupancy = grossRent > 0 ? (totalExpenses + annualDebtService) / grossRent : 1;
     const totalProfit = arv - allInCost;
@@ -866,7 +874,7 @@ export default function DealAnalyzer() {
           zipCode = components.zipCode || '';
         }
       } catch (e) {
-        console.log('Could not parse stored address components, falling back to parsing');
+        // Could not parse stored address components, falling back to parsing
       }
       
       // Fallback to manual parsing if no components stored
@@ -886,7 +894,9 @@ export default function DealAnalyzer() {
       const finishingsTotal = rehabBudgetSections.finishings.reduce((sum, item) => sum + (item.perUnitCost * item.quantity), 0);
       
       const rehabSubtotal = exteriorTotal + generalInteriorTotal + kitchensTotal + bathroomsTotal + finishingsTotal;
-      const contingency = rehabSubtotal * 0.10; // 10% buffer
+      // Use contingency rate from assumptions or default to 10%
+      const contingencyRate = assumptions.contingencyRate || 0.10;
+      const contingency = rehabSubtotal * contingencyRate;
       const totalRehabCosts = rehabSubtotal + contingency;
 
       // Calculate total closing costs and holding costs
@@ -989,7 +999,7 @@ export default function DealAnalyzer() {
         }
       };
 
-      console.log('Importing property data:', propertyData);
+      // Importing property data
 
       // Get authentication token
       const authToken = localStorage.getItem('authToken');
@@ -1023,7 +1033,7 @@ export default function DealAnalyzer() {
       }
 
       const result = await response.json();
-      console.log('Import successful:', result);
+      // Import successful
 
       // After successful property creation, import the rehab line items
       if (result.id) {
@@ -1097,10 +1107,10 @@ export default function DealAnalyzer() {
       rehabData[propertyId] = rehabLineItems;
       localStorage.setItem('rehabLineItems', JSON.stringify(rehabData));
       
-      console.log(`Imported ${rehabLineItems.length} rehab line items for property ${propertyId}`);
+      // Imported rehab line items for property
       
     } catch (error) {
-      console.error('Error importing rehab line items:', error);
+      // Error importing rehab line items
       // Don't throw error here as the main property import was successful
     }
   };
@@ -2255,7 +2265,8 @@ export default function DealAnalyzer() {
                   ];
                   return rates.map(rate => {
                     const monthlyRate = rate / 100 / 12;
-                    const payments = 30 * 12; // 30-year term for refinance
+                    const termYears = assumptions.refinanceTermYears || assumptions.loanTermYears || 0;
+                    const payments = termYears * 12;
                     const monthlyPayment = (metrics.refinanceLoan * monthlyRate * Math.pow(1 + monthlyRate, payments)) / (Math.pow(1 + monthlyRate, payments) - 1);
                     const annualPayment = monthlyPayment * 12;
                     const adjustedCashFlow = metrics.noi - annualPayment;

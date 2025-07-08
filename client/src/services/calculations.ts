@@ -82,13 +82,13 @@ export class CalculationService {
       // Extract Deal Analyzer data if available
       const dealData: DealAnalyzerData = property.dealAnalyzerData || {};
       
-      // Get assumptions or use property fields as fallback
+      // Get assumptions or use property fields as fallback - no hardcoded defaults
       const assumptions = dealData.assumptions || {};
       const purchasePrice = parseFloat(assumptions.purchasePrice || property.acquisitionPrice || '0');
-      const vacancyRate = parseFloat(assumptions.vacancyRate || '0.05');
-      const managementFee = parseFloat(assumptions.managementFee || '0.08');
-      const exitCapRate = parseFloat(assumptions.exitCapRate || '0.055');
-      const loanPercentage = parseFloat(assumptions.loanPercentage || '0.75');
+      const vacancyRate = parseFloat(assumptions.vacancyRate || '0');
+      const managementFee = parseFloat(assumptions.managementFee || '0');
+      const exitCapRate = parseFloat(assumptions.exitCapRate || assumptions.marketCapRate || '0');
+      const loanPercentage = parseFloat(assumptions.loanPercentage || '0');
       
       // Calculate rental income
       const grossRentalIncome = CalculationService.calculateGrossRentalIncome(dealData.rentRoll, dealData.unitTypes);
@@ -132,8 +132,10 @@ export class CalculationService {
       const currentEquityValue = arv - loanAmount;
       
       // Calculate return metrics with validation
-      const equityMultiple = capitalRequired > 0 
-        ? Math.max(0, currentEquityValue / capitalRequired)
+      // Equity Multiple = Current Equity Value / Total Invested Capital
+      const totalInvestedCapital = capitalRequired; // capital required includes all invested capital
+      const equityMultiple = totalInvestedCapital > 0 
+        ? Math.max(0, currentEquityValue / totalInvestedCapital)
         : 0;
         
       const cashOnCashReturn = capitalRequired > 0 
@@ -311,13 +313,7 @@ export class CalculationService {
    */
   private static calculateMonthlyDebtService(loans?: any[], defaultLoanAmount?: number): number {
     if (!loans?.length) {
-      // If no loans defined, estimate based on default loan amount
-      if (defaultLoanAmount && defaultLoanAmount > 0) {
-        // Assume 6% interest, 30-year amortization
-        const rate = 0.06 / 12;
-        const term = 30 * 12;
-        return (defaultLoanAmount * rate * Math.pow(1 + rate, term)) / (Math.pow(1 + rate, term) - 1);
-      }
+      // No loans defined - return 0 instead of making assumptions
       return 0;
     }
     
