@@ -52,13 +52,22 @@ function DocumentManagement() {
   const { data: processingHistory = [], refetch: refetchHistory } = useQuery<ProcessingHistory[]>({
     queryKey: ['/api/ai-documents/history', selectedProperty, selectedEntity],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (selectedProperty) params.append('propertyId', selectedProperty.toString());
-      if (selectedEntity) params.append('entityId', selectedEntity.toString());
-      
-      const response = await fetch(`/api/ai-documents/history?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch processing history');
-      return response.json();
+      try {
+        const params = new URLSearchParams();
+        if (selectedProperty) params.append('propertyId', selectedProperty.toString());
+        if (selectedEntity) params.append('entityId', selectedEntity.toString());
+        
+        const response = await fetch(`/api/ai-documents/history?${params}`);
+        if (!response.ok) {
+          console.warn('Failed to fetch processing history, returning empty array');
+          return [];
+        }
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.warn('Error fetching processing history:', error);
+        return [];
+      }
     }
   });
 
@@ -194,12 +203,12 @@ function DocumentManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Property</label>
-                  <Select value={selectedProperty?.toString()} onValueChange={(value) => setSelectedProperty(value ? Number(value) : undefined)}>
+                  <Select value={selectedProperty?.toString() || "none"} onValueChange={(value) => setSelectedProperty(value === "none" ? undefined : Number(value))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select property (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No property selected</SelectItem>
+                      <SelectItem value="none">No property selected</SelectItem>
                       {Array.isArray(properties) && properties.map(property => (
                         <SelectItem key={property.id} value={property.id.toString()}>
                           {property.address} ({property.apartments} units)
@@ -211,12 +220,12 @@ function DocumentManagement() {
 
                 <div>
                   <label className="text-sm font-medium">Entity</label>
-                  <Select value={selectedEntity?.toString()} onValueChange={(value) => setSelectedEntity(value ? Number(value) : undefined)}>
+                  <Select value={selectedEntity?.toString() || "none"} onValueChange={(value) => setSelectedEntity(value === "none" ? undefined : Number(value))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select entity (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No entity selected</SelectItem>
+                      <SelectItem value="none">No entity selected</SelectItem>
                       <SelectItem value="1">5Central Capital</SelectItem>
                       <SelectItem value="2">The House Doctors</SelectItem>
                       <SelectItem value="3">Arcadia Vision Group</SelectItem>
@@ -293,7 +302,7 @@ function DocumentManagement() {
                 </CardContent>
               </Card>
             ) : (
-              filteredHistory.map(item => (
+              Array.isArray(filteredHistory) && filteredHistory.map(item => (
                 <Card key={item.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
@@ -305,8 +314,8 @@ function DocumentManagement() {
                             {getStatusBadge(item)}
                           </div>
                           <div className="text-sm text-gray-600 space-y-1">
-                            <p>Type: <span className="capitalize">{item.documentType.replace('_', ' ')}</span></p>
-                            <p>Confidence: {Math.round(item.confidence * 100)}%</p>
+                            <p>Type: <span className="capitalize">{item.documentType?.replace('_', ' ') || 'Unknown'}</span></p>
+                            <p>Confidence: {Math.round((item.confidence || 0) * 100)}%</p>
                             <p>Processed: {new Date(item.processedAt).toLocaleDateString()}</p>
                             {item.appliedAt && (
                               <p>Applied: {new Date(item.appliedAt).toLocaleDateString()}</p>
