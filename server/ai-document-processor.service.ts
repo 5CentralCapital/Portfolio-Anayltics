@@ -90,14 +90,18 @@ export class AIDocumentProcessor {
       
       // Step 1: Classify document type
       const classification = await this.classifyDocument(filePath, fileName, model);
+      console.log('Document classification:', classification);
       
-      if (classification.type === 'unknown') {
+      if (classification.type === 'unknown' || classification.confidence < 0.5) {
+        // Return partial result for manual review instead of failing
         return {
           success: false,
-          documentType: 'unknown',
+          documentType: classification.type,
           extractedData: null,
-          confidence: 0,
-          errors: ['Could not determine document type']
+          confidence: classification.confidence,
+          errors: ['Document classification uncertain. Manual review recommended.'],
+          warnings: [`Detected as: ${classification.subtype || 'unknown document type'}`],
+          suggestedActions: ['Use manual review to verify document type and extracted data', 'Ensure document is a lease, LLC document, or mortgage statement']
         };
       }
 
@@ -222,29 +226,31 @@ export class AIDocumentProcessor {
       messages: [
         {
           role: "system",
-          content: `You are a document classifier for real estate property management. Classify documents as:
-          - lease: Residential/commercial lease agreements
-          - llc_document: LLC operating agreements, articles of organization, membership documents  
-          - mortgage_statement: Monthly mortgage/loan statements
-          - unknown: Cannot determine or other document type`
+          content: `You are a document classifier for real estate property management. Classify documents as one of these types:
+          - lease: Residential/commercial lease agreements, rental agreements, tenant documents
+          - llc_document: LLC operating agreements, articles of organization, membership documents, corporate documents
+          - mortgage_statement: Monthly mortgage/loan statements, lender statements, payment documents
+          - unknown: Cannot determine or other document type
+          
+          Be generous with classification - if a document could reasonably be one of these types, classify it rather than marking as unknown.`
         },
         {
           role: "user",
-          content: `Classify this document content and respond with JSON:
+          content: `Analyze this document content and classify it. Content preview:
           
-          Content: ${content}
+          ${content}
           
-          Format:
+          Respond with JSON format:
           {
             "type": "lease|llc_document|mortgage_statement|unknown",
             "confidence": 0.0-1.0,
-            "subtype": "specific document subtype",
-            "reasoning": "classification reasoning"
+            "subtype": "brief description of document"
           }`
         }
       ],
       response_format: { type: "json_object" },
-      max_tokens: 300
+      max_tokens: 500,
+      temperature: 0.1
     });
 
     const result = JSON.parse(response.choices[0].message.content);
