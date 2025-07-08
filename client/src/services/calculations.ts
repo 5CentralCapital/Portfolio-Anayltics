@@ -421,18 +421,22 @@ export class CalculationService {
    * Format currency for display
    */
   static formatCurrency(value: number): string {
+    // Ensure value is a number
+    const numValue = typeof value === 'number' ? value : parseFloat(value) || 0;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(value);
+    }).format(numValue);
   }
   
   /**
    * Format percentage for display
    */
   static formatPercentage(value: number, decimals: number = 1): string {
-    return `${value.toFixed(decimals)}%`;
+    // Ensure value is a number
+    const numValue = typeof value === 'number' ? value : parseFloat(value) || 0;
+    return `${numValue.toFixed(decimals)}%`;
   }
 }
