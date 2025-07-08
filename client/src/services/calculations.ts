@@ -336,7 +336,7 @@ export class CalculationService {
     
     // Calculate total units (from all active properties)
     const totalUnits = allProperties.reduce((sum, property) => {
-      const units = parseInt(property.numberOfUnits || '0');
+      const units = parseInt(property.apartments || property.numberOfUnits || '0');
       return sum + units;
     }, 0);
     
