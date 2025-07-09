@@ -698,8 +698,15 @@ export default function AssetManagement() {
 
   // Add the missing getPropertyCalculations function
   const getPropertyCalculations = () => {
-    if (!showPropertyDetailModal || !editingModalProperty) return null;
-    return calculatePropertyKPIs(editingModalProperty);
+    // Use showPropertyDetailModal as the primary data source, fallback to editingModalProperty
+    const propertyData = showPropertyDetailModal || editingModalProperty;
+    if (!propertyData) {
+      console.log('getPropertyCalculations: No property data available');
+      return null;
+    }
+    
+    console.log('getPropertyCalculations: Using property data:', propertyData.address);
+    return calculatePropertyKPIs(propertyData);
   };
 
   if (isLoading) {
