@@ -3390,13 +3390,12 @@ export default function AssetManagement() {
       )}
 
       {/* TenantDetailsModal */}
-      {showTenantModal && selectedTenant && (
+      {tenantDetailsModal.isOpen && tenantDetailsModal.tenantData && (
         <TenantDetailsModal
-          tenant={selectedTenant}
-          onClose={() => {
-            setShowTenantModal(false);
-            setSelectedTenant(null);
-          }}
+          isOpen={tenantDetailsModal.isOpen}
+          onClose={() => setTenantDetailsModal({ isOpen: false, tenantData: null, unitNumber: '' })}
+          tenantData={tenantDetailsModal.tenantData}
+          unitNumber={tenantDetailsModal.unitNumber}
         />
       )}
 
