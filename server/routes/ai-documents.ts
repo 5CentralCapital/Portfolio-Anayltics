@@ -71,14 +71,23 @@ router.post('/process', upload.single('document'), async (req: ProcessDocumentRe
     let result: ProcessingResult;
 
     // Check if it's a CSV file for lease processing
-    if (fileName.toLowerCase().endsWith('.csv') && 
-        (fileName.toLowerCase().includes('lease') || fileName.toLowerCase().includes('tenant'))) {
-      console.log('Detected CSV lease file, using CSV processor');
+    const isCSV = fileName.toLowerCase().endsWith('.csv');
+    const hasLeaseKeyword = fileName.toLowerCase().includes('lease');
+    const hasTenantKeyword = fileName.toLowerCase().includes('tenant');
+    
+    console.log(`CSV Detection - isCSV: ${isCSV}, hasLeaseKeyword: ${hasLeaseKeyword}, hasTenantKeyword: ${hasTenantKeyword}`);
+    
+    if (isCSV && (hasLeaseKeyword || hasTenantKeyword)) {
+      console.log('✓ Detected CSV lease file, using CSV processor');
       
       try {
+        console.log('🔄 Starting CSV lease processing...');
         const csvResult = await csvLeaseProcessor.processLeaseCSV(filePath, fileName);
+        console.log('📊 CSV processing result:', csvResult);
         
         if (csvResult.success) {
+          console.log(`✓ CSV processed successfully: ${csvResult.processedCount} records found`);
+          
           // Convert CSV result to ProcessingResult format
           result = {
             success: true,
@@ -98,18 +107,22 @@ router.post('/process', upload.single('document'), async (req: ProcessDocumentRe
             ]
           };
 
+          console.log(`📝 Auto-apply setting: ${autoApply}`);
           // Auto-save to database if requested
           if (autoApply === 'true' || autoApply === true) {
+            console.log('💾 Auto-saving to database...');
             const saveResult = await csvLeaseProcessor.saveLeaseDataToDatabase(
               csvResult.leaseData,
               csvResult.propertyMatches
             );
+            console.log('💾 Save result:', saveResult);
             result.suggestedActions?.push(`Saved ${saveResult.saved} lease records to database`);
             if (saveResult.errors.length > 0) {
               result.warnings = [...(result.warnings || []), ...saveResult.errors];
             }
           }
         } else {
+          console.log('❌ CSV processing failed:', csvResult.errors);
           result = {
             success: false,
             documentType: 'lease',
@@ -129,6 +142,7 @@ router.post('/process', upload.single('document'), async (req: ProcessDocumentRe
         };
       }
     } else {
+      console.log('📄 Processing with AI (not CSV lease file)');
       // Process with AI for non-CSV files
       result = await aiDocumentProcessor.processDocument(filePath, fileName, model || 'gpt-4o');
     }

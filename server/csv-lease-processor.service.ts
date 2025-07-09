@@ -6,7 +6,7 @@
 import * as XLSX from 'xlsx';
 import { promises as fs } from 'fs';
 import { db } from './db';
-import { properties, propertyRentRoll, tenantDetails } from '@shared/schema';
+import { properties, propertyRentRoll } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 
 export interface CSVLeaseData {
@@ -43,8 +43,13 @@ class CSVLeaseProcessorService {
       console.log(`Processing CSV lease file: ${fileName}`);
       
       const csvData = await this.parseCSVFile(filePath);
+      console.log('Raw CSV data:', csvData);
+      
       const leaseData = this.mapCSVToLeaseData(csvData);
+      console.log('Mapped lease data:', leaseData);
+      
       const propertyMatches = await this.matchPropertiesToLeases(leaseData);
+      console.log('Property matches:', propertyMatches);
       
       const result: LeaseProcessingResult = {
         success: true,
@@ -120,27 +125,41 @@ class CSVLeaseProcessorService {
     
     // Get all properties for matching
     const allProperties = await db.select().from(properties);
+    console.log('Available properties for matching:', allProperties.map(p => ({ id: p.id, address: p.address })));
     
     for (const lease of leaseData) {
+      console.log(`Trying to match lease address: "${lease.address}" for tenant: ${lease.tenantName}`);
+      
       // Try to match by address
       const matchedProperty = allProperties.find(property => {
         const propertyAddress = property.address?.toLowerCase().trim();
         const leaseAddress = lease.address?.toLowerCase().trim();
         
+        console.log(`  Comparing property "${propertyAddress}" with lease "${leaseAddress}"`);
+        
         // Remove unit numbers and extra details for comparison
         const cleanPropertyAddress = propertyAddress?.replace(/\s*(#|unit|apt|apartment)\s*\d+.*$/i, '').trim();
         const cleanLeaseAddress = leaseAddress?.replace(/\s*(#|unit|apt|apartment)\s*\d+.*$/i, '').trim();
         
-        return cleanPropertyAddress && cleanLeaseAddress && 
+        console.log(`  Clean property: "${cleanPropertyAddress}" vs clean lease: "${cleanLeaseAddress}"`);
+        
+        const isMatch = cleanPropertyAddress && cleanLeaseAddress && 
                (cleanLeaseAddress.includes(cleanPropertyAddress) || cleanPropertyAddress.includes(cleanLeaseAddress));
+        
+        console.log(`  Match result: ${isMatch}`);
+        return isMatch;
       });
       
       if (matchedProperty) {
         const key = `${lease.address}-${lease.unitNumber}`;
         propertyMatches[key] = matchedProperty.id;
+        console.log(`✓ Matched ${lease.tenantName} to property ${matchedProperty.id} (${matchedProperty.address})`);
+      } else {
+        console.log(`✗ No match found for ${lease.tenantName} at "${lease.address}"`);
       }
     }
     
+    console.log('Final property matches:', propertyMatches);
     return propertyMatches;
   }
 
@@ -165,77 +184,49 @@ class CSVLeaseProcessorService {
         }
 
         // Check if rent roll entry exists
+        console.log(`Looking for unit ${lease.unitNumber} in property ${propertyId}`);
         const existingRentRoll = await db.select()
           .from(propertyRentRoll)
           .where(and(
             eq(propertyRentRoll.propertyId, propertyId),
-            eq(propertyRentRoll.unitNumber, lease.unitNumber)
+            eq(propertyRentRoll.unitNumber, lease.unitNumber.toString())
           ))
           .limit(1);
+        
+        console.log(`Found ${existingRentRoll.length} existing rent roll entries`);  
 
         if (existingRentRoll.length > 0) {
           // Update existing rent roll with real lease data
+          console.log(`Updating existing rent roll for unit ${lease.unitNumber}`);
           await db.update(propertyRentRoll)
             .set({
               currentRent: lease.monthlyRent.toString(),
               tenantName: lease.tenantName,
               isVacant: false,
-              leaseStart: new Date(lease.leaseFrom),
-              leaseEnd: new Date(lease.leaseTo),
+              leaseStart: lease.leaseFrom ? new Date(lease.leaseFrom) : null,
+              leaseEnd: lease.leaseTo ? new Date(lease.leaseTo) : null,
               updatedAt: new Date()
             })
             .where(eq(propertyRentRoll.id, existingRentRoll[0].id));
+          console.log(`✓ Updated rent roll for ${lease.tenantName} in unit ${lease.unitNumber}`);
         } else {
           // Create new rent roll entry
           await db.insert(propertyRentRoll).values({
             propertyId,
-            unitNumber: lease.unitNumber,
+            unitNumber: lease.unitNumber.toString(),
             currentRent: lease.monthlyRent.toString(),
             proFormaRent: lease.monthlyRent.toString(),
             tenantName: lease.tenantName,
             isVacant: false,
-            leaseStart: new Date(lease.leaseFrom),
-            leaseEnd: new Date(lease.leaseTo),
+            leaseStart: lease.leaseFrom ? new Date(lease.leaseFrom) : null,
+            leaseEnd: lease.leaseTo ? new Date(lease.leaseTo) : null,
             createdAt: new Date(),
             updatedAt: new Date()
           });
         }
 
-        // Save detailed tenant information
-        const tenantDetailData = {
-          propertyId,
-          unitNumber: lease.unitNumber,
-          tenantName: lease.tenantName,
-          phone: lease.phone || null,
-          email: lease.email || null,
-          leaseStartDate: new Date(lease.leaseFrom),
-          leaseEndDate: new Date(lease.leaseTo),
-          monthlyRent: lease.monthlyRent,
-          securityDeposit: lease.securityDeposit || 0,
-          petPolicy: lease.petPolicy || null,
-          utilitiesResponsibility: lease.utilities || null,
-          parkingSpaces: lease.parking ? 1 : 0,
-          leaseNotes: `Imported from CSV: ${lease.petPolicy ? 'Pet Policy: ' + lease.petPolicy : ''} ${lease.utilities ? 'Utilities: ' + lease.utilities : ''}`.trim(),
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-
-        // Check if tenant details already exist
-        const existingTenant = await db.select()
-          .from(tenantDetails)
-          .where(and(
-            eq(tenantDetails.propertyId, propertyId),
-            eq(tenantDetails.unitNumber, lease.unitNumber)
-          ))
-          .limit(1);
-
-        if (existingTenant.length > 0) {
-          await db.update(tenantDetails)
-            .set(tenantDetailData)
-            .where(eq(tenantDetails.id, existingTenant[0].id));
-        } else {
-          await db.insert(tenantDetails).values(tenantDetailData);
-        }
+        // Note: Detailed tenant information will be stored when tenant modal is accessed
+        // For now, we just store basic info in the rent roll
 
         saved++;
         console.log(`Saved lease data for ${lease.tenantName} - Unit ${lease.unitNumber}`);
@@ -256,28 +247,45 @@ class CSVLeaseProcessorService {
     if (!dateValue) return null;
     
     try {
-      // Handle various date formats
-      let dateStr = dateValue.toString().trim();
+      console.log(`Parsing date: ${dateValue} (type: ${typeof dateValue})`);
       
-      // Handle M/D/YYYY format
-      if (dateStr.includes('/') && dateStr.split('/').length === 3) {
-        const parts = dateStr.split('/');
-        if (parts.length === 3) {
-          const month = parts[0].padStart(2, '0');
-          const day = parts[1].padStart(2, '0');
-          const year = parts[2];
-          dateStr = `${year}-${month}-${day}`;
+      // Handle Excel serial numbers and various date formats
+      let date: Date;
+      
+      if (typeof dateValue === 'number') {
+        // Excel date serial number (days since 1900-01-01, but Excel has a leap year bug)
+        const excelEpoch = new Date(1900, 0, 1);
+        const days = dateValue - 2; // Adjust for Excel's 1900 leap year bug
+        date = new Date(excelEpoch.getTime() + days * 24 * 60 * 60 * 1000);
+        console.log(`Excel date ${dateValue} converted to: ${date}`);
+      } else if (typeof dateValue === 'string') {
+        // Handle M/D/YYYY format and other string formats
+        let dateStr = dateValue.toString().trim();
+        
+        if (dateStr.includes('/') && dateStr.split('/').length === 3) {
+          const parts = dateStr.split('/');
+          const month = parseInt(parts[0]) - 1; // Month is 0-indexed in Date constructor
+          const day = parseInt(parts[1]);
+          const year = parseInt(parts[2]);
+          date = new Date(year, month, day);
+          console.log(`Date string "${dateStr}" parsed as: ${date}`);
+        } else {
+          date = new Date(dateStr);
         }
+      } else {
+        date = new Date(dateValue);
       }
       
-      const date = new Date(dateStr);
       if (isNaN(date.getTime())) {
+        console.warn(`Could not parse date: ${dateValue}`);
         return null;
       }
       
-      return date.toISOString().split('T')[0];
+      const result = date.toISOString().split('T')[0];
+      console.log(`Final date result: ${result}`);
+      return result;
     } catch (error) {
-      console.error('Error parsing date:', dateValue, error);
+      console.error(`Error parsing date ${dateValue}:`, error);
       return null;
     }
   }
