@@ -8,7 +8,7 @@ import { useCalculations } from '@/contexts/CalculationsContext';
 
 const Portfolio = () => {
   const [showKPIModal, setShowKPIModal] = useState<Property | null>(null);
-  const { calculateProperty, formatCurrency, formatPercentage } = useCalculations();
+  const { calculateProperty, calculatePortfolioMetrics, formatCurrency, formatPercentage } = useCalculations();
 
   // Fetch properties from public endpoint
   const { data: propertiesResponse, isLoading, error } = useQuery({

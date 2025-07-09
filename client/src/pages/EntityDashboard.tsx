@@ -289,7 +289,7 @@ export default function EntityDashboard() {
 
         // Calculate current debt using centralized calculation service
         try {
-          const metrics = calculatePropertyKPIs(prop);
+          const metrics = calculateProperty(prop);
           if (metrics && metrics.currentDebt) {
             totalDebt += metrics.currentDebt;
           } else {
@@ -357,7 +357,7 @@ export default function EntityDashboard() {
       properties
         .filter((prop: Property) => prop.status !== 'Sold')
         .forEach((prop: Property) => {
-        const metrics = calculatePropertyKPIs(prop);
+        const metrics = calculateProperty(prop);
         if (metrics && metrics.acquisitionPrice > 0) {
           const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.totalClosingCosts + metrics.totalHoldingCosts;
           const arv = parseFloat(prop.arvAtTimePurchased || '0');
@@ -385,7 +385,7 @@ export default function EntityDashboard() {
       properties
         .filter((prop: Property) => prop.status !== 'Sold')
         .forEach((prop: Property) => {
-        const metrics = calculatePropertyKPIs(prop);
+        const metrics = calculateProperty(prop);
         if (metrics && metrics.cashOnCashReturn > 0) {
           totalCoCReturn += metrics.cashOnCashReturn;
           propertiesWithCoC++;
@@ -415,7 +415,7 @@ export default function EntityDashboard() {
       if (prop.status === 'Cashflowing' || prop.status === 'Rehabbing' || prop.status === 'Under Contract') {
         // Use centralized calculation service for debt calculation
         try {
-          const metrics = calculatePropertyKPIs(prop);
+          const metrics = calculateProperty(prop);
           if (metrics && metrics.currentDebt) {
             totalDebt += metrics.currentDebt;
           } else {
@@ -465,7 +465,7 @@ export default function EntityDashboard() {
     let propertiesWithMetrics = 0;
 
     properties.forEach((prop: Property) => {
-      const metrics = calculatePropertyKPIs(prop);
+      const metrics = calculateProperty(prop);
       if (metrics && metrics.equityMultiple !== undefined) {
         totalEquityMultiple += metrics.equityMultiple;
         propertiesWithMetrics++;
@@ -479,7 +479,7 @@ export default function EntityDashboard() {
     let propertiesWithCoC = 0;
 
     properties.forEach((prop: Property) => {
-      const metrics = calculatePropertyKPIs(prop);
+      const metrics = calculateProperty(prop);
       if (metrics && metrics.cashOnCashReturn > 0) {
         totalCoCReturn += metrics.cashOnCashReturn;
         propertiesWithCoC++;
@@ -1175,7 +1175,7 @@ export default function EntityDashboard() {
                   <div className="space-y-3">
                     {(() => {
                       // Use centralized calculation service for accurate expense breakdown
-                      const calculatedMetrics = calculatePropertyKPIs(selectedPropertyModal);
+                      const calculatedMetrics = calculateProperty(selectedPropertyModal);
                       const monthlyExpenses = calculatedMetrics.monthlyExpenses || 0;
                       const totalExpenses = monthlyExpenses;
                       
@@ -1244,7 +1244,7 @@ export default function EntityDashboard() {
                   <div className="space-y-3">
                     {(() => {
                       // Use centralized calculation service for accurate NOI and cash flow
-                      const calculatedMetrics = calculatePropertyKPIs(selectedPropertyModal);
+                      const calculatedMetrics = calculateProperty(selectedPropertyModal);
                       const noi = calculatedMetrics.netOperatingIncome || 0;
                       const monthlyDebtService = calculatedMetrics.monthlyDebtService || 0;
                       const netCashFlow = calculatedMetrics.monthlyCashFlow || 0;
