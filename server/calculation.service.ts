@@ -306,18 +306,19 @@ export class CalculationService {
       grossRentalIncome: metrics.grossRentalIncome.toString(),
       netOperatingIncome: metrics.netOperatingIncome.toString(),
       annualCashFlow: metrics.beforeTaxCashFlow.toString(),
-      capRate: metrics.capRate.toString(),
-      cashOnCashReturn: metrics.cashOnCashReturn.toString(),
+      // Convert percentages to decimal format (divide by 100) and cap at 9.9999
+      capRate: Math.min(metrics.capRate / 100, 9.9999).toString(),
+      cashOnCashReturn: Math.min(metrics.cashOnCashReturn / 100, 9.9999).toString(),
       dscr: metrics.dscr.toString(),
       equityMultiple: metrics.equityMultiple.toString(),
-      irr: metrics.irr.toString(),
+      irr: Math.min(metrics.irr / 100, 9.9999).toString(),
       currentArv: metrics.currentArv.toString(),
       totalInvestedCapital: metrics.totalInvestedCapital.toString(),
       currentEquityValue: metrics.currentEquityValue.toString(),
-      breakEvenOccupancy: metrics.breakEvenOccupancy.toString(),
-      operatingExpenseRatio: metrics.operatingExpenseRatio.toString(),
-      loanToValue: metrics.loanToValue.toString(),
-      debtYield: metrics.debtYield.toString()
+      breakEvenOccupancy: Math.min(metrics.breakEvenOccupancy / 100, 9.9999).toString(),
+      operatingExpenseRatio: Math.min(metrics.operatingExpenseRatio / 100, 9.9999).toString(),
+      loanToValue: Math.min(metrics.loanToValue / 100, 9.9999).toString(),
+      debtYield: Math.min(metrics.debtYield / 100, 9.9999).toString()
     });
   }
 
