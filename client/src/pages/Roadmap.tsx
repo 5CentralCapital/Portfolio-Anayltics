@@ -572,25 +572,25 @@ export default function Roadmap() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div className="p-4 bg-green-50 rounded-lg">
                       <div className="text-3xl font-bold text-green-600">
-                        {activeProperties ? activeProperties.filter(p => p.status === 'Cashflowing').length : 0}
+                        {activeProperties && Array.isArray(activeProperties) ? activeProperties.filter(p => p.status === 'Cashflowing').length : 0}
                       </div>
                       <div className="text-sm text-gray-600">Owned Properties</div>
                     </div>
                     <div className="p-4 bg-blue-50 rounded-lg">
                       <div className="text-3xl font-bold text-blue-600">
-                        {activeProperties ? activeProperties.filter(p => p.status === 'Under Contract' || p.status === 'Rehabbing').length : 0}
+                        {activeProperties && Array.isArray(activeProperties) ? activeProperties.filter(p => p.status === 'Under Contract' || p.status === 'Rehabbing').length : 0}
                       </div>
                       <div className="text-sm text-gray-600">Pipeline Properties</div>
                     </div>
                     <div className="p-4 bg-purple-50 rounded-lg">
                       <div className="text-3xl font-bold text-purple-600">
-                        {activeProperties ? activeProperties.filter(p => p.status !== 'Sold').length : 0}
+                        {activeProperties && Array.isArray(activeProperties) ? activeProperties.filter(p => p.status !== 'Sold').length : 0}
                       </div>
                       <div className="text-sm text-gray-600">Total Portfolio</div>
                     </div>
                     <div className="p-4 bg-orange-50 rounded-lg">
                       <div className="text-3xl font-bold text-orange-600">
-                        {activeProperties ? 
+                        {activeProperties && Array.isArray(activeProperties) ? 
                           `$${(activeProperties.filter(p => p.status !== 'Sold').reduce((sum, p) => sum + (parseFloat(p.arv) || 0), 0) / 1000000).toFixed(1)}M` : 
                           '$0M'
                         }
