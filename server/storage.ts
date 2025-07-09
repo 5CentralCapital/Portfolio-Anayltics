@@ -265,21 +265,23 @@ export class DatabaseStorage implements IStorage {
   async getProperties(): Promise<Property[]> {
     const allProperties = await db.select().from(properties).orderBy(desc(properties.createdAt));
     
-    // Add rent roll data to each property
-    const propertiesWithRentRoll = await Promise.all(
+    // Add rent roll, unit types, and property loans data to each property
+    const propertiesWithData = await Promise.all(
       allProperties.map(async (property) => {
         const rentRoll = await db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, property.id));
         const unitTypes = await db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, property.id));
+        const propertyLoansData = await db.select().from(propertyLoans).where(eq(propertyLoans.propertyId, property.id));
         
         return {
           ...property,
           rentRoll,
-          unitTypes
+          unitTypes,
+          propertyLoans: propertyLoansData
         };
       })
     );
     
-    return propertiesWithRentRoll;
+    return propertiesWithData;
   }
 
   async getPropertiesForUser(userId: number): Promise<Property[]> {
@@ -295,21 +297,23 @@ export class DatabaseStorage implements IStorage {
     const allProperties = await db.select().from(properties).orderBy(desc(properties.createdAt));
     const userProperties = allProperties.filter(property => userEntityNames.includes(property.entity || ''));
     
-    // Add rent roll data to each property
-    const propertiesWithRentRoll = await Promise.all(
+    // Add rent roll, unit types, and property loans data to each property
+    const propertiesWithData = await Promise.all(
       userProperties.map(async (property) => {
         const rentRoll = await db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, property.id));
         const unitTypes = await db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, property.id));
+        const propertyLoansData = await db.select().from(propertyLoans).where(eq(propertyLoans.propertyId, property.id));
         
         return {
           ...property,
           rentRoll,
-          unitTypes
+          unitTypes,
+          propertyLoans: propertyLoansData
         };
       })
     );
     
-    return propertiesWithRentRoll;
+    return propertiesWithData;
   }
 
   async getFeaturedProperties(): Promise<Property[]> {

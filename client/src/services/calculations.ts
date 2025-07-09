@@ -103,6 +103,21 @@ export class CalculationService {
         console.log('No rent roll data found in property or Deal Analyzer');
       }
       
+      // For loans, prioritize live debt data over Deal Analyzer loans
+      let activeLoans = [];
+      if (property.propertyLoans && property.propertyLoans.length > 0) {
+        // Use live debt data (highest priority)
+        activeLoans = property.propertyLoans.filter((loan: any) => loan.isActive);
+        console.log('Using live debt data for loan calculations:', activeLoans);
+      } else if (dealData.loans && dealData.loans.length > 0) {
+        // Fallback to Deal Analyzer loans
+        activeLoans = dealData.loans.filter((loan: any) => loan.isActive);
+        console.log('Using Deal Analyzer loan data:', activeLoans);
+      }
+      
+      // Ensure only one active loan per property
+      const activeLoan = activeLoans.length > 0 ? activeLoans[0] : null;
+      
       let unitTypesData = dealData.unitTypes;
       if (property.unitTypes && property.unitTypes.length > 0) {
         console.log('Using normalized database unit types data:', property.unitTypes);
@@ -138,8 +153,17 @@ export class CalculationService {
       const downPayment = purchasePrice - (purchasePrice * loanPercentage);
       const capitalRequired = downPayment + totalClosingCosts + totalHoldingCosts;
       
-      // Calculate debt service
-      const monthlyDebtService = CalculationService.calculateMonthlyDebtService(dealData.loans, loanAmount);
+      // Calculate debt service using active loan's actual monthly payment
+      let monthlyDebtService = 0;
+      if (activeLoan) {
+        // Use actual monthly payment from active loan (live debt data or Deal Analyzer)
+        monthlyDebtService = parseFloat(activeLoan.monthlyPayment || '0');
+        console.log('Using active loan monthly payment:', monthlyDebtService, 'from loan:', activeLoan);
+      } else {
+        // Fallback to calculated debt service if no active loan
+        monthlyDebtService = CalculationService.calculateMonthlyDebtService(dealData.loans, loanAmount);
+        console.log('Calculated debt service (no active loan):', monthlyDebtService);
+      }
       const annualDebtService = monthlyDebtService * 12;
       
       // Calculate cash flow

@@ -226,7 +226,7 @@ const LiveDebtDataSection: React.FC<LiveDebtDataSectionProps> = ({
                   </h3>
                   {loan.isActive && (
                     <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                      Active
+                      Active - Used for Debt Service
                     </span>
                   )}
                   {getSyncStatusBadge(loan.syncStatus)}
@@ -236,18 +236,34 @@ const LiveDebtDataSection: React.FC<LiveDebtDataSectionProps> = ({
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => {
-                        const newActiveState = !loan.isActive;
-                        updateLoanMutation.mutate({
-                          loanId: loan.id,
-                          data: { isActive: newActiveState }
-                        });
+                        if (!loan.isActive) {
+                          // Setting this loan as active - deactivate all others first
+                          const deactivatePromises = propertyLoans
+                            .filter((l: any) => l.id !== loan.id && l.isActive)
+                            .map((l: any) => 
+                              updateLoanMutation.mutateAsync({
+                                loanId: l.id,
+                                data: { isActive: false }
+                              })
+                            );
+                          
+                          Promise.all(deactivatePromises).then(() => {
+                            // Now activate this loan
+                            updateLoanMutation.mutate({
+                              loanId: loan.id,
+                              data: { isActive: true }
+                            });
+                          });
+                        }
+                        // Cannot deactivate the only active loan - must have one active loan
                       }}
+                      disabled={loan.isActive} // Disable if already active (can't deactivate)
                       className={`px-3 py-1 text-xs rounded ${
                         loan.isActive 
-                          ? 'bg-green-600 text-white' 
+                          ? 'bg-green-600 text-white cursor-not-allowed' 
                           : 'bg-gray-200 text-gray-700 hover:bg-green-100'
                       }`}
-                      title="Toggle active status for debt service calculations"
+                      title={loan.isActive ? "This is the active loan for debt service calculations" : "Set as active loan for debt service calculations"}
                     >
                       {loan.isActive ? 'Active' : 'Set Active'}
                     </button>
@@ -468,7 +484,7 @@ const LiveDebtDataSection: React.FC<LiveDebtDataSectionProps> = ({
               {loan.isActive && (
                 <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
                   <p className="text-sm text-green-800 dark:text-green-300 font-medium">
-                    This loan is used for debt service calculations in cash flow analysis
+                    ✓ Active loan - Monthly payment of {formatCurrency(loan.monthlyPayment)} used in all cash flow calculations
                   </p>
                 </div>
               )}
@@ -477,8 +493,8 @@ const LiveDebtDataSection: React.FC<LiveDebtDataSectionProps> = ({
         </div>
       )}
 
-      {/* Sync with Deal Analyzer */}
-      {dealAnalyzerData?.loans && dealAnalyzerData.loans.length > 0 && (
+      {/* Sync with Deal Analyzer - Only show if no live debt data */}
+      {propertyLoans.length === 0 && dealAnalyzerData?.loans && dealAnalyzerData.loans.length > 0 && (
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
           <div className="flex justify-between items-center">
             <div>

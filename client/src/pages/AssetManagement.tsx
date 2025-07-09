@@ -3302,7 +3302,7 @@ export default function AssetManagement() {
                                       interestRate: interestRate,
                                       termYears: termYears,
                                       monthlyPayment: monthlyPayment,
-                                      isActive: dealData.loans.length === 0, // First loan is active by default
+                                      isActive: dealData.loans.length === 0 || !dealData.loans.some((l: any) => l.isActive), // First loan or active if no other active loans
                                       loanType: 'refinance',
                                       paymentType: paymentType,
                                       startDate: new Date().toISOString().split('T')[0],
@@ -3351,7 +3351,7 @@ export default function AssetManagement() {
                                       </h3>
                                       {loan.isActive && (
                                         <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                                          Active
+                                          Active - Used for Debt Service
                                         </span>
                                       )}
                                     </div>
@@ -3360,19 +3360,27 @@ export default function AssetManagement() {
                                       <div className="flex items-center space-x-2">
                                         <button
                                           onClick={() => {
-                                            const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
-                                            if (!dealData.loans) dealData.loans = [];
-                                            
-                                            // Set all loans to inactive, then activate this one
-                                            dealData.loans.forEach((l: any) => { l.isActive = false; });
-                                            const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
-                                            if (loanIndex >= 0) {
-                                              dealData.loans[loanIndex].isActive = true;
+                                            if (!loan.isActive) {
+                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                              if (!dealData.loans) dealData.loans = [];
+                                              
+                                              // Set all loans to inactive, then activate this one
+                                              dealData.loans.forEach((l: any) => { l.isActive = false; });
+                                              const loanIndex = dealData.loans.findIndex((l: any) => l.id === loan.id);
+                                              if (loanIndex >= 0) {
+                                                dealData.loans[loanIndex].isActive = true;
+                                              }
+                                              handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
                                             }
-                                            handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                            // Cannot deactivate the only active loan
                                           }}
-                                          className={`px-3 py-1 text-xs rounded ${loan.isActive ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-green-100'}`}
-                                          title="Set as active loan for debt service calculations"
+                                          disabled={loan.isActive} // Disable if already active
+                                          className={`px-3 py-1 text-xs rounded ${
+                                            loan.isActive 
+                                              ? 'bg-green-600 text-white cursor-not-allowed' 
+                                              : 'bg-gray-200 text-gray-700 hover:bg-green-100'
+                                          }`}
+                                          title={loan.isActive ? "This is the active loan for debt service calculations" : "Set as active loan for debt service calculations"}
                                         >
                                           {loan.isActive ? 'Active' : 'Set Active'}
                                         </button>
