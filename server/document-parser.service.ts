@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx';
 import { promises as fs } from 'fs';
 import { db } from './db';
 import { properties, propertyLoans } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 export interface ParsedLoanData {
   loanId?: string;
