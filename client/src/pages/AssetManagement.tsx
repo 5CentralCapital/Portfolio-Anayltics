@@ -125,9 +125,9 @@ interface RehabLineItem {
 }
 
 const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
-  const { calculatePropertyKPIs, formatCurrency } = useCalculations();
+  const { calculateProperty, formatCurrency } = useCalculations();
   // Use centralized calculation function
-  const calculatedMetrics = calculatePropertyKPIs(property);
+  const calculatedMetrics = calculateProperty(property);
   
 
   
@@ -180,7 +180,7 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
             // Use centralized calculation service for consistency
             const modalCalculations = () => {
               try {
-                const calculatedMetrics = calculatePropertyKPIs(property);
+                const calculatedMetrics = calculateProperty(property);
                 return { annualCashFlow: calculatedMetrics.annualCashFlow };
               } catch (e) {
                 return null;
@@ -204,7 +204,7 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
             // Use centralized calculation service for consistency
             const modalCalculations = () => {
               try {
-                const calculatedMetrics = calculatePropertyKPIs(property);
+                const calculatedMetrics = calculateProperty(property);
                 return { equityMultiple: calculatedMetrics.equityMultiple };
               } catch (e) {
                 return null;
@@ -235,9 +235,9 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
 };
 
 const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
-  const { calculatePropertyKPIs, formatCurrency } = useCalculations();
+  const { calculateProperty, formatCurrency } = useCalculations();
   // Use centralized calculations for accurate metrics
-  const calculatedMetrics = calculatePropertyKPIs(property);
+  const calculatedMetrics = calculateProperty(property);
   
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 aspect-square flex flex-col cursor-pointer card-hover transition-all-smooth hover:shadow-md bg-white dark:bg-gray-800"
