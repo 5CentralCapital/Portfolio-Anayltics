@@ -3060,8 +3060,8 @@ export default function AssetManagement() {
                                       values: Array(12).fill(''),
                                       annual: ''
                                     },
-                                    (() => {
-                                      // Get individual expense amounts from centralized calculation service
+                                    // Get individual expense amounts from centralized calculation service
+                                    ...(() => {
                                       const totalMonthlyExpenses = calculations.monthlyExpenses || 0;
                                       const totalAnnualExpenses = totalMonthlyExpenses * 12;
                                       
