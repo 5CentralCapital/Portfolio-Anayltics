@@ -7,6 +7,20 @@ import { Router } from 'express';
 import { db } from './db';
 import { propertyLoans, properties } from '@shared/schema';
 import { eq, and, isNotNull, desc } from 'drizzle-orm';
+
+// Helper function to safely convert dates for PostgreSQL
+function parseDate(dateValue: any): Date | null {
+  if (!dateValue) return null;
+  if (dateValue instanceof Date) return dateValue;
+  
+  // Handle different date formats
+  if (typeof dateValue === 'string') {
+    const parsedDate = new Date(dateValue);
+    return isNaN(parsedDate.getTime()) ? null : parsedDate;
+  }
+  
+  return null;
+}
 // Authentication middleware
 function authenticateSession(req: any, res: any, next: any) {
   // First try session-based authentication
@@ -203,13 +217,13 @@ router.post('/property/:propertyId/loans/sync', authenticateSession, async (req,
           principalBalance: loanData.principalBalance?.toString() || null,
           interestRate: (loanData.interestRate / 100).toString(),
           monthlyPayment: loanData.monthlyPayment.toString(),
-          nextPaymentDate: loanData.nextPaymentDate || null,
+          nextPaymentDate: parseDate(loanData.nextPaymentDate),
           nextPaymentAmount: loanData.nextPaymentAmount?.toString() || null,
-          lastPaymentDate: loanData.lastPaymentDate || null,
+          lastPaymentDate: parseDate(loanData.lastPaymentDate),
           lastPaymentAmount: loanData.lastPaymentAmount?.toString() || null,
           escrowBalance: loanData.escrowBalance?.toString() || null,
           remainingTerm: loanData.remainingTerm || null,
-          lastSyncDate: new Date().toISOString(),
+          lastSyncDate: new Date(),
           syncStatus: 'success',
           syncError: null
         })
@@ -230,18 +244,18 @@ router.post('/property/:propertyId/loans/sync', authenticateSession, async (req,
           termYears: 30, // Default, can be updated manually
           monthlyPayment: loanData.monthlyPayment.toString(),
           paymentType: 'principal_and_interest',
-          maturityDate: new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          maturityDate: new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000),
           isActive: true, // First loan is active by default
           lender: loanData.lenderName,
           externalLoanId: loanData.loanId,
           principalBalance: loanData.principalBalance?.toString() || null,
-          nextPaymentDate: loanData.nextPaymentDate || null,
+          nextPaymentDate: parseDate(loanData.nextPaymentDate),
           nextPaymentAmount: loanData.nextPaymentAmount?.toString() || null,
-          lastPaymentDate: loanData.lastPaymentDate || null,
+          lastPaymentDate: parseDate(loanData.lastPaymentDate),
           lastPaymentAmount: loanData.lastPaymentAmount?.toString() || null,
           escrowBalance: loanData.escrowBalance?.toString() || null,
           remainingTerm: loanData.remainingTerm || null,
-          lastSyncDate: new Date().toISOString(),
+          lastSyncDate: new Date(),
           syncStatus: 'success',
           syncError: null
         })
