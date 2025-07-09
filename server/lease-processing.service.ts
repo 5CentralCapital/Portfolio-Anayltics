@@ -3,9 +3,9 @@ import * as path from 'path';
 import { db } from './db';
 import { properties, propertyRentRoll, tenantDetails } from '../shared/schema';
 import { eq, and, isNotNull, desc } from 'drizzle-orm';
-import OpenAI from 'openai';
+import { GoogleGenAI } from '@google/genai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 export interface LeaseData {
   tenantName: string;
@@ -170,23 +170,41 @@ export class LeaseProcessingService {
 Document content:
 ${documentContent}`;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert at extracting structured data from lease agreements. Always return valid JSON."
-          },
-          {
-            role: "user",
-            content: prompt
+      const systemPrompt = `You are an expert at extracting structured data from lease agreements. 
+Extract lease information from the provided document and return JSON with the exact structure specified.
+Always return valid JSON only, no additional text.`;
+
+      const response = await gemini.models.generateContent({
+        model: "gemini-2.5-pro",
+        config: {
+          systemInstruction: systemPrompt,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "object",
+            properties: {
+              tenantName: { type: "string" },
+              propertyAddress: { type: "string" },
+              unitNumber: { type: "string" },
+              leaseStartDate: { type: "string" },
+              leaseEndDate: { type: "string" },
+              monthlyRent: { type: "number" },
+              securityDeposit: { type: "number" },
+              petDeposit: { type: "number" },
+              phone: { type: "string" },
+              email: { type: "string" },
+              utilities: { type: "string" },
+              petPolicy: { type: "string" },
+              notes: { type: "string" },
+              leaseTerm: { type: "string" },
+              lateFee: { type: "number" }
+            },
+            required: ["tenantName", "propertyAddress", "monthlyRent"]
           }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.1
+        },
+        contents: prompt
       });
 
-      const extractedData = JSON.parse(response.choices[0].message.content || '{}');
+      const extractedData = JSON.parse(response.text || '{}');
       
       // Validate and clean the data
       return {
