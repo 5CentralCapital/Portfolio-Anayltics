@@ -217,7 +217,7 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick, calculateProper
             };
             
             const calculations = modalCalculations();
-            if (calculations && calculations.equityMultiple !== undefined) {
+            if (calculations && calculations.equityMultiple !== undefined && typeof calculations.equityMultiple === 'number') {
               return (
                 <p className={`font-semibold ${calculations.equityMultiple >= 1 ? 'text-blue-600' : 'text-red-600'}`}>
                   {calculations.equityMultiple.toFixed(2)}x

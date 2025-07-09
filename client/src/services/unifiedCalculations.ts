@@ -155,21 +155,27 @@ export class UnifiedCalculationService {
         unit.isRealData === true
       );
       
+      // Check if rent roll has valid rent amounts (indicates database data)
+      const hasValidRents = rentRoll.some(unit => 
+        parseFloat(unit.currentRent || unit.proFormaRent || '0') > 0
+      );
+      
       console.log('Rent roll data check:', { 
         propertyId: property.id,
         address: property.address,
         rentRollLength: rentRoll.length,
         hasRealData,
+        hasValidRents,
         firstUnit: rentRoll[0]
       });
       
       if (hasRealData) {
         liveRentRoll = rentRoll;
         console.log('Detected live rent roll data with real tenant information');
-      } else {
-        // Use as database rent roll if not live data
+      } else if (hasValidRents) {
+        // Use as database rent roll if it has rent amounts (even without tenant data)
         dbRentRoll = rentRoll;
-        console.log('Using database rent roll data');
+        console.log('Using database rent roll data with valid rent amounts');
       }
     }
     

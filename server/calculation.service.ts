@@ -128,15 +128,14 @@ export class CalculationService {
     const propertyRecord = await db.select().from(properties).where(eq(properties.id, propertyId)).then(rows => rows[0]);
     
     if (propertyRecord?.status === 'Sold') {
-      // For sold properties: total profit / capital invested
+      // For sold properties: total profit / capital required
       const totalProfit = Number(propertyRecord.totalProfits || 0);
-      const capitalInvested = Number(propertyRecord.initialCapitalRequired || 0);
-      equityMultiple = capitalInvested > 0 ? totalProfit / capitalInvested : 0;
+      const capitalRequired = Number(propertyRecord.initialCapitalRequired || 0);
+      equityMultiple = capitalRequired > 0 ? totalProfit / capitalRequired : 0;
     } else {
-      // For active properties: (all-in cost + cashflow collected so far) / capital invested
-      const cashflowCollected = Number(propertyRecord?.cashFlow || 0); // Annual cash flow from property
-      const capitalInvested = Number(propertyRecord?.initialCapitalRequired || 0);
-      equityMultiple = capitalInvested > 0 ? (allInCost + cashflowCollected) / capitalInvested : 0;
+      // For active properties: (ARV - all in cost) / capital required
+      const capitalRequired = Number(propertyRecord?.initialCapitalRequired || 0);
+      equityMultiple = capitalRequired > 0 ? (currentArv - allInCost) / capitalRequired : 0;
     }
     const dscr = annualDebtService > 0 ? netOperatingIncome / annualDebtService : 0;
     const loanToValue = currentArv > 0 ? currentLoanBalance / currentArv : 0;

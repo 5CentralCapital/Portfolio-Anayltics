@@ -352,10 +352,22 @@ export class PropertyCalculationEngine {
     // Current equity = ARV - Current Debt
     const currentEquityValue = currentARV - debtData.currentDebt;
     
-    // Equity Multiple = (Current Equity + Total Profits) / Initial Capital
-    // Where Total Profits = Current Equity - Initial Capital + Total Cash Flow Received
-    // Simplified: Equity Multiple = Current Equity / Initial Capital (for current snapshot)
-    const equityMultiple = capitalRequired > 0 ? Math.max(0, (currentEquityValue + (cashFlowData.annualCashFlow > 0 ? cashFlowData.annualCashFlow : 0)) / capitalRequired) : 0;
+    // Calculate all-in cost (purchase price + rehab + closing + holding costs)
+    const rehabCosts = this.getRehabCosts(sources);
+    const allInCost = purchasePrice + rehabCosts; // Simplified - add closing/holding costs if available
+    
+    // Equity Multiple calculation based on property status
+    let equityMultiple = 0;
+    const property = sources.property;
+    
+    if (property?.status === 'Sold') {
+      // For sold properties: total profit / capital required
+      const totalProfit = parseFloat(property.totalProfits || '0');
+      equityMultiple = capitalRequired > 0 ? totalProfit / capitalRequired : 0;
+    } else {
+      // For active properties: (ARV - all in cost) / capital required
+      equityMultiple = capitalRequired > 0 ? Math.max(0, (currentARV - allInCost) / capitalRequired) : 0;
+    }
     
     const dscr = debtData.annualDebtService > 0 ? cashFlowData.netOperatingIncome / debtData.annualDebtService : 0;
     
@@ -422,6 +434,19 @@ export class PropertyCalculationEngine {
   
   private static getCapitalRequired(sources: DataSources): number {
     return parseFloat(sources.property?.initialCapitalRequired || '0');
+  }
+
+  private static getRehabCosts(sources: DataSources): number {
+    // Priority: Deal Analyzer > Property field
+    if (sources.dealAnalyzerData?.rehabBudget) {
+      const rehabItems = sources.dealAnalyzerData.rehabBudget;
+      if (Array.isArray(rehabItems)) {
+        return rehabItems.reduce((sum, item) => sum + parseFloat(item.totalCost || '0'), 0);
+      }
+    }
+    
+    // Fallback to property rehab costs field
+    return parseFloat(sources.property?.rehabCosts || '0');
   }
   
   private static getExitCapRate(sources: DataSources): number {
