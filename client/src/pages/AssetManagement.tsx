@@ -686,6 +686,11 @@ export default function AssetManagement() {
       };
       console.log('Updated property:', updatedProperty);
       setEditingModalProperty(updatedProperty);
+      
+      // Trigger real-time calculation updates for all tabs
+      setTimeout(() => {
+        setRefreshCounter(prev => prev + 1);
+      }, 50);
     }
   };
 
@@ -700,8 +705,8 @@ export default function AssetManagement() {
   // Add the missing getPropertyCalculations function with robust error handling
   const getPropertyCalculations = () => {
     try {
-      // Use showPropertyDetailModal as the primary data source, fallback to editingModalProperty
-      const propertyData = showPropertyDetailModal || editingModalProperty;
+      // Use editingModalProperty when editing for real-time updates, otherwise use showPropertyDetailModal
+      const propertyData = isEditing && editingModalProperty ? editingModalProperty : showPropertyDetailModal;
       if (!propertyData) {
         console.log('getPropertyCalculations: No property data available');
         return null;
@@ -2550,6 +2555,10 @@ export default function AssetManagement() {
                                                   const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                                                   dealData.rentRoll[index].proFormaRent = parseFloat(e.target.value) || 0;
                                                   handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                  // Trigger real-time calculation updates
+                                                  setTimeout(() => {
+                                                    setRefreshCounter(prev => prev + 1);
+                                                  }, 100);
                                                 }}
                                                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                                                 placeholder="Current rent"
@@ -2846,9 +2855,10 @@ export default function AssetManagement() {
                           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Financial Breakdown</h3>
                           
                           {(() => {
-                            // Use centralized calculations for consistency
+                            // Use centralized calculations with real-time updates
                             const calculations = getPropertyCalculations();
-                            console.log('Income & Expenses - Using centralized calculations:', calculations);
+                            const _ = refreshCounter; // Force re-render when refreshCounter changes
+                            console.log('Income & Expenses - Using centralized calculations:', calculations, 'refresh count:', refreshCounter);
                             
                             if (!calculations) {
                               return (
@@ -2922,10 +2932,10 @@ export default function AssetManagement() {
                                               if (!dealData.expenses) dealData.expenses = {};
                                               dealData.expenses[item.key] = parseFloat(e.target.value) || 0;
                                               handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
-                                              // Trigger re-calculation by refreshing the property data
+                                              // Trigger real-time calculation updates
                                               setTimeout(() => {
                                                 setRefreshCounter(prev => prev + 1);
-                                              }, 100);
+                                              }, 50);
                                             }}
                                             className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-right"
                                           />
