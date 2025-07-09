@@ -335,130 +335,438 @@ export default function Roadmap() {
                 <TabsTrigger value="team">Team</TabsTrigger>
               </TabsList>
 
-              {/* Dashboard Tab - KPI Cards */}
+              {/* Dashboard Tab - Updated Layout */}
               <TabsContent value="dashboard" className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription>Total AUM</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-3xl font-bold text-blue-600">{selectedMilestone.metrics.aum}</div>
-                    </CardContent>
+                {/* Top KPI Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className="p-4">
+                    <div className="text-sm text-gray-600 mb-1">Total AUM</div>
+                    <div className="text-2xl font-bold text-blue-600">{selectedMilestone.metrics.aum}</div>
+                    <div className="text-xs text-gray-500">Assets Under Management</div>
                   </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription>Properties</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-3xl font-bold text-green-600">{selectedMilestone.metrics.properties}</div>
-                    </CardContent>
+                  <Card className="p-4">
+                    <div className="text-sm text-gray-600 mb-1">Properties</div>
+                    <div className="text-2xl font-bold text-green-600">{selectedMilestone.metrics.properties}</div>
+                    <div className="text-xs text-gray-500">Total Portfolio Count</div>
                   </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription>Monthly Cash Flow</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-3xl font-bold text-purple-600">{selectedMilestone.metrics.cashFlow}</div>
-                    </CardContent>
+                  <Card className="p-4">
+                    <div className="text-sm text-gray-600 mb-1">Monthly Cash Flow</div>
+                    <div className="text-2xl font-bold text-green-600">{selectedMilestone.metrics.cashFlow}</div>
+                    <div className="text-xs text-gray-500">Net Operating Income</div>
                   </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription>Portfolio IRR</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-3xl font-bold text-orange-600">{selectedMilestone.metrics.irr}</div>
-                    </CardContent>
+                  <Card className="p-4">
+                    <div className="text-sm text-gray-600 mb-1">Target IRR</div>
+                    <div className="text-2xl font-bold text-purple-600">{selectedMilestone.metrics.irr}</div>
+                    <div className="text-xs text-gray-500">Internal Rate of Return</div>
                   </Card>
                 </div>
 
-                {/* Key Milestones */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Key Milestones</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Strategic Objectives */}
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-blue-600 text-sm">🎯</span>
+                      </div>
+                      Strategic Objectives
+                    </h3>
                     <div className="space-y-3">
                       {selectedMilestone.keyMilestones.map((milestone, idx) => (
                         <div key={idx} className="flex items-center space-x-3">
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                          <span className="text-gray-700">{milestone}</span>
+                          <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs">✓</span>
+                          </div>
+                          <span className="text-gray-700 text-sm">{milestone}</span>
                         </div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
+                  </Card>
+
+                  {/* Portfolio Composition */}
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-2">
+                        <span className="text-green-600 text-sm">📊</span>
+                      </div>
+                      Portfolio Composition
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Multifamily</span>
+                        <span className="font-semibold">45%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: '45%' }}></div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Mixed-Use</span>
+                        <span className="font-semibold">25%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: '25%' }}></div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Industrial</span>
+                        <span className="font-semibold">20%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: '20%' }}></div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Retail</span>
+                        <span className="font-semibold">10%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-orange-500 h-2 rounded-full" style={{ width: '10%' }}></div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Bottom Section - 3 columns */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Geographic Focus</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span className="text-gray-700">Connecticut Primary</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span className="text-gray-700">New England Expansion</span>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Investment Strategy</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                        <span className="text-gray-700">Value-Add Focus</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                        <span className="text-gray-700">Core+ Stabilized</span>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Market Position</h3>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600 mb-2">Achieved</div>
+                      <div className="text-sm text-gray-600">Milestone Status</div>
+                    </div>
+                  </Card>
+                </div>
               </TabsContent>
 
-              {/* Properties Tab - Clickable property list */}
-              <TabsContent value="properties" className="space-y-4">
-                <div className="grid gap-4">
-                  {selectedMilestone.properties.map((property, idx) => (
-                    <Card 
-                      key={idx} 
-                      className="cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => {
-                        // Open property modal for current year properties
-                        if (selectedMilestone.year === 2025 && activeProperties && Array.isArray(activeProperties)) {
-                          const realProperty = activeProperties.find(p => p.address === property.name);
-                          if (realProperty) setSelectedProperty(realProperty);
-                        }
-                      }}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg">{property.name}</h3>
-                            <p className="text-sm text-gray-600">{property.location}</p>
-                            <p className="text-sm text-gray-500">{property.type}</p>
+              {/* Properties Tab - Redesigned */}
+              <TabsContent value="properties" className="space-y-6">
+                {/* Owned Properties Section */}
+                <div className="mb-6">
+                  <div className="flex items-center mb-4">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-green-600 font-bold">🏠</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Owned Properties</h3>
+                      <p className="text-sm text-gray-600">Currently owned and operated properties in the portfolio</p>
+                    </div>
+                  </div>
+                  
+                  {selectedMilestone.year === 2025 && realProperties.length > 0 ? (
+                    <div className="space-y-4">
+                      {realProperties.map((property, idx) => (
+                        <Card key={idx} className="p-4 border-l-4 border-l-green-500">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-2">
+                                <div className="w-6 h-6 bg-green-100 rounded flex items-center justify-center">
+                                  <span className="text-green-600 text-sm">🏠</span>
+                                </div>
+                                <h4 className="font-semibold text-gray-900">{property.name}</h4>
+                                <Badge className="bg-green-100 text-green-800">OWNED</Badge>
+                              </div>
+                              <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                                <span className="flex items-center">
+                                  <span className="text-red-500 mr-1">📍</span>
+                                  {property.location}
+                                </span>
+                                <span className="flex items-center">
+                                  <span className="text-blue-500 mr-1">🏢</span>
+                                  {property.type}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-4 text-sm">
+                                <div>
+                                  <div className="text-gray-600">Current NOI</div>
+                                  <div className="font-bold">$8,125,000/mo</div>
+                                </div>
+                                <div>
+                                  <div className="text-gray-600">Cap Rate</div>
+                                  <div className="font-bold text-purple-600">6.5%</div>
+                                </div>
+                                <div>
+                                  <div className="text-gray-600">Acquisition</div>
+                                  <div className="font-bold">2029-2032</div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-2xl font-bold text-green-600">{property.value}</div>
+                              <Badge className="bg-green-100 text-green-800">Stabilized</Badge>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-lg font-bold text-blue-600">{property.value}</p>
-                            <Badge className={property.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                              {property.status}
-                            </Badge>
-                          </div>
-                        </div>
-                      </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <Card className="p-6 text-center text-gray-500">
+                      <p>No owned properties for this milestone</p>
                     </Card>
-                  ))}
+                  )}
+                </div>
+
+                {/* Projected Properties Section */}
+                <div className="mb-6">
+                  <div className="flex items-center mb-4">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-blue-600 font-bold">🎯</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Projected Properties</h3>
+                      <p className="text-sm text-gray-600">Future acquisition targets and development pipeline</p>
+                    </div>
+                  </div>
+                  
+                  <Card className="p-6 text-center text-gray-500">
+                    <p>No projected properties for this milestone</p>
+                  </Card>
+                </div>
+
+                {/* Portfolio Summary */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center">
+                    <span className="text-blue-600 mr-2">📊</span>
+                    Portfolio Summary
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div className="p-4 bg-green-50 rounded-lg">
+                      <div className="text-3xl font-bold text-green-600">{selectedMilestone.metrics.properties}</div>
+                      <div className="text-sm text-gray-600">Owned Properties</div>
+                    </div>
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <div className="text-3xl font-bold text-blue-600">0</div>
+                      <div className="text-sm text-gray-600">Projected Properties</div>
+                    </div>
+                    <div className="p-4 bg-purple-50 rounded-lg">
+                      <div className="text-3xl font-bold text-purple-600">{selectedMilestone.metrics.properties}</div>
+                      <div className="text-sm text-gray-600">Total Portfolio</div>
+                    </div>
+                    <div className="p-4 bg-orange-50 rounded-lg">
+                      <div className="text-3xl font-bold text-orange-600">{selectedMilestone.metrics.aum}</div>
+                      <div className="text-sm text-gray-600">Total AUM</div>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Acquisition Strategy & Market Focus */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Acquisition Strategy</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span className="text-gray-700">Stabilized assets for immediate cash flow</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span className="text-gray-700">Value-add opportunities for growth</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                        <span className="text-gray-700">Development projects for premium returns</span>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Market Focus</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span className="text-gray-700">Primary: Connecticut & New England</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span className="text-gray-700">Secondary: Mid-Atlantic expansion</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                        <span className="text-gray-700">Focus: Multifamily & Mixed-Use</span>
+                      </div>
+                    </div>
+                  </Card>
                 </div>
               </TabsContent>
 
               {/* Financials Tab */}
-              <TabsContent value="financials" className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Monthly Revenue</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-blue-600">{selectedMilestone.financials.revenue}</div>
-                    </CardContent>
+              <TabsContent value="financials" className="space-y-6">
+                {/* Revenue Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <span className="text-green-600 mr-2">📈</span>
+                      Revenue Metrics
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Gross Monthly Revenue</span>
+                        <span className="font-bold text-green-600">$28.7K/mo</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Net Operating Income</span>
+                        <span className="font-bold text-blue-600">$23.9K/mo</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">NOI Margin</span>
+                        <span className="font-bold text-purple-600">83%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Annual NOI</span>
+                        <span className="font-bold text-green-600">$287K</span>
+                      </div>
+                    </div>
                   </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Net Operating Income</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-green-600">{selectedMilestone.financials.noi}</div>
-                    </CardContent>
+
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <span className="text-blue-600 mr-2">💰</span>
+                      Capital Structure
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total Debt</span>
+                        <span className="font-bold text-red-600">$2.1M</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total Equity</span>
+                        <span className="font-bold text-green-600">$1.57M</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">LTV Ratio</span>
+                        <span className="font-bold text-orange-600">57%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total AUM</span>
+                        <span className="font-bold text-blue-600">{selectedMilestone.metrics.aum}</span>
+                      </div>
+                    </div>
                   </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Total Debt</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-red-600">{selectedMilestone.financials.debt}</div>
-                    </CardContent>
+
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <span className="text-purple-600 mr-2">📊</span>
+                      Performance Metrics
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Target IRR</span>
+                        <span className="font-bold text-purple-600">18.5%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Cash-on-Cash Return</span>
+                        <span className="font-bold text-blue-600">18%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Portfolio Cap Rate</span>
+                        <span className="font-bold text-green-600">6.8%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">DSCR Average</span>
+                        <span className="font-bold text-blue-600">1.35x</span>
+                      </div>
+                    </div>
                   </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Total Equity</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-purple-600">{selectedMilestone.financials.equity}</div>
-                    </CardContent>
+                </div>
+
+                {/* Growth Projections & Investment Strategy */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <span className="text-green-600 mr-2">📈</span>
+                      Growth Projections
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-gray-600">Revenue Growth (Annual)</span>
+                          <span className="font-bold">18%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-3">
+                          <div className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full" style={{ width: '18%' }}></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-gray-600">Portfolio Expansion</span>
+                          <span className="font-bold">22%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-3">
+                          <div className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full" style={{ width: '22%' }}></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-gray-600">Market Penetration</span>
+                          <span className="font-bold">45%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-3">
+                          <div className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full" style={{ width: '45%' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <span className="text-blue-600 mr-2">💼</span>
+                      Investment Strategy
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Value-Add</span>
+                        <span className="font-bold text-blue-600">65%</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Core+</span>
+                        <span className="font-bold text-green-600">35%</span>
+                      </div>
+                      <div className="mt-4 space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span className="text-sm text-gray-700">Geographic concentration in CT/New England</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-sm text-gray-700">Focus on multifamily and mixed-use properties</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                          <span className="text-sm text-gray-700">Target 14-22% IRR across all investments</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                          <span className="text-sm text-gray-700">Hold period: 3-7 years average</span>
+                        </div>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </TabsContent>
