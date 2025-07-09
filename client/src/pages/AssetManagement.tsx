@@ -2922,18 +2922,18 @@ export default function AssetManagement() {
                         <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-6 border border-indigo-200 dark:border-indigo-800">
                           <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-300 mb-4">12-Month Pro Forma</h3>
                           <div className="overflow-x-auto">
-                            <table className="min-w-full text-sm border-collapse">
+                            <table className="min-w-full text-xs border-collapse">
                               <thead>
                                 <tr className="bg-indigo-100 dark:bg-indigo-900/40">
-                                  <th className="px-3 py-2 text-left font-medium text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 sticky left-0 bg-indigo-100 dark:bg-indigo-900/40 min-w-[120px]">
+                                  <th className="px-2 py-1 text-left font-medium text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 sticky left-0 bg-indigo-100 dark:bg-indigo-900/40 min-w-[100px]">
                                     Category
                                   </th>
                                   {Array.from({ length: 12 }, (_, i) => (
-                                    <th key={i} className="px-2 py-2 text-center font-medium text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 min-w-[80px]">
+                                    <th key={i} className="px-1 py-1 text-center font-medium text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 min-w-[60px]">
                                       {new Date(2025, i).toLocaleDateString('en-US', { month: 'short' })}
                                     </th>
                                   ))}
-                                  <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 min-w-[100px]">
+                                  <th className="px-2 py-1 text-center font-bold text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 min-w-[80px]">
                                     Annual
                                   </th>
                                 </tr>
@@ -3101,15 +3101,15 @@ export default function AssetManagement() {
                                   
                                   return rows.map((row, index) => (
                                     <tr key={index} className={row.bgColor}>
-                                      <td className={`px-3 py-2 ${row.textColor} border border-indigo-200 dark:border-indigo-700 sticky left-0 ${row.bgColor || 'bg-white dark:bg-gray-800'}`}>
+                                      <td className={`px-2 py-1 ${row.textColor} border border-indigo-200 dark:border-indigo-700 sticky left-0 ${row.bgColor || 'bg-white dark:bg-gray-800'}`}>
                                         {row.category}
                                       </td>
                                       {row.values.map((value, monthIndex) => (
-                                        <td key={monthIndex} className={`px-2 py-2 text-center ${row.textColor} border border-indigo-200 dark:border-indigo-700`}>
+                                        <td key={monthIndex} className={`px-1 py-1 text-center ${row.textColor} border border-indigo-200 dark:border-indigo-700`}>
                                           {row.isHeader || value === '' ? '' : formatCurrency(value)}
                                         </td>
                                       ))}
-                                      <td className={`px-3 py-2 text-center ${row.textColor} border border-indigo-200 dark:border-indigo-700`}>
+                                      <td className={`px-2 py-1 text-center ${row.textColor} border border-indigo-200 dark:border-indigo-700`}>
                                         {row.isHeader || row.annual === '' ? '' : formatCurrency(row.annual)}
                                       </td>
                                     </tr>
