@@ -468,50 +468,67 @@ router.post('/manual-review', async (req, res) => {
           propertyAddress = extractedData.propertyAddress;
         }
         
-        // Extract unit number from property address if available
-        if (propertyAddress && propertyAddress.includes('#')) {
+        // Extract unit number from various sources
+        if (extractedData.unitNumber) {
+          unitNumber = extractedData.unitNumber;
+        } else if (propertyAddress && propertyAddress.includes('#')) {
           const unitMatch = propertyAddress.match(/#(\w+)/);
           if (unitMatch) {
-            unitNumber = `Unit ${unitMatch[1]}`;
+            unitNumber = unitMatch[1];
+          }
+        } else if (propertyAddress && propertyAddress.toLowerCase().includes('unit')) {
+          const unitMatch = propertyAddress.match(/unit\s*(\w+)/i);
+          if (unitMatch) {
+            unitNumber = unitMatch[1];
           }
         }
         
+        // If no unit number found, generate one based on existing rent roll
+        if (!unitNumber) {
+          const existingUnits = rentRoll.map(entry => {
+            const num = entry.unitNumber?.replace(/\D/g, '') || entry.unit?.replace(/\D/g, '');
+            return parseInt(num) || 0;
+          }).filter(num => num > 0);
+          const maxUnit = Math.max(0, ...existingUnits);
+          unitNumber = `${maxUnit + 1}`;
+        }
+        
         if (tenantName && monthlyRent > 0) {
-          // Find existing rent roll entry for this unit or create new one
-          let existingEntryIndex = -1;
-          if (unitNumber) {
-            existingEntryIndex = rentRoll.findIndex(entry => 
-              entry.unit === unitNumber || 
-              entry.unit === unitNumber.replace('Unit ', '#')
-            );
-          }
+          // Find existing rent roll entry for this tenant or unit
+          let existingEntryIndex = rentRoll.findIndex(entry => 
+            entry.tenantName?.toLowerCase() === tenantName.toLowerCase() ||
+            entry.unitNumber === unitNumber ||
+            entry.unit === unitNumber
+          );
           
           const rentEntry = {
-            id: existingEntryIndex >= 0 ? rentRoll[existingEntryIndex].id : rentRoll.length + 1,
-            unit: unitNumber || `Unit ${rentRoll.length + 1}`,
-            unitNumber: unitNumber || `Unit ${rentRoll.length + 1}`,
-            unitTypeId: rentRoll[existingEntryIndex]?.unitTypeId || 1,
-            tenantName: tenantName, // Use tenantName field that property modal expects
+            id: existingEntryIndex >= 0 ? rentRoll[existingEntryIndex].id : (rentRoll.length + 1),
+            unitNumber: unitNumber,
+            unitTypeId: rentRoll[existingEntryIndex]?.unitTypeId || '1br',
+            tenantName: tenantName,
             leaseFrom: leaseStart || '',
             leaseTo: leaseEnd || '',
             currentRent: monthlyRent,
-            proFormaRent: monthlyRent, // Use proFormaRent field expected by modal
+            proFormaRent: monthlyRent,
             marketRent: monthlyRent,
             sqft: extractedData.squareFootage || 0,
-            deposit: securityDeposit,
-            isRealData: true // Mark as real data to override assumptions
+            deposit: securityDeposit || 0,
+            isRealData: true
           };
           
           if (existingEntryIndex >= 0) {
-            rentRoll[existingEntryIndex] = rentEntry;
-            integrationResults.push(`Updated rent roll for ${rentEntry.unit}: ${tenantName} - $${monthlyRent}/month`);
+            rentRoll[existingEntryIndex] = { ...rentRoll[existingEntryIndex], ...rentEntry };
+            integrationResults.push(`Updated unit ${unitNumber}: ${tenantName} - $${monthlyRent}/month`);
           } else {
             rentRoll.push(rentEntry);
-            integrationResults.push(`Added tenant ${tenantName} to rent roll - $${monthlyRent}/month`);
+            integrationResults.push(`Added tenant ${tenantName} to unit ${unitNumber} - $${monthlyRent}/month`);
           }
           
           existingDealData.rentRoll = rentRoll;
           updatedProperty.dealAnalyzerData = JSON.stringify(existingDealData);
+          
+          console.log('Updated rent roll:', rentRoll);
+          console.log('Integration results:', integrationResults);
         }
         break;
 
@@ -634,12 +651,10 @@ router.delete('/delete/:id', async (req: Request, res: Response) => {
     }
 
     // Delete the file from uploads directory
-    const fs = require('fs').promises;
-    const path = require('path');
     const filePath = path.join(process.cwd(), 'uploads', document.fileName);
     
     try {
-      await fs.unlink(filePath);
+      await fs.promises.unlink(filePath);
     } catch (fileError) {
       console.warn('File deletion warning:', fileError.message);
       // Continue with database deletion even if file doesn't exist
