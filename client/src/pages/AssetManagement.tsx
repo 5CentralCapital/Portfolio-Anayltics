@@ -2954,12 +2954,20 @@ export default function AssetManagement() {
                               </thead>
                               <tbody>
                                 {(() => {
-                                  const calculations = getPropertyCalculations();
-                                  if (!calculations) return null;
+                                  // Calculate property KPIs using centralized calculation service
+                                  const property = showPropertyDetailModal;
+                                  if (!property) return null;
                                   
-                                  // Get property data for detailed expenses
-                                  const propertyData = showPropertyDetailModal?.dealAnalyzerData ? JSON.parse(showPropertyDetailModal.dealAnalyzerData) : {};
-                                  const expenses = propertyData?.expenses || {};
+                                  const kpis = CalculationService.calculatePropertyKPIs(property);
+                                  
+                                  // Get monthly values for proforma table
+                                  const monthlyGrossRent = kpis.grossRentalIncome / 12;
+                                  const monthlyVacancyLoss = monthlyGrossRent * (kpis.vacancyRate / 100);
+                                  const monthlyOtherIncome = kpis.totalOtherIncome / 12;
+                                  const monthlyEGI = (kpis.grossRentalIncome - (kpis.grossRentalIncome * (kpis.vacancyRate / 100)) + kpis.totalOtherIncome) / 12;
+                                  const monthlyExpenses = kpis.monthlyExpenses;
+                                  const monthlyNOI = monthlyEGI - monthlyExpenses;
+                                  const monthlyCashFlow = monthlyNOI - kpis.monthlyDebtService;
                                   
                                   const rows = [
                                     // Income Section
@@ -2976,24 +2984,32 @@ export default function AssetManagement() {
                                       isHeader: false,
                                       bgColor: '',
                                       textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill(calculations.grossRentMonthly),
-                                      annual: calculations.grossRentAnnual
+                                      values: Array(12).fill(monthlyGrossRent),
+                                      annual: kpis.grossRentalIncome
                                     },
                                     {
-                                      category: 'Vacancy Loss (5%)',
+                                      category: 'Vacancy Loss',
                                       isHeader: false,
                                       bgColor: '',
                                       textColor: 'text-red-600',
-                                      values: Array(12).fill(-calculations.vacancy),
-                                      annual: -calculations.vacancyAnnual
+                                      values: Array(12).fill(-monthlyVacancyLoss),
+                                      annual: -(kpis.grossRentalIncome * (kpis.vacancyRate / 100))
+                                    },
+                                    {
+                                      category: 'Other Income',
+                                      isHeader: false,
+                                      bgColor: '',
+                                      textColor: 'text-gray-900 dark:text-white',
+                                      values: Array(12).fill(monthlyOtherIncome),
+                                      annual: kpis.totalOtherIncome
                                     },
                                     {
                                       category: 'Effective Gross Income',
                                       isHeader: false,
                                       bgColor: 'bg-green-25 dark:bg-green-900/10',
                                       textColor: 'text-green-700 dark:text-green-300 font-semibold',
-                                      values: Array(12).fill(calculations.netRevenue),
-                                      annual: calculations.netRevenueAnnual
+                                      values: Array(12).fill(monthlyEGI),
+                                      annual: kpis.effectiveGrossIncome
                                     },
                                     // Expenses Section
                                     {
@@ -3005,76 +3021,12 @@ export default function AssetManagement() {
                                       annual: ''
                                     },
                                     {
-                                      category: 'Property Tax',
+                                      category: 'Total Operating Expenses',
                                       isHeader: false,
                                       bgColor: '',
                                       textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.taxes || calculations.netRevenueAnnual * 0.12) / 12),
-                                      annual: expenses.taxes || calculations.netRevenueAnnual * 0.12
-                                    },
-                                    {
-                                      category: 'Insurance',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.insurance || calculations.netRevenueAnnual * 0.06) / 12),
-                                      annual: expenses.insurance || calculations.netRevenueAnnual * 0.06
-                                    },
-                                    {
-                                      category: 'Maintenance & Repairs',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.maintenance || calculations.netRevenueAnnual * 0.08) / 12),
-                                      annual: expenses.maintenance || calculations.netRevenueAnnual * 0.08
-                                    },
-                                    {
-                                      category: 'Water/Sewer/Trash',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.waterSewerTrash || calculations.netRevenueAnnual * 0.04) / 12),
-                                      annual: expenses.waterSewerTrash || calculations.netRevenueAnnual * 0.04
-                                    },
-                                    {
-                                      category: 'Capital Reserves',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.capex || calculations.netRevenueAnnual * 0.032) / 12),
-                                      annual: expenses.capex || calculations.netRevenueAnnual * 0.032
-                                    },
-                                    {
-                                      category: 'Utilities',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.utilities || calculations.netRevenueAnnual * 0.024) / 12),
-                                      annual: expenses.utilities || calculations.netRevenueAnnual * 0.024
-                                    },
-                                    {
-                                      category: 'Management Fee (8%)',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill(calculations.netRevenue * 0.08),
-                                      annual: calculations.netRevenueAnnual * 0.08
-                                    },
-                                    {
-                                      category: 'Other',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.other || calculations.netRevenueAnnual * 0.016) / 12),
-                                      annual: expenses.other || calculations.netRevenueAnnual * 0.016
-                                    },
-                                    {
-                                      category: 'Total Expenses',
-                                      isHeader: false,
-                                      bgColor: 'bg-red-25 dark:bg-red-900/10',
-                                      textColor: 'text-red-700 dark:text-red-300 font-semibold',
-                                      values: Array(12).fill(-calculations.totalExpenses),
-                                      annual: -calculations.totalExpensesAnnual
+                                      values: Array(12).fill(-monthlyExpenses),
+                                      annual: -kpis.annualExpenses
                                     },
                                     // NOI Section
                                     {
@@ -3082,8 +3034,8 @@ export default function AssetManagement() {
                                       isHeader: false,
                                       bgColor: 'bg-blue-50 dark:bg-blue-900/20',
                                       textColor: 'text-blue-800 dark:text-blue-300 font-bold',
-                                      values: Array(12).fill(calculations.noi),
-                                      annual: calculations.noiAnnual
+                                      values: Array(12).fill(monthlyNOI),
+                                      annual: kpis.netOperatingIncome
                                     },
                                     // Debt Section
                                     {
@@ -3099,17 +3051,17 @@ export default function AssetManagement() {
                                       isHeader: false,
                                       bgColor: '',
                                       textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill(-calculations.monthlyDebtService),
-                                      annual: -calculations.monthlyDebtService * 12
+                                      values: Array(12).fill(-kpis.monthlyDebtService),
+                                      annual: -kpis.annualDebtService
                                     },
                                     // Cash Flow Section
                                     {
                                       category: 'NET CASH FLOW',
                                       isHeader: false,
                                       bgColor: 'bg-green-100 dark:bg-green-900/30',
-                                      textColor: `font-bold ${calculations.monthlyCashFlow >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`,
-                                      values: Array(12).fill(calculations.monthlyCashFlow),
-                                      annual: calculations.annualCashFlow
+                                      textColor: `font-bold ${monthlyCashFlow >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`,
+                                      values: Array(12).fill(monthlyCashFlow),
+                                      annual: kpis.annualCashFlow
                                     }
                                   ];
                                   

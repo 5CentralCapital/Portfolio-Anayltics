@@ -115,11 +115,11 @@ export class CalculationService {
       const totalOtherIncome = CalculationService.calculateOtherIncome(dealData.otherIncome);
       const effectiveGrossIncome = grossRentalIncome - vacancyLoss + totalOtherIncome;
       
-      // Calculate expenses including management fee
-      const baseMonthlyExpenses = CalculationService.calculateMonthlyExpenses(dealData.expenses, effectiveGrossIncome);
-      const managementFeeAmount = (effectiveGrossIncome / 12) * managementFee; // Monthly management fee
-      const monthlyExpenses = baseMonthlyExpenses + managementFeeAmount;
-      const annualExpenses = monthlyExpenses * 12;
+      // Calculate expenses including management fee (consistent with server logic)
+      const baseAnnualExpenses = CalculationService.calculateAnnualExpenses(dealData.expenses, effectiveGrossIncome);
+      const managementFeeAmount = effectiveGrossIncome * managementFee; // Annual management fee
+      const annualExpenses = baseAnnualExpenses + managementFeeAmount;
+      const monthlyExpenses = annualExpenses / 12;
       
       // Calculate NOI
       const monthlyNOI = effectiveGrossIncome / 12 - monthlyExpenses;
@@ -251,13 +251,13 @@ export class CalculationService {
     
     let totalMonthlyRent = 0;
     
-    // First check rent roll for actual rents
+    // First check rent roll for actual rents (use database field names: currentRent, proFormaRent)
     if (rentRoll?.length) {
       console.log('Calculating from rent roll:', rentRoll);
       totalMonthlyRent = rentRoll.reduce((sum, unit) => {
-        // Check multiple field names for rent (prioritize current rent over pro forma for existing properties)
-        const rent = parseFloat(unit.currentRent || unit.current_rent || unit.marketRent || unit.proFormaRent || unit.pro_forma_rent || unit.rent || '0');
-        console.log(`Unit ${unit.unitNumber || unit.unit_number || 'N/A'} rent: $${rent}`);
+        // Use correct database field names (camelCase) and prioritize current rent for existing tenants
+        const rent = parseFloat(unit.currentRent || unit.proFormaRent || unit.marketRent || '0');
+        console.log(`Unit ${unit.unitNumber || 'N/A'} rent: $${rent}`);
         return sum + rent;
       }, 0);
     }
@@ -285,6 +285,21 @@ export class CalculationService {
     
     return otherIncome.reduce((sum, income) => {
       return sum + parseFloat(income.annualAmount || '0');
+    }, 0);
+  }
+
+  /**
+   * Calculate annual operating expenses (matches server logic)
+   */
+  private static calculateAnnualExpenses(expenses?: any[], effectiveGrossIncome?: number): number {
+    if (!expenses?.length) return 0;
+    
+    return expenses.reduce((sum, expense) => {
+      if (expense.isPercentage && expense.percentageBase && effectiveGrossIncome) {
+        const percentageValue = Number(expense.annualAmount) / 100;
+        return sum + (effectiveGrossIncome * percentageValue);
+      }
+      return sum + Number(expense.annualAmount || expense.monthlyAmount * 12 || 0);
     }, 0);
   }
   
