@@ -29,6 +29,7 @@ import { AddressComponents } from '../services/googlePlaces';
 import { useCalculations } from '@/contexts/CalculationsContext';
 import LiveDebtDataSection from '../components/LiveDebtDataSection';
 import { TenantDetailsModal } from '@/components/TenantDetailsModal';
+import TenantModal from '../components/TenantModal';
 
 // Helper function for loan calculations
 const calculateLoanPayment = (amount: number, interestRate: number, termYears: number, paymentType: string) => {
@@ -440,34 +441,27 @@ export default function AssetManagement() {
     tenantData: null, 
     unitNumber: '' 
   });
-  const [showTenantModal, setShowTenantModal] = useState(false);
-  const [selectedTenant, setSelectedTenant] = useState<any>(null);
+  // New tenant modal state for TenantModal component
+  const [newTenantModal, setNewTenantModal] = useState({
+    isOpen: false,
+    tenantName: '',
+    propertyId: 0,
+    unitNumber: ''
+  });
   
-  // Function to handle tenant name double-click
-  const handleTenantNameClick = async (propertyId: number, unitNumber: string, tenantDetailsId?: number) => {
-    if (!tenantDetailsId) {
-      console.warn('No tenant details ID available');
+  // Function to handle tenant name double-click - open TenantModal
+  const handleTenantNameClick = (propertyId: number, unitNumber: string, tenantName: string) => {
+    if (!tenantName) {
+      console.warn('No tenant name available');
       return;
     }
 
-    try {
-      const response = await fetch(`/api/tenant-details/${tenantDetailsId}`, {
-        credentials: 'include',
-      });
-      
-      if (response.ok) {
-        const tenantData = await response.json();
-        setTenantDetailsModal({
-          isOpen: true,
-          tenantData,
-          unitNumber
-        });
-      } else {
-        console.error('Failed to fetch tenant details');
-      }
-    } catch (error) {
-      console.error('Error fetching tenant details:', error);
-    }
+    setNewTenantModal({
+      isOpen: true,
+      tenantName,
+      propertyId,
+      unitNumber
+    });
   };
   
   // Centralized loan data management for modal consistency
@@ -2403,8 +2397,8 @@ export default function AssetManagement() {
                                               <span 
                                                 className={unit.tenantName ? "cursor-pointer text-blue-600 hover:text-blue-800 hover:underline" : ""}
                                                 onDoubleClick={() => {
-                                                  if (unit.tenantName && unit.tenantDetailsId && showPropertyDetailModal) {
-                                                    handleTenantNameClick(showPropertyDetailModal.id, unit.unitNumber, unit.tenantDetailsId);
+                                                  if (unit.tenantName && showPropertyDetailModal) {
+                                                    handleTenantNameClick(showPropertyDetailModal.id, unit.unitNumber, unit.tenantName);
                                                   }
                                                 }}
                                                 title={unit.tenantName ? "Double-click to view tenant details" : ""}
@@ -3405,6 +3399,15 @@ export default function AssetManagement() {
           }}
         />
       )}
+
+      {/* New TenantModal */}
+      <TenantModal
+        isOpen={newTenantModal.isOpen}
+        onClose={() => setNewTenantModal({ ...newTenantModal, isOpen: false })}
+        tenantName={newTenantModal.tenantName}
+        propertyId={newTenantModal.propertyId}
+        unitNumber={newTenantModal.unitNumber}
+      />
     </div>
   );
 }

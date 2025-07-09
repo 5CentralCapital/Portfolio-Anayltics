@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DocumentUpload } from '@/components/DocumentUpload';
 import StatementUpload from '@/components/StatementUpload';
+import LeaseUpload from '@/components/LeaseUpload';
 import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Upload, Eye, CreditCard, Trash2, FolderOpen, Loader2 } from 'lucide-react';
 import { useQuery, useMutation, queryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -250,6 +251,7 @@ function DocumentManagement() {
         <TabsList>
           <TabsTrigger value="ai-documents">AI Documents</TabsTrigger>
           <TabsTrigger value="debt-statements">Debt Statements</TabsTrigger>
+          <TabsTrigger value="leases">Leases</TabsTrigger>
           <TabsTrigger value="history">Processing History</TabsTrigger>
         </TabsList>
 
@@ -323,6 +325,23 @@ function DocumentManagement() {
             </CardHeader>
             <CardContent className="pt-0">
               <StatementUpload />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="leases" className="space-y-6">
+          <Card>
+            <CardHeader className="text-center pb-3">
+              <CardTitle className="flex items-center justify-center gap-2 text-lg">
+                <FileText className="h-5 w-5" />
+                Lease Document Upload
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Upload lease agreements to automatically extract tenant data and integrate with property rent rolls
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <LeaseUpload />
             </CardContent>
           </Card>
         </TabsContent>

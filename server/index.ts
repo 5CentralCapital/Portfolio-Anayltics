@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
 import propertyLoansRoutes from "./property-loans.routes";
+import leaseRoutes from "./lease.routes";
 import aiDocumentRoutes from "./routes/ai-documents";
 import tenantDetailsRoutes from "./routes/tenant-details";
 import openaiModelsRoutes from "./routes/openai-models";
@@ -26,6 +27,9 @@ app.use(session({
 
 // Register property loans routes
 app.use('/api', propertyLoansRoutes);
+
+// Register lease processing routes
+app.use('/api/leases', leaseRoutes);
 
 // Register AI document processing routes
 app.use('/api/ai-documents', aiDocumentRoutes);
