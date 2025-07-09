@@ -332,14 +332,10 @@ export class PropertyCalculationEngine {
     const capitalRequired = this.getCapitalRequired(sources);
     const exitCapRate = this.getExitCapRate(sources);
     
-    // Calculate ARV - Use database value first, then calculate if needed
-    const databaseARV = this.getARVFromProperty(sources);
-    const calculatedARV = cashFlowData.netOperatingIncome > 0 && exitCapRate > 0 
+    // Calculate ARV using NOI and cap rate
+    const currentARV = cashFlowData.netOperatingIncome > 0 && exitCapRate > 0 
       ? cashFlowData.netOperatingIncome / exitCapRate 
-      : 0;
-    
-    // Priority: Database ARV > Calculated ARV > Purchase Price
-    const currentARV = databaseARV > 0 ? databaseARV : (calculatedARV > 0 ? calculatedARV : this.getPurchasePrice(sources));
+      : this.getPurchasePrice(sources);
     
     // Calculate investment metrics
     const capRate = purchasePrice > 0 ? (cashFlowData.netOperatingIncome / purchasePrice) * 100 : 0;
