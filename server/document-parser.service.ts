@@ -841,12 +841,46 @@ class DocumentParserService {
         }
       }
 
-      // Try to match by property address
+      // Try to match by property address with flexible matching
       if (!property && loan.propertyAddress) {
+        // First try exact match
         property = await db.select()
           .from(properties)
           .where(eq(properties.address, loan.propertyAddress))
           .limit(1);
+        
+        // If no exact match, try fuzzy matching
+        if (!property || property.length === 0) {
+          const allProperties = await db.select().from(properties);
+          
+          // Normalize addresses for comparison
+          const normalizeAddress = (addr: string) => {
+            return addr.toLowerCase()
+              .replace(/\s+/g, ' ')
+              .replace(/\b(street|st|avenue|ave|drive|dr|boulevard|blvd|road|rd|lane|ln|court|ct|place|pl)\b/g, (match) => {
+                const abbrevs: { [key: string]: string } = {
+                  'street': 'st', 'avenue': 'ave', 'drive': 'dr', 'boulevard': 'blvd',
+                  'road': 'rd', 'lane': 'ln', 'court': 'ct', 'place': 'pl'
+                };
+                return abbrevs[match.toLowerCase()] || match.toLowerCase();
+              })
+              .replace(/[^\w\s]/g, '')
+              .trim();
+          };
+          
+          const normalizedLoanAddress = normalizeAddress(loan.propertyAddress);
+          
+          for (const prop of allProperties) {
+            const normalizedPropAddress = normalizeAddress(prop.address);
+            if (normalizedPropAddress === normalizedLoanAddress || 
+                normalizedPropAddress.includes(normalizedLoanAddress) ||
+                normalizedLoanAddress.includes(normalizedPropAddress)) {
+              property = [prop];
+              console.log(`Fuzzy matched: "${loan.propertyAddress}" → "${prop.address}"`);
+              break;
+            }
+          }
+        }
       }
 
       if (property && property.length > 0) {
