@@ -314,6 +314,20 @@ const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick, calculatePr
   );
 };
 
+// Helper function to safely parse JSON data
+const safeJSONParse = (data: any, fallback: any = null) => {
+  try {
+    if (!data) return fallback;
+    if (typeof data === 'string') {
+      return JSON.parse(data);
+    }
+    return data;
+  } catch (e) {
+    console.error('Failed to parse JSON:', e);
+    return fallback;
+  }
+};
+
 export default function AssetManagement() {
   const queryClient = useQueryClient();
   // Removed duplicate useCalculations call - now handled at top level
@@ -468,7 +482,36 @@ export default function AssetManagement() {
   // Data fetching hooks with forced refresh
   const { data: propertiesResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/properties'],
-    queryFn: () => apiService.getProperties(),
+    queryFn: async () => {
+      const response = await apiService.getProperties();
+      console.log('Properties API response structure:', {
+        isArray: Array.isArray(response),
+        hasData: !!response?.data,
+        dataIsArray: Array.isArray(response?.data),
+        responseType: typeof response,
+        responseKeys: response ? Object.keys(response) : []
+      });
+      
+      // Extract the actual properties array
+      let properties = [];
+      if (Array.isArray(response)) {
+        properties = response;
+      } else if (response?.data && Array.isArray(response.data)) {
+        properties = response.data;
+      }
+      
+      if (properties.length > 0) {
+        console.log('First property from API:', {
+          id: properties[0].id,
+          address: properties[0].address,
+          hasRentRoll: 'rentRoll' in properties[0],
+          rentRollLength: properties[0].rentRoll?.length || 0,
+          propertyLoansLength: properties[0].propertyLoans?.length || 0,
+          propertyKeys: Object.keys(properties[0])
+        });
+      }
+      return response;
+    },
     staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true
@@ -482,9 +525,27 @@ export default function AssetManagement() {
   // Ensure properties is always an array
   const properties = (() => {
     if (!propertiesResponse) return [];
-    if (Array.isArray(propertiesResponse)) return propertiesResponse;
-    if (propertiesResponse.data && Array.isArray(propertiesResponse.data)) return propertiesResponse.data;
-    return [];
+    
+    let propertiesArray = [];
+    if (Array.isArray(propertiesResponse)) {
+      propertiesArray = propertiesResponse;
+    } else if (propertiesResponse.data && Array.isArray(propertiesResponse.data)) {
+      propertiesArray = propertiesResponse.data;
+    }
+    
+    // Log first property to check structure
+    if (propertiesArray.length > 0) {
+      console.log('First property structure from API:', {
+        id: propertiesArray[0].id,
+        address: propertiesArray[0].address,
+        hasRentRoll: !!propertiesArray[0].rentRoll,
+        rentRollLength: propertiesArray[0].rentRoll?.length || 0,
+        hasPropertyLoans: !!propertiesArray[0].propertyLoans,
+        propertyLoansLength: propertiesArray[0].propertyLoans?.length || 0
+      });
+    }
+    
+    return propertiesArray;
   })();
 
   const updatePropertyMutation = useMutation({
@@ -820,7 +881,7 @@ export default function AssetManagement() {
             <div className="text-sm text-white/80">Price/Unit</div>
           </div>
           <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
-            <div className="text-2xl font-bold text-white">{(metrics.avgEquityMultiple || 0).toFixed(1)}x</div>
+            <div className="text-2xl font-bold text-white">{metrics.avgEquityMultiple ? Number(metrics.avgEquityMultiple).toFixed(1) : '0.0'}x</div>
             <div className="text-sm text-white/80">Avg Equity Multiple</div>
           </div>
           <div className="text-center">
@@ -900,7 +961,19 @@ export default function AssetManagement() {
             <div className="space-y-6 stagger-children">
               {properties.filter((p: Property) => p.status === 'Rehabbing').map((property: Property) => {
                 // Get rehab progress from Deal Analyzer data if available
-                const dealAnalyzerData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : null;
+                let dealAnalyzerData = null;
+                try {
+                  if (property.dealAnalyzerData) {
+                    if (typeof property.dealAnalyzerData === 'string') {
+                      dealAnalyzerData = JSON.parse(property.dealAnalyzerData);
+                    } else {
+                      dealAnalyzerData = property.dealAnalyzerData;
+                    }
+                  }
+                } catch (e) {
+                  console.error('Failed to parse dealAnalyzerData:', e);
+                  dealAnalyzerData = null;
+                }
                 let rehabBudget = parseFloat(property.rehabCosts) || 0;
                 let rehabSpent = 0;
                 let rehabProgress = 0;

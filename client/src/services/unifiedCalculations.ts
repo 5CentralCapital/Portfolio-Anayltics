@@ -144,18 +144,32 @@ export class UnifiedCalculationService {
     
     // Check for live rent roll data (from lease uploads)
     let liveRentRoll = null;
+    let dbRentRoll = null;
+    
     if (rentRoll && rentRoll.length > 0) {
       // Check if this looks like real lease data vs. Deal Analyzer assumptions
       const hasRealData = rentRoll.some(unit => 
         unit.tenantName || 
         unit.leaseStart || 
         unit.leaseEnd ||
-        (unit.currentRent && unit.currentRent !== unit.proFormaRent)
+        unit.isRealData === true
       );
+      
+      console.log('Rent roll data check:', { 
+        propertyId: property.id,
+        address: property.address,
+        rentRollLength: rentRoll.length,
+        hasRealData,
+        firstUnit: rentRoll[0]
+      });
       
       if (hasRealData) {
         liveRentRoll = rentRoll;
         console.log('Detected live rent roll data with real tenant information');
+      } else {
+        // Use as database rent roll if not live data
+        dbRentRoll = rentRoll;
+        console.log('Using database rent roll data');
       }
     }
     
@@ -185,7 +199,7 @@ export class UnifiedCalculationService {
       editedExpenses,
       
       // Normalized database data
-      dbRentRoll: liveRentRoll ? null : rentRoll, // Only use if not live data
+      dbRentRoll: dbRentRoll,
       dbLoans: liveLoanData ? null : propertyLoans, // Only use if not live data
       dbAssumptions: assumptions,
       
@@ -200,7 +214,8 @@ export class UnifiedCalculationService {
   /**
    * Format currency for display
    */
-  static formatCurrency(value: number | string): string {
+  static formatCurrency(value: number | string | undefined | null): string {
+    if (value === undefined || value === null) return '$0';
     const numValue = typeof value === 'string' ? parseFloat(value) : value;
     if (isNaN(numValue)) return '$0';
     
@@ -215,8 +230,8 @@ export class UnifiedCalculationService {
   /**
    * Format percentage for display
    */
-  static formatPercentage(value: number, decimals: number = 1): string {
-    if (isNaN(value)) return '0.0%';
+  static formatPercentage(value: number | undefined | null, decimals: number = 1): string {
+    if (value === undefined || value === null || isNaN(value)) return '0.0%';
     return `${value.toFixed(decimals)}%`;
   }
   

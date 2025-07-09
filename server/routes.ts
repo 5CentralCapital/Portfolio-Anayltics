@@ -626,6 +626,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const properties = await storage.getPropertiesForUser(userId);
+      
+      // Debug log to check rent roll data
+      if (properties.length > 0) {
+        console.log('First property from storage:', {
+          id: properties[0].id,
+          address: properties[0].address,
+          hasRentRoll: !!properties[0].rentRoll,
+          rentRollLength: properties[0].rentRoll?.length || 0,
+          hasPropertyLoans: !!properties[0].propertyLoans,
+          propertyLoansLength: properties[0].propertyLoans?.length || 0
+        });
+      }
+      
       res.json(properties);
     } catch (error) {
       console.error("Properties error:", error);

@@ -109,6 +109,13 @@ export class PropertyCalculationEngine {
     let grossRentalIncome = 0;
     let totalOtherIncome = 0;
     
+    console.log('Income calculation sources:', {
+      hasLiveRentRoll: sources.liveRentRoll?.length > 0,
+      hasDbRentRoll: sources.dbRentRoll?.length > 0,
+      hasDealAnalyzerRentRoll: sources.dealAnalyzerData?.rentRoll?.length > 0,
+      propertyAddress: sources.property?.address
+    });
+    
     // 1. Try live rent roll data (from lease uploads)
     if (sources.liveRentRoll && sources.liveRentRoll.length > 0) {
       console.log('Using live rent roll data for income calculation');
@@ -120,9 +127,10 @@ export class PropertyCalculationEngine {
     
     // 2. Fallback to normalized DB rent roll
     else if (sources.dbRentRoll && sources.dbRentRoll.length > 0) {
-      console.log('Using database rent roll data for income calculation');
+      console.log('Using database rent roll data for income calculation', sources.dbRentRoll);
       grossRentalIncome = sources.dbRentRoll.reduce((sum, unit) => {
         const rent = parseFloat(unit.currentRent || unit.proFormaRent || '0');
+        console.log('Unit rent:', unit, 'parsed as:', rent);
         return sum + rent;
       }, 0) * 12; // Annual
     }
@@ -340,8 +348,15 @@ export class PropertyCalculationEngine {
     // Calculate investment metrics
     const capRate = purchasePrice > 0 ? (cashFlowData.netOperatingIncome / purchasePrice) * 100 : 0;
     const cashOnCashReturn = capitalRequired > 0 ? (cashFlowData.annualCashFlow / capitalRequired) * 100 : 0;
+    
+    // Current equity = ARV - Current Debt
     const currentEquityValue = currentARV - debtData.currentDebt;
-    const equityMultiple = capitalRequired > 0 ? currentEquityValue / capitalRequired : 0;
+    
+    // Equity Multiple = (Current Equity + Total Profits) / Initial Capital
+    // Where Total Profits = Current Equity - Initial Capital + Total Cash Flow Received
+    // Simplified: Equity Multiple = Current Equity / Initial Capital (for current snapshot)
+    const equityMultiple = capitalRequired > 0 ? Math.max(0, (currentEquityValue + (cashFlowData.annualCashFlow > 0 ? cashFlowData.annualCashFlow : 0)) / capitalRequired) : 0;
+    
     const dscr = debtData.annualDebtService > 0 ? cashFlowData.netOperatingIncome / debtData.annualDebtService : 0;
     
     console.log('Investment metrics result:', { 

@@ -46,6 +46,11 @@ class ApiService {
         throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
 
+      // Return the data directly if it's an array (for properties endpoint)
+      if (Array.isArray(data)) {
+        return data as any;
+      }
+      
       return { data };
     } catch (error) {
       console.error('API request failed:', {
@@ -124,7 +129,20 @@ class ApiService {
   }
 
   async getProperties() {
-    return this.request<any[]>('/properties');
+    const response = await this.request<any[]>('/properties');
+    
+    // Debug log to check what the API returns
+    if (response && Array.isArray(response) && response.length > 0) {
+      console.log('API getProperties - First property:', {
+        id: response[0].id,
+        address: response[0].address,
+        hasRentRoll: 'rentRoll' in response[0],
+        rentRollLength: response[0].rentRoll?.length || 0,
+        propertyKeys: Object.keys(response[0])
+      });
+    }
+    
+    return response;
   }
 
   async updateProperty(id: number, property: any) {
