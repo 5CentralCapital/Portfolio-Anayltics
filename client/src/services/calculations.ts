@@ -83,13 +83,13 @@ export class CalculationService {
       // Extract Deal Analyzer data if available
       const dealData: DealAnalyzerData = property.dealAnalyzerData || {};
       
-      // Get assumptions or use property fields as fallback - no hardcoded defaults
+      // Get assumptions with market standard defaults when missing
       const assumptions = dealData.assumptions || {};
       const purchasePrice = parseFloat(assumptions.purchasePrice || property.acquisitionPrice || '0');
-      const vacancyRate = parseFloat(assumptions.vacancyRate || '0');
-      const managementFee = parseFloat(assumptions.managementFee || '0');
-      const exitCapRate = parseFloat(assumptions.exitCapRate || assumptions.marketCapRate || '0');
-      const loanPercentage = parseFloat(assumptions.loanPercentage || '0');
+      const vacancyRate = parseFloat(assumptions.vacancyRate || '0.05'); // 5% default vacancy
+      const managementFee = parseFloat(assumptions.managementFee || '0.08'); // 8% default management fee
+      const exitCapRate = parseFloat(assumptions.exitCapRate || assumptions.marketCapRate || '0.055'); // 5.5% default cap rate
+      const loanPercentage = parseFloat(assumptions.loanPercentage || '0.75'); // 75% default LTV
       
       // Calculate rental income
       const grossRentalIncome = CalculationService.calculateGrossRentalIncome(dealData.rentRoll, dealData.unitTypes);
@@ -97,8 +97,10 @@ export class CalculationService {
       const totalOtherIncome = CalculationService.calculateOtherIncome(dealData.otherIncome);
       const effectiveGrossIncome = grossRentalIncome - vacancyLoss + totalOtherIncome;
       
-      // Calculate expenses
-      const monthlyExpenses = CalculationService.calculateMonthlyExpenses(dealData.expenses, effectiveGrossIncome);
+      // Calculate expenses including management fee
+      const baseMonthlyExpenses = CalculationService.calculateMonthlyExpenses(dealData.expenses, effectiveGrossIncome);
+      const managementFeeAmount = (effectiveGrossIncome / 12) * managementFee; // Monthly management fee
+      const monthlyExpenses = baseMonthlyExpenses + managementFeeAmount;
       const annualExpenses = monthlyExpenses * 12;
       
       // Calculate NOI

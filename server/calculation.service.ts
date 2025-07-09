@@ -89,12 +89,16 @@ export class CalculationService {
 
     // Calculate rental income using unit types for market rent data
     const grossRentalIncome = this.calculateGrossRentalIncome(rentRoll, unitTypes, assumptions);
-    const vacancyLoss = grossRentalIncome * Number(assumptions.vacancyRate);
+    const vacancyRate = Number(assumptions.vacancyRate) || 0.05; // 5% default vacancy
+    const vacancyLoss = grossRentalIncome * vacancyRate;
     const totalOtherIncome = otherIncome.reduce((sum, income) => sum + Number(income.annualAmount), 0);
     const effectiveGrossIncome = grossRentalIncome - vacancyLoss + totalOtherIncome;
 
-    // Calculate operating expenses
-    const totalOperatingExpenses = this.calculateOperatingExpenses(expenses, effectiveGrossIncome);
+    // Calculate operating expenses including management fee
+    const baseOperatingExpenses = this.calculateOperatingExpenses(expenses, effectiveGrossIncome);
+    const managementFee = Number(assumptions.managementFee) || 0.08; // 8% default management fee
+    const managementFeeAmount = effectiveGrossIncome * managementFee;
+    const totalOperatingExpenses = baseOperatingExpenses + managementFeeAmount;
     const netOperatingIncome = effectiveGrossIncome - totalOperatingExpenses;
 
     // Calculate debt service from active loan
@@ -180,18 +184,29 @@ export class CalculationService {
     const [existing] = await db.select().from(propertyAssumptions).where(eq(propertyAssumptions.propertyId, propertyId));
     
     if (!existing) {
-      // Create default assumptions if none exist
+      // Create default assumptions with market standards
       const [newAssumptions] = await db.insert(propertyAssumptions).values({
         propertyId,
         unitCount: 1,
         purchasePrice: "0",
-        vacancyRate: "0",
-        marketCapRate: "0"
+        vacancyRate: "0.05", // 5% default vacancy
+        managementFee: "0.08", // 8% default management fee
+        marketCapRate: "0.055", // 5.5% default cap rate
+        loanPercentage: "0.75", // 75% default LTV
+        holdPeriodYears: "5" // 5 year default hold period
       }).returning();
       return newAssumptions;
     }
     
-    return existing;
+    // Apply defaults to existing assumptions if values are missing or zero
+    return {
+      ...existing,
+      vacancyRate: existing.vacancyRate || "0.05",
+      managementFee: existing.managementFee || "0.08", 
+      marketCapRate: existing.marketCapRate || "0.055",
+      loanPercentage: existing.loanPercentage || "0.75",
+      holdPeriodYears: existing.holdPeriodYears || "5"
+    };
   }
 
   /**
@@ -234,7 +249,7 @@ export class CalculationService {
    * Calculate current ARV using cap rate method
    */
   private calculateCurrentARV(netOperatingIncome: number, assumptions: any): number {
-    const marketCapRate = Number(assumptions.marketCapRate);
+    const marketCapRate = Number(assumptions.marketCapRate) || 0.055; // Default 5.5% cap rate
     if (netOperatingIncome > 0 && marketCapRate > 0) {
       return netOperatingIncome / marketCapRate;
     }
