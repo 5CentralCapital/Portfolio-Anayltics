@@ -2285,7 +2285,6 @@ export default function AssetManagement() {
                                       <>
                                         <h4 className="font-medium text-gray-900 dark:text-white">{unitType.name}</h4>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">Market Rent: {formatCurrency(unitType.marketRent || 0)}</p>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">Square Feet: {unitType.sqft || 0}</p>
                                       </>
                                     )}
                                   </div>
