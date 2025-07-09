@@ -2836,43 +2836,56 @@ export default function AssetManagement() {
                                     <h4 className="text-lg font-semibold text-red-700 dark:text-red-300 border-b border-red-200 pb-2">Expenses</h4>
                                   
                                   <div className="space-y-3">
-                                    {[
-                                      { key: 'taxes', label: 'Property Tax', value: expenses.taxes || 15000 },
-                                      { key: 'insurance', label: 'Insurance', value: expenses.insurance || 14500 },
-                                      { key: 'maintenance', label: 'Maintenance', value: expenses.maintenance || 8000 },
-                                      { key: 'waterSewerTrash', label: 'Water/Sewer/Trash', value: expenses.waterSewerTrash || 6000 },
-                                      { key: 'capex', label: 'Capital Reserves', value: expenses.capex || 2000 },
-                                      { key: 'utilities', label: 'Utilities', value: expenses.utilities || 6000 },
-                                      { key: 'other', label: 'Other', value: expenses.other || 0 }
-                                    ].map((item) => (
-                                      <div key={item.key} className="flex justify-between items-center">
-                                        <span className="text-gray-700 dark:text-gray-300">{item.label}</span>
-                                        {isEditing ? (
-                                          <input
-                                            type="number"
-                                            value={item.value}
-                                            onChange={(e) => {
-                                              const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
-                                              if (!dealData.expenses) dealData.expenses = {};
-                                              dealData.expenses[item.key] = parseFloat(e.target.value) || 0;
-                                              handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
-                                              // Trigger real-time calculation updates
-                                              setTimeout(() => {
-                                                setRefreshCounter(prev => prev + 1);
-                                              }, 50);
-                                            }}
-                                            className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-right"
-                                          />
-                                        ) : (
-                                          <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(item.value)}</span>
-                                        )}
-                                      </div>
-                                    ))}
-                                    
-                                    <div className="flex justify-between items-center">
-                                      <span className="text-gray-700 dark:text-gray-300">Management Fee (8%)</span>
-                                      <span className="font-medium text-gray-900 dark:text-white">{formatCurrency((calculations.effectiveGrossIncome || calculations.netRevenueAnnual || 0) * 0.08)}</span>
-                                    </div>
+                                    {(() => {
+                                      // Get individual expense amounts from centralized calculation service
+                                      const totalMonthlyExpenses = calculations.monthlyExpenses || 0;
+                                      const totalAnnualExpenses = totalMonthlyExpenses * 12;
+                                      
+                                      // Calculate proportional expense breakdown based on centralized totals
+                                      const expenseItems = [
+                                        { key: 'taxes', label: 'Property Tax', value: expenses.taxes || (totalAnnualExpenses * 0.267) },
+                                        { key: 'insurance', label: 'Insurance', value: expenses.insurance || (totalAnnualExpenses * 0.133) },
+                                        { key: 'maintenance', label: 'Maintenance', value: expenses.maintenance || (totalAnnualExpenses * 0.178) },
+                                        { key: 'waterSewerTrash', label: 'Water/Sewer/Trash', value: expenses.waterSewerTrash || (totalAnnualExpenses * 0.089) },
+                                        { key: 'capex', label: 'Capital Reserves', value: expenses.capex || (totalAnnualExpenses * 0.071) },
+                                        { key: 'utilities', label: 'Utilities', value: expenses.utilities || (totalAnnualExpenses * 0.054) },
+                                        { key: 'other', label: 'Other', value: expenses.other || (totalAnnualExpenses * 0.036) }
+                                      ];
+                                      
+                                      return (
+                                        <>
+                                          {expenseItems.map((item) => (
+                                            <div key={item.key} className="flex justify-between items-center">
+                                              <span className="text-gray-700 dark:text-gray-300">{item.label}</span>
+                                              {isEditing ? (
+                                                <input
+                                                  type="number"
+                                                  value={item.value}
+                                                  onChange={(e) => {
+                                                    const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
+                                                    if (!dealData.expenses) dealData.expenses = {};
+                                                    dealData.expenses[item.key] = parseFloat(e.target.value) || 0;
+                                                    handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                                    // Trigger real-time calculation updates
+                                                    setTimeout(() => {
+                                                      setRefreshCounter(prev => prev + 1);
+                                                    }, 50);
+                                                  }}
+                                                  className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                                />
+                                              ) : (
+                                                <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(item.value)}</span>
+                                              )}
+                                            </div>
+                                          ))}
+                                          
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-gray-700 dark:text-gray-300">Management Fee</span>
+                                            <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(totalAnnualExpenses * 0.179)}</span>
+                                          </div>
+                                        </>
+                                      );
+                                    })()}
                                     
                                     <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                                       <span className="font-semibold text-gray-900 dark:text-white">Total Expenses</span>
@@ -3047,70 +3060,70 @@ export default function AssetManagement() {
                                       values: Array(12).fill(''),
                                       annual: ''
                                     },
-                                    {
-                                      category: 'Property Tax',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.taxes || calculations.netRevenueAnnual * 0.12) / 12),
-                                      annual: expenses.taxes || calculations.netRevenueAnnual * 0.12
-                                    },
-                                    {
-                                      category: 'Insurance',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.insurance || calculations.netRevenueAnnual * 0.06) / 12),
-                                      annual: expenses.insurance || calculations.netRevenueAnnual * 0.06
-                                    },
-                                    {
-                                      category: 'Maintenance & Repairs',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.maintenance || calculations.netRevenueAnnual * 0.08) / 12),
-                                      annual: expenses.maintenance || calculations.netRevenueAnnual * 0.08
-                                    },
-                                    {
-                                      category: 'Water/Sewer/Trash',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.waterSewerTrash || calculations.netRevenueAnnual * 0.04) / 12),
-                                      annual: expenses.waterSewerTrash || calculations.netRevenueAnnual * 0.04
-                                    },
-                                    {
-                                      category: 'Capital Reserves',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.capex || calculations.netRevenueAnnual * 0.032) / 12),
-                                      annual: expenses.capex || calculations.netRevenueAnnual * 0.032
-                                    },
-                                    {
-                                      category: 'Utilities',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.utilities || calculations.netRevenueAnnual * 0.024) / 12),
-                                      annual: expenses.utilities || calculations.netRevenueAnnual * 0.024
-                                    },
-                                    {
-                                      category: 'Management Fee (8%)',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill(calculations.netRevenue * 0.08),
-                                      annual: calculations.netRevenueAnnual * 0.08
-                                    },
-                                    {
-                                      category: 'Other',
-                                      isHeader: false,
-                                      bgColor: '',
-                                      textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill((expenses.other || calculations.netRevenueAnnual * 0.016) / 12),
-                                      annual: expenses.other || calculations.netRevenueAnnual * 0.016
-                                    },
+                                    (() => {
+                                      // Get individual expense amounts from centralized calculation service
+                                      const totalMonthlyExpenses = calculations.monthlyExpenses || 0;
+                                      const totalAnnualExpenses = totalMonthlyExpenses * 12;
+                                      
+                                      return [
+                                        {
+                                          category: 'Property Tax',
+                                          isHeader: false,
+                                          bgColor: '',
+                                          textColor: 'text-gray-900 dark:text-white',
+                                          values: Array(12).fill((expenses.taxes || (totalAnnualExpenses * 0.267)) / 12),
+                                          annual: expenses.taxes || (totalAnnualExpenses * 0.267)
+                                        },
+                                        {
+                                          category: 'Insurance',
+                                          isHeader: false,
+                                          bgColor: '',
+                                          textColor: 'text-gray-900 dark:text-white',
+                                          values: Array(12).fill((expenses.insurance || (totalAnnualExpenses * 0.133)) / 12),
+                                          annual: expenses.insurance || (totalAnnualExpenses * 0.133)
+                                        },
+                                        {
+                                          category: 'Maintenance & Repairs',
+                                          isHeader: false,
+                                          bgColor: '',
+                                          textColor: 'text-gray-900 dark:text-white',
+                                          values: Array(12).fill((expenses.maintenance || (totalAnnualExpenses * 0.178)) / 12),
+                                          annual: expenses.maintenance || (totalAnnualExpenses * 0.178)
+                                        },
+                                        {
+                                          category: 'Water/Sewer/Trash',
+                                          isHeader: false,
+                                          bgColor: '',
+                                          textColor: 'text-gray-900 dark:text-white',
+                                          values: Array(12).fill((expenses.waterSewerTrash || (totalAnnualExpenses * 0.089)) / 12),
+                                          annual: expenses.waterSewerTrash || (totalAnnualExpenses * 0.089)
+                                        },
+                                        {
+                                          category: 'Capital Reserves',
+                                          isHeader: false,
+                                          bgColor: '',
+                                          textColor: 'text-gray-900 dark:text-white',
+                                          values: Array(12).fill((expenses.capex || (totalAnnualExpenses * 0.071)) / 12),
+                                          annual: expenses.capex || (totalAnnualExpenses * 0.071)
+                                        },
+                                        {
+                                          category: 'Utilities',
+                                          isHeader: false,
+                                          bgColor: '',
+                                          textColor: 'text-gray-900 dark:text-white',
+                                          values: Array(12).fill((expenses.utilities || (totalAnnualExpenses * 0.054)) / 12),
+                                          annual: expenses.utilities || (totalAnnualExpenses * 0.054)
+                                        },
+                                        {
+                                          category: 'Other',
+                                          isHeader: false,
+                                          bgColor: '',
+                                          textColor: 'text-gray-900 dark:text-white',
+                                          values: Array(12).fill((expenses.other || (totalAnnualExpenses * 0.036)) / 12),
+                                          annual: expenses.other || (totalAnnualExpenses * 0.036)
+                                        }
+                                      ];
+                                    })(),
                                     {
                                       category: 'Total Expenses',
                                       isHeader: false,
