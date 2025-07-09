@@ -124,8 +124,13 @@ interface RehabLineItem {
   notes?: string;
 }
 
-const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
-  const { calculateProperty, formatCurrency } = useCalculations();
+const PropertyCard = ({ property, onStatusChange, onDoubleClick, calculateProperty, formatCurrency }: { 
+  property: Property; 
+  onStatusChange: (id: number, status: string) => void; 
+  onDoubleClick: (property: Property) => void;
+  calculateProperty: any;
+  formatCurrency: any;
+}) => {
   // Use centralized calculation function
   const calculatedMetrics = calculateProperty(property);
   
@@ -234,8 +239,13 @@ const PropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: P
   );
 };
 
-const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { property: Property; onStatusChange: (id: number, status: string) => void; onDoubleClick: (property: Property) => void }) => {
-  const { calculateProperty, formatCurrency } = useCalculations();
+const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick, calculateProperty, formatCurrency }: { 
+  property: Property; 
+  onStatusChange: (id: number, status: string) => void; 
+  onDoubleClick: (property: Property) => void;
+  calculateProperty: any;
+  formatCurrency: any;
+}) => {
   // Use centralized calculations for accurate metrics
   const calculatedMetrics = calculateProperty(property);
   
@@ -306,7 +316,7 @@ const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { propert
 
 export default function AssetManagement() {
   const queryClient = useQueryClient();
-  const { calculateProperty, calculatePortfolioMetrics, formatCurrency, formatPercentage } = useCalculations();
+  // Removed duplicate useCalculations call - now handled at top level
   // Feature/unfeature property mutation
   const featureMutation = useMutation({
     mutationFn: async ({ id, isFeatured }: { id: number; isFeatured: boolean }) => {
@@ -773,8 +783,9 @@ export default function AssetManagement() {
     );
   }
 
-  // Calculate metrics using the new unified calculation system
-  const metrics = calculatePortfolioMetrics(properties || []);
+  // Calculate metrics using the unified calculation system
+  const { calculateProperty, formatCurrency, calculatePortfolioMetrics: calculatePortfolioMetricsUnified } = useCalculations();
+  const metrics = calculatePortfolioMetricsUnified(properties || []);
 
   return (
     <div className="space-y-6">
@@ -1058,7 +1069,7 @@ export default function AssetManagement() {
           {properties.filter((p: Property) => p.status === 'Cashflowing').length > 0 ? (
             <div className="grid gap-4 stagger-children">
               {properties.filter((p: Property) => p.status === 'Cashflowing').map((property: Property) => (
-                <PropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} />
+                <PropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} calculateProperty={calculateProperty} formatCurrency={formatCurrency} />
               ))}
             </div>
           ) : (
@@ -1080,7 +1091,7 @@ export default function AssetManagement() {
           {properties.filter((p: Property) => p.status === 'Sold').length > 0 ? (
             <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-3 stagger-children">
               {properties.filter((p: Property) => p.status === 'Sold').map((property: Property) => (
-                <SoldPropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} />
+                <SoldPropertyCard key={property.id} property={property} onStatusChange={handleStatusChange} onDoubleClick={handlePropertyDoubleClick} calculateProperty={calculateProperty} formatCurrency={formatCurrency} />
               ))}
             </div>
           ) : (
