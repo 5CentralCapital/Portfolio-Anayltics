@@ -784,7 +784,7 @@ export default function AssetManagement() {
   }
 
   // Calculate metrics using the unified calculation system
-  const { calculateProperty, formatCurrency, calculatePortfolioMetrics: calculatePortfolioMetricsUnified } = useCalculations();
+  const { calculateProperty, formatCurrency, formatPercentage, calculatePortfolioMetrics: calculatePortfolioMetricsUnified } = useCalculations();
   const metrics = calculatePortfolioMetricsUnified(properties || []);
 
   return (

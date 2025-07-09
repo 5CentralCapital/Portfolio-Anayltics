@@ -50,15 +50,21 @@ export class UnifiedCalculationService {
     let totalCoCReturns = 0;
     let propertiesWithMetrics = 0;
     
+    console.log(`[AUM DEBUG] Starting portfolio calculation with ${properties.length} properties`);
+    
     properties.forEach(propertyData => {
       const financials = this.calculateProperty(propertyData);
       const property = propertyData.property;
+      
+      console.log(`[AUM DEBUG] Property: ${property.address}, Status: ${property.status}, ARV: ${financials.currentARV}, Units: ${property.apartments}`);
       
       // Only include active properties (exclude sold)
       if (property.status !== 'Sold') {
         totalAUM += financials.currentARV;
         totalUnits += property.apartments || 0;
         totalEquity += financials.currentEquityValue;
+        
+        console.log(`[AUM DEBUG] Added to AUM: ${financials.currentARV}, Running total: ${totalAUM}`);
         
         if (property.status === 'Cashflowing') {
           totalMonthlyCashFlow += financials.monthlyCashFlow;
@@ -72,8 +78,12 @@ export class UnifiedCalculationService {
         if (financials.cashOnCashReturn > 0) {
           totalCoCReturns += financials.cashOnCashReturn;
         }
+      } else {
+        console.log(`[AUM DEBUG] Excluded sold property from AUM: ${property.address}`);
       }
     });
+    
+    console.log(`[AUM DEBUG] Final totals - AUM: ${totalAUM}, Units: ${totalUnits}, Properties: ${properties.length}`);
     
     return {
       totalAUM,
