@@ -83,7 +83,8 @@ export default function Roadmap() {
 
   // Calculate real KPIs from data
   const calculateRealKPIs = () => {
-    if (!activeProperties || !portfolioAnalytics) {
+    // Fallback to default values if data isn't loaded yet
+    if (!activeProperties || !Array.isArray(activeProperties) || !portfolioAnalytics) {
       return { aum: "$3.67M", properties: 3, cashFlow: "$23.9K/mo", irr: "18.5%" };
     }
     
@@ -95,26 +96,26 @@ export default function Roadmap() {
     return {
       aum: `$${(totalAUM / 1000000).toFixed(2)}M`,
       properties: propertyCount,
-      cashFlow: `$${(monthlyCashFlow / 1000).toFixed(1)}K/mo`,
+      cashFlow: `$${(Math.abs(monthlyCashFlow) / 1000).toFixed(1)}K/mo`,
       irr: `${irr.toFixed(1)}%`
     };
   };
 
   // Transform real properties for milestone display
-  const transformRealProperties = (properties: Property[]) => {
-    if (!properties) return [];
+  const transformRealProperties = (properties: Property[] | undefined) => {
+    if (!properties || !Array.isArray(properties)) return [];
     
     return properties.map(prop => ({
-      name: prop.address,
-      location: `${prop.city}, ${prop.state}`,
-      type: `${prop.apartments} Units`,
+      name: prop.address || 'Unknown Property',
+      location: `${prop.city || 'Unknown'}, ${prop.state || 'Unknown'}`,
+      type: `${prop.apartments || 0} Units`,
       value: prop.acquisitionPrice ? `$${(parseFloat(prop.acquisitionPrice) / 1000000).toFixed(2)}M` : "$0",
       status: prop.status || 'active'
     }));
   };
 
   const realKPIs = calculateRealKPIs();
-  const realProperties = transformRealProperties(activeProperties || []);
+  const realProperties = transformRealProperties(activeProperties);
 
   // Create dynamic milestones with real data for current year
   const createMilestones = (): Milestone[] => [
@@ -235,7 +236,8 @@ export default function Roadmap() {
     }
   };
 
-  if (propertiesLoading || analyticsLoading) {
+  // Show loading only if both are loading, otherwise show roadmap with available data
+  if (propertiesLoading && analyticsLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
@@ -397,7 +399,7 @@ export default function Roadmap() {
                       className="cursor-pointer hover:shadow-md transition-shadow"
                       onClick={() => {
                         // Open property modal for current year properties
-                        if (selectedMilestone.year === 2025 && activeProperties) {
+                        if (selectedMilestone.year === 2025 && activeProperties && Array.isArray(activeProperties)) {
                           const realProperty = activeProperties.find(p => p.address === property.name);
                           if (realProperty) setSelectedProperty(realProperty);
                         }
