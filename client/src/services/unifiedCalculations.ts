@@ -52,14 +52,18 @@ export class UnifiedCalculationService {
     
     // console.log(`[AUM DEBUG] Starting portfolio calculation with ${properties.length} properties`);
     
+    console.log(`[AUM DEBUG] Processing ${properties.length} properties for AUM calculation`);
+    
     properties.forEach(propertyData => {
       const financials = this.calculateProperty(propertyData);
       const property = propertyData.property;
       
+      console.log(`[AUM DEBUG] Processing property: ${property.address}, Status: ${property.status}, ARV field: ${property.arvAtTimePurchased}`);
+      
       // Only include active properties (exclude sold)
       if (property.status !== 'Sold') {
         // Use database ARV for AUM calculation instead of calculated ARV
-        const databaseARV = parseFloat(property.arv_at_time_purchased || '0');
+        const databaseARV = parseFloat(property.arvAtTimePurchased || '0');
         const arvForAUM = databaseARV > 0 ? databaseARV : financials.currentARV;
         
         totalAUM += arvForAUM;
