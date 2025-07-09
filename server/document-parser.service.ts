@@ -931,40 +931,54 @@ class DocumentParserService {
 
     for (const { loan, property } of matchedData) {
       try {
-        await db.insert(propertyLoans).values({
-          propertyId: property.id,
-          loanName: `${loan.lenderName} Loan`,
-          loanType: 'acquisition',
-          originalAmount: loan.currentBalance.toString(),
-          currentBalance: loan.currentBalance.toString(),
-          interestRate: loan.interestRate.toString(),
-          termYears: 30, // Default, can be updated manually
-          monthlyPayment: loan.monthlyPayment.toString(),
-          paymentType: 'principal_and_interest',
-          maturityDate: this.parseDate(loan.nextPaymentDate) || new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000),
-          isActive: true,
-          lender: loan.lenderName,
-          externalLoanId: loan.loanId,
-          principalBalance: loan.principalBalance?.toString(),
-          nextPaymentDate: this.parseDate(loan.nextPaymentDate),
-          nextPaymentAmount: loan.nextPaymentAmount?.toString(),
-          escrowBalance: loan.escrowBalance?.toString(),
-          lastSyncDate: new Date(),
-          syncStatus: 'success'
-        }).onConflictDoUpdate({
-          target: [propertyLoans.propertyId, propertyLoans.externalLoanId],
-          set: {
+        // Check if loan already exists for this property
+        const existingLoan = await db.select()
+          .from(propertyLoans)
+          .where(and(
+            eq(propertyLoans.propertyId, property.id),
+            eq(propertyLoans.externalLoanId, loan.loanId)
+          ))
+          .limit(1);
+
+        if (existingLoan.length > 0) {
+          // Update existing loan
+          await db.update(propertyLoans)
+            .set({
+              currentBalance: loan.currentBalance.toString(),
+              interestRate: loan.interestRate.toString(),
+              monthlyPayment: loan.monthlyPayment.toString(),
+              principalBalance: loan.principalBalance?.toString(),
+              nextPaymentDate: this.parseDate(loan.nextPaymentDate),
+              nextPaymentAmount: loan.nextPaymentAmount?.toString(),
+              escrowBalance: loan.escrowBalance?.toString(),
+              lastSyncDate: new Date(),
+              syncStatus: 'success'
+            })
+            .where(eq(propertyLoans.id, existingLoan[0].id));
+        } else {
+          // Create new loan
+          await db.insert(propertyLoans).values({
+            propertyId: property.id,
+            loanName: `${loan.lenderName} Loan`,
+            loanType: 'acquisition',
+            originalAmount: loan.currentBalance.toString(),
             currentBalance: loan.currentBalance.toString(),
             interestRate: loan.interestRate.toString(),
+            termYears: 30, // Default, can be updated manually
             monthlyPayment: loan.monthlyPayment.toString(),
+            paymentType: 'principal_and_interest',
+            maturityDate: this.parseDate(loan.nextPaymentDate) || new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000),
+            isActive: true,
+            lender: loan.lenderName,
+            externalLoanId: loan.loanId,
             principalBalance: loan.principalBalance?.toString(),
             nextPaymentDate: this.parseDate(loan.nextPaymentDate),
             nextPaymentAmount: loan.nextPaymentAmount?.toString(),
             escrowBalance: loan.escrowBalance?.toString(),
             lastSyncDate: new Date(),
             syncStatus: 'success'
-          }
-        });
+          });
+        }
 
         updated++;
       } catch (error) {
