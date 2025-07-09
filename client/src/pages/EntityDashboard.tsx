@@ -1148,16 +1148,20 @@ export default function EntityDashboard() {
                   </h3>
                   <div className="space-y-3">
                     {(() => {
-                      const grossRent = Number(selectedPropertyModal.cashFlow) * 12;
-                      const propertyTax = grossRent * 0.12;
-                      const insurance = grossRent * 0.06;
-                      const maintenance = grossRent * 0.08;
-                      const waterSewerTrash = grossRent * 0.04;
-                      const capitalReserves = grossRent * 0.032;
-                      const utilities = grossRent * 0.024;
-                      const other = grossRent * 0.016;
-                      const managementFee = grossRent * 0.08;
-                      const totalExpenses = propertyTax + insurance + maintenance + waterSewerTrash + capitalReserves + utilities + other + managementFee;
+                      // Use centralized calculation service for accurate expense breakdown
+                      const calculatedMetrics = calculatePropertyKPIs(selectedPropertyModal);
+                      const monthlyExpenses = calculatedMetrics.monthlyExpenses || 0;
+                      const totalExpenses = monthlyExpenses;
+                      
+                      // Calculate individual expense components based on calculated total
+                      const propertyTax = totalExpenses * 0.267; // Approximately 26.7% of total expenses
+                      const insurance = totalExpenses * 0.133; // Approximately 13.3% of total expenses
+                      const maintenance = totalExpenses * 0.178; // Approximately 17.8% of total expenses
+                      const waterSewerTrash = totalExpenses * 0.089; // Approximately 8.9% of total expenses
+                      const capitalReserves = totalExpenses * 0.071; // Approximately 7.1% of total expenses
+                      const utilities = totalExpenses * 0.054; // Approximately 5.4% of total expenses
+                      const other = totalExpenses * 0.036; // Approximately 3.6% of total expenses
+                      const managementFee = totalExpenses * 0.178; // Approximately 17.8% of total expenses
 
                       return (
                         <>
@@ -1213,12 +1217,11 @@ export default function EntityDashboard() {
                   </h3>
                   <div className="space-y-3">
                     {(() => {
-                      const grossRent = Number(selectedPropertyModal.cashFlow) * 12;
-                      const netRevenue = grossRent * 0.95;
-                      const totalExpenses = grossRent * 0.448; // Sum of all expense percentages
-                      const noi = netRevenue - totalExpenses;
-                      const monthlyDebtService = grossRent * 0.055; // Estimated debt service
-                      const netCashFlow = (noi - (monthlyDebtService * 12)) / 12;
+                      // Use centralized calculation service for accurate NOI and cash flow
+                      const calculatedMetrics = calculatePropertyKPIs(selectedPropertyModal);
+                      const noi = calculatedMetrics.netOperatingIncome || 0;
+                      const monthlyDebtService = calculatedMetrics.monthlyDebtService || 0;
+                      const netCashFlow = calculatedMetrics.monthlyCashFlow || 0;
 
                       return (
                         <>
