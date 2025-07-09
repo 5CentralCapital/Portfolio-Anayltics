@@ -306,7 +306,7 @@ const SoldPropertyCard = ({ property, onStatusChange, onDoubleClick }: { propert
 
 export default function AssetManagement() {
   const queryClient = useQueryClient();
-  const { calculatePropertyKPIs, calculatePortfolioMetrics, formatCurrency, formatPercentage } = useCalculations();
+  const { calculateProperty, calculatePortfolioMetrics, formatCurrency, formatPercentage } = useCalculations();
   // Feature/unfeature property mutation
   const featureMutation = useMutation({
     mutationFn: async ({ id, isFeatured }: { id: number; isFeatured: boolean }) => {
@@ -634,11 +634,11 @@ export default function AssetManagement() {
       }
       
       console.log('getPropertyCalculations: Using property data:', propertyData.address);
-      const calculations = calculatePropertyKPIs(propertyData);
+      const calculations = calculateProperty(propertyData);
       
       // Return calculations with safe fallbacks for any missing fields
       if (!calculations) {
-        console.warn('calculatePropertyKPIs returned null, using fallback values');
+        console.warn('calculateProperty returned null, using fallback values');
         return {
           grossRentMonthly: 0,
           grossRentAnnual: 0,
@@ -773,145 +773,8 @@ export default function AssetManagement() {
     );
   }
 
-  // Calculate metrics with safe operations
-  const metrics = {
-    totalUnits: Array.isArray(properties) ? properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0) : 0,
-    
-    // AUM = Total ARV of active properties only (exclude sold)
-    totalAUM: Array.isArray(properties) ? properties
-      .filter((prop: Property) => prop.status !== 'Sold')
-      .reduce((sum: number, prop: Property) => {
-        const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
-        return sum + (isNaN(arv) ? 0 : arv);
-      }, 0) : 0,
-    
-    // Total Equity = AUM - current debt (calculate debt from live debt data and Deal Analyzer data)
-    totalEquity: (() => {
-      if (!Array.isArray(properties)) return 0;
-      
-      let totalAUM = 0;
-      let totalDebt = 0;
-      
-      properties
-        .filter((prop: Property) => prop.status !== 'Sold')
-        .forEach((prop: Property) => {
-          const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
-          totalAUM += isNaN(arv) ? 0 : arv;
-        
-        // Calculate current debt using centralized calculation service
-        try {
-          const metrics = calculatePropertyKPIs(prop);
-          if (metrics && metrics.currentDebt && metrics.currentDebt > 0) {
-            console.log(`Property ${prop.address}: Using currentDebt ${metrics.currentDebt} from centralized service`);
-            totalDebt += metrics.currentDebt;
-          } else {
-            console.log(`Property ${prop.address}: No currentDebt found, using fallback calculation`);
-            // Fallback to Deal Analyzer data or basic calculation
-            if (prop.dealAnalyzerData) {
-              try {
-                const dealData = JSON.parse(prop.dealAnalyzerData);
-                const loans = dealData?.loans || [];
-                
-                // Find active loan or calculate from assumptions
-                const activeLoan = loans.find((loan: any) => loan.isActive);
-                if (activeLoan) {
-                  const loanAmount = activeLoan.loanAmount || 0;
-                  console.log(`Property ${prop.address}: Using Deal Analyzer active loan ${loanAmount}`);
-                  totalDebt += loanAmount;
-                } else if (dealData?.assumptions) {
-                  // Use assumption-based calculation for current debt
-                  const loanPercentage = dealData.assumptions.loanPercentage || 0.8;
-                  const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
-                  const rehabCosts = parseFloat(prop.rehabCosts || '0');
-                  const calculatedDebt = (purchasePrice + rehabCosts) * loanPercentage;
-                  console.log(`Property ${prop.address}: Using assumption-based calculation ${calculatedDebt}`);
-                  totalDebt += calculatedDebt;
-                }
-              } catch (e) {
-                // Fallback to basic calculation if parsing fails
-                const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
-                const calculatedDebt = purchasePrice * 0.8;
-                console.log(`Property ${prop.address}: Using basic LTV calculation ${calculatedDebt}`);
-                totalDebt += calculatedDebt;
-              }
-            }
-          }
-        } catch (e) {
-          console.error(`Property ${prop.address}: Error in centralized service`, e);
-          // Fallback to basic calculation if centralized service fails
-          const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
-          const calculatedDebt = purchasePrice * 0.8;
-          console.log(`Property ${prop.address}: Using emergency fallback ${calculatedDebt}`);
-          totalDebt += calculatedDebt;
-        }
-      });
-      
-      return totalAUM - totalDebt;
-    })(),
-    
-    // Current Monthly Income = Sum of all monthly cash flows from cashflowing properties
-    currentMonthlyIncome: Array.isArray(properties) ? properties
-      .filter((prop: Property) => prop.status === 'Cashflowing')
-      .reduce((sum: number, prop: Property) => {
-        const cashFlow = parseFloat((prop.cashFlow || '0').toString().replace(/[^0-9.-]/g, ''));
-        return sum + (isNaN(cashFlow) ? 0 : cashFlow);
-      }, 0) : 0,
-    
-    // Price/Unit = AUM / Total Units
-    pricePerUnit: (() => {
-      if (!Array.isArray(properties) || properties.length === 0) return 0;
-      const totalAUM = properties.reduce((sum: number, prop: Property) => {
-        const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
-        return sum + (isNaN(arv) ? 0 : arv);
-      }, 0);
-      const totalUnits = properties.reduce((sum: number, prop: Property) => sum + (prop.apartments || 0), 0);
-      return totalUnits > 0 ? totalAUM / totalUnits : 0;
-    })(),
-    
-    // Average Equity Multiple using calculatePropertyMetrics function
-    avgEquityMultiple: (() => {
-      if (!Array.isArray(properties) || properties.length === 0) return 0;
-      
-      let totalEquityMultiple = 0;
-      let propertiesWithMetrics = 0;
-      
-      properties.forEach((prop: Property) => {
-        const metrics = calculatePropertyKPIs(prop);
-        if (metrics && metrics.acquisitionPrice > 0) {
-          const allInCost = metrics.acquisitionPrice + metrics.totalRehab + metrics.totalClosingCosts + metrics.totalHoldingCosts;
-          const arv = parseFloat(prop.arvAtTimePurchased || '0');
-          const cashCollected = parseFloat(prop.totalProfits || '0');
-          const capitalRequired = metrics.capitalRequired || 0; // Use calculated capital from centralized service
-          
-          if (capitalRequired > 0) {
-            const equityMultiple = (arv - allInCost + cashCollected) / capitalRequired;
-            totalEquityMultiple += equityMultiple;
-            propertiesWithMetrics++;
-          }
-        }
-      });
-      
-      return propertiesWithMetrics > 0 ? totalEquityMultiple / propertiesWithMetrics : 0;
-    })(),
-    
-    // Average Cash-on-Cash Return using calculatePropertyMetrics function
-    avgCoCReturn: (() => {
-      if (!Array.isArray(properties) || properties.length === 0) return 0;
-      
-      let totalCoCReturn = 0;
-      let propertiesWithCoC = 0;
-      
-      properties.forEach((prop: Property) => {
-        const metrics = calculatePropertyKPIs(prop);
-        if (metrics && metrics.cashOnCashReturn > 0) {
-          totalCoCReturn += metrics.cashOnCashReturn;
-          propertiesWithCoC++;
-        }
-      });
-      
-      return propertiesWithCoC > 0 ? totalCoCReturn / propertiesWithCoC : 0;
-    })()
-  };
+  // Calculate metrics using the new unified calculation system
+  const metrics = calculatePortfolioMetrics(properties || []);
 
   return (
     <div className="space-y-6">

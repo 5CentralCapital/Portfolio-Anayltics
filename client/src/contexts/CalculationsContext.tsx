@@ -1,10 +1,10 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
-import { CalculationService, PropertyKPIs, PortfolioMetrics } from '@/services/calculations';
+import { UnifiedCalculationService, PropertyFinancials } from '@/services/unifiedCalculations';
 
 interface CalculationsContextType {
-  calculatePropertyKPIs: (property: any) => PropertyKPIs;
-  calculatePortfolioMetrics: (properties: any[]) => PortfolioMetrics;
-  formatCurrency: (value: number) => string;
+  calculateProperty: (property: any) => PropertyFinancials;
+  calculatePortfolioMetrics: (properties: any[]) => any;
+  formatCurrency: (value: number | string) => string;
   formatPercentage: (value: number, decimals?: number) => string;
 }
 
@@ -12,10 +12,28 @@ const CalculationsContext = createContext<CalculationsContextType | undefined>(u
 
 export function CalculationsProvider({ children }: { children: ReactNode }) {
   const contextValue = useMemo(() => ({
-    calculatePropertyKPIs: CalculationService.calculatePropertyKPIs,
-    calculatePortfolioMetrics: CalculationService.calculatePortfolioMetrics,
-    formatCurrency: CalculationService.formatCurrency,
-    formatPercentage: CalculationService.formatPercentage,
+    calculateProperty: (property: any) => {
+      const propertyData = {
+        property,
+        rentRoll: property.rentRoll,
+        propertyLoans: property.propertyLoans,
+        assumptions: property.assumptions,
+        editedExpenses: property.editedExpenses
+      };
+      return UnifiedCalculationService.calculateProperty(propertyData);
+    },
+    calculatePortfolioMetrics: (properties: any[]) => {
+      const propertyDataArray = properties.map(property => ({
+        property,
+        rentRoll: property.rentRoll,
+        propertyLoans: property.propertyLoans,
+        assumptions: property.assumptions,
+        editedExpenses: property.editedExpenses
+      }));
+      return UnifiedCalculationService.calculatePortfolioMetrics(propertyDataArray);
+    },
+    formatCurrency: UnifiedCalculationService.formatCurrency,
+    formatPercentage: UnifiedCalculationService.formatPercentage,
   }), []);
 
   return (

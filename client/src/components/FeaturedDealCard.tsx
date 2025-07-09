@@ -20,7 +20,7 @@ interface FeaturedDealCardProps {
 }
 
 const FeaturedDealCard: React.FC<FeaturedDealCardProps> = ({ deal }) => {
-  const { calculatePropertyKPIs, formatCurrency } = useCalculations();
+  const { calculateProperty, formatCurrency } = useCalculations();
 
   // Fixed image mapping for featured deals
   const getPropertyImage = (address: string) => {
@@ -35,7 +35,7 @@ const FeaturedDealCard: React.FC<FeaturedDealCardProps> = ({ deal }) => {
   };
 
   const propertyImage = getPropertyImage(deal.address);
-  const kpis = calculatePropertyKPIs(deal);
+  const kpis = calculateProperty(deal);
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
