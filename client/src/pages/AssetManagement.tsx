@@ -440,6 +440,8 @@ export default function AssetManagement() {
     tenantData: null, 
     unitNumber: '' 
   });
+  const [showTenantModal, setShowTenantModal] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState<any>(null);
   
   // Function to handle tenant name double-click
   const handleTenantNameClick = async (propertyId: number, unitNumber: string, tenantDetailsId?: number) => {
