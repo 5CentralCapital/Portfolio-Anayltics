@@ -2346,25 +2346,19 @@ export default function AssetManagement() {
                                       const dealAnalyzerRentRoll = dealAnalyzerData.rentRoll || [];
                                       
                                       // Use database data if available, otherwise fallback to dealAnalyzerData
-                                      const rentRollToDisplay = propertyRentRoll && propertyRentRoll.length > 0 
+                                      let rentRollToDisplay = propertyRentRoll && propertyRentRoll.length > 0 
                                         ? propertyRentRoll 
                                         : dealAnalyzerRentRoll;
 
+                                      // Sort units numerically by unit number
+                                      rentRollToDisplay = rentRollToDisplay.sort((a: any, b: any) => parseInt(a.unitNumber) - parseInt(b.unitNumber));
+
                                       return rentRollToDisplay.map((unit: any, index: number) => {
-                                        // Handle different data structures between database and dealAnalyzer
-                                        const isFromDatabase = propertyRentRoll && propertyRentRoll.length > 0;
-                                        
-                                        // Extract data with proper field mapping
-                                        const unitNumber = isFromDatabase ? unit.unitNumber : unit.unitNumber;
-                                        const tenantName = isFromDatabase ? unit.tenantName : unit.tenantName;
-                                        const leaseFrom = isFromDatabase ? unit.leaseStart : unit.leaseFrom;
-                                        const leaseTo = isFromDatabase ? unit.leaseEnd : unit.leaseTo; 
-                                        const currentRent = isFromDatabase ? parseFloat(unit.currentRent || 0) : (unit.proFormaRent || 0);
-                                        
                                         // Get the latest unit type data from the editing state
                                         const currentDealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : dealAnalyzerData;
                                         const unitType = currentDealData.unitTypes.find((ut: any) => ut.id === unit.unitTypeId);
                                         const marketRent = unitType?.marketRent || 0;
+                                        const currentRent = unit.currentRent ? parseFloat(unit.currentRent) : (unit.proFormaRent || 0);
                                         const upside = marketRent - currentRent;
                                       
                                       return (
@@ -2373,7 +2367,7 @@ export default function AssetManagement() {
                                             {isEditing ? (
                                               <input
                                                 type="text"
-                                                value={unitNumber}
+                                                value={unit.unitNumber}
                                                 onChange={(e) => {
                                                   const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                                                   dealData.rentRoll[index].unitNumber = e.target.value;
@@ -2383,7 +2377,7 @@ export default function AssetManagement() {
                                                 placeholder="Unit number"
                                               />
                                             ) : (
-                                              `Unit ${unitNumber}`
+                                              `Unit ${unit.unitNumber}`
                                             )}
                                           </td>
                                           <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
@@ -2410,7 +2404,7 @@ export default function AssetManagement() {
                                             {isEditing ? (
                                               <input
                                                 type="text"
-                                                value={tenantName || ''}
+                                                value={unit.tenantName || ''}
                                                 onChange={(e) => {
                                                   const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                                                   dealData.rentRoll[index].tenantName = e.target.value;
@@ -2421,25 +2415,25 @@ export default function AssetManagement() {
                                               />
                                             ) : (
                                               <div className="flex items-center gap-1">
-                                                {tenantName ? (
+                                                {unit.tenantName ? (
                                                   <span 
                                                     className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
                                                     onClick={() => {
                                                       if (showPropertyDetailModal) {
-                                                        handleTenantNameClick(showPropertyDetailModal.id, unitNumber, tenantName);
+                                                        handleTenantNameClick(showPropertyDetailModal.id, unit.unitNumber, unit.tenantName);
                                                       }
                                                     }}
                                                     title="Click to view tenant details"
                                                   >
                                                     <User className="w-3 h-3" />
-                                                    {tenantName}
+                                                    {unit.tenantName}
                                                   </span>
                                                 ) : (
                                                   <span 
                                                     className="cursor-pointer text-gray-500 hover:text-blue-600 hover:underline flex items-center gap-1"
                                                     onClick={() => {
                                                       if (showPropertyDetailModal) {
-                                                        handleTenantNameClick(showPropertyDetailModal.id, unitNumber, 'New Tenant');
+                                                        handleTenantNameClick(showPropertyDetailModal.id, unit.unitNumber, 'New Tenant');
                                                       }
                                                     }}
                                                     title="Click to add tenant details"
@@ -2455,7 +2449,7 @@ export default function AssetManagement() {
                                             {isEditing ? (
                                               <input
                                                 type="date"
-                                                value={leaseFrom || ''}
+                                                value={unit.leaseStart || ''}
                                                 onChange={(e) => {
                                                   const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                                                   dealData.rentRoll[index].leaseFrom = e.target.value;
@@ -2464,14 +2458,14 @@ export default function AssetManagement() {
                                                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                                               />
                                             ) : (
-                                              leaseFrom || '-'
+                                              unit.leaseStart || '-'
                                             )}
                                           </td>
                                           <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
                                             {isEditing ? (
                                               <input
                                                 type="date"
-                                                value={leaseTo || ''}
+                                                value={unit.leaseEnd || ''}
                                                 onChange={(e) => {
                                                   const dealData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                                                   dealData.rentRoll[index].leaseTo = e.target.value;
@@ -2480,7 +2474,7 @@ export default function AssetManagement() {
                                                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                                               />
                                             ) : (
-                                              leaseTo || '-'
+                                              unit.leaseEnd || '-'
                                             )}
                                           </td>
                                           <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
