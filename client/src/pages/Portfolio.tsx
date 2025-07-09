@@ -257,7 +257,7 @@ const Portfolio = () => {
   const fallbackSoldProperties = portfolioProperties.filter(p => p.status === 'Sold');
 
   // Use centralized calculation service for consistency with homepage
-  const portfolioMetricsData = CalculationService.calculatePortfolioMetrics(properties);
+  const portfolioMetricsData = calculatePortfolioMetrics(properties);
   
   // Calculate additional metrics for display
   const soldProperties = properties.filter((p: Property) => p.status === 'Sold');
@@ -540,7 +540,7 @@ const Portfolio = () => {
                       <div className="flex justify-between">
                         <p className="text-gray-500">Annual Cash Flow</p>
                         {(() => {
-                          const kpis = calculatePropertyKPIs(property);
+                          const kpis = calculateProperty(property);
                           return (
                             <p className={`font-semibold ${kpis?.annualCashFlow && kpis.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                               {kpis ? formatCurrency(kpis.annualCashFlow) : 'N/A'}
@@ -551,7 +551,7 @@ const Portfolio = () => {
                       <div className="flex justify-between">
                         <p className="text-gray-500">Equity Multiple</p>
                         {(() => {
-                          const kpis = calculatePropertyKPIs(property);
+                          const kpis = calculateProperty(property);
                           return (
                             <p className={`font-semibold ${kpis?.equityMultiple && kpis.equityMultiple >= 1 ? 'text-blue-600' : 'text-red-600'}`}>
                               {kpis ? `${kpis.equityMultiple.toFixed(2)}x` : 'N/A'}
@@ -666,7 +666,7 @@ const Portfolio = () => {
               </div>
 
               {(() => {
-                const kpis = calculatePropertyKPIs(showKPIModal);
+                const kpis = calculateProperty(showKPIModal);
                 if (!kpis) {
                   return (
                     <div className="text-center py-8">

@@ -7,10 +7,10 @@ import ValuePropCard from '../components/ValuePropCard';
 import FeaturedDealCard from '../components/FeaturedDealCard';
 import FAQSection from '../components/FAQSection';
 import { useCalculations } from '../contexts/CalculationsContext';
-import { CalculationService } from '../services/calculations';
+
 
 const Home = () => {
-  const { calculatePropertyKPIs, formatCurrency, formatPercentage } = useCalculations();
+  const { calculateProperty, calculatePortfolioMetrics, formatCurrency, formatPercentage } = useCalculations();
 
   // Fetch portfolio properties data 
   const { data: propertiesResponse } = useQuery({
@@ -30,7 +30,7 @@ const Home = () => {
   })();
 
   // Use centralized calculation service for consistency
-  const portfolioMetricsData = CalculationService.calculatePortfolioMetrics(properties);
+  const portfolioMetricsData = calculatePortfolioMetrics(properties);
   
   // Calculate additional metrics for display
   const soldProperties = properties.filter((p: any) => p.status === 'Sold');
