@@ -28,7 +28,7 @@ export class UnifiedCalculationService {
       // Run calculations using the new engine
       const financials = PropertyCalculationEngine.calculatePropertyFinancials(sources);
       
-      console.log(`Calculated financials for property ${propertyData.property.address}:`, financials);
+      // console.log(`Calculated financials for property ${propertyData.property.address}:`, financials);
       
       return financials;
       
@@ -51,6 +51,12 @@ export class UnifiedCalculationService {
     let propertiesWithMetrics = 0;
     
     console.log(`[AUM DEBUG] Starting portfolio calculation with ${properties.length} properties`);
+    
+    // List all properties and their status for debugging
+    properties.forEach((propertyData, index) => {
+      const property = propertyData.property;
+      console.log(`[AUM DEBUG] Property ${index + 1}: ${property.address} - Status: ${property.status}, ARV from DB: ${property.arvAtTimePurchased}`);
+    });
     
     properties.forEach(propertyData => {
       const financials = this.calculateProperty(propertyData);
@@ -84,6 +90,16 @@ export class UnifiedCalculationService {
     });
     
     console.log(`[AUM DEBUG] Final totals - AUM: ${totalAUM}, Units: ${totalUnits}, Properties: ${properties.length}`);
+    console.log(`[AUM DEBUG] Active properties breakdown:`);
+    
+    // Log each active property for debugging
+    properties.forEach(propertyData => {
+      const property = propertyData.property;
+      if (property.status !== 'Sold') {
+        const financials = this.calculateProperty(propertyData);
+        console.log(`[AUM DEBUG] - ${property.address} (${property.status}): ARV $${financials.currentARV.toLocaleString()}, Units: ${property.apartments}`);
+      }
+    });
     
     return {
       totalAUM,

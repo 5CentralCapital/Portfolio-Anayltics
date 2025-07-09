@@ -820,7 +820,7 @@ export default function AssetManagement() {
             <div className="text-sm text-white/80">Price/Unit</div>
           </div>
           <div className="text-center border-r border-white/20 last:border-r-0 pr-4 last:pr-0 hover-scale transition-transform-smooth cursor-pointer">
-            <div className="text-2xl font-bold text-white">{metrics.avgEquityMultiple.toFixed(1)}x</div>
+            <div className="text-2xl font-bold text-white">{(metrics.avgEquityMultiple || 0).toFixed(1)}x</div>
             <div className="text-sm text-white/80">Avg Equity Multiple</div>
           </div>
           <div className="text-center">
