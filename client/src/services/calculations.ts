@@ -321,12 +321,27 @@ export class CalculationService {
   
   /**
    * Calculate monthly expenses including percentage-based fees
+   * Handles both array format (Deal Analyzer) and object format (edited expenses)
    */
-  private static calculateMonthlyExpenses(expenses?: any[], effectiveGrossIncome?: number): number {
-    if (!expenses?.length) return 0;
+  private static calculateMonthlyExpenses(expenses?: any[] | any, effectiveGrossIncome?: number): number {
+    if (!expenses) return 0;
     
     const annualEGI = effectiveGrossIncome || 0;
     const monthlyEGI = annualEGI / 12;
+    
+    // Handle object format (edited expenses from modal)
+    if (!Array.isArray(expenses)) {
+      const expenseKeys = ['taxes', 'insurance', 'maintenance', 'waterSewerTrash', 'capex', 'utilities', 'other'];
+      const totalMonthly = expenseKeys.reduce((sum, key) => {
+        const value = parseFloat(expenses[key] || '0');
+        return sum + (value / 12); // Convert annual to monthly
+      }, 0);
+      
+      return totalMonthly;
+    }
+    
+    // Handle array format (Deal Analyzer format)
+    if (!expenses.length) return 0;
     
     const totalExpenses = expenses.reduce((sum, expense) => {
       if (expense.isPercentage && expense.percentage) {
@@ -381,13 +396,45 @@ export class CalculationService {
    */
   private static calculateMonthlyDebtService(loans?: any[], defaultLoanAmount?: number): number {
     if (!loans?.length) {
-      // No loans defined - return 0 instead of making assumptions
+      // If no loans but we have a default loan amount, calculate using standard terms
+      if (defaultLoanAmount && defaultLoanAmount > 0) {
+        // Use standard investment property loan terms: 6.5% interest, 30 years
+        const principal = defaultLoanAmount;
+        const monthlyRate = 0.065 / 12; // 6.5% annual rate
+        const numPayments = 30 * 12; // 30 years
+        
+        if (monthlyRate === 0) return principal / numPayments;
+        
+        const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                       (Math.pow(1 + monthlyRate, numPayments) - 1);
+        return payment;
+      }
       return 0;
     }
     
     // Find active loan or use first loan
     const activeLoan = loans.find(loan => loan.isActive) || loans[0];
-    return parseFloat(activeLoan.monthlyPayment || '0');
+    const monthlyPayment = parseFloat(activeLoan.monthlyPayment || '0');
+    
+    // If no monthly payment calculated, calculate it from loan details
+    if (monthlyPayment === 0 && activeLoan.loanAmount) {
+      const principal = parseFloat(activeLoan.loanAmount || activeLoan.amount || '0');
+      const annualRate = parseFloat(activeLoan.interestRate || '0.065'); // Default 6.5%
+      const termYears = parseFloat(activeLoan.termYears || '30'); // Default 30 years
+      
+      if (principal > 0 && annualRate > 0 && termYears > 0) {
+        const monthlyRate = annualRate / 12;
+        const numPayments = termYears * 12;
+        
+        if (monthlyRate === 0) return principal / numPayments;
+        
+        const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                       (Math.pow(1 + monthlyRate, numPayments) - 1);
+        return payment;
+      }
+    }
+    
+    return monthlyPayment;
   }
   
   /**

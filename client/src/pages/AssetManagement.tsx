@@ -2870,9 +2870,11 @@ export default function AssetManagement() {
                               );
                             }
                             
-                            // Get the original expenses data for editing purposes
+                            // Get the original expenses data for editing purposes - use fresh data after changes
                             const propertyData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
                             const expenses = propertyData?.expenses || {};
+                            
+                            // Apply real-time updates to expenses display based on refreshCounter
                             
                             return (
                               <div className="space-y-6">
@@ -2953,7 +2955,9 @@ export default function AssetManagement() {
                                     
                                     <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                                       <span className="font-semibold text-gray-900 dark:text-white">Total Expenses</span>
-                                      <span className="font-bold text-red-600">{formatCurrency(calculations.annualExpenses || calculations.totalExpensesAnnual)}</span>
+                                      <span className="font-bold text-red-600">
+                                        {formatCurrency(calculations.annualExpenses || calculations.totalExpensesAnnual)}
+                                      </span>
                                     </div>
                                   </div>
                                   </div>
@@ -3218,7 +3222,7 @@ export default function AssetManagement() {
                                       bgColor: '',
                                       textColor: 'text-gray-900 dark:text-white',
                                       values: Array(12).fill(-(calculations.monthlyDebtService || 0)),
-                                      annual: -(calculations.monthlyDebtService || 0) * 12
+                                      annual: -(calculations.annualDebtService || (calculations.monthlyDebtService || 0) * 12)
                                     },
                                     // Cash Flow Section
                                     {
@@ -3226,8 +3230,8 @@ export default function AssetManagement() {
                                       isHeader: false,
                                       bgColor: 'bg-green-100 dark:bg-green-900/30',
                                       textColor: `font-bold ${calculations.monthlyCashFlow >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`,
-                                      values: Array(12).fill(calculations.monthlyCashFlow),
-                                      annual: calculations.annualCashFlow
+                                      values: Array(12).fill(calculations.monthlyCashFlow || 0),
+                                      annual: calculations.annualCashFlow || 0
                                     }
                                   ];
                                   
