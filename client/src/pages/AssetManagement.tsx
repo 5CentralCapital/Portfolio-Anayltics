@@ -801,9 +801,11 @@ export default function AssetManagement() {
         // Calculate current debt using centralized calculation service
         try {
           const metrics = calculatePropertyKPIs(prop);
-          if (metrics && metrics.currentDebt) {
+          if (metrics && metrics.currentDebt && metrics.currentDebt > 0) {
+            console.log(`Property ${prop.address}: Using currentDebt ${metrics.currentDebt} from centralized service`);
             totalDebt += metrics.currentDebt;
           } else {
+            console.log(`Property ${prop.address}: No currentDebt found, using fallback calculation`);
             // Fallback to Deal Analyzer data or basic calculation
             if (prop.dealAnalyzerData) {
               try {
@@ -813,25 +815,34 @@ export default function AssetManagement() {
                 // Find active loan or calculate from assumptions
                 const activeLoan = loans.find((loan: any) => loan.isActive);
                 if (activeLoan) {
-                  totalDebt += activeLoan.loanAmount || 0;
+                  const loanAmount = activeLoan.loanAmount || 0;
+                  console.log(`Property ${prop.address}: Using Deal Analyzer active loan ${loanAmount}`);
+                  totalDebt += loanAmount;
                 } else if (dealData?.assumptions) {
                   // Use assumption-based calculation for current debt
                   const loanPercentage = dealData.assumptions.loanPercentage || 0.8;
                   const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
                   const rehabCosts = parseFloat(prop.rehabCosts || '0');
-                  totalDebt += (purchasePrice + rehabCosts) * loanPercentage;
+                  const calculatedDebt = (purchasePrice + rehabCosts) * loanPercentage;
+                  console.log(`Property ${prop.address}: Using assumption-based calculation ${calculatedDebt}`);
+                  totalDebt += calculatedDebt;
                 }
               } catch (e) {
                 // Fallback to basic calculation if parsing fails
                 const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
-                totalDebt += purchasePrice * 0.8; // Assume 80% LTV
+                const calculatedDebt = purchasePrice * 0.8;
+                console.log(`Property ${prop.address}: Using basic LTV calculation ${calculatedDebt}`);
+                totalDebt += calculatedDebt;
               }
             }
           }
         } catch (e) {
+          console.error(`Property ${prop.address}: Error in centralized service`, e);
           // Fallback to basic calculation if centralized service fails
           const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
-          totalDebt += purchasePrice * 0.8; // Assume 80% LTV
+          const calculatedDebt = purchasePrice * 0.8;
+          console.log(`Property ${prop.address}: Using emergency fallback ${calculatedDebt}`);
+          totalDebt += calculatedDebt;
         }
       });
       
