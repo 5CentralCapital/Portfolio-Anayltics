@@ -449,6 +449,7 @@ export default function AssetManagement() {
     propertyId: 0,
     unitNumber: ''
   });
+  const [refreshCounter, setRefreshCounter] = useState(0);
   
   // Function to handle tenant name double-click - open TenantModal
   const handleTenantNameClick = (propertyId: number, unitNumber: string, tenantName: string) => {
@@ -2875,23 +2876,23 @@ export default function AssetManagement() {
                                       {isEditing ? (
                                         <input
                                           type="number"
-                                          value={calculations.grossRentAnnual}
+                                          value={calculations.grossRentalIncome || calculations.grossRentAnnual}
                                           className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-right"
                                           readOnly
                                         />
                                       ) : (
-                                        <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(calculations.grossRentAnnual)}</span>
+                                        <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(calculations.grossRentalIncome || calculations.grossRentAnnual)}</span>
                                       )}
                                     </div>
                                     
                                     <div className="flex justify-between items-center">
                                       <span className="text-gray-700 dark:text-gray-300">Vacancy Loss (5.0%)</span>
-                                      <span className="font-medium text-red-600">-{formatCurrency(calculations.vacancyAnnual)}</span>
+                                      <span className="font-medium text-red-600">-{formatCurrency((calculations.grossRentalIncome || calculations.grossRentAnnual || 0) * 0.05)}</span>
                                     </div>
                                     
                                     <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                                       <span className="font-semibold text-gray-900 dark:text-white">Net Revenue</span>
-                                      <span className="font-bold text-green-600">{formatCurrency(calculations.netRevenueAnnual)}</span>
+                                      <span className="font-bold text-green-600">{formatCurrency(calculations.effectiveGrossIncome || calculations.netRevenueAnnual)}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -2921,6 +2922,10 @@ export default function AssetManagement() {
                                               if (!dealData.expenses) dealData.expenses = {};
                                               dealData.expenses[item.key] = parseFloat(e.target.value) || 0;
                                               handlePropertyFieldChange('dealAnalyzerData', JSON.stringify(dealData));
+                                              // Trigger re-calculation by refreshing the property data
+                                              setTimeout(() => {
+                                                setRefreshCounter(prev => prev + 1);
+                                              }, 100);
                                             }}
                                             className="w-32 px-2 py-1 border border-gray-300 rounded text-sm text-right"
                                           />
@@ -2932,12 +2937,12 @@ export default function AssetManagement() {
                                     
                                     <div className="flex justify-between items-center">
                                       <span className="text-gray-700 dark:text-gray-300">Management Fee (8%)</span>
-                                      <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(calculations.netRevenueAnnual * 0.08)}</span>
+                                      <span className="font-medium text-gray-900 dark:text-white">{formatCurrency((calculations.effectiveGrossIncome || calculations.netRevenueAnnual || 0) * 0.08)}</span>
                                     </div>
                                     
                                     <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                                       <span className="font-semibold text-gray-900 dark:text-white">Total Expenses</span>
-                                      <span className="font-bold text-red-600">{formatCurrency(calculations.totalExpensesAnnual)}</span>
+                                      <span className="font-bold text-red-600">{formatCurrency(calculations.annualExpenses || calculations.totalExpensesAnnual)}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -2947,7 +2952,7 @@ export default function AssetManagement() {
                                   <div className="grid md:grid-cols-3 gap-6">
                                     <div className="text-center">
                                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Net Operating Income (NOI)</p>
-                                      <p className={`text-2xl font-bold ${calculations.noiAnnual >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(calculations.noiAnnual)}</p>
+                                      <p className={`text-2xl font-bold ${(calculations.netOperatingIncome || calculations.noiAnnual || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(calculations.netOperatingIncome || calculations.noiAnnual)}</p>
                                     </div>
                                     
                                     <div className="text-center">
@@ -2957,7 +2962,7 @@ export default function AssetManagement() {
                                     
                                     <div className="text-center">
                                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Net Cash Flow (Monthly)</p>
-                                      <p className={`text-2xl font-bold ${calculations.monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(calculations.monthlyCashFlow)}</p>
+                                      <p className={`text-2xl font-bold ${(calculations.monthlyCashFlow || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(calculations.monthlyCashFlow || 0)}</p>
                                     </div>
                                   </div>
                                 </div>

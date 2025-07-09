@@ -111,9 +111,11 @@ export class CalculationService {
       
       // Calculate rental income
       const grossRentalIncome = CalculationService.calculateGrossRentalIncome(rentRollData, unitTypesData);
+      console.log('Debug - Final gross rental income calculation:', grossRentalIncome);
       const vacancyLoss = grossRentalIncome * vacancyRate;
       const totalOtherIncome = CalculationService.calculateOtherIncome(dealData.otherIncome);
       const effectiveGrossIncome = grossRentalIncome - vacancyLoss + totalOtherIncome;
+      console.log('Debug - EGI calculation:', { grossRentalIncome, vacancyLoss, totalOtherIncome, effectiveGrossIncome });
       
       // Calculate expenses including management fee
       const baseMonthlyExpenses = CalculationService.calculateMonthlyExpenses(dealData.expenses, effectiveGrossIncome);
