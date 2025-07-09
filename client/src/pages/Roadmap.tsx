@@ -480,51 +480,64 @@ export default function Roadmap() {
                     </div>
                   </div>
                   
-                  {selectedMilestone.year === 2025 && realProperties.length > 0 ? (
+                  {selectedMilestone.year === 2025 && activeProperties && Array.isArray(activeProperties) && activeProperties.length > 0 ? (
                     <div className="space-y-4">
-                      {realProperties.map((property, idx) => (
-                        <Card key={idx} className="p-4 border-l-4 border-l-green-500">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-3 mb-2">
-                                <div className="w-6 h-6 bg-green-100 rounded flex items-center justify-center">
-                                  <span className="text-green-600 text-sm">🏠</span>
+                      {activeProperties.filter(prop => prop.status === 'Cashflowing').map((property, idx) => {
+                        // Calculate real metrics for each property
+                        const dealData = property.dealAnalyzerData ? JSON.parse(property.dealAnalyzerData) : null;
+                        const monthlyRent = dealData?.rentRoll?.reduce((sum: number, unit: any) => sum + (parseFloat(unit.currentRent) || 0), 0) || 0;
+                        const monthlyExpenses = dealData?.expenses?.reduce((sum: number, expense: any) => sum + (parseFloat(expense.amount) || 0), 0) || 0;
+                        const monthlyNOI = monthlyRent - monthlyExpenses;
+                        const annualNOI = monthlyNOI * 12;
+                        const arv = parseFloat(property.arv) || 0;
+                        const capRate = arv > 0 ? (annualNOI / arv * 100) : 0;
+                        
+                        return (
+                          <Card key={idx} className="p-4 border-l-4 border-l-green-500">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-3 mb-2">
+                                  <div className="w-6 h-6 bg-green-100 rounded flex items-center justify-center">
+                                    <span className="text-green-600 text-sm">🏠</span>
+                                  </div>
+                                  <h4 className="font-semibold text-gray-900">{property.address}</h4>
+                                  <Badge className="bg-green-100 text-green-800">OWNED</Badge>
                                 </div>
-                                <h4 className="font-semibold text-gray-900">{property.name}</h4>
-                                <Badge className="bg-green-100 text-green-800">OWNED</Badge>
+                                <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                                  <span className="flex items-center">
+                                    <span className="text-red-500 mr-1">📍</span>
+                                    {property.city}, {property.state}
+                                  </span>
+                                  <span className="flex items-center">
+                                    <span className="text-blue-500 mr-1">🏢</span>
+                                    {property.apartments} Units
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-4 text-sm">
+                                  <div>
+                                    <div className="text-gray-600">Monthly NOI</div>
+                                    <div className="font-bold">${monthlyNOI.toLocaleString()}/mo</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-gray-600">Cap Rate</div>
+                                    <div className="font-bold text-purple-600">{capRate.toFixed(1)}%</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-gray-600">Acquisition</div>
+                                    <div className="font-bold">{property.acquisitionDate ? new Date(property.acquisitionDate).getFullYear() : 'N/A'}</div>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                                <span className="flex items-center">
-                                  <span className="text-red-500 mr-1">📍</span>
-                                  {property.location}
-                                </span>
-                                <span className="flex items-center">
-                                  <span className="text-blue-500 mr-1">🏢</span>
-                                  {property.type}
-                                </span>
-                              </div>
-                              <div className="grid grid-cols-3 gap-4 text-sm">
-                                <div>
-                                  <div className="text-gray-600">Current NOI</div>
-                                  <div className="font-bold">$8,125,000/mo</div>
+                              <div className="text-right">
+                                <div className="text-2xl font-bold text-green-600">
+                                  ${arv > 0 ? (arv / 1000000).toFixed(2) + 'M' : 'N/A'}
                                 </div>
-                                <div>
-                                  <div className="text-gray-600">Cap Rate</div>
-                                  <div className="font-bold text-purple-600">6.5%</div>
-                                </div>
-                                <div>
-                                  <div className="text-gray-600">Acquisition</div>
-                                  <div className="font-bold">2029-2032</div>
-                                </div>
+                                <Badge className="bg-green-100 text-green-800">Stabilized</Badge>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <div className="text-2xl font-bold text-green-600">{property.value}</div>
-                              <Badge className="bg-green-100 text-green-800">Stabilized</Badge>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
+                          </Card>
+                        );
+                      })}
                     </div>
                   ) : (
                     <Card className="p-6 text-center text-gray-500">
@@ -558,19 +571,30 @@ export default function Roadmap() {
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div className="p-4 bg-green-50 rounded-lg">
-                      <div className="text-3xl font-bold text-green-600">{selectedMilestone.metrics.properties}</div>
+                      <div className="text-3xl font-bold text-green-600">
+                        {activeProperties ? activeProperties.filter(p => p.status === 'Cashflowing').length : 0}
+                      </div>
                       <div className="text-sm text-gray-600">Owned Properties</div>
                     </div>
                     <div className="p-4 bg-blue-50 rounded-lg">
-                      <div className="text-3xl font-bold text-blue-600">0</div>
-                      <div className="text-sm text-gray-600">Projected Properties</div>
+                      <div className="text-3xl font-bold text-blue-600">
+                        {activeProperties ? activeProperties.filter(p => p.status === 'Under Contract' || p.status === 'Rehabbing').length : 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Pipeline Properties</div>
                     </div>
                     <div className="p-4 bg-purple-50 rounded-lg">
-                      <div className="text-3xl font-bold text-purple-600">{selectedMilestone.metrics.properties}</div>
+                      <div className="text-3xl font-bold text-purple-600">
+                        {activeProperties ? activeProperties.filter(p => p.status !== 'Sold').length : 0}
+                      </div>
                       <div className="text-sm text-gray-600">Total Portfolio</div>
                     </div>
                     <div className="p-4 bg-orange-50 rounded-lg">
-                      <div className="text-3xl font-bold text-orange-600">{selectedMilestone.metrics.aum}</div>
+                      <div className="text-3xl font-bold text-orange-600">
+                        {activeProperties ? 
+                          `$${(activeProperties.filter(p => p.status !== 'Sold').reduce((sum, p) => sum + (parseFloat(p.arv) || 0), 0) / 1000000).toFixed(1)}M` : 
+                          '$0M'
+                        }
+                      </div>
                       <div className="text-sm text-gray-600">Total AUM</div>
                     </div>
                   </div>
