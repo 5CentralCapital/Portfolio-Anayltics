@@ -817,6 +817,32 @@ class DocumentParserService {
   }
 
   /**
+   * Parse date string/value and return proper Date object for database
+   */
+  private parseDate(value: any): Date | null {
+    if (!value) return null;
+    
+    try {
+      // Handle Excel serial dates (numbers like 45814)
+      if (typeof value === 'number' && value > 25000 && value < 100000) {
+        // Excel epoch is 1900-01-01, but Excel incorrectly treats 1900 as a leap year
+        const excelEpoch = new Date(1900, 0, 1);
+        const date = new Date(excelEpoch.getTime() + (value - 2) * 24 * 60 * 60 * 1000);
+        return date;
+      }
+      
+      // Handle regular date strings
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        return null;
+      }
+      return date;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
    * Match parsed data to properties in database
    */
   async matchToProperties(parsedData: ParsedLoanData[]): Promise<{ matched: any[], unmatched: ParsedLoanData[] }> {
@@ -915,15 +941,15 @@ class DocumentParserService {
           termYears: 30, // Default, can be updated manually
           monthlyPayment: loan.monthlyPayment.toString(),
           paymentType: 'principal_and_interest',
-          maturityDate: loan.nextPaymentDate || new Date().toISOString().split('T')[0],
+          maturityDate: this.parseDate(loan.nextPaymentDate) || new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000),
           isActive: true,
           lender: loan.lenderName,
           externalLoanId: loan.loanId,
           principalBalance: loan.principalBalance?.toString(),
-          nextPaymentDate: loan.nextPaymentDate,
+          nextPaymentDate: this.parseDate(loan.nextPaymentDate),
           nextPaymentAmount: loan.nextPaymentAmount?.toString(),
           escrowBalance: loan.escrowBalance?.toString(),
-          lastSyncDate: new Date().toISOString(),
+          lastSyncDate: new Date(),
           syncStatus: 'success'
         }).onConflictDoUpdate({
           target: [propertyLoans.propertyId, propertyLoans.externalLoanId],
@@ -932,10 +958,10 @@ class DocumentParserService {
             interestRate: loan.interestRate.toString(),
             monthlyPayment: loan.monthlyPayment.toString(),
             principalBalance: loan.principalBalance?.toString(),
-            nextPaymentDate: loan.nextPaymentDate,
+            nextPaymentDate: this.parseDate(loan.nextPaymentDate),
             nextPaymentAmount: loan.nextPaymentAmount?.toString(),
             escrowBalance: loan.escrowBalance?.toString(),
-            lastSyncDate: new Date().toISOString(),
+            lastSyncDate: new Date(),
             syncStatus: 'success'
           }
         });
