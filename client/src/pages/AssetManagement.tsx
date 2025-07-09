@@ -785,7 +785,7 @@ export default function AssetManagement() {
         return sum + (isNaN(arv) ? 0 : arv);
       }, 0) : 0,
     
-    // Total Equity = AUM - current debt (calculate debt from Deal Analyzer data)
+    // Total Equity = AUM - current debt (calculate debt from live debt data and Deal Analyzer data)
     totalEquity: (() => {
       if (!Array.isArray(properties)) return 0;
       
@@ -798,28 +798,40 @@ export default function AssetManagement() {
           const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
           totalAUM += isNaN(arv) ? 0 : arv;
         
-        // Calculate current debt from Deal Analyzer data
-        if (prop.dealAnalyzerData) {
-          try {
-            const dealData = JSON.parse(prop.dealAnalyzerData);
-            const loans = dealData?.loans || [];
-            
-            // Find active loan or calculate from assumptions
-            const activeLoan = loans.find((loan: any) => loan.isActive);
-            if (activeLoan) {
-              totalDebt += activeLoan.loanAmount || 0;
-            } else if (dealData?.assumptions) {
-              // Use assumption-based calculation for current debt
-              const loanPercentage = dealData.assumptions.loanPercentage || 0.8;
-              const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
-              const rehabCosts = parseFloat(prop.rehabCosts || '0');
-              totalDebt += (purchasePrice + rehabCosts) * loanPercentage;
+        // Calculate current debt using centralized calculation service
+        try {
+          const metrics = calculatePropertyKPIs(prop);
+          if (metrics && metrics.currentDebt) {
+            totalDebt += metrics.currentDebt;
+          } else {
+            // Fallback to Deal Analyzer data or basic calculation
+            if (prop.dealAnalyzerData) {
+              try {
+                const dealData = JSON.parse(prop.dealAnalyzerData);
+                const loans = dealData?.loans || [];
+                
+                // Find active loan or calculate from assumptions
+                const activeLoan = loans.find((loan: any) => loan.isActive);
+                if (activeLoan) {
+                  totalDebt += activeLoan.loanAmount || 0;
+                } else if (dealData?.assumptions) {
+                  // Use assumption-based calculation for current debt
+                  const loanPercentage = dealData.assumptions.loanPercentage || 0.8;
+                  const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+                  const rehabCosts = parseFloat(prop.rehabCosts || '0');
+                  totalDebt += (purchasePrice + rehabCosts) * loanPercentage;
+                }
+              } catch (e) {
+                // Fallback to basic calculation if parsing fails
+                const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+                totalDebt += purchasePrice * 0.8; // Assume 80% LTV
+              }
             }
-          } catch (e) {
-            // Fallback to basic calculation if parsing fails
-            const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
-            totalDebt += purchasePrice * 0.8; // Assume 80% LTV
           }
+        } catch (e) {
+          // Fallback to basic calculation if centralized service fails
+          const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+          totalDebt += purchasePrice * 0.8; // Assume 80% LTV
         }
       });
       

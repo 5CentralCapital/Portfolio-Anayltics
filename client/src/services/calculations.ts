@@ -45,6 +45,7 @@ export interface PropertyKPIs {
   // Loan metrics
   loanAmount: number;
   loanToValue: number;
+  currentDebt: number;
 }
 
 export interface PortfolioMetrics {
@@ -215,6 +216,13 @@ export class CalculationService {
         ? (loanAmount / arv) * 100 
         : 0;
       
+      // Calculate current debt using actual loan balance if available
+      let currentDebt = loanAmount; // Default to calculated loan amount
+      if (activeLoan) {
+        // Use actual remaining balance from active loan (live debt data has balance field)
+        currentDebt = parseFloat(activeLoan.balance || activeLoan.remainingBalance || activeLoan.loanAmount || activeLoan.amount || '0');
+      }
+      
       return {
         // Revenue metrics
         grossRentalIncome,
@@ -256,7 +264,8 @@ export class CalculationService {
         
         // Loan metrics
         loanAmount,
-        loanToValue
+        loanToValue,
+        currentDebt
       };
     } catch (error) {
       console.error('Error calculating property KPIs:', error);
@@ -288,7 +297,8 @@ export class CalculationService {
         annualExpenses: 0,
         vacancyRate: 5,
         loanAmount: 0,
-        loanToValue: 0
+        loanToValue: 0,
+        currentDebt: 0
       };
     }
   }

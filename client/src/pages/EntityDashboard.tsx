@@ -274,7 +274,7 @@ export default function EntityDashboard() {
         return sum + (isNaN(arv) ? 0 : arv);
       }, 0) : 0,
 
-    // Total Equity = AUM - current debt (calculate debt from Deal Analyzer data)
+    // Total Equity = AUM - current debt (calculate debt from live debt data and Deal Analyzer data)
     totalEquity: (() => {
       if (!Array.isArray(properties)) return 0;
 
@@ -287,27 +287,40 @@ export default function EntityDashboard() {
           const arv = parseFloat((prop.arvAtTimePurchased || '0').toString().replace(/[^0-9.-]/g, ''));
           totalAUM += isNaN(arv) ? 0 : arv;
 
-        // Calculate current debt from Deal Analyzer data
-        if (prop.dealAnalyzerData) {
-          try {
-            const dealData = JSON.parse(prop.dealAnalyzerData);
-            const loans = dealData?.loans || [];
+        // Calculate current debt using centralized calculation service
+        try {
+          const metrics = calculatePropertyKPIs(prop);
+          if (metrics && metrics.currentDebt) {
+            totalDebt += metrics.currentDebt;
+          } else {
+            // Fallback to Deal Analyzer data or basic calculation
+            if (prop.dealAnalyzerData) {
+              try {
+                const dealData = JSON.parse(prop.dealAnalyzerData);
+                const loans = dealData?.loans || [];
 
-            // Find active loan or calculate from assumptions
-            const activeLoan = loans.find((loan: any) => loan.isActive);
-            if (activeLoan) {
-              totalDebt += activeLoan.loanAmount || 0;
-            } else if (dealData?.assumptions) {
-              // Use assumption-based calculation for current debt
-              const loanPercentage = dealData.assumptions.loanPercentage || 0;
-              const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
-              const rehabCosts = parseFloat(prop.rehabCosts || '0');
-              totalDebt += (purchasePrice + rehabCosts) * loanPercentage;
+                // Find active loan or calculate from assumptions
+                const activeLoan = loans.find((loan: any) => loan.isActive);
+                if (activeLoan) {
+                  totalDebt += activeLoan.loanAmount || 0;
+                } else if (dealData?.assumptions) {
+                  // Use assumption-based calculation for current debt
+                  const loanPercentage = dealData.assumptions.loanPercentage || 0.8;
+                  const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+                  const rehabCosts = parseFloat(prop.rehabCosts || '0');
+                  totalDebt += (purchasePrice + rehabCosts) * loanPercentage;
+                }
+              } catch (e) {
+                // Fallback to basic calculation if parsing fails
+                const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+                totalDebt += purchasePrice * 0.8; // Assume 80% LTV
+              }
             }
-          } catch (e) {
-            // If parsing fails, don't assume debt
-            // Debt information should come from actual data
           }
+        } catch (e) {
+          // Fallback to basic calculation if centralized service fails
+          const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+          totalDebt += purchasePrice * 0.8; // Assume 80% LTV
         }
       });
 
@@ -396,26 +409,39 @@ export default function EntityDashboard() {
     }, 0) : 0;
 
     // Total Equity = AUM - current debt
-    // Calculate total debt using actual loan data from Deal Analyzer
+    // Calculate total debt using centralized calculation service (includes live debt data and Deal Analyzer)
     let totalDebt = 0;
     properties.forEach((prop: Property) => {
       if (prop.status === 'Cashflowing' || prop.status === 'Rehabbing' || prop.status === 'Under Contract') {
-        if (prop.dealAnalyzerData) {
-          try {
-            const dealData = JSON.parse(prop.dealAnalyzerData);
-            if (dealData.loans && Array.isArray(dealData.loans)) {
-              const activeLoan = dealData.loans.find((loan: any) => loan.isActive) || dealData.loans[0];
-              if (activeLoan) {
-                // Use remaining balance if available, otherwise use original loan amount
-                const loanBalance = activeLoan.remainingBalance || activeLoan.loanAmount || activeLoan.amount || 0;
-                totalDebt += parseFloat(loanBalance.toString());
+        // Use centralized calculation service for debt calculation
+        try {
+          const metrics = calculatePropertyKPIs(prop);
+          if (metrics && metrics.currentDebt) {
+            totalDebt += metrics.currentDebt;
+          } else {
+            // Fallback to Deal Analyzer data or basic calculation
+            if (prop.dealAnalyzerData) {
+              try {
+                const dealData = JSON.parse(prop.dealAnalyzerData);
+                if (dealData.loans && Array.isArray(dealData.loans)) {
+                  const activeLoan = dealData.loans.find((loan: any) => loan.isActive) || dealData.loans[0];
+                  if (activeLoan) {
+                    // Use remaining balance if available, otherwise use original loan amount
+                    const loanBalance = activeLoan.remainingBalance || activeLoan.loanAmount || activeLoan.amount || 0;
+                    totalDebt += parseFloat(loanBalance.toString());
+                  }
+                }
+              } catch (e) {
+                const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+                totalDebt += purchasePrice * 0.8; // 80% LTV fallback
               }
+            } else {
+              const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
+              totalDebt += purchasePrice * 0.8; // 80% LTV fallback
             }
-          } catch (e) {
-            const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
-            totalDebt += purchasePrice * 0.8; // 80% LTV fallback
           }
-        } else {
+        } catch (e) {
+          // Fallback to basic calculation if centralized service fails
           const purchasePrice = parseFloat(prop.acquisitionPrice || '0');
           totalDebt += purchasePrice * 0.8; // 80% LTV fallback
         }
