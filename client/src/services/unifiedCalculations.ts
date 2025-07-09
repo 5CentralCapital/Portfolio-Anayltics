@@ -50,19 +50,13 @@ export class UnifiedCalculationService {
     let totalCoCReturns = 0;
     let propertiesWithMetrics = 0;
     
-    console.log(`[AUM DEBUG] Starting portfolio calculation with ${properties.length} properties`);
-    
-    // List all properties and their status for debugging
-    properties.forEach((propertyData, index) => {
-      const property = propertyData.property;
-      console.log(`[AUM DEBUG] Property ${index + 1}: ${property.address} - Status: ${property.status}, ARV from DB: ${property.arvAtTimePurchased}`);
-    });
+    // console.log(`[AUM DEBUG] Starting portfolio calculation with ${properties.length} properties`);
     
     properties.forEach(propertyData => {
       const financials = this.calculateProperty(propertyData);
       const property = propertyData.property;
       
-      console.log(`[AUM DEBUG] Property: ${property.address}, Status: ${property.status}, ARV: ${financials.currentARV}, Units: ${property.apartments}`);
+      // console.log(`[AUM DEBUG] Property: ${property.address}, Status: ${property.status}, ARV: ${financials.currentARV}, Units: ${property.apartments}`);
       
       // Only include active properties (exclude sold)
       if (property.status !== 'Sold') {
@@ -70,7 +64,7 @@ export class UnifiedCalculationService {
         totalUnits += property.apartments || 0;
         totalEquity += financials.currentEquityValue;
         
-        console.log(`[AUM DEBUG] Added to AUM: ${financials.currentARV}, Running total: ${totalAUM}`);
+        // console.log(`[AUM DEBUG] Added to AUM: ${financials.currentARV}, Running total: ${totalAUM}`);
         
         if (property.status === 'Cashflowing') {
           totalMonthlyCashFlow += financials.monthlyCashFlow;
@@ -85,21 +79,12 @@ export class UnifiedCalculationService {
           totalCoCReturns += financials.cashOnCashReturn;
         }
       } else {
-        console.log(`[AUM DEBUG] Excluded sold property from AUM: ${property.address}`);
+        // console.log(`[AUM DEBUG] Excluded sold property from AUM: ${property.address}`);
       }
     });
     
-    console.log(`[AUM DEBUG] Final totals - AUM: ${totalAUM}, Units: ${totalUnits}, Properties: ${properties.length}`);
-    console.log(`[AUM DEBUG] Active properties breakdown:`);
-    
-    // Log each active property for debugging
-    properties.forEach(propertyData => {
-      const property = propertyData.property;
-      if (property.status !== 'Sold') {
-        const financials = this.calculateProperty(propertyData);
-        console.log(`[AUM DEBUG] - ${property.address} (${property.status}): ARV $${financials.currentARV.toLocaleString()}, Units: ${property.apartments}`);
-      }
-    });
+    // Debug logging disabled
+    // console.log(`[AUM DEBUG] Final totals - AUM: ${totalAUM}, Units: ${totalUnits}, Properties: ${properties.length}`);
     
     return {
       totalAUM,
