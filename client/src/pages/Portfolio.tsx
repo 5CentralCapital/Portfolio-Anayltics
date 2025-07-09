@@ -629,7 +629,7 @@ const Portfolio = () => {
                       <div className="flex justify-between">
                         <span className="text-gray-500">Equity Multiple</span>
                         {(() => {
-                          const kpis = calculatePropertyKPIs(property);
+                          const kpis = calculateProperty(property);
                           return (
                             <span className="font-semibold text-purple-600">
                               {kpis ? `${kpis.equityMultiple.toFixed(2)}x` : 'N/A'}
