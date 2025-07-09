@@ -2395,7 +2395,7 @@ export default function AssetManagement() {
                                                 placeholder="Tenant name"
                                               />
                                             ) : (
-                                              <div className="flex items-center gap-2">
+                                              <div className="flex items-center gap-1">
                                                 {unit.tenantName ? (
                                                   <span 
                                                     className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
@@ -2410,21 +2410,18 @@ export default function AssetManagement() {
                                                     {unit.tenantName}
                                                   </span>
                                                 ) : (
-                                                  <div className="flex items-center gap-2">
-                                                    <span className="text-gray-500">Vacant</span>
-                                                    <button
-                                                      onClick={() => {
-                                                        if (showPropertyDetailModal) {
-                                                          handleTenantNameClick(showPropertyDetailModal.id, unit.unitNumber, 'New Tenant');
-                                                        }
-                                                      }}
-                                                      className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded hover:bg-blue-200 flex items-center gap-1"
-                                                      title="Add tenant details"
-                                                    >
-                                                      <User className="w-3 h-3" />
-                                                      Add Tenant
-                                                    </button>
-                                                  </div>
+                                                  <span 
+                                                    className="cursor-pointer text-gray-500 hover:text-blue-600 hover:underline flex items-center gap-1"
+                                                    onClick={() => {
+                                                      if (showPropertyDetailModal) {
+                                                        handleTenantNameClick(showPropertyDetailModal.id, unit.unitNumber, 'New Tenant');
+                                                      }
+                                                    }}
+                                                    title="Click to add tenant details"
+                                                  >
+                                                    <User className="w-3 h-3" />
+                                                    Vacant
+                                                  </span>
                                                 )}
                                               </div>
                                             )}
