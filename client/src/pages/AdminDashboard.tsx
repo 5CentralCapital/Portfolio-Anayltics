@@ -41,6 +41,7 @@ import AssetManagement from './AssetManagement';
 import NetWorthTracker from './NetWorthTracker';
 import DocumentManagement from './DocumentManagement';
 import OnboardingTour from '../components/OnboardingTour';
+import Roadmap from './Roadmap';
 
 interface DashboardData {
   financial: {
@@ -294,47 +295,7 @@ const AdminDashboard: React.FC = () => {
         )}
 
         {activeTab === 'roadmap' && (
-          <div className="space-y-8">
-            <div className="text-center py-16">
-              <MapPin className="h-16 w-16 text-gray-400 mx-auto mb-6" />
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Roadmap</h2>
-              <p className="text-xl text-gray-600 mb-8">Coming Soon</p>
-              <div className="max-w-2xl mx-auto">
-                <p className="text-gray-500 mb-6">
-                  We're building exciting new features to enhance your real estate investment management experience.
-                </p>
-                <div className="bg-white rounded-xl shadow-lg p-8">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Features</h3>
-                  <div className="space-y-3 text-left">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-gray-700">Advanced portfolio analytics and projections</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-gray-700">Automated rent collection tracking</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-gray-700">Tenant and lease management</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-gray-700">Market analysis and comps integration</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-gray-700">Tax optimization strategies and reporting</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-gray-700">Investor portal and communication tools</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <Roadmap />
         )}
 
         {activeTab === 'net-worth' && (

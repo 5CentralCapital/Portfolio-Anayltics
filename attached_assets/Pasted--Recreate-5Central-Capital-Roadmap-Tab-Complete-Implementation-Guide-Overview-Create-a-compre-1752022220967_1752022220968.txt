@@ -1,0 +1,943 @@
+# Recreate 5Central Capital Roadmap Tab - Complete Implementation Guide
+
+## Overview
+Create a comprehensive "Roadmap" tab that displays a strategic vision timeline with interactive property analysis capabilities. This feature combines portfolio planning, milestone tracking, and sophisticated real estate investment analysis tools.
+
+## Required Tech Stack
+- **Frontend**: React 18 + TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **State Management**: TanStack Query v5
+- **Database**: PostgreSQL with Drizzle ORM
+- **Backend**: Express.js + TypeScript
+- **Icons**: Lucide React
+
+## Core Features to Implement
+
+### 1. Interactive Timeline with Milestones
+- **Visual Timeline**: Vertical timeline with milestone cards
+- **Milestone Data**: Years (2025, 2030, 2040) with metrics
+- **Status Indicators**: Completed, in-progress, planned
+- **Dynamic Content**: Uses real portfolio data for current year
+
+### 2. Comprehensive Property Modal System
+- **Property Analysis**: Sale vs Refinance vs Hold scenarios
+- **Financial Calculations**: NOI, cash flow, IRR, cap rates
+- **Decision Execution**: Ability to execute strategies that modify portfolio
+- **Multi-tab Interface**: Dashboard, Properties, Financials, Team
+
+### 3. Real-time Financial Analytics
+- **Dynamic Calculations**: All metrics update based on input changes
+- **Portfolio Integration**: Pulls from live property database
+- **Scenario Modeling**: Multiple strategy comparisons
+
+## Database Schema Required
+
+```sql
+-- Properties table (core real estate data)
+CREATE TABLE properties (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  address TEXT,
+  property_type TEXT NOT NULL, -- multifamily, single-family, commercial
+  purchase_price DECIMAL(12,2) NOT NULL,
+  current_value DECIMAL(12,2),
+  square_footage INTEGER,
+  units INTEGER,
+  purchase_date TIMESTAMP,
+  condition TEXT,
+  appreciation_rate REAL DEFAULT 3.0,
+  status TEXT DEFAULT 'active', -- active, sold, under-contract
+  
+  -- Financial tracking
+  all_in_cost DECIMAL(12,2),
+  rehab_cost DECIMAL(12,2),
+  closing_costs DECIMAL(12,2),
+  after_repair_value DECIMAL(12,2),
+  
+  -- Location details
+  city TEXT,
+  state TEXT,
+  zip_code TEXT,
+  
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Mortgages (loan information)
+CREATE TABLE mortgages (
+  id SERIAL PRIMARY KEY,
+  property_id INTEGER REFERENCES properties(id),
+  loan_type TEXT NOT NULL, -- bridge, permanent, construction
+  original_amount DECIMAL(12,2) NOT NULL,
+  current_balance DECIMAL(12,2) NOT NULL,
+  interest_rate REAL NOT NULL,
+  term_months INTEGER NOT NULL,
+  monthly_payment DECIMAL(10,2),
+  loan_to_value REAL,
+  maturity_date TIMESTAMP,
+  is_interest_only BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Rental Income
+CREATE TABLE rental_income (
+  id SERIAL PRIMARY KEY,
+  property_id INTEGER REFERENCES properties(id),
+  monthly_rent DECIMAL(10,2) NOT NULL,
+  vacancy_rate REAL DEFAULT 5.0,
+  rent_growth_rate REAL DEFAULT 3.0,
+  occupancy_rate REAL DEFAULT 95.0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Operating Expenses
+CREATE TABLE operating_expenses (
+  id SERIAL PRIMARY KEY,
+  property_id INTEGER REFERENCES properties(id),
+  monthly_amount DECIMAL(10,2) NOT NULL,
+  expense_type TEXT NOT NULL, -- management, maintenance, insurance, taxes, utilities
+  description TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Property Analysis (for strategy scenarios)
+CREATE TABLE property_analysis (
+  id SERIAL PRIMARY KEY,
+  property_id INTEGER REFERENCES properties(id),
+  analysis_type TEXT NOT NULL, -- 'sell', 'refinance', 'hold'
+  scenario_name TEXT NOT NULL,
+  
+  -- Sale scenario fields
+  sale_price DECIMAL(12,2),
+  selling_costs DECIMAL(12,2),
+  capital_gains_tax DECIMAL(12,2),
+  net_proceeds DECIMAL(12,2),
+  
+  -- Refinance scenario fields
+  new_loan_amount DECIMAL(12,2),
+  new_interest_rate REAL,
+  new_term_months INTEGER,
+  cash_out_amount DECIMAL(12,2),
+  
+  -- Impact analysis
+  monthly_payment_change DECIMAL(12,2),
+  cash_flow_impact DECIMAL(12,2),
+  equity_impact DECIMAL(12,2),
+  total_return_impact DECIMAL(12,2),
+  
+  analysis_date TIMESTAMP DEFAULT NOW(),
+  assumptions TEXT,
+  recommendation TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+## Frontend Components to Create
+
+### 1. Main Roadmap Page (`/pages/roadmap.tsx`)
+
+```typescript
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { Property } from "@shared/schema";
+import { VisionPropertyModal } from "@/components/vision-property-modal";
+
+interface Milestone {
+  year: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  status: 'completed' | 'in-progress' | 'planned';
+  metrics: {
+    aum: string;
+    properties: number;
+    cashFlow: string;
+    irr: string;
+  };
+  keyMilestones: string[];
+  properties: Array<{
+    name: string;
+    location: string;
+    type: string;
+    value: string;
+    status: string;
+  }>;
+  financials: {
+    revenue: string;
+    noi: string;
+    debt: string;
+    equity: string;
+  };
+  team: Array<{
+    name: string;
+    role: string;
+    joinDate: string;
+  }>;
+}
+
+export default function Roadmap() {
+  const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  
+  // Fetch real portfolio data
+  const { data: activeProperties } = useQuery<Property[]>({
+    queryKey: ['/api/properties/active'],
+  });
+  
+  const { data: analytics } = useQuery({
+    queryKey: ['/api/portfolio/analytics'],
+  });
+
+  // Calculate real KPIs from data
+  const calculateRealKPIs = () => {
+    if (!activeProperties || !analytics) {
+      return { aum: "$3.67M", properties: 3, cashFlow: "$23.9K/mo", irr: "18.5%" };
+    }
+    
+    const totalAUM = (analytics as any).totalAUM || 3670000;
+    const propertyCount = activeProperties.length;
+    const monthlyCashFlow = (analytics as any).netCashFlow || 23950;
+    const irr = (analytics as any).portfolioROI || 18.5;
+    
+    return {
+      aum: `$${(totalAUM / 1000000).toFixed(2)}M`,
+      properties: propertyCount,
+      cashFlow: `$${(monthlyCashFlow / 1000).toFixed(1)}K/mo`,
+      irr: `${irr.toFixed(1)}%`
+    };
+  };
+
+  // Create dynamic milestones with real data for current year
+  const createMilestones = (realKPIs: any, realProperties: any): Milestone[] => [
+    {
+      year: 2025,
+      title: "Current Portfolio",
+      subtitle: "Foundation established with stabilized properties",
+      description: "Current portfolio status with real performance data",
+      status: 'completed' as const,
+      metrics: realKPIs,
+      keyMilestones: [
+        "Established Connecticut market presence",
+        "Diversified geographically with Florida expansion", 
+        "Built property management systems",
+        "Achieved positive cash flow across portfolio"
+      ],
+      properties: realProperties,
+      financials: {
+        revenue: "$28.7K/mo",
+        noi: "$23.9K/mo",
+        debt: "$2.1M", 
+        equity: "$1.57M"
+      },
+      team: [
+        { name: "Founding Team", role: "Managing Partners", joinDate: "2023-2025" },
+        { name: "Asset Management", role: "Property Operations", joinDate: "2024" }
+      ]
+    },
+    // Add future milestones for 2030, 2040 with projected metrics
+  ];
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Header with company branding */}
+      <div className="border-b border-gray-200 bg-white">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Our Vision</h1>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Strategic roadmap for building significant AUM through real estate investments
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive Timeline */}
+      <div className="max-w-6xl mx-auto px-6 py-16">
+        <div className="relative">
+          {/* Vertical timeline line */}
+          <div className="absolute left-1/2 transform -translate-x-px h-full w-px bg-gray-300"></div>
+
+          {milestones.map((milestone, index) => (
+            <div key={milestone.year} className="relative mb-16 last:mb-0">
+              {/* Timeline dot with status color */}
+              <div className="absolute left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full border-4 border-white bg-white shadow-md">
+                <div className={`w-full h-full rounded-full ${getStatusColor(milestone.status)}`}></div>
+              </div>
+
+              {/* Milestone card - alternating sides */}
+              <div className={`w-5/12 ${index % 2 === 0 ? 'mr-auto pr-12' : 'ml-auto pl-12'}`}>
+                <div 
+                  className="bg-white rounded-lg border border-gray-200 p-6 cursor-pointer hover:shadow-lg transition-all duration-200"
+                  onClick={() => setSelectedMilestone(milestone)}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-gray-900">{milestone.year}</h3>
+                    <Badge className={getStatusBadgeColor(milestone.status)}>
+                      {milestone.status === 'completed' ? 'achieved' : 
+                       milestone.status === 'in-progress' ? 'in progress' : 'future'}
+                    </Badge>
+                  </div>
+                  <h4 className="text-lg font-semibold text-blue-600 mb-2">{milestone.title}</h4>
+                  <p className="text-sm text-gray-600">{milestone.subtitle}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Detailed Modal with Tabs */}
+      <Dialog open={!!selectedMilestone} onOpenChange={() => setSelectedMilestone(null)}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              {selectedMilestone?.year} - {selectedMilestone?.title}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedMilestone && (
+            <Tabs defaultValue="dashboard" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                <TabsTrigger value="properties">Properties</TabsTrigger>
+                <TabsTrigger value="financials">Financials</TabsTrigger>
+                <TabsTrigger value="team">Team</TabsTrigger>
+              </TabsList>
+
+              {/* Dashboard Tab - KPI Cards */}
+              <TabsContent value="dashboard" className="space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardDescription>Total AUM</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-blue-600">{selectedMilestone.metrics.aum}</div>
+                    </CardContent>
+                  </Card>
+                  {/* Add more KPI cards */}
+                </div>
+              </TabsContent>
+
+              {/* Properties Tab - Clickable property list */}
+              <TabsContent value="properties" className="space-y-4">
+                <div className="grid gap-4">
+                  {selectedMilestone.properties.map((property, idx) => (
+                    <Card 
+                      key={idx} 
+                      className="cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => {
+                        // Open property modal for current year properties
+                        if (selectedMilestone.year === 2025 && activeProperties) {
+                          const realProperty = activeProperties.find(p => p.name === property.name);
+                          if (realProperty) setSelectedProperty(realProperty);
+                        }
+                      }}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold">{property.name}</h3>
+                            <p className="text-sm text-gray-600">{property.location}</p>
+                            <p className="text-sm text-gray-500">{property.type}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">{property.value}</p>
+                            <Badge variant="outline">{property.status}</Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+
+              {/* Financials Tab */}
+              <TabsContent value="financials">
+                {/* Financial metrics and charts */}
+              </TabsContent>
+
+              {/* Team Tab */}
+              <TabsContent value="team">
+                {/* Team member cards */}
+              </TabsContent>
+            </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Property Analysis Modal */}
+      {selectedProperty && (
+        <VisionPropertyModal
+          isOpen={!!selectedProperty}
+          onClose={() => setSelectedProperty(null)}
+          property={selectedProperty}
+        />
+      )}
+    </div>
+  );
+}
+```
+
+### 2. Property Analysis Modal (`/components/vision-property-modal.tsx`)
+
+```typescript
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { Property } from "@shared/schema";
+
+interface VisionPropertyModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  property: Property;
+}
+
+export function VisionPropertyModal({ isOpen, onClose, property }: VisionPropertyModalProps) {
+  const [saleScenario, setSaleScenario] = useState({
+    salePrice: property.currentValue || property.purchasePrice,
+    is1031Exchange: false
+  });
+
+  const [refinanceScenario, setRefinanceScenario] = useState({
+    newLoanAmount: (parseFloat(property.currentValue || property.purchasePrice) * 0.8).toString(),
+    newInterestRate: "6.5",
+    newTermMonths: "360"
+  });
+
+  const [activeAnalysis, setActiveAnalysis] = useState<any>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch property details
+  const { data: mortgages } = useQuery({
+    queryKey: [`/api/properties/${property.id}/mortgages`],
+    enabled: isOpen,
+  });
+
+  const { data: rentalIncome } = useQuery({
+    queryKey: [`/api/properties/${property.id}/rental-income`],
+    enabled: isOpen,
+  });
+
+  // Sale analysis mutation
+  const saleAnalysisMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", `/api/properties/${property.id}/sell`, data);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setActiveAnalysis({ type: 'sell', data });
+    },
+  });
+
+  // Refinance analysis mutation
+  const refinanceAnalysisMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", `/api/properties/${property.id}/refinance`, data);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setActiveAnalysis({ type: 'refinance', data });
+    },
+  });
+
+  // Execute sale decision (modifies portfolio)
+  const executeSaleMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", `/api/properties/${property.id}/execute/sell`, data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolio/analytics"] });
+      toast({
+        title: "Sale Executed",
+        description: "Property sale has been processed and portfolio updated.",
+      });
+      onClose();
+    },
+  });
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{property.name} - Investment Analysis</DialogTitle>
+        </DialogHeader>
+
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="analysis">Analysis</TabsTrigger>
+            <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
+            <TabsTrigger value="execute">Execute</TabsTrigger>
+          </TabsList>
+
+          {/* Property Overview Tab */}
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Property Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Purchase Price:</span>
+                    <span>${parseFloat(property.purchasePrice).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Current Value:</span>
+                    <span>${parseFloat(property.currentValue || property.purchasePrice).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Property Type:</span>
+                    <span className="capitalize">{property.propertyType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Location:</span>
+                    <span>{property.city}, {property.state}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Financial Performance</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {rentalIncome && (
+                    <div className="flex justify-between">
+                      <span>Monthly Rent:</span>
+                      <span>${parseFloat(rentalIncome.monthlyRent).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {mortgages && mortgages[0] && (
+                    <div className="flex justify-between">
+                      <span>Mortgage Balance:</span>
+                      <span>${parseFloat(mortgages[0].currentBalance).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {/* Add more calculated metrics */}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Analysis Tab */}
+          <TabsContent value="analysis" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sale Analysis</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <label>Sale Price</label>
+                    <Input
+                      type="number"
+                      value={saleScenario.salePrice}
+                      onChange={(e) => setSaleScenario({...saleScenario, salePrice: e.target.value})}
+                    />
+                  </div>
+                  <Button 
+                    onClick={() => saleAnalysisMutation.mutate(saleScenario)}
+                    disabled={saleAnalysisMutation.isPending}
+                    className="w-full"
+                  >
+                    {saleAnalysisMutation.isPending ? "Calculating..." : "Calculate Sale"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Refinance Analysis</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <label>New Loan Amount</label>
+                    <Input
+                      type="number"
+                      value={refinanceScenario.newLoanAmount}
+                      onChange={(e) => setRefinanceScenario({...refinanceScenario, newLoanAmount: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label>Interest Rate (%)</label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={refinanceScenario.newInterestRate}
+                      onChange={(e) => setRefinanceScenario({...refinanceScenario, newInterestRate: e.target.value})}
+                    />
+                  </div>
+                  <Button 
+                    onClick={() => refinanceAnalysisMutation.mutate(refinanceScenario)}
+                    disabled={refinanceAnalysisMutation.isPending}
+                    className="w-full"
+                  >
+                    {refinanceAnalysisMutation.isPending ? "Calculating..." : "Calculate Refinance"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Analysis Results */}
+            {activeAnalysis && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    {activeAnalysis.type === 'sell' ? 'Sale' : 'Refinance'} Analysis Results
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    {activeAnalysis.type === 'sell' && (
+                      <>
+                        <div className="flex justify-between">
+                          <span>Net Proceeds:</span>
+                          <span className="font-semibold">${parseFloat(activeAnalysis.data.netProceeds).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Selling Costs:</span>
+                          <span>${parseFloat(activeAnalysis.data.sellingCosts).toLocaleString()}</span>
+                        </div>
+                      </>
+                    )}
+                    {activeAnalysis.type === 'refinance' && (
+                      <>
+                        <div className="flex justify-between">
+                          <span>Cash Out:</span>
+                          <span className="font-semibold">${parseFloat(activeAnalysis.data.cashOutAmount || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Payment Change:</span>
+                          <span>${parseFloat(activeAnalysis.data.monthlyPaymentChange || 0).toLocaleString()}/mo</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="mt-4 p-3 bg-blue-50 rounded">
+                    <p className="text-sm">{activeAnalysis.data.recommendation}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Execute Tab */}
+          <TabsContent value="execute" className="space-y-4">
+            {activeAnalysis && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Execute Decision</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-gray-600">
+                    Warning: This will modify your live portfolio data.
+                  </p>
+                  {activeAnalysis.type === 'sell' && (
+                    <Button 
+                      onClick={() => executeSaleMutation.mutate(activeAnalysis.data)}
+                      disabled={executeSaleMutation.isPending}
+                      variant="destructive"
+                      className="w-full"
+                    >
+                      {executeSaleMutation.isPending ? "Processing..." : "Execute Sale"}
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+### 3. Dynamic Calculations Library (`/lib/dynamic-calculations.ts`)
+
+```typescript
+export interface PropertyInputs {
+  purchasePrice: number;
+  currentValue: number;
+  monthlyRent: number;
+  monthlyExpenses: number;
+  mortgageBalance: number;
+  interestRate: number;
+  appreciationRate: number;
+  vacancyRate: number;
+  rentGrowthRate: number;
+}
+
+export interface CalculatedMetrics {
+  grossRentYearly: number;
+  netOperatingIncome: number;
+  cashFlow: number;
+  cashOnCashReturn: number;
+  capRate: number;
+  grm: number;
+  loanToValue: number;
+  debtServiceCoverageRatio: number;
+  projectedValue1Year: number;
+  projectedValue5Year: number;
+  totalReturnProjection: number;
+}
+
+export function calculateDynamicMetrics(inputs: PropertyInputs): CalculatedMetrics {
+  const {
+    purchasePrice,
+    currentValue,
+    monthlyRent,
+    monthlyExpenses,
+    mortgageBalance,
+    interestRate,
+    appreciationRate,
+    vacancyRate,
+    rentGrowthRate
+  } = inputs;
+
+  // Basic calculations
+  const grossRentYearly = monthlyRent * 12;
+  const effectiveRent = grossRentYearly * (1 - vacancyRate / 100);
+  const yearlyExpenses = monthlyExpenses * 12;
+  const netOperatingIncome = effectiveRent - yearlyExpenses;
+  
+  // Debt service calculation
+  const monthlyInterestRate = interestRate / 100 / 12;
+  const monthlyPayment = mortgageBalance > 0 
+    ? (mortgageBalance * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, 360)) / 
+      (Math.pow(1 + monthlyInterestRate, 360) - 1)
+    : 0;
+  const annualDebtService = monthlyPayment * 12;
+  
+  const cashFlow = netOperatingIncome - annualDebtService;
+  const equity = currentValue - mortgageBalance;
+  
+  // Performance metrics
+  const cashOnCashReturn = equity > 0 ? (cashFlow / equity) * 100 : 0;
+  const capRate = currentValue > 0 ? (netOperatingIncome / currentValue) * 100 : 0;
+  const grm = monthlyRent > 0 ? currentValue / grossRentYearly : 0;
+  const loanToValue = currentValue > 0 ? (mortgageBalance / currentValue) * 100 : 0;
+  const debtServiceCoverageRatio = annualDebtService > 0 ? netOperatingIncome / annualDebtService : 0;
+  
+  // Growth projections
+  const projectedValue1Year = currentValue * (1 + appreciationRate / 100);
+  const projectedValue5Year = currentValue * Math.pow(1 + appreciationRate / 100, 5);
+  
+  // Total return calculation
+  const totalReturnProjection = ((projectedValue5Year - currentValue) + (cashFlow * 5)) / currentValue * 100;
+  
+  return {
+    grossRentYearly,
+    netOperatingIncome,
+    cashFlow,
+    cashOnCashReturn,
+    capRate,
+    grm,
+    loanToValue,
+    debtServiceCoverageRatio,
+    projectedValue1Year,
+    projectedValue5Year,
+    totalReturnProjection
+  };
+}
+```
+
+## Backend API Routes Required
+
+### Express Routes (`/server/routes.ts`)
+
+```typescript
+// Property analysis routes
+app.post("/api/properties/:id/sell", async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id);
+    const saleData = req.body;
+    
+    // Calculate sale analysis
+    const saleAnalysis = await calculateSaleAnalysis(propertyId, saleData);
+    res.json(saleAnalysis);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to calculate sale analysis" });
+  }
+});
+
+app.post("/api/properties/:id/refinance", async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id);
+    const refinanceData = req.body;
+    
+    const refinanceAnalysis = await calculateRefinanceAnalysis(propertyId, refinanceData);
+    res.json(refinanceAnalysis);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to calculate refinance analysis" });
+  }
+});
+
+app.post("/api/properties/:id/compare", async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id);
+    const { saleScenario, refinanceScenario, holdScenario } = req.body;
+    
+    const comparison = await comparePropertyStrategies(propertyId, {
+      sell: saleScenario,
+      refinance: refinanceScenario,
+      hold: holdScenario
+    });
+    
+    res.json(comparison);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to compare strategies" });
+  }
+});
+
+// Execute decisions (modifies portfolio)
+app.post("/api/properties/:id/execute/sell", async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id);
+    const saleData = req.body;
+    
+    const result = await executeSaleDecision(propertyId, saleData);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to execute sale" });
+  }
+});
+
+// Analysis calculation functions
+async function calculateSaleAnalysis(propertyId: number, saleData: any) {
+  const property = await storage.getProperty(propertyId);
+  const mortgages = await storage.getMortgagesByPropertyId(propertyId);
+  
+  const salePrice = parseFloat(saleData.salePrice);
+  const currentDebt = mortgages.reduce((sum, m) => sum + parseFloat(m.currentBalance), 0);
+  const sellingCosts = salePrice * 0.07; // 7% selling costs
+  const capitalGainsTax = calculateCapitalGains(property, salePrice);
+  const netProceeds = salePrice - sellingCosts - capitalGainsTax - currentDebt;
+  
+  return {
+    salePrice: salePrice.toString(),
+    sellingCosts: sellingCosts.toString(),
+    capitalGainsTax: capitalGainsTax.toString(),
+    netProceeds: netProceeds.toString(),
+    recommendation: generateSaleRecommendation(netProceeds, salePrice)
+  };
+}
+
+async function calculateRefinanceAnalysis(propertyId: number, refinanceData: any) {
+  const property = await storage.getProperty(propertyId);
+  const mortgages = await storage.getMortgagesByPropertyId(propertyId);
+  
+  const newLoanAmount = parseFloat(refinanceData.newLoanAmount);
+  const newRate = parseFloat(refinanceData.newInterestRate);
+  const currentBalance = mortgages.reduce((sum, m) => sum + parseFloat(m.currentBalance), 0);
+  
+  const cashOut = Math.max(0, newLoanAmount - currentBalance);
+  const newPayment = calculateMonthlyPayment(newLoanAmount, newRate, 360);
+  const oldPayment = mortgages.reduce((sum, m) => sum + parseFloat(m.monthlyPayment || 0), 0);
+  const paymentChange = newPayment - oldPayment;
+  
+  return {
+    newLoanAmount: newLoanAmount.toString(),
+    newInterestRate: newRate,
+    cashOutAmount: cashOut.toString(),
+    monthlyPaymentChange: paymentChange.toString(),
+    recommendation: generateRefinanceRecommendation(paymentChange, cashOut)
+  };
+}
+
+function calculateMonthlyPayment(principal: number, rate: number, termMonths: number): number {
+  const monthlyRate = rate / 100 / 12;
+  return (principal * monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / 
+         (Math.pow(1 + monthlyRate, termMonths) - 1);
+}
+```
+
+## Navigation Setup
+
+Add to sidebar navigation:
+```typescript
+const navItems = [
+  { name: "Dashboard", icon: Home, href: "/" },
+  { name: "Portfolio", icon: Building, href: "/portfolio" },
+  { name: "Roadmap", icon: Eye, href: "/roadmap" },
+  // ... other items
+];
+```
+
+Add route in App.tsx:
+```typescript
+<Route path="/roadmap" component={Roadmap} />
+```
+
+## Styling Requirements
+
+### Tailwind CSS Classes Used
+- `bg-white`, `border-gray-200`, `text-gray-900`
+- `hover:shadow-lg`, `transition-all`, `duration-200`
+- `grid-cols-2`, `grid-cols-4`, `space-y-4`
+- `rounded-lg`, `border`, `p-6`
+- `text-xl`, `font-bold`, `font-semibold`
+- Status colors: `bg-green-500`, `bg-blue-500`, `bg-gray-400`
+
+### Key Visual Elements
+- **Timeline**: Vertical line with alternating milestone cards
+- **Status Indicators**: Color-coded dots and badges
+- **Modal Tabs**: Dashboard, Properties, Financials, Team
+- **Interactive Cards**: Hover effects and click handlers
+- **Analysis Results**: Color-coded recommendations
+
+## Installation Steps
+
+1. **Install Dependencies**:
+```bash
+npm install @tanstack/react-query @radix-ui/react-dialog @radix-ui/react-tabs
+npm install lucide-react class-variance-authority clsx tailwind-merge
+```
+
+2. **Database Setup**:
+```bash
+npm run db:push
+```
+
+3. **File Structure**:
+```
+src/
+├── pages/
+│   └── roadmap.tsx
+├── components/
+│   └── vision-property-modal.tsx
+├── lib/
+│   └── dynamic-calculations.ts
+└── types/
+    └── roadmap.ts
+```
+
+4. **Add Route**: Update App.tsx and sidebar navigation
+
+## Key Features Summary
+
+✅ **Interactive Timeline** - Visual milestone progression
+✅ **Real Data Integration** - Uses live portfolio data  
+✅ **Property Analysis** - Sell/refinance/hold scenarios
+✅ **Decision Execution** - Modifies live portfolio data
+✅ **Financial Modeling** - Dynamic calculations
+✅ **Multi-tab Modals** - Comprehensive property details
+✅ **Responsive Design** - Works on all screen sizes
+✅ **Professional UI** - shadcn/ui components with Tailwind
+
+This implementation provides a sophisticated roadmap feature that combines strategic planning with actionable real estate investment analysis tools.
