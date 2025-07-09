@@ -2922,79 +2922,200 @@ export default function AssetManagement() {
                         <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-6 border border-indigo-200 dark:border-indigo-800">
                           <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-300 mb-4">12-Month Pro Forma</h3>
                           <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-indigo-200 dark:divide-indigo-700">
+                            <table className="min-w-full text-sm border-collapse">
                               <thead>
-                                <tr>
-                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Month</th>
-                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Gross Income</th>
-                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Vacancy</th>
-                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Net Income</th>
-                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Expenses</th>
-                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">NOI</th>
-                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Debt Service</th>
-                                  <th className="px-4 py-2 text-left text-sm font-medium text-indigo-700 dark:text-indigo-300">Cash Flow</th>
+                                <tr className="bg-indigo-100 dark:bg-indigo-900/40">
+                                  <th className="px-3 py-2 text-left font-medium text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 sticky left-0 bg-indigo-100 dark:bg-indigo-900/40 min-w-[120px]">
+                                    Category
+                                  </th>
+                                  {Array.from({ length: 12 }, (_, i) => (
+                                    <th key={i} className="px-2 py-2 text-center font-medium text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 min-w-[80px]">
+                                      {new Date(2025, i).toLocaleDateString('en-US', { month: 'short' })}
+                                    </th>
+                                  ))}
+                                  <th className="px-3 py-2 text-center font-bold text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 min-w-[100px]">
+                                    Annual
+                                  </th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-indigo-200 dark:divide-indigo-700">
-                                {Array.from({ length: 12 }, (_, index) => {
-                                  const month = index + 1;
-                                  
-                                  // Use centralized calculations for consistency
+                              <tbody>
+                                {(() => {
                                   const calculations = getPropertyCalculations();
                                   if (!calculations) return null;
                                   
-                                  return (
-                                    <tr key={month} className={month % 2 === 0 ? 'bg-indigo-25 dark:bg-indigo-900/10' : ''}>
-                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">Month {month}</td>
-                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">{formatCurrency(calculations.grossRentMonthly)}</td>
-                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(calculations.vacancy)})</td>
-                                      <td className="px-4 py-2 text-sm text-indigo-900 dark:text-indigo-200">{formatCurrency(calculations.netRevenue)}</td>
-                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(calculations.totalExpenses)})</td>
-                                      <td className="px-4 py-2 text-sm font-medium text-indigo-900 dark:text-indigo-200">{formatCurrency(calculations.noi)}</td>
-                                      <td className="px-4 py-2 text-sm text-red-600">({formatCurrency(calculations.monthlyDebtService)})</td>
-                                      <td className={`px-4 py-2 text-sm font-medium ${calculations.monthlyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {formatCurrency(calculations.monthlyCashFlow)}
+                                  // Get property data for detailed expenses
+                                  const propertyData = showPropertyDetailModal?.dealAnalyzerData ? JSON.parse(showPropertyDetailModal.dealAnalyzerData) : {};
+                                  const expenses = propertyData?.expenses || {};
+                                  
+                                  const rows = [
+                                    // Income Section
+                                    {
+                                      category: 'INCOME',
+                                      isHeader: true,
+                                      bgColor: 'bg-green-50 dark:bg-green-900/20',
+                                      textColor: 'text-green-800 dark:text-green-300 font-bold',
+                                      values: Array(12).fill(''),
+                                      annual: ''
+                                    },
+                                    {
+                                      category: 'Gross Rental Income',
+                                      isHeader: false,
+                                      bgColor: '',
+                                      textColor: 'text-gray-900 dark:text-white',
+                                      values: Array(12).fill(calculations.grossRentMonthly),
+                                      annual: calculations.grossRentAnnual
+                                    },
+                                    {
+                                      category: 'Vacancy Loss (5%)',
+                                      isHeader: false,
+                                      bgColor: '',
+                                      textColor: 'text-red-600',
+                                      values: Array(12).fill(-calculations.vacancy),
+                                      annual: -calculations.vacancyAnnual
+                                    },
+                                    {
+                                      category: 'Effective Gross Income',
+                                      isHeader: false,
+                                      bgColor: 'bg-green-25 dark:bg-green-900/10',
+                                      textColor: 'text-green-700 dark:text-green-300 font-semibold',
+                                      values: Array(12).fill(calculations.netRevenue),
+                                      annual: calculations.netRevenueAnnual
+                                    },
+                                    // Expenses Section
+                                    {
+                                      category: 'EXPENSES',
+                                      isHeader: true,
+                                      bgColor: 'bg-red-50 dark:bg-red-900/20',
+                                      textColor: 'text-red-800 dark:text-red-300 font-bold',
+                                      values: Array(12).fill(''),
+                                      annual: ''
+                                    },
+                                    {
+                                      category: 'Property Tax',
+                                      isHeader: false,
+                                      bgColor: '',
+                                      textColor: 'text-gray-900 dark:text-white',
+                                      values: Array(12).fill((expenses.taxes || calculations.netRevenueAnnual * 0.12) / 12),
+                                      annual: expenses.taxes || calculations.netRevenueAnnual * 0.12
+                                    },
+                                    {
+                                      category: 'Insurance',
+                                      isHeader: false,
+                                      bgColor: '',
+                                      textColor: 'text-gray-900 dark:text-white',
+                                      values: Array(12).fill((expenses.insurance || calculations.netRevenueAnnual * 0.06) / 12),
+                                      annual: expenses.insurance || calculations.netRevenueAnnual * 0.06
+                                    },
+                                    {
+                                      category: 'Maintenance & Repairs',
+                                      isHeader: false,
+                                      bgColor: '',
+                                      textColor: 'text-gray-900 dark:text-white',
+                                      values: Array(12).fill((expenses.maintenance || calculations.netRevenueAnnual * 0.08) / 12),
+                                      annual: expenses.maintenance || calculations.netRevenueAnnual * 0.08
+                                    },
+                                    {
+                                      category: 'Water/Sewer/Trash',
+                                      isHeader: false,
+                                      bgColor: '',
+                                      textColor: 'text-gray-900 dark:text-white',
+                                      values: Array(12).fill((expenses.waterSewerTrash || calculations.netRevenueAnnual * 0.04) / 12),
+                                      annual: expenses.waterSewerTrash || calculations.netRevenueAnnual * 0.04
+                                    },
+                                    {
+                                      category: 'Capital Reserves',
+                                      isHeader: false,
+                                      bgColor: '',
+                                      textColor: 'text-gray-900 dark:text-white',
+                                      values: Array(12).fill((expenses.capex || calculations.netRevenueAnnual * 0.032) / 12),
+                                      annual: expenses.capex || calculations.netRevenueAnnual * 0.032
+                                    },
+                                    {
+                                      category: 'Utilities',
+                                      isHeader: false,
+                                      bgColor: '',
+                                      textColor: 'text-gray-900 dark:text-white',
+                                      values: Array(12).fill((expenses.utilities || calculations.netRevenueAnnual * 0.024) / 12),
+                                      annual: expenses.utilities || calculations.netRevenueAnnual * 0.024
+                                    },
+                                    {
+                                      category: 'Management Fee (8%)',
+                                      isHeader: false,
+                                      bgColor: '',
+                                      textColor: 'text-gray-900 dark:text-white',
+                                      values: Array(12).fill(calculations.netRevenue * 0.08),
+                                      annual: calculations.netRevenueAnnual * 0.08
+                                    },
+                                    {
+                                      category: 'Other',
+                                      isHeader: false,
+                                      bgColor: '',
+                                      textColor: 'text-gray-900 dark:text-white',
+                                      values: Array(12).fill((expenses.other || calculations.netRevenueAnnual * 0.016) / 12),
+                                      annual: expenses.other || calculations.netRevenueAnnual * 0.016
+                                    },
+                                    {
+                                      category: 'Total Expenses',
+                                      isHeader: false,
+                                      bgColor: 'bg-red-25 dark:bg-red-900/10',
+                                      textColor: 'text-red-700 dark:text-red-300 font-semibold',
+                                      values: Array(12).fill(-calculations.totalExpenses),
+                                      annual: -calculations.totalExpensesAnnual
+                                    },
+                                    // NOI Section
+                                    {
+                                      category: 'NET OPERATING INCOME',
+                                      isHeader: false,
+                                      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+                                      textColor: 'text-blue-800 dark:text-blue-300 font-bold',
+                                      values: Array(12).fill(calculations.noi),
+                                      annual: calculations.noiAnnual
+                                    },
+                                    // Debt Section
+                                    {
+                                      category: 'DEBT SERVICE',
+                                      isHeader: true,
+                                      bgColor: 'bg-orange-50 dark:bg-orange-900/20',
+                                      textColor: 'text-orange-800 dark:text-orange-300 font-bold',
+                                      values: Array(12).fill(''),
+                                      annual: ''
+                                    },
+                                    {
+                                      category: 'Monthly Debt Service',
+                                      isHeader: false,
+                                      bgColor: '',
+                                      textColor: 'text-gray-900 dark:text-white',
+                                      values: Array(12).fill(-calculations.monthlyDebtService),
+                                      annual: -calculations.monthlyDebtService * 12
+                                    },
+                                    // Cash Flow Section
+                                    {
+                                      category: 'NET CASH FLOW',
+                                      isHeader: false,
+                                      bgColor: 'bg-green-100 dark:bg-green-900/30',
+                                      textColor: `font-bold ${calculations.monthlyCashFlow >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`,
+                                      values: Array(12).fill(calculations.monthlyCashFlow),
+                                      annual: calculations.annualCashFlow
+                                    }
+                                  ];
+                                  
+                                  return rows.map((row, index) => (
+                                    <tr key={index} className={row.bgColor}>
+                                      <td className={`px-3 py-2 ${row.textColor} border border-indigo-200 dark:border-indigo-700 sticky left-0 ${row.bgColor || 'bg-white dark:bg-gray-800'}`}>
+                                        {row.category}
+                                      </td>
+                                      {row.values.map((value, monthIndex) => (
+                                        <td key={monthIndex} className={`px-2 py-2 text-center ${row.textColor} border border-indigo-200 dark:border-indigo-700`}>
+                                          {row.isHeader || value === '' ? '' : formatCurrency(value)}
+                                        </td>
+                                      ))}
+                                      <td className={`px-3 py-2 text-center ${row.textColor} border border-indigo-200 dark:border-indigo-700`}>
+                                        {row.isHeader || row.annual === '' ? '' : formatCurrency(row.annual)}
                                       </td>
                                     </tr>
-                                  );
-                                })}
+                                  ));
+                                })()}
                               </tbody>
-                              <tfoot className="bg-indigo-100 dark:bg-indigo-900/30">
-                                <tr>
-                                  <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">Annual Total</td>
-                                  {(() => {
-                                    // Use centralized calculations for annual totals
-                                    const calculations = getPropertyCalculations();
-                                    if (!calculations) return null;
-                                    
-                                    return (
-                                      <>
-                                        <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
-                                          {formatCurrency(calculations.grossRentAnnual)}
-                                        </td>
-                                        <td className="px-4 py-2 text-sm font-bold text-red-600">
-                                          ({formatCurrency(calculations.vacancyAnnual)})
-                                        </td>
-                                        <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
-                                          {formatCurrency(calculations.netRevenueAnnual)}
-                                        </td>
-                                        <td className="px-4 py-2 text-sm font-bold text-red-600">
-                                          ({formatCurrency(calculations.totalExpensesAnnual)})
-                                        </td>
-                                        <td className="px-4 py-2 text-sm font-bold text-indigo-900 dark:text-indigo-200">
-                                          {formatCurrency(calculations.noiAnnual)}
-                                        </td>
-                                        <td className="px-4 py-2 text-sm font-bold text-red-600">
-                                          ({formatCurrency(calculations.annualDebtService)})
-                                        </td>
-                                        <td className={`px-4 py-2 text-sm font-bold ${calculations.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                          {formatCurrency(calculations.annualCashFlow)}
-                                        </td>
-                                      </>
-                                    );
-                                  })()}
-                                </tr>
-                              </tfoot>
                             </table>
                           </div>
                         </div>
