@@ -91,8 +91,26 @@ export class CalculationService {
       const exitCapRate = parseFloat(assumptions.exitCapRate || assumptions.marketCapRate || '0.055'); // 5.5% default cap rate
       const loanPercentage = parseFloat(assumptions.loanPercentage || '0.75'); // 75% default LTV
       
+      // Use normalized database data when available (from property modal)
+      // For rent roll, check if property has normalized rent roll data
+      let rentRollData = dealData.rentRoll;
+      if (property.rentRoll && property.rentRoll.length > 0) {
+        console.log('Using normalized database rent roll data:', property.rentRoll);
+        rentRollData = property.rentRoll;
+      } else if (dealData.rentRoll && dealData.rentRoll.length > 0) {
+        console.log('Using Deal Analyzer rent roll data:', dealData.rentRoll);
+      } else {
+        console.log('No rent roll data found in property or Deal Analyzer');
+      }
+      
+      let unitTypesData = dealData.unitTypes;
+      if (property.unitTypes && property.unitTypes.length > 0) {
+        console.log('Using normalized database unit types data:', property.unitTypes);
+        unitTypesData = property.unitTypes;
+      }
+      
       // Calculate rental income
-      const grossRentalIncome = CalculationService.calculateGrossRentalIncome(dealData.rentRoll, dealData.unitTypes);
+      const grossRentalIncome = CalculationService.calculateGrossRentalIncome(rentRollData, unitTypesData);
       const vacancyLoss = grossRentalIncome * vacancyRate;
       const totalOtherIncome = CalculationService.calculateOtherIncome(dealData.otherIncome);
       const effectiveGrossIncome = grossRentalIncome - vacancyLoss + totalOtherIncome;
@@ -226,28 +244,37 @@ export class CalculationService {
    * Calculate gross rental income from rent roll and unit types
    */
   private static calculateGrossRentalIncome(rentRoll?: any[], unitTypes?: any[]): number {
-    if (!rentRoll?.length && !unitTypes?.length) return 0;
+    if (!rentRoll?.length && !unitTypes?.length) {
+      console.log('No rent roll or unit types data available');
+      return 0;
+    }
     
-    let totalRent = 0;
+    let totalMonthlyRent = 0;
     
     // First check rent roll for actual rents
     if (rentRoll?.length) {
-      totalRent = rentRoll.reduce((sum, unit) => {
-        const rent = parseFloat(unit.currentRent || unit.marketRent || '0');
+      console.log('Calculating from rent roll:', rentRoll);
+      totalMonthlyRent = rentRoll.reduce((sum, unit) => {
+        // Check multiple field names for rent (prioritize current rent over pro forma for existing properties)
+        const rent = parseFloat(unit.currentRent || unit.current_rent || unit.marketRent || unit.proFormaRent || unit.pro_forma_rent || unit.rent || '0');
+        console.log(`Unit ${unit.unitNumber || unit.unit_number || 'N/A'} rent: $${rent}`);
         return sum + rent;
       }, 0);
     }
     
-    // If no rent roll, use unit types
-    if (totalRent === 0 && unitTypes?.length) {
-      totalRent = unitTypes.reduce((sum, unitType) => {
-        const units = parseInt(unitType.units || '0');
-        const rent = parseFloat(unitType.marketRent || '0');
+    // If no rent roll or total is 0, use unit types
+    if (totalMonthlyRent === 0 && unitTypes?.length) {
+      console.log('Calculating from unit types:', unitTypes);
+      totalMonthlyRent = unitTypes.reduce((sum, unitType) => {
+        const units = parseInt(unitType.units || unitType.count || '1');
+        const rent = parseFloat(unitType.marketRent || unitType.rent || '0');
+        console.log(`Unit type: ${units} units at $${rent}/month`);
         return sum + (units * rent);
       }, 0);
     }
     
-    return totalRent * 12; // Annual income
+    console.log(`Total monthly rent: $${totalMonthlyRent}, Annual: $${totalMonthlyRent * 12}`);
+    return totalMonthlyRent * 12; // Annual income
   }
   
   /**

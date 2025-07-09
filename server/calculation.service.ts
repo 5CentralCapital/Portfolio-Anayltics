@@ -213,12 +213,29 @@ export class CalculationService {
    * Calculate gross rental income from rent roll and unit types
    */
   private calculateGrossRentalIncome(rentRoll: any[], unitTypes: any[], assumptions: any): number {
-    return rentRoll.reduce((sum, unit) => {
-      // Use market rent from unit types if available, otherwise use unit's pro forma rent
-      const unitType = unitTypes.find(ut => ut.unitTypeId === unit.unitTypeId);
-      const marketRent = unitType ? Number(unitType.marketRent) : Number(unit.proFormaRent || 0);
-      return sum + (marketRent * 12);
-    }, 0);
+    if (!rentRoll?.length && !unitTypes?.length) return 0;
+    
+    let totalMonthlyRent = 0;
+    
+    // First check rent roll for actual rents
+    if (rentRoll?.length) {
+      totalMonthlyRent = rentRoll.reduce((sum, unit) => {
+        const unitType = unitTypes.find(ut => ut.unitTypeId === unit.unitTypeId);
+        const rent = unitType ? Number(unitType.marketRent) : Number(unit.proFormaRent || unit.currentRent || 0);
+        return sum + rent;
+      }, 0);
+    }
+    
+    // If no rent roll or total is 0, use unit types
+    if (totalMonthlyRent === 0 && unitTypes?.length) {
+      totalMonthlyRent = unitTypes.reduce((sum, unitType) => {
+        const units = Number(unitType.units || 1);
+        const rent = Number(unitType.marketRent || 0);
+        return sum + (units * rent);
+      }, 0);
+    }
+    
+    return totalMonthlyRent * 12; // Annual income
   }
 
   /**

@@ -130,7 +130,6 @@ export const propertyRentRoll = pgTable("property_rent_roll", {
   leaseEnd: date("lease_end"),
   leaseEndDate: date("lease_end_date"), // Keep for backward compatibility
   tenantName: text("tenant_name"),
-  tenantDetailsId: integer("tenant_details_id").references(() => tenantDetails.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

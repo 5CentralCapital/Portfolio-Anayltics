@@ -263,7 +263,23 @@ export class DatabaseStorage implements IStorage {
 
   // Property operations
   async getProperties(): Promise<Property[]> {
-    return await db.select().from(properties).orderBy(desc(properties.createdAt));
+    const allProperties = await db.select().from(properties).orderBy(desc(properties.createdAt));
+    
+    // Add rent roll data to each property
+    const propertiesWithRentRoll = await Promise.all(
+      allProperties.map(async (property) => {
+        const rentRoll = await db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, property.id));
+        const unitTypes = await db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, property.id));
+        
+        return {
+          ...property,
+          rentRoll,
+          unitTypes
+        };
+      })
+    );
+    
+    return propertiesWithRentRoll;
   }
 
   async getPropertiesForUser(userId: number): Promise<Property[]> {
@@ -277,7 +293,23 @@ export class DatabaseStorage implements IStorage {
     
     // Get all properties and filter by user's entities
     const allProperties = await db.select().from(properties).orderBy(desc(properties.createdAt));
-    return allProperties.filter(property => userEntityNames.includes(property.entity || ''));
+    const userProperties = allProperties.filter(property => userEntityNames.includes(property.entity || ''));
+    
+    // Add rent roll data to each property
+    const propertiesWithRentRoll = await Promise.all(
+      userProperties.map(async (property) => {
+        const rentRoll = await db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, property.id));
+        const unitTypes = await db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, property.id));
+        
+        return {
+          ...property,
+          rentRoll,
+          unitTypes
+        };
+      })
+    );
+    
+    return propertiesWithRentRoll;
   }
 
   async getFeaturedProperties(): Promise<Property[]> {
