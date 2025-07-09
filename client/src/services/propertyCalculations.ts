@@ -332,10 +332,14 @@ export class PropertyCalculationEngine {
     const capitalRequired = this.getCapitalRequired(sources);
     const exitCapRate = this.getExitCapRate(sources);
     
-    // Calculate ARV
-    const currentARV = cashFlowData.netOperatingIncome > 0 && exitCapRate > 0 
+    // Calculate ARV - Use database value first, then calculate if needed
+    const databaseARV = this.getARVFromProperty(sources);
+    const calculatedARV = cashFlowData.netOperatingIncome > 0 && exitCapRate > 0 
       ? cashFlowData.netOperatingIncome / exitCapRate 
-      : this.getARVFromProperty(sources);
+      : 0;
+    
+    // Priority: Database ARV > Calculated ARV > Purchase Price
+    const currentARV = databaseARV > 0 ? databaseARV : (calculatedARV > 0 ? calculatedARV : this.getPurchasePrice(sources));
     
     // Calculate investment metrics
     const capRate = purchasePrice > 0 ? (cashFlowData.netOperatingIncome / purchasePrice) * 100 : 0;
@@ -420,7 +424,7 @@ export class PropertyCalculationEngine {
   }
   
   private static getARVFromProperty(sources: DataSources): number {
-    return parseFloat(sources.property?.arvAtTimePurchased || '0');
+    return parseFloat(sources.property?.arv_at_time_purchased || '0');
   }
   
   private static calculateLoanAmount(sources: DataSources): number {
