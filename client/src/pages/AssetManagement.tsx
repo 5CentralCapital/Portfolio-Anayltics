@@ -2875,10 +2875,11 @@ export default function AssetManagement() {
                             const expenses = propertyData?.expenses || {};
                             
                             return (
-                              <div className="grid lg:grid-cols-2 gap-8">
-                                {/* Revenue Section */}
-                                <div className="space-y-4">
-                                  <h4 className="text-lg font-semibold text-green-700 dark:text-green-300 border-b border-green-200 pb-2">Revenue</h4>
+                              <div className="space-y-6">
+                                <div className="grid lg:grid-cols-2 gap-8">
+                                  {/* Revenue Section */}
+                                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">
+                                    <h4 className="text-lg font-semibold text-green-700 dark:text-green-300 border-b border-green-200 pb-2">Revenue</h4>
                                   
                                   <div className="space-y-3">
                                     <div className="flex justify-between items-center">
@@ -2905,11 +2906,11 @@ export default function AssetManagement() {
                                       <span className="font-bold text-green-600">{formatCurrency(calculations.effectiveGrossIncome || calculations.netRevenueAnnual)}</span>
                                     </div>
                                   </div>
-                                </div>
+                                  </div>
                                 
-                                {/* Expenses Section */}
-                                <div className="space-y-4">
-                                  <h4 className="text-lg font-semibold text-red-700 dark:text-red-300 border-b border-red-200 pb-2">Expenses</h4>
+                                  {/* Expenses Section */}
+                                  <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-6 border border-red-200 dark:border-red-800">
+                                    <h4 className="text-lg font-semibold text-red-700 dark:text-red-300 border-b border-red-200 pb-2">Expenses</h4>
                                   
                                   <div className="space-y-3">
                                     {[
@@ -2955,24 +2956,38 @@ export default function AssetManagement() {
                                       <span className="font-bold text-red-600">{formatCurrency(calculations.annualExpenses || calculations.totalExpensesAnnual)}</span>
                                     </div>
                                   </div>
+                                  </div>
                                 </div>
                                 
                                 {/* NOI and Cash Flow Summary */}
                                 <div className="lg:col-span-2 mt-6 pt-6 border-t border-gray-200">
                                   <div className="grid md:grid-cols-3 gap-6">
-                                    <div className="text-center">
+                                    <div className="bg-white dark:bg-gray-700 rounded-lg p-4 text-center">
                                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Net Operating Income (NOI)</p>
-                                      <p className={`text-2xl font-bold ${(calculations.netOperatingIncome || calculations.noiAnnual || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(calculations.netOperatingIncome || calculations.noiAnnual)}</p>
+                                      <p className={`text-2xl font-bold ${(calculations.netOperatingIncome || calculations.noiAnnual || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {formatCurrency(calculations.netOperatingIncome || calculations.noiAnnual)}
+                                      </p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Annual</p>
                                     </div>
                                     
-                                    <div className="text-center">
+                                    <div className="bg-white dark:bg-gray-700 rounded-lg p-4 text-center">
                                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Monthly Debt Service</p>
-                                      <p className="text-2xl font-bold text-orange-600">-{formatCurrency(calculations.monthlyDebtService)}</p>
+                                      <p className="text-2xl font-bold text-orange-600">
+                                        -{formatCurrency(calculations.monthlyDebtService || 0)}
+                                      </p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        {formatCurrency((calculations.monthlyDebtService || 0) * 12)} / year
+                                      </p>
                                     </div>
                                     
-                                    <div className="text-center">
-                                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Net Cash Flow (Monthly)</p>
-                                      <p className={`text-2xl font-bold ${(calculations.monthlyCashFlow || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(calculations.monthlyCashFlow || 0)}</p>
+                                    <div className="bg-white dark:bg-gray-700 rounded-lg p-4 text-center">
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Net Cash Flow</p>
+                                      <p className={`text-2xl font-bold ${(calculations.monthlyCashFlow || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {formatCurrency(calculations.monthlyCashFlow || 0)}
+                                      </p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        {formatCurrency(calculations.annualCashFlow || 0)} / year
+                                      </p>
                                     </div>
                                   </div>
                                 </div>
@@ -3040,7 +3055,12 @@ export default function AssetManagement() {
                               </thead>
                               <tbody>
                                 {(() => {
+                                  // Use centralized calculations with real-time updates
                                   const calculations = getPropertyCalculations();
+                                  const _ = refreshCounter; // Force re-render when refreshCounter changes
+                                  
+                                  console.log('12-Month Proforma - Using centralized calculations:', calculations, 'refresh count:', refreshCounter);
+                                  
                                   if (!calculations) {
                                     return (
                                       <tr>
@@ -3053,8 +3073,10 @@ export default function AssetManagement() {
                                     );
                                   }
                                   
-                                  // Get property data for detailed expenses
-                                  const propertyData = showPropertyDetailModal?.dealAnalyzerData ? JSON.parse(showPropertyDetailModal.dealAnalyzerData) : {};
+                                  // Get property data for detailed expenses (use editing data if available)
+                                  const propertyData = editingModalProperty?.dealAnalyzerData 
+                                    ? JSON.parse(editingModalProperty.dealAnalyzerData) 
+                                    : (showPropertyDetailModal?.dealAnalyzerData ? JSON.parse(showPropertyDetailModal.dealAnalyzerData) : {});
                                   const expenses = propertyData?.expenses || {};
                                   
                                   const rows = [
@@ -3169,8 +3191,8 @@ export default function AssetManagement() {
                                       isHeader: false,
                                       bgColor: 'bg-red-25 dark:bg-red-900/10',
                                       textColor: 'text-red-700 dark:text-red-300 font-semibold',
-                                      values: Array(12).fill(-calculations.totalExpenses),
-                                      annual: -calculations.totalExpensesAnnual
+                                      values: Array(12).fill(-(calculations.monthlyExpenses || calculations.totalExpensesAnnual / 12)),
+                                      annual: -(calculations.annualExpenses || calculations.totalExpensesAnnual)
                                     },
                                     // NOI Section
                                     {
@@ -3178,8 +3200,8 @@ export default function AssetManagement() {
                                       isHeader: false,
                                       bgColor: 'bg-blue-50 dark:bg-blue-900/20',
                                       textColor: 'text-blue-800 dark:text-blue-300 font-bold',
-                                      values: Array(12).fill(calculations.noi),
-                                      annual: calculations.noiAnnual
+                                      values: Array(12).fill((calculations.netOperatingIncome || calculations.noiAnnual) / 12),
+                                      annual: calculations.netOperatingIncome || calculations.noiAnnual
                                     },
                                     // Debt Section
                                     {
@@ -3195,8 +3217,8 @@ export default function AssetManagement() {
                                       isHeader: false,
                                       bgColor: '',
                                       textColor: 'text-gray-900 dark:text-white',
-                                      values: Array(12).fill(-calculations.monthlyDebtService),
-                                      annual: -calculations.monthlyDebtService * 12
+                                      values: Array(12).fill(-(calculations.monthlyDebtService || 0)),
+                                      annual: -(calculations.monthlyDebtService || 0) * 12
                                     },
                                     // Cash Flow Section
                                     {
