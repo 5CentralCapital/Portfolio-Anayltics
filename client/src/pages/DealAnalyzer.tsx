@@ -22,8 +22,20 @@ export default function DealAnalyzer() {
   const [dealData, setDealData] = useState<any>(null);
   const [editingProperty, setEditingProperty] = useState(false);
   const [editingAddress, setEditingAddress] = useState(false);
-  const [propertyName, setPropertyName] = useState(() => loadSavedState('propertyName', 'Maple Street Apartments'));
-  const [propertyAddress, setPropertyAddress] = useState(() => loadSavedState('propertyAddress', '123 Maple Street, Hartford, CT 06106'));
+  const [propertyName, setPropertyName] = useState(() => {
+    try {
+      return loadSavedState('propertyName', 'Maple Street Apartments');
+    } catch (e) {
+      return 'Maple Street Apartments';
+    }
+  });
+  const [propertyAddress, setPropertyAddress] = useState(() => {
+    try {
+      return loadSavedState('propertyAddress', '123 Maple Street, Hartford, CT 06106');
+    } catch (e) {
+      return '123 Maple Street, Hartford, CT 06106';
+    }
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [savedDeals, setSavedDeals] = useState<any[]>([]);

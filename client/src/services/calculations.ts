@@ -236,7 +236,36 @@ export class CalculationService {
       };
     } catch (error) {
       console.error('Error calculating property KPIs:', error);
-      return CalculationService.getDefaultKPIs();
+      return {
+        grossRentalIncome: 0,
+        effectiveGrossIncome: 0,
+        netOperatingIncome: 0,
+        totalOtherIncome: 0,
+        capitalRequired: 0,
+        allInCost: 0,
+        arv: 0,
+        equityMultiple: 0,
+        cashOnCashReturn: 0,
+        currentEquityValue: 0,
+        monthlyCashFlow: 0,
+        annualCashFlow: 0,
+        monthlyDebtService: 0,
+        annualDebtService: 0,
+        dscr: 0,
+        capRate: 0,
+        breakEvenOccupancy: 1,
+        operatingExpenseRatio: 0,
+        acquisitionPrice: 0,
+        totalRehab: 0,
+        totalClosingCosts: 0,
+        totalHoldingCosts: 0,
+        downPayment: 0,
+        monthlyExpenses: 0,
+        annualExpenses: 0,
+        vacancyRate: 5,
+        loanAmount: 0,
+        loanToValue: 0
+      };
     }
   }
   

@@ -696,17 +696,80 @@ export default function AssetManagement() {
     setIsEditing(false);
   };
 
-  // Add the missing getPropertyCalculations function
+  // Add the missing getPropertyCalculations function with robust error handling
   const getPropertyCalculations = () => {
-    // Use showPropertyDetailModal as the primary data source, fallback to editingModalProperty
-    const propertyData = showPropertyDetailModal || editingModalProperty;
-    if (!propertyData) {
-      console.log('getPropertyCalculations: No property data available');
-      return null;
+    try {
+      // Use showPropertyDetailModal as the primary data source, fallback to editingModalProperty
+      const propertyData = showPropertyDetailModal || editingModalProperty;
+      if (!propertyData) {
+        console.log('getPropertyCalculations: No property data available');
+        return null;
+      }
+      
+      console.log('getPropertyCalculations: Using property data:', propertyData.address);
+      const calculations = calculatePropertyKPIs(propertyData);
+      
+      // Return calculations with safe fallbacks for any missing fields
+      if (!calculations) {
+        console.warn('calculatePropertyKPIs returned null, using fallback values');
+        return {
+          grossRentMonthly: 0,
+          grossRentAnnual: 0,
+          vacancy: 0,
+          vacancyAnnual: 0,
+          netRevenue: 0,
+          netRevenueAnnual: 0,
+          totalExpensesAnnual: 0,
+          noiAnnual: 0,
+          monthlyDebtService: 0,
+          monthlyCashFlow: 0,
+          annualCashFlow: 0,
+          grossRentalIncome: 0,
+          netOperatingIncome: 0,
+          monthlyExpenses: 0,
+          annualExpenses: 0
+        };
+      }
+
+      return {
+        grossRentMonthly: (calculations?.grossRentalIncome || 0) / 12,
+        grossRentAnnual: calculations?.grossRentalIncome || 0,
+        vacancy: ((calculations?.grossRentalIncome || 0) / 12) * 0.05,
+        vacancyAnnual: (calculations?.grossRentalIncome || 0) * 0.05,
+        netRevenue: ((calculations?.grossRentalIncome || 0) / 12) * 0.95,
+        netRevenueAnnual: (calculations?.grossRentalIncome || 0) * 0.95,
+        totalExpensesAnnual: calculations?.annualExpenses || 0,
+        noiAnnual: calculations?.netOperatingIncome || 0,
+        monthlyDebtService: calculations?.monthlyDebtService || 0,
+        monthlyCashFlow: calculations?.monthlyCashFlow || 0,
+        annualCashFlow: calculations?.annualCashFlow || 0,
+        grossRentalIncome: calculations?.grossRentalIncome || 0,
+        netOperatingIncome: calculations?.netOperatingIncome || 0,
+        monthlyExpenses: calculations?.monthlyExpenses || 0,
+        annualExpenses: calculations?.annualExpenses || 0,
+        ...calculations
+      };
+    } catch (error) {
+      console.error('getPropertyCalculations error:', error);
+      // Return safe fallback object to prevent crashes
+      return {
+        grossRentMonthly: 0,
+        grossRentAnnual: 0,
+        vacancy: 0,
+        vacancyAnnual: 0,
+        netRevenue: 0,
+        netRevenueAnnual: 0,
+        totalExpensesAnnual: 0,
+        noiAnnual: 0,
+        monthlyDebtService: 0,
+        monthlyCashFlow: 0,
+        annualCashFlow: 0,
+        grossRentalIncome: 0,
+        netOperatingIncome: 0,
+        monthlyExpenses: 0,
+        annualExpenses: 0
+      };
     }
-    
-    console.log('getPropertyCalculations: Using property data:', propertyData.address);
-    return calculatePropertyKPIs(propertyData);
   };
 
   if (isLoading) {
@@ -2786,7 +2849,15 @@ export default function AssetManagement() {
                             const calculations = getPropertyCalculations();
                             console.log('Income & Expenses - Using centralized calculations:', calculations);
                             
-                            if (!calculations) return null;
+                            if (!calculations) {
+                              return (
+                                <div className="text-center py-12">
+                                  <Calculator className="mx-auto h-12 w-12 text-gray-400" />
+                                  <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">Calculation Error</h3>
+                                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Unable to calculate financial metrics. Please check property data.</p>
+                                </div>
+                              );
+                            }
                             
                             // Get the original expenses data for editing purposes
                             const propertyData = editingModalProperty?.dealAnalyzerData ? JSON.parse(editingModalProperty.dealAnalyzerData) : {};
@@ -2955,7 +3026,17 @@ export default function AssetManagement() {
                               <tbody>
                                 {(() => {
                                   const calculations = getPropertyCalculations();
-                                  if (!calculations) return null;
+                                  if (!calculations) {
+                                    return (
+                                      <tr>
+                                        <td colSpan={14} className="text-center py-12">
+                                          <Calculator className="mx-auto h-12 w-12 text-gray-400" />
+                                          <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">Calculation Error</h3>
+                                          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Unable to calculate proforma. Please check property data.</p>
+                                        </td>
+                                      </tr>
+                                    );
+                                  }
                                   
                                   // Get property data for detailed expenses
                                   const propertyData = showPropertyDetailModal?.dealAnalyzerData ? JSON.parse(showPropertyDetailModal.dealAnalyzerData) : {};
