@@ -28,6 +28,7 @@ import { Star, StarOff } from 'lucide-react';
 import { AddressComponents } from '../services/googlePlaces';
 import { useCalculations } from '@/contexts/CalculationsContext';
 import LiveDebtDataSection from '../components/LiveDebtDataSection';
+import { TenantDetailsModal } from '@/components/TenantDetailsModal';
 
 // Helper function for loan calculations
 const calculateLoanPayment = (amount: number, interestRate: number, termYears: number, paymentType: string) => {
@@ -430,6 +431,42 @@ export default function AssetManagement() {
     noiAtSale: '',
     saleDate: new Date().toISOString().split('T')[0]
   });
+  const [tenantDetailsModal, setTenantDetailsModal] = useState<{ 
+    isOpen: boolean; 
+    tenantData: any; 
+    unitNumber: string; 
+  }>({ 
+    isOpen: false, 
+    tenantData: null, 
+    unitNumber: '' 
+  });
+  
+  // Function to handle tenant name double-click
+  const handleTenantNameClick = async (propertyId: number, unitNumber: string, tenantDetailsId?: number) => {
+    if (!tenantDetailsId) {
+      console.warn('No tenant details ID available');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/tenant-details/${tenantDetailsId}`, {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const tenantData = await response.json();
+        setTenantDetailsModal({
+          isOpen: true,
+          tenantData,
+          unitNumber
+        });
+      } else {
+        console.error('Failed to fetch tenant details');
+      }
+    } catch (error) {
+      console.error('Error fetching tenant details:', error);
+    }
+  };
   
   // Centralized loan data management for modal consistency
   const getModalLoanData = () => {
@@ -2363,7 +2400,17 @@ export default function AssetManagement() {
                                                 placeholder="Tenant name"
                                               />
                                             ) : (
-                                              unit.tenantName || 'Vacant'
+                                              <span 
+                                                className={unit.tenantName ? "cursor-pointer text-blue-600 hover:text-blue-800 hover:underline" : ""}
+                                                onDoubleClick={() => {
+                                                  if (unit.tenantName && unit.tenantDetailsId && showPropertyDetailModal) {
+                                                    handleTenantNameClick(showPropertyDetailModal.id, unit.unitNumber, unit.tenantDetailsId);
+                                                  }
+                                                }}
+                                                title={unit.tenantName ? "Double-click to view tenant details" : ""}
+                                              >
+                                                {unit.tenantName || 'Vacant'}
+                                              </span>
                                             )}
                                           </td>
                                           <td className="px-4 py-2 text-sm text-green-900 dark:text-green-200">
@@ -3989,6 +4036,13 @@ export default function AssetManagement() {
         </div>
       )}
 
+      {/* Tenant Details Modal */}
+      <TenantDetailsModal
+        isOpen={tenantDetailsModal.isOpen}
+        onClose={() => setTenantDetailsModal({ isOpen: false, tenantData: null, unitNumber: '' })}
+        tenantData={tenantDetailsModal.tenantData}
+        unitNumber={tenantDetailsModal.unitNumber}
+      />
 
     </div>
   );

@@ -3,6 +3,7 @@ import session from "express-session";
 import { registerRoutes } from "./routes";
 import propertyLoansRoutes from "./property-loans.routes";
 import aiDocumentRoutes from "./routes/ai-documents";
+import tenantDetailsRoutes from "./routes/tenant-details";
 import openaiModelsRoutes from "./routes/openai-models";
 import geminiModelsRoutes from "./routes/gemini-models";
 import { setupVite, serveStatic, log } from "./vite";
@@ -27,6 +28,9 @@ app.use('/api', propertyLoansRoutes);
 
 // Register AI document processing routes
 app.use('/api/ai-documents', aiDocumentRoutes);
+
+// Register tenant details routes
+app.use('/api/tenant-details', tenantDetailsRoutes);
 
 // Register OpenAI models routes  
 app.use('/api/openai/models', openaiModelsRoutes);

@@ -9,7 +9,7 @@ import path from 'path';
 import fs from 'fs';
 import { aiDocumentProcessor, ProcessingResult } from '../ai-document-processor.service';
 import { db } from '../db';
-import { properties, propertyRentRoll, entityMemberships, propertyLoans, documentProcessingHistory } from '../../shared/schema';
+import { properties, propertyRentRoll, entityMemberships, propertyLoans, documentProcessingHistory, tenantDetails } from '../../shared/schema';
 import { eq, and, desc, isNotNull } from 'drizzle-orm';
 
 const router = Router();
@@ -494,41 +494,95 @@ router.post('/manual-review', async (req, res) => {
         }
         
         if (tenantName && monthlyRent > 0) {
-          // Find existing rent roll entry for this tenant or unit
-          let existingEntryIndex = rentRoll.findIndex(entry => 
-            entry.tenantName?.toLowerCase() === tenantName.toLowerCase() ||
-            entry.unitNumber === unitNumber ||
-            entry.unit === unitNumber
-          );
-          
-          const rentEntry = {
-            id: existingEntryIndex >= 0 ? rentRoll[existingEntryIndex].id : (rentRoll.length + 1),
+          // Create comprehensive tenant details record
+          const tenantDetailsData = {
+            propertyId: propertyId,
             unitNumber: unitNumber,
-            unitTypeId: rentRoll[existingEntryIndex]?.unitTypeId || '1br',
             tenantName: tenantName,
-            leaseFrom: leaseStart || '',
-            leaseTo: leaseEnd || '',
-            currentRent: monthlyRent,
-            proFormaRent: monthlyRent,
-            marketRent: monthlyRent,
-            sqft: extractedData.squareFootage || 0,
-            deposit: securityDeposit || 0,
-            isRealData: true
+            tenantAddress: extractedData.tenant?.address || '',
+            tenantPhone: extractedData.tenant?.phone || '',
+            tenantEmail: extractedData.tenant?.email || '',
+            leaseStartDate: leaseStart ? new Date(leaseStart) : null,
+            leaseEndDate: leaseEnd ? new Date(leaseEnd) : null,
+            monthlyRent: monthlyRent.toString(),
+            securityDeposit: securityDeposit?.toString() || '0',
+            totalMoveInCost: (extractedData.lease_details?.total_move_in_cost || extractedData.financial_details?.total_move_in_cost)?.toString() || '0',
+            rentDueDate: extractedData.lease_details?.rent_due_date || 'First of each month',
+            lateFee: (extractedData.lease_details?.late_fee || extractedData.financial_details?.late_fee)?.toString() || '0',
+            utilitiesResponsibility: extractedData.rules_and_policies?.utilities_responsibility || '',
+            petPolicy: extractedData.rules_and_policies?.pet_policy || '',
+            smokingPolicy: extractedData.rules_and_policies?.smoking_policy || '',
+            guestPolicy: extractedData.rules_and_policies?.guest_policy || '',
+            alterationPolicy: extractedData.rules_and_policies?.alteration_policy || '',
+            movingOutNotice: extractedData.moving_out?.notice_period || '',
+            lockOutCharge: (extractedData.lease_details?.lock_out_charge)?.toString() || '0',
+            maintenancePolicy: extractedData.maintenance_and_repairs?.tenant_responsibility || '',
+            paymentMethods: extractedData.payment_methods || [],
+            automaticPaymentAuth: extractedData.authorization?.automatic_payments === 'Authorized' || false,
+            governingLaw: extractedData.legal_information?.governing_law || '',
+            fullLeaseData: extractedData,
+            sourceDocumentId: null // Will be set when document processing is complete
           };
-          
-          if (existingEntryIndex >= 0) {
-            rentRoll[existingEntryIndex] = { ...rentRoll[existingEntryIndex], ...rentEntry };
-            integrationResults.push(`Updated unit ${unitNumber}: ${tenantName} - $${monthlyRent}/month`);
-          } else {
+
+          try {
+            // Save comprehensive tenant details to database
+            const [createdTenantDetails] = await db.insert(tenantDetails).values(tenantDetailsData).returning();
+            
+            // Find existing rent roll entry for this tenant or unit
+            let existingEntryIndex = rentRoll.findIndex(entry => 
+              entry.tenantName?.toLowerCase() === tenantName.toLowerCase() ||
+              entry.unitNumber === unitNumber ||
+              entry.unit === unitNumber
+            );
+            
+            const rentEntry = {
+              id: existingEntryIndex >= 0 ? rentRoll[existingEntryIndex].id : (rentRoll.length + 1),
+              unitNumber: unitNumber,
+              unitTypeId: rentRoll[existingEntryIndex]?.unitTypeId || '1br',
+              tenantName: tenantName,
+              leaseFrom: leaseStart || '',
+              leaseTo: leaseEnd || '',
+              currentRent: monthlyRent,
+              proFormaRent: monthlyRent,
+              marketRent: monthlyRent,
+              sqft: extractedData.squareFootage || 0,
+              deposit: securityDeposit || 0,
+              isRealData: true,
+              tenantDetailsId: createdTenantDetails.id
+            };
+            
+            if (existingEntryIndex >= 0) {
+              rentRoll[existingEntryIndex] = { ...rentRoll[existingEntryIndex], ...rentEntry };
+              integrationResults.push(`Updated unit ${unitNumber}: ${tenantName} - $${monthlyRent}/month with full lease details`);
+            } else {
+              rentRoll.push(rentEntry);
+              integrationResults.push(`Added tenant ${tenantName} to unit ${unitNumber} - $${monthlyRent}/month with comprehensive lease data`);
+            }
+            
+            existingDealData.rentRoll = rentRoll;
+            updatedProperty.dealAnalyzerData = JSON.stringify(existingDealData);
+            
+          } catch (dbError) {
+            console.warn('Failed to save tenant details to database:', dbError);
+            // Continue with basic rent roll entry
+            const rentEntry = {
+              id: rentRoll.length + 1,
+              unitNumber: unitNumber,
+              unitTypeId: '1br',
+              tenantName: tenantName,
+              leaseFrom: leaseStart || '',
+              leaseTo: leaseEnd || '',
+              currentRent: monthlyRent,
+              proFormaRent: monthlyRent,
+              marketRent: monthlyRent,
+              isRealData: true
+            };
+            
             rentRoll.push(rentEntry);
-            integrationResults.push(`Added tenant ${tenantName} to unit ${unitNumber} - $${monthlyRent}/month`);
+            existingDealData.rentRoll = rentRoll;
+            updatedProperty.dealAnalyzerData = JSON.stringify(existingDealData);
+            integrationResults.push(`Added tenant ${tenantName} to unit ${unitNumber} - $${monthlyRent}/month (basic data only)`);
           }
-          
-          existingDealData.rentRoll = rentRoll;
-          updatedProperty.dealAnalyzerData = JSON.stringify(existingDealData);
-          
-          console.log('Updated rent roll:', rentRoll);
-          console.log('Integration results:', integrationResults);
         }
         break;
 

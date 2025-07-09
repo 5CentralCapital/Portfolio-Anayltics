@@ -312,22 +312,66 @@ export class AIDocumentProcessor {
 
           ${content}
 
-          Return JSON with this structure:
+          Return JSON with this comprehensive structure based on standard lease documents:
           {
-            "tenantNames": ["string array of all tenant names"],
-            "propertyAddress": "full property address",
-            "unitNumber": "unit/apartment number or null",
-            "leaseStartDate": "YYYY-MM-DD",
-            "leaseEndDate": "YYYY-MM-DD", 
-            "monthlyRent": number,
-            "securityDeposit": number or null,
-            "petDeposit": number or null,
-            "leaseTerm": "lease duration description",
-            "renewalOptions": "renewal terms or null",
-            "petPolicy": "pet policy description or null",
-            "utilities": ["array of included utilities"],
-            "parkingSpaces": number or null,
-            "additionalFees": [{"name": "fee name", "amount": number}]
+            "tenant": {
+              "name": "tenant full name",
+              "address": "tenant mailing address",
+              "phone": "tenant phone number",
+              "email": "tenant email address"
+            },
+            "landlord": {
+              "name": "landlord name",
+              "company": "landlord company/entity",
+              "address": "landlord address",
+              "phone": "landlord phone",
+              "email": "landlord email"
+            },
+            "lease_details": {
+              "lease_start_date": "YYYY-MM-DD",
+              "lease_end_date": "YYYY-MM-DD",
+              "monthly_rent": number,
+              "security_deposit": number,
+              "total_move_in_cost": number,
+              "rent_due_date": "rent due date (e.g., 1st of each month)",
+              "late_fee": number,
+              "lock_out_charge": number or null
+            },
+            "property_details": {
+              "address": "full property address including unit number",
+              "unit_number": "specific unit number if applicable"
+            },
+            "financial_details": {
+              "monthly_rent": number,
+              "security_deposit": number,
+              "total_move_in_cost": number,
+              "late_fee": number
+            },
+            "payment_methods": [
+              "list of accepted payment methods"
+            ],
+            "rules_and_policies": {
+              "utilities_responsibility": "who pays utilities",
+              "pet_policy": "pet policy description",
+              "smoking_policy": "smoking policy",
+              "guest_policy": "overnight guest policy",
+              "alteration_policy": "property alteration policy"
+            },
+            "maintenance_and_repairs": {
+              "tenant_responsibility": "tenant maintenance responsibilities",
+              "damage_responsibility": "damage responsibility policy"
+            },
+            "moving_out": {
+              "notice_period": "required notice period",
+              "penalty": "penalty for insufficient notice"
+            },
+            "legal_information": {
+              "governing_law": "governing state law",
+              "entire_agreement_clause": "entire agreement clause text"
+            },
+            "authorization": {
+              "automatic_payments": "automatic payment authorization status"
+            }
           }`
         }
       ],

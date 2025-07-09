@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, decimal, timestamp, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, decimal, timestamp, date, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -130,6 +130,57 @@ export const propertyRentRoll = pgTable("property_rent_roll", {
   leaseEnd: date("lease_end"),
   leaseEndDate: date("lease_end_date"), // Keep for backward compatibility
   tenantName: text("tenant_name"),
+  tenantDetailsId: integer("tenant_details_id").references(() => tenantDetails.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Tenant Details - Full lease information
+export const tenantDetails = pgTable("tenant_details", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  unitNumber: text("unit_number").notNull(),
+  
+  // Tenant Information
+  tenantName: text("tenant_name").notNull(),
+  tenantAddress: text("tenant_address"),
+  tenantPhone: text("tenant_phone"),
+  tenantEmail: text("tenant_email"),
+  
+  // Lease Details
+  leaseStartDate: date("lease_start_date"),
+  leaseEndDate: date("lease_end_date"),
+  monthlyRent: decimal("monthly_rent", { precision: 10, scale: 2 }),
+  securityDeposit: decimal("security_deposit", { precision: 10, scale: 2 }),
+  totalMoveInCost: decimal("total_move_in_cost", { precision: 10, scale: 2 }),
+  rentDueDate: text("rent_due_date"),
+  lateFee: decimal("late_fee", { precision: 10, scale: 2 }),
+  
+  // Property Rules
+  utilitiesResponsibility: text("utilities_responsibility"),
+  petPolicy: text("pet_policy"),
+  smokingPolicy: text("smoking_policy"),
+  guestPolicy: text("guest_policy"),
+  alterationPolicy: text("alteration_policy"),
+  
+  // Moving & Maintenance
+  movingOutNotice: text("moving_out_notice"),
+  lockOutCharge: decimal("lock_out_charge", { precision: 10, scale: 2 }),
+  maintenancePolicy: text("maintenance_policy"),
+  
+  // Payment Methods
+  paymentMethods: jsonb("payment_methods"),
+  automaticPaymentAuth: boolean("automatic_payment_auth").default(false),
+  
+  // Legal
+  governingLaw: text("governing_law"),
+  
+  // Full lease document data (JSON)
+  fullLeaseData: jsonb("full_lease_data"),
+  
+  // Document reference
+  sourceDocumentId: integer("source_document_id").references(() => documentProcessingHistory.id, { onDelete: "set null" }),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -617,6 +668,12 @@ export const insertPropertyRentRollSchema = createInsertSchema(propertyRentRoll)
   updatedAt: true,
 });
 
+export const insertTenantDetailsSchema = createInsertSchema(tenantDetails).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertPropertyExpensesSchema = createInsertSchema(propertyExpenses).omit({
   id: true,
   createdAt: true,
@@ -676,6 +733,8 @@ export type PropertyUnitTypes = typeof propertyUnitTypes.$inferSelect;
 export type InsertPropertyUnitTypes = z.infer<typeof insertPropertyUnitTypesSchema>;
 export type PropertyRentRoll = typeof propertyRentRoll.$inferSelect;
 export type InsertPropertyRentRoll = z.infer<typeof insertPropertyRentRollSchema>;
+export type TenantDetails = typeof tenantDetails.$inferSelect;
+export type InsertTenantDetails = z.infer<typeof insertTenantDetailsSchema>;
 export type PropertyExpenses = typeof propertyExpenses.$inferSelect;
 export type InsertPropertyExpenses = z.infer<typeof insertPropertyExpensesSchema>;
 export type PropertyRehabBudget = typeof propertyRehabBudget.$inferSelect;
