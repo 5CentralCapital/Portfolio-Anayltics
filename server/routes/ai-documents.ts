@@ -8,6 +8,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { aiDocumentProcessor, ProcessingResult } from '../ai-document-processor.service';
+import { csvLeaseProcessor } from '../csv-lease-processor.service';
 import { db } from '../db';
 import { properties, propertyRentRoll, entityMemberships, propertyLoans, documentProcessingHistory, tenantDetails } from '../../shared/schema';
 import { eq, and, desc, isNotNull } from 'drizzle-orm';
@@ -67,8 +68,70 @@ router.post('/process', upload.single('document'), async (req: ProcessDocumentRe
 
     console.log(`Processing document: ${fileName} for property: ${propertyId} using model: ${model || 'gpt-4o'}`);
 
-    // Process document with AI
-    const result = await aiDocumentProcessor.processDocument(filePath, fileName, model || 'gpt-4o');
+    let result: ProcessingResult;
+
+    // Check if it's a CSV file for lease processing
+    if (fileName.toLowerCase().endsWith('.csv') && 
+        (fileName.toLowerCase().includes('lease') || fileName.toLowerCase().includes('tenant'))) {
+      console.log('Detected CSV lease file, using CSV processor');
+      
+      try {
+        const csvResult = await csvLeaseProcessor.processLeaseCSV(filePath, fileName);
+        
+        if (csvResult.success) {
+          // Convert CSV result to ProcessingResult format
+          result = {
+            success: true,
+            documentType: 'lease',
+            extractedData: {
+              tenantNames: csvResult.leaseData.map(lease => lease.tenantName),
+              propertyAddress: csvResult.leaseData[0]?.address || '',
+              leaseData: csvResult.leaseData,
+              propertyMatches: csvResult.propertyMatches
+            },
+            confidence: 0.95,
+            warnings: csvResult.warnings,
+            suggestedActions: [
+              'CSV lease data processed successfully',
+              'Review property matches before applying',
+              'Check tenant details for completeness'
+            ]
+          };
+
+          // Auto-save to database if requested
+          if (autoApply === 'true' || autoApply === true) {
+            const saveResult = await csvLeaseProcessor.saveLeaseDataToDatabase(
+              csvResult.leaseData,
+              csvResult.propertyMatches
+            );
+            result.suggestedActions?.push(`Saved ${saveResult.saved} lease records to database`);
+            if (saveResult.errors.length > 0) {
+              result.warnings = [...(result.warnings || []), ...saveResult.errors];
+            }
+          }
+        } else {
+          result = {
+            success: false,
+            documentType: 'lease',
+            extractedData: null,
+            confidence: 0,
+            errors: csvResult.errors
+          };
+        }
+      } catch (error) {
+        console.error('CSV processing error:', error);
+        result = {
+          success: false,
+          documentType: 'lease',
+          extractedData: null,
+          confidence: 0,
+          errors: [`CSV processing failed: ${error.message}`]
+        };
+      }
+    } else {
+      // Process with AI for non-CSV files
+      result = await aiDocumentProcessor.processDocument(filePath, fileName, model || 'gpt-4o');
+    }
 
     // Store processing result
     const processingRecord = await db.insert(documentProcessingHistory).values({

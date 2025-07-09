@@ -14,6 +14,8 @@ import {
 import { federalReserveService } from './fed-api';
 import { censusService } from './census-api';
 import statementUploadRoutes from './statement-upload.routes';
+import leaseUploadRoutes from './routes/lease-upload';
+import aiDocumentsRoutes from './routes/ai-documents';
 import { 
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
@@ -1077,6 +1079,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Statement upload routes
   app.use('/api/statements', statementUploadRoutes);
+
+  // Lease upload routes
+  app.use('/api/leases', leaseUploadRoutes);
+
+  // AI document processing routes
+  app.use('/api/ai-documents', aiDocumentsRoutes);
 
   return httpServer;
 }
