@@ -132,10 +132,8 @@ export class CalculationService {
       const effectiveGrossIncome = grossRentalIncome - vacancyLoss + totalOtherIncome;
       console.log('Debug - EGI calculation:', { grossRentalIncome, vacancyLoss, totalOtherIncome, effectiveGrossIncome });
       
-      // Calculate expenses including management fee
-      const baseMonthlyExpenses = CalculationService.calculateMonthlyExpenses(dealData.expenses, effectiveGrossIncome);
-      const managementFeeAmount = (effectiveGrossIncome / 12) * managementFee; // Monthly management fee
-      const monthlyExpenses = baseMonthlyExpenses + managementFeeAmount;
+      // Calculate expenses (monthly expenses function returns monthly amount)
+      const monthlyExpenses = CalculationService.calculateMonthlyExpenses(dealData.expenses, effectiveGrossIncome);
       const annualExpenses = monthlyExpenses * 12;
       
       // Calculate NOI
@@ -361,7 +359,10 @@ export class CalculationService {
         return sum + (value / 12); // Convert annual to monthly
       }, 0);
       
-      return totalMonthly;
+      // Add management fee as percentage of monthly EGI (this is already monthly)
+      const managementFeeMonthly = monthlyEGI * 0.08; // 8% management fee
+      
+      return totalMonthly + managementFeeMonthly;
     }
     
     // Handle array format (Deal Analyzer format)
@@ -379,7 +380,16 @@ export class CalculationService {
       }
     }, 0);
     
-    return totalExpenses;
+    // Check if management fee is already included in Deal Analyzer expenses
+    const hasManagementFee = expenses.some(expense => 
+      expense.category?.toLowerCase().includes('management') || 
+      expense.name?.toLowerCase().includes('management')
+    );
+    
+    // Add management fee if not already included (8% of monthly EGI)
+    const managementFeeMonthly = hasManagementFee ? 0 : monthlyEGI * 0.08;
+    
+    return totalExpenses + managementFeeMonthly;
   }
   
   /**
