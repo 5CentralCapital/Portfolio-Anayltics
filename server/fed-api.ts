@@ -39,8 +39,11 @@ class FederalReserveService {
 
   constructor() {
     this.apiKey = process.env.FEDERAL_RESERVE_API_KEY || '';
-    if (!this.apiKey) {
+    if (!this.apiKey && process.env.NODE_ENV === 'production') {
       throw new Error('FEDERAL_RESERVE_API_KEY environment variable is required');
+    }
+    if (!this.apiKey) {
+      console.warn('Warning: FEDERAL_RESERVE_API_KEY not set - Federal Reserve API features will not work');
     }
   }
 
