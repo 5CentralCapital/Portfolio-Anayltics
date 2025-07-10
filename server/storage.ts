@@ -265,12 +265,15 @@ export class DatabaseStorage implements IStorage {
   async getProperties(): Promise<Property[]> {
     const allProperties = await db.select().from(properties).orderBy(desc(properties.createdAt));
     
-    // Add rent roll, unit types, and property loans data to each property
+    // Add rent roll, unit types, property loans, and assumptions data to each property
     const propertiesWithData = await Promise.all(
       allProperties.map(async (property) => {
-        const rentRoll = await db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, property.id));
-        const unitTypes = await db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, property.id));
-        const propertyLoansData = await db.select().from(propertyLoans).where(eq(propertyLoans.propertyId, property.id));
+        const [rentRoll, unitTypes, propertyLoansData, assumptions] = await Promise.all([
+          db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, property.id)),
+          db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, property.id)),
+          db.select().from(propertyLoans).where(eq(propertyLoans.propertyId, property.id)),
+          db.select().from(propertyAssumptions).where(eq(propertyAssumptions.propertyId, property.id))
+        ]);
         
         // Parse dealAnalyzerData if it's a string
         let parsedDealAnalyzerData = property.dealAnalyzerData;
@@ -287,7 +290,8 @@ export class DatabaseStorage implements IStorage {
           dealAnalyzerData: parsedDealAnalyzerData,
           rentRoll,
           unitTypes,
-          propertyLoans: propertyLoansData
+          propertyLoans: propertyLoansData,
+          assumptions: assumptions[0] || null
         };
       })
     );
@@ -308,12 +312,15 @@ export class DatabaseStorage implements IStorage {
     const allProperties = await db.select().from(properties).orderBy(desc(properties.createdAt));
     const userProperties = allProperties.filter(property => userEntityNames.includes(property.entity || ''));
     
-    // Add rent roll, unit types, and property loans data to each property
+    // Add rent roll, unit types, property loans, and assumptions data to each property
     const propertiesWithData = await Promise.all(
       userProperties.map(async (property) => {
-        const rentRoll = await db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, property.id));
-        const unitTypes = await db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, property.id));
-        const propertyLoansData = await db.select().from(propertyLoans).where(eq(propertyLoans.propertyId, property.id));
+        const [rentRoll, unitTypes, propertyLoansData, assumptions] = await Promise.all([
+          db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, property.id)),
+          db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, property.id)),
+          db.select().from(propertyLoans).where(eq(propertyLoans.propertyId, property.id)),
+          db.select().from(propertyAssumptions).where(eq(propertyAssumptions.propertyId, property.id))
+        ]);
         
         // Debug log for property 50
         if (property.id === 50) {
@@ -338,7 +345,8 @@ export class DatabaseStorage implements IStorage {
           dealAnalyzerData: parsedDealAnalyzerData,
           rentRoll,
           unitTypes,
-          propertyLoans: propertyLoansData
+          propertyLoans: propertyLoansData,
+          assumptions: assumptions[0] || null
         };
       })
     );
@@ -349,7 +357,8 @@ export class DatabaseStorage implements IStorage {
         id: propertiesWithData[0].id,
         address: propertiesWithData[0].address,
         hasRentRoll: !!propertiesWithData[0].rentRoll,
-        rentRollLength: propertiesWithData[0].rentRoll?.length || 0
+        rentRollLength: propertiesWithData[0].rentRoll?.length || 0,
+        hasAssumptions: !!propertiesWithData[0].assumptions
       });
     }
     
