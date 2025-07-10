@@ -322,13 +322,7 @@ export class DatabaseStorage implements IStorage {
           db.select().from(propertyAssumptions).where(eq(propertyAssumptions.propertyId, property.id))
         ]);
         
-        // Debug log for property 50
-        if (property.id === 50) {
-          console.log(`Property 50 rent roll from DB:`, rentRoll.length, 'units');
-          if (rentRoll.length > 0) {
-            console.log('First unit:', rentRoll[0]);
-          }
-        }
+
         
         // Parse dealAnalyzerData if it's a string
         let parsedDealAnalyzerData = property.dealAnalyzerData;
@@ -351,16 +345,7 @@ export class DatabaseStorage implements IStorage {
       })
     );
     
-    // Debug log for first property
-    if (propertiesWithData.length > 0) {
-      console.log('First property being returned:', {
-        id: propertiesWithData[0].id,
-        address: propertiesWithData[0].address,
-        hasRentRoll: !!propertiesWithData[0].rentRoll,
-        rentRollLength: propertiesWithData[0].rentRoll?.length || 0,
-        hasAssumptions: !!propertiesWithData[0].assumptions
-      });
-    }
+
     
     return propertiesWithData;
   }
