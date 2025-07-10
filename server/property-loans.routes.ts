@@ -6,7 +6,9 @@
 import { Router } from 'express';
 import { db } from './db';
 import { propertyLoans, properties } from '@shared/schema';
-import { eq, and, isNotNull, desc } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
+import { InferInsertModel } from 'drizzle-orm';
+import { z } from 'zod';
 
 // Helper function to safely convert dates for PostgreSQL
 function parseDate(dateValue: any): Date | null {
@@ -30,6 +32,70 @@ function authenticateSession(req: any, res: any, next: any) {
   }
 
   return res.status(401).json({ error: 'Authentication required' });
+}
+
+// Drizzle inferred type for an insert row
+type NewLoan = InferInsertModel<typeof propertyLoans>;
+
+// Runtime validation schema (loosely mirrors table definition)
+const loanInputSchema = z.object({
+  loanName: z.string().default('New Loan'),
+  loanType: z.enum(['acquisition', 'refinance', 'construction', 'bridge', 'mezzanine']).default('acquisition'),
+  originalAmount: z.union([z.string(), z.number()]).default('0'),
+  currentBalance: z.union([z.string(), z.number()]).default('0'),
+  interestRate: z.union([z.string(), z.number()]).default('0'),
+  termYears: z.number().int().default(30),
+  monthlyPayment: z.union([z.string(), z.number()]).default('0'),
+  paymentType: z.enum(['principal_and_interest', 'interest_only']).default('principal_and_interest'),
+  maturityDate: z.preprocess((v) => typeof v === 'string' ? new Date(v) : v, z.date()).optional(),
+  isActive: z.boolean().default(false),
+  lender: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+
+  // live-data optional fields
+  externalLoanId: z.string().nullable().optional(),
+  principalBalance: z.union([z.string(), z.number()]).nullable().optional(),
+  nextPaymentDate: z.preprocess((v) => v ? new Date(v as string) : undefined, z.date()).nullable().optional(),
+  nextPaymentAmount: z.union([z.string(), z.number()]).nullable().optional(),
+  lastPaymentDate: z.preprocess((v)=> v ? new Date(v as string) : undefined, z.date()).nullable().optional(),
+  lastPaymentAmount: z.union([z.string(), z.number()]).nullable().optional(),
+  escrowBalance: z.union([z.string(), z.number()]).nullable().optional(),
+  remainingTerm: z.number().int().nullable().optional(),
+});
+
+// Helper – convert validated input to a type-safe Drizzle row
+function toNewLoan(propertyId: number, input: z.infer<typeof loanInputSchema>): NewLoan {
+  return {
+    propertyId,
+    loanName: input.loanName,
+    loanType: input.loanType,
+    originalAmount: input.originalAmount.toString(),
+    currentBalance: input.currentBalance.toString(),
+    interestRate: (
+      typeof input.interestRate === 'number' ? input.interestRate.toFixed(4) : input.interestRate
+    ),
+    termYears: input.termYears,
+    monthlyPayment: input.monthlyPayment.toString(),
+    paymentType: input.paymentType,
+    maturityDate: input.maturityDate ?? new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000),
+    isActive: input.isActive,
+    lender: input.lender ?? null,
+    notes: input.notes ?? null,
+
+    externalLoanId: input.externalLoanId ?? null,
+    principalBalance: input.principalBalance ? input.principalBalance.toString() : null,
+    nextPaymentDate: input.nextPaymentDate ?? null,
+    nextPaymentAmount: input.nextPaymentAmount ? input.nextPaymentAmount.toString() : null,
+    lastPaymentDate: input.lastPaymentDate ?? null,
+    lastPaymentAmount: input.lastPaymentAmount ? input.lastPaymentAmount.toString() : null,
+    escrowBalance: input.escrowBalance ? input.escrowBalance.toString() : null,
+    remainingTerm: input.remainingTerm ?? null,
+
+    // sync fields
+    lastSyncDate: null,
+    syncStatus: 'pending',
+    syncError: null,
+  } as NewLoan;
 }
 
 const router = Router();
@@ -77,40 +143,14 @@ router.post('/property/:propertyId/loans', authenticateSession, async (req, res)
       return res.status(404).json({ error: 'Property not found' });
     }
 
-    const loanData = {
-      propertyId,
-      loanName: req.body.loanName || 'New Loan',
-      loanType: req.body.loanType || 'acquisition',
-      originalAmount: req.body.originalAmount || '0',
-      currentBalance: req.body.currentBalance || '0',
-      interestRate: req.body.interestRate || '0',
-      termYears: req.body.termYears || 30,
-      monthlyPayment: req.body.monthlyPayment || '0',
-      paymentType: req.body.paymentType || 'principal_and_interest',
-      maturityDate: req.body.maturityDate || new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      isActive: req.body.isActive || false,
-      lender: req.body.lender || null,
-      notes: req.body.notes || null,
-      
-      // Live data integration fields
-      externalLoanId: req.body.externalLoanId || null,
-      principalBalance: req.body.principalBalance || null,
-      nextPaymentDate: req.body.nextPaymentDate || null,
-      nextPaymentAmount: req.body.nextPaymentAmount || null,
-      lastPaymentDate: req.body.lastPaymentDate || null,
-      lastPaymentAmount: req.body.lastPaymentAmount || null,
-      escrowBalance: req.body.escrowBalance || null,
-      remainingTerm: req.body.remainingTerm || null,
-      lastSyncDate: req.body.lastSyncDate || null,
-      syncStatus: req.body.syncStatus || 'pending',
-      syncError: req.body.syncError || null
-    };
+    // Validate & build a type-safe object
+    const parsed = loanInputSchema.parse(req.body);
+    const newLoanData = toNewLoan(propertyId, parsed);
 
-    const newLoan = await db.insert(propertyLoans)
-      .values(loanData)
+    const [newLoan] = await db.insert(propertyLoans)
+      .values(newLoanData)
       .returning();
-
-    res.json(newLoan[0]);
+    res.json(newLoan);
   } catch (error) {
     console.error('Error creating property loan:', error);
     res.status(500).json({ error: 'Failed to create property loan' });
