@@ -98,8 +98,8 @@ export class CalculationService {
 
     // Calculate operating expenses including management fee
     const baseOperatingExpenses = this.calculateOperatingExpenses(expenses, effectiveGrossIncome);
-    const managementFee = Number(assumptions.managementFee) || 0.08; // 8% default management fee
-    const managementFeeAmount = effectiveGrossIncome * managementFee;
+    const managementFeeRate = 0.08; // 8% management fee (can be turned into configurable constant later)
+    const managementFeeAmount = effectiveGrossIncome * managementFeeRate;
     const totalOperatingExpenses = baseOperatingExpenses + managementFeeAmount;
     const netOperatingIncome = effectiveGrossIncome - totalOperatingExpenses;
 
@@ -207,10 +207,10 @@ export class CalculationService {
         propertyId,
         unitCount: 1,
         purchasePrice: "0",
-        vacancyRate: "0.05", // 5% default vacancy
-        managementFee: "0.08", // 8% default management fee
-        marketCapRate: "0.055", // 5.5% default cap rate
         loanPercentage: "0.75", // 75% default LTV
+        // management fee no longer stored in assumptions
+        vacancyRate: "0.05", // 5% default vacancy
+        marketCapRate: "0.055", // 5.5% default cap rate
         holdPeriodYears: "5" // 5 year default hold period
       }).returning();
       return newAssumptions;
@@ -220,7 +220,7 @@ export class CalculationService {
     return {
       ...existing,
       vacancyRate: existing.vacancyRate || "0.05",
-      managementFee: existing.managementFee || "0.08", 
+      // management fee removed – kept here for backward compatibility but unused
       marketCapRate: existing.marketCapRate || "0.055",
       loanPercentage: existing.loanPercentage || "0.75",
       holdPeriodYears: existing.holdPeriodYears || "5"
