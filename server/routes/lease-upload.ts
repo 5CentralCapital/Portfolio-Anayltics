@@ -42,7 +42,7 @@ const upload = multer({
 
 interface LeaseUploadRequest extends Request {
   body: {
-    autoSave?: boolean;
+    autoSave?: boolean | 'true' | 'false';
   };
 }
 
@@ -77,7 +77,8 @@ router.post('/upload', upload.single('leaseFile'), async (req: LeaseUploadReques
 
     // If autoSave is enabled, save to database immediately
     let saveResult = null;
-    if (autoSave === 'true' || autoSave === true) {
+    const shouldAutoSave = autoSave === true || autoSave === 'true';
+    if (shouldAutoSave) {
       saveResult = await csvLeaseProcessor.saveLeaseDataToDatabase(
         processingResult.leaseData,
         processingResult.propertyMatches

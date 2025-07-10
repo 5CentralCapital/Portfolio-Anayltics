@@ -49,7 +49,8 @@ interface ProcessDocumentRequest extends Request {
     propertyId?: number;
     entityId?: number;
     documentType?: string;
-    autoApply?: boolean;
+    autoApply?: boolean | 'true' | 'false';
+    model?: string;
   };
 }
 
@@ -108,8 +109,12 @@ router.post('/process', upload.single('document'), async (req: ProcessDocumentRe
           };
 
           console.log(`📝 Auto-apply setting: ${autoApply}`);
+
+          // Normalise autoApply to a boolean
+          const shouldAutoApply = autoApply === true || autoApply === 'true';
+
           // Auto-save to database if requested
-          if (autoApply === 'true' || autoApply === true) {
+          if (shouldAutoApply) {
             console.log('💾 Auto-saving to database...');
             const saveResult = await csvLeaseProcessor.saveLeaseDataToDatabase(
               csvResult.leaseData,
@@ -165,7 +170,9 @@ router.post('/process', upload.single('document'), async (req: ProcessDocumentRe
     }).returning();
 
     // Auto-apply updates if requested and confidence is high
-    if (autoApply && result.success && result.confidence > 0.8) {
+    const shouldAutoApply = autoApply === true || autoApply === 'true';
+
+    if (shouldAutoApply && result.success && result.confidence > 0.8) {
       const updateResult = await applyDocumentUpdates(result, propertyId, entityId);
       return res.json({
         ...result,
@@ -179,7 +186,7 @@ router.post('/process', upload.single('document'), async (req: ProcessDocumentRe
     res.json({
       ...result,
       processingId: processingRecord[0].id,
-      requiresReview: !autoApply || result.confidence <= 0.8
+      requiresReview: !shouldAutoApply || result.confidence <= 0.8
     });
 
   } catch (error) {
