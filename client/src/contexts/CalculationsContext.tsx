@@ -1,61 +1,91 @@
-import React, { createContext, useContext, ReactNode, useMemo } from 'react';
-import { UnifiedCalculationService, PropertyFinancials } from '@/services/unifiedCalculations';
+import React, { createContext, useContext } from 'react';
+import { calculatePropertyWithLegacy, formatters, type CalculationResult } from '@shared/calculations/calculation-engine';
 
 interface CalculationsContextType {
-  calculateProperty: (property: any) => PropertyFinancials;
+  calculateProperty: (property: any) => any; // Using any for backward compatibility
+  formatCurrency: (value: number | string | undefined | null) => string;
+  formatPercentage: (value: number | undefined | null, decimals?: number) => string;
   calculatePortfolioMetrics: (properties: any[]) => any;
-  formatCurrency: (value: number | string) => string;
-  formatPercentage: (value: number, decimals?: number) => string;
 }
 
 const CalculationsContext = createContext<CalculationsContextType | undefined>(undefined);
 
-export function CalculationsProvider({ children }: { children: ReactNode }) {
-  const contextValue = useMemo(() => ({
-    calculateProperty: (property: any) => {
-      console.log('CalculationsContext - property data:', {
-        id: property.id,
-        address: property.address,
-        hasRentRoll: !!property.rentRoll,
-        rentRollLength: property.rentRoll?.length || 0,
-        hasPropertyLoans: !!property.propertyLoans,
-        propertyLoansLength: property.propertyLoans?.length || 0
-      });
+export const CalculationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const calculatePortfolioMetrics = (properties: any[]) => {
+    let totalAUM = 0;
+    let totalUnits = 0;
+    let totalEquity = 0;
+    let totalMonthlyCashFlow = 0;
+    let totalEquityMultiples = 0;
+    let totalCoCReturns = 0;
+    let propertiesWithMetrics = 0;
+    
+    properties.forEach(property => {
+      const metrics = calculatePropertyWithLegacy(property);
       
-      const propertyData = {
-        property,
-        rentRoll: property.rentRoll || [],
-        propertyLoans: property.propertyLoans || [],
-        assumptions: property.assumptions,
-        editedExpenses: property.editedExpenses
-      };
-      return UnifiedCalculationService.calculateProperty(propertyData);
-    },
-    calculatePortfolioMetrics: (properties: any[]) => {
-      const propertyDataArray = properties.map(property => ({
-        property,
-        rentRoll: property.rentRoll,
-        propertyLoans: property.propertyLoans,
-        assumptions: property.assumptions,
-        editedExpenses: property.editedExpenses
-      }));
-      return UnifiedCalculationService.calculatePortfolioMetrics(propertyDataArray);
-    },
-    formatCurrency: UnifiedCalculationService.formatCurrency,
-    formatPercentage: UnifiedCalculationService.formatPercentage,
-  }), []);
+      // Only include active properties for AUM (exclude sold)
+      if (property.status !== 'Sold') {
+        totalAUM += metrics.currentARV;
+        totalUnits += property.apartments || 0;
+        totalEquity += metrics.currentEquity;
+        
+        if (property.status === 'Cashflowing') {
+          totalMonthlyCashFlow += metrics.monthlyCashFlow;
+        }
+        
+        if (metrics.equityMultiple > 0) {
+          totalEquityMultiples += metrics.equityMultiple;
+          propertiesWithMetrics++;
+        }
+        
+        if (metrics.cashOnCashReturn > 0) {
+          totalCoCReturns += metrics.cashOnCashReturn;
+        }
+      }
+    });
+    
+    return {
+      totalAUM,
+      totalUnits,
+      totalEquity,
+      currentMonthlyIncome: totalMonthlyCashFlow,
+      pricePerUnit: totalUnits > 0 ? totalAUM / totalUnits : 0,
+      avgEquityMultiple: propertiesWithMetrics > 0 ? totalEquityMultiples / propertiesWithMetrics : 0,
+      avgCoCReturn: propertiesWithMetrics > 0 ? (totalCoCReturns / propertiesWithMetrics) * 100 : 0 // Convert to percentage for display
+    };
+  };
+
+  // Wrapper functions to handle type conversions
+  const formatCurrency = (value: number | string | undefined | null): string => {
+    if (value === undefined || value === null) return '$0';
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(numValue)) return '$0';
+    return formatters.currency(numValue);
+  };
+
+  const formatPercentage = (value: number | undefined | null, decimals: number = 1): string => {
+    if (value === undefined || value === null || isNaN(value)) return '0.0%';
+    return formatters.percentage(value, decimals);
+  };
+
+  const value = {
+    calculateProperty: calculatePropertyWithLegacy,
+    formatCurrency,
+    formatPercentage,
+    calculatePortfolioMetrics
+  };
 
   return (
-    <CalculationsContext.Provider value={contextValue}>
+    <CalculationsContext.Provider value={value}>
       {children}
     </CalculationsContext.Provider>
   );
-}
+};
 
-export function useCalculations() {
+export const useCalculations = () => {
   const context = useContext(CalculationsContext);
   if (!context) {
     throw new Error('useCalculations must be used within a CalculationsProvider');
   }
   return context;
-}
+};

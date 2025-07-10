@@ -83,6 +83,7 @@ export const propertyAssumptions = pgTable("property_assumptions", {
   loanTermYears: integer("loan_term_years").default(30),
   vacancyRate: decimal("vacancy_rate", { precision: 5, scale: 4 }).default("0.05"),
   expenseRatio: decimal("expense_ratio", { precision: 5, scale: 4 }).default("0.45"),
+  managementFee: decimal("management_fee", { precision: 5, scale: 4 }).default("0.08"),
   marketCapRate: decimal("market_cap_rate", { precision: 5, scale: 4 }).default("0.055"),
   refinanceLTV: decimal("refinance_ltv", { precision: 5, scale: 4 }).default("0.75"),
   refinanceInterestRate: decimal("refinance_interest_rate", { precision: 5, scale: 4 }).default("0.065"),

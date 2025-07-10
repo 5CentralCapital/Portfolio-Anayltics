@@ -73,6 +73,7 @@ export interface IStorage {
   // Property operations
   getProperties(): Promise<Property[]>;
   getPropertiesForUser(userId: number): Promise<Property[]>;
+  getPropertiesForUserOptimized(userId: number): Promise<Property[]>;
   getFeaturedProperties(): Promise<Property[]>;
   getProperty(id: number): Promise<Property | undefined>;
   createProperty(property: InsertProperty): Promise<Property>;
@@ -265,12 +266,15 @@ export class DatabaseStorage implements IStorage {
   async getProperties(): Promise<Property[]> {
     const allProperties = await db.select().from(properties).orderBy(desc(properties.createdAt));
     
-    // Add rent roll, unit types, and property loans data to each property
+    // Add rent roll, unit types, property loans, and assumptions data to each property
     const propertiesWithData = await Promise.all(
       allProperties.map(async (property) => {
-        const rentRoll = await db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, property.id));
-        const unitTypes = await db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, property.id));
-        const propertyLoansData = await db.select().from(propertyLoans).where(eq(propertyLoans.propertyId, property.id));
+        const [rentRoll, unitTypes, propertyLoansData, assumptions] = await Promise.all([
+          db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, property.id)),
+          db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, property.id)),
+          db.select().from(propertyLoans).where(eq(propertyLoans.propertyId, property.id)),
+          db.select().from(propertyAssumptions).where(eq(propertyAssumptions.propertyId, property.id))
+        ]);
         
         // Parse dealAnalyzerData if it's a string
         let parsedDealAnalyzerData = property.dealAnalyzerData;
@@ -287,7 +291,8 @@ export class DatabaseStorage implements IStorage {
           dealAnalyzerData: parsedDealAnalyzerData,
           rentRoll,
           unitTypes,
-          propertyLoans: propertyLoansData
+          propertyLoans: propertyLoansData,
+          assumptions: assumptions[0] || null
         };
       })
     );
@@ -308,20 +313,17 @@ export class DatabaseStorage implements IStorage {
     const allProperties = await db.select().from(properties).orderBy(desc(properties.createdAt));
     const userProperties = allProperties.filter(property => userEntityNames.includes(property.entity || ''));
     
-    // Add rent roll, unit types, and property loans data to each property
+    // Add rent roll, unit types, property loans, and assumptions data to each property
     const propertiesWithData = await Promise.all(
       userProperties.map(async (property) => {
-        const rentRoll = await db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, property.id));
-        const unitTypes = await db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, property.id));
-        const propertyLoansData = await db.select().from(propertyLoans).where(eq(propertyLoans.propertyId, property.id));
+        const [rentRoll, unitTypes, propertyLoansData, assumptions] = await Promise.all([
+          db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, property.id)),
+          db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, property.id)),
+          db.select().from(propertyLoans).where(eq(propertyLoans.propertyId, property.id)),
+          db.select().from(propertyAssumptions).where(eq(propertyAssumptions.propertyId, property.id))
+        ]);
         
-        // Debug log for property 50
-        if (property.id === 50) {
-          console.log(`Property 50 rent roll from DB:`, rentRoll.length, 'units');
-          if (rentRoll.length > 0) {
-            console.log('First unit:', rentRoll[0]);
-          }
-        }
+
         
         // Parse dealAnalyzerData if it's a string
         let parsedDealAnalyzerData = property.dealAnalyzerData;
@@ -338,22 +340,169 @@ export class DatabaseStorage implements IStorage {
           dealAnalyzerData: parsedDealAnalyzerData,
           rentRoll,
           unitTypes,
-          propertyLoans: propertyLoansData
+          propertyLoans: propertyLoansData,
+          assumptions: assumptions[0] || null
         };
       })
     );
     
-    // Debug log for first property
-    if (propertiesWithData.length > 0) {
-      console.log('First property being returned:', {
-        id: propertiesWithData[0].id,
-        address: propertiesWithData[0].address,
-        hasRentRoll: !!propertiesWithData[0].rentRoll,
-        rentRollLength: propertiesWithData[0].rentRoll?.length || 0
-      });
-    }
+
     
     return propertiesWithData;
+  }
+
+  /**
+   * Optimized version that fetches all property data in a single query
+   * Reduces database queries from N+1 to 1
+   */
+  async getPropertiesForUserOptimized(userId: number): Promise<Property[]> {
+    // Get user's entity ownerships
+    const userEntities = await this.getUserEntityOwnership(userId);
+    const entityNames = userEntities.map(e => e.entityName);
+    
+    if (entityNames.length === 0) {
+      return [];
+    }
+    
+    // Single optimized query with JSON aggregation
+    const query = sql`
+      WITH user_entities AS (
+        SELECT unnest(${entityNames}::text[]) as entity_name
+      )
+      SELECT 
+        p.*,
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object(
+            'id', rr.id,
+            'unitTypeId', rr.unit_type_id,
+            'unitNumber', rr.unit_number,
+            'currentRent', rr.current_rent,
+            'proFormaRent', rr.pro_forma_rent,
+            'isVacant', rr.is_vacant,
+            'leaseStart', rr.lease_start,
+            'leaseEnd', rr.lease_end,
+            'leaseEndDate', rr.lease_end_date,
+            'tenantName', rr.tenant_name,
+            'createdAt', rr.created_at,
+            'updatedAt', rr.updated_at
+          )) FILTER (WHERE rr.id IS NOT NULL), 
+          '[]'::json
+        ) as rent_roll,
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object(
+            'id', ut.id,
+            'unitTypeId', ut.unit_type_id,
+            'name', ut.name,
+            'bedrooms', ut.bedrooms,
+            'bathrooms', ut.bathrooms,
+            'squareFeet', ut.square_feet,
+            'marketRent', ut.market_rent,
+            'createdAt', ut.created_at,
+            'updatedAt', ut.updated_at
+          )) FILTER (WHERE ut.id IS NOT NULL),
+          '[]'::json
+        ) as unit_types,
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object(
+            'id', pl.id,
+            'loanName', pl.loan_name,
+            'loanType', pl.loan_type,
+            'originalAmount', pl.original_amount,
+            'currentBalance', pl.current_balance,
+            'interestRate', pl.interest_rate,
+            'termYears', pl.term_years,
+            'monthlyPayment', pl.monthly_payment,
+            'paymentType', pl.payment_type,
+            'maturityDate', pl.maturity_date,
+            'isActive', pl.is_active,
+            'lender', pl.lender,
+            'notes', pl.notes,
+            'principalBalance', pl.principal_balance,
+            'remainingTerm', pl.remaining_term,
+            'createdAt', pl.created_at,
+            'updatedAt', pl.updated_at
+          )) FILTER (WHERE pl.id IS NOT NULL),
+          '[]'::json
+        ) as property_loans,
+        COALESCE(
+          (SELECT row_to_json(pa.*) 
+           FROM property_assumptions pa 
+           WHERE pa.property_id = p.id 
+           LIMIT 1),
+          null
+        ) as assumptions,
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object(
+            'id', pe.id,
+            'expenseType', pe.expense_type,
+            'expenseName', pe.expense_name,
+            'annualAmount', pe.annual_amount,
+            'isPercentage', pe.is_percentage,
+            'percentageBase', pe.percentage_base,
+            'notes', pe.notes,
+            'createdAt', pe.created_at,
+            'updatedAt', pe.updated_at
+          )) FILTER (WHERE pe.id IS NOT NULL),
+          '[]'::json
+        ) as expenses
+      FROM properties p
+      INNER JOIN user_entities ue ON p.entity = ue.entity_name
+      LEFT JOIN property_rent_roll rr ON rr.property_id = p.id
+      LEFT JOIN property_unit_types ut ON ut.property_id = p.id
+      LEFT JOIN property_loans pl ON pl.property_id = p.id
+      LEFT JOIN property_expenses pe ON pe.property_id = p.id
+      WHERE p.entity IN (SELECT entity_name FROM user_entities)
+      GROUP BY p.id
+      ORDER BY p.created_at DESC
+    `;
+
+    const result = await db.execute(query);
+    
+    return result.rows.map((row: any) => {
+      // Parse dealAnalyzerData if it's a string
+      let parsedDealAnalyzerData = row.deal_analyzer_data;
+      if (typeof parsedDealAnalyzerData === 'string') {
+        try {
+          parsedDealAnalyzerData = JSON.parse(parsedDealAnalyzerData);
+        } catch (e) {
+          parsedDealAnalyzerData = null;
+        }
+      }
+      
+      // Convert snake_case database fields to camelCase for Property interface
+      return {
+        id: row.id,
+        entity: row.entity,
+        status: row.status,
+        apartments: row.apartments,
+        address: row.address,
+        city: row.city,
+        state: row.state,
+        zipCode: row.zip_code,
+        acquisitionDate: row.acquisition_date,
+        acquisitionPrice: row.acquisition_price,
+        rehabCosts: row.rehab_costs,
+        arvAtTimePurchased: row.arv_at_time_purchased,
+        salePrice: row.sale_price,
+        totalProfits: row.total_profits,
+        initialCapitalRequired: row.initial_capital_required,
+        cashFlow: row.cash_flow,
+        cashOnCashReturn: row.cash_on_cash_return,
+        annualizedReturn: row.annualized_return,
+        yearsHeld: row.years_held,
+        legalNotes: row.legal_notes,
+        broker: row.broker,
+        isFeatured: row.is_featured,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        dealAnalyzerData: parsedDealAnalyzerData,
+        rentRoll: row.rent_roll || [],
+        unitTypes: row.unit_types || [],
+        propertyLoans: row.property_loans || [],
+        assumptions: row.assumptions || null,
+        expenses: row.expenses || []
+      };
+    });
   }
 
   async getFeaturedProperties(): Promise<Property[]> {

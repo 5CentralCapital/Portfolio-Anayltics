@@ -1,298 +1,123 @@
 import { db } from "./db";
 import { 
-  properties, 
-  propertyRentRoll, 
-  propertyExpenses, 
-  propertyRehabBudget, 
-  propertyAssumptions,
-  propertyLoans,
-  propertyClosingCosts,
-  propertyHoldingCosts,
-  propertyUnitTypes,
   propertyPerformanceMetrics,
-  propertyCashFlow,
-  propertyIncomeOther
+  properties
 } from "@shared/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { calculateProperty, formatters, type CalculationResult } from "@shared/calculations/calculation-engine";
 
-export interface PropertyMetrics {
-  // Core Financial Metrics
-  grossRentalIncome: number;
-  effectiveGrossIncome: number;
-  totalOperatingExpenses: number;
-  netOperatingIncome: number;
-  beforeTaxCashFlow: number;
-  afterTaxCashFlow: number;
-  
-  // Investment Returns
-  capRate: number;
-  cashOnCashReturn: number;
-  equityMultiple: number;
-  irr: number;
-  
-  // Debt Metrics
-  dscr: number;
-  debtYield: number;
-  loanToValue: number;
-  
-  // Risk Metrics
-  breakEvenOccupancy: number;
-  operatingExpenseRatio: number;
-  
-  // Valuation Metrics
-  currentArv: number;
-  totalInvestedCapital: number;
-  currentEquityValue: number;
-  
-  // Project Costs
-  totalRehab: number;
-  totalClosingCosts: number;
-  totalHoldingCosts: number;
-  allInCost: number;
-  
-  // Debt Service
-  monthlyDebtService: number;
-  annualDebtService: number;
+export interface PropertyMetrics extends CalculationResult {
+  // Keep interface for backward compatibility
+  // All fields now come from CalculationResult
 }
 
 export class CalculationService {
   /**
-   * Calculate comprehensive property metrics using normalized database structure
+   * Calculate comprehensive property metrics using unified engine
    */
   async calculatePropertyMetrics(propertyId: number): Promise<PropertyMetrics> {
-    // Get property data
-    const [property] = await db.select().from(properties).where(eq(properties.id, propertyId));
+    // Get property with all related data
+    const property = await this.getPropertyWithData(propertyId);
     if (!property) throw new Error('Property not found');
 
-    // Get all related data in parallel for better performance
-    const [
-      assumptions,
-      rentRoll,
-      unitTypes,
-      expenses,
-      rehabItems,
-      closingCosts,
-      holdingCosts,
-      loans,
-      otherIncome
-    ] = await Promise.all([
-      this.getPropertyAssumptions(propertyId),
-      db.select().from(propertyRentRoll).where(eq(propertyRentRoll.propertyId, propertyId)),
-      db.select().from(propertyUnitTypes).where(eq(propertyUnitTypes.propertyId, propertyId)),
-      db.select().from(propertyExpenses).where(eq(propertyExpenses.propertyId, propertyId)),
-      db.select().from(propertyRehabBudget).where(eq(propertyRehabBudget.propertyId, propertyId)),
-      db.select().from(propertyClosingCosts).where(eq(propertyClosingCosts.propertyId, propertyId)),
-      db.select().from(propertyHoldingCosts).where(eq(propertyHoldingCosts.propertyId, propertyId)),
-      db.select().from(propertyLoans).where(eq(propertyLoans.propertyId, propertyId)),
-      db.select().from(propertyIncomeOther).where(eq(propertyIncomeOther.propertyId, propertyId))
-    ]);
-
-    // Calculate rental income using unit types for market rent data
-    const grossRentalIncome = this.calculateGrossRentalIncome(rentRoll, unitTypes, assumptions);
-    const vacancyRate = Number(assumptions.vacancyRate) || 0.05; // 5% default vacancy
-    const vacancyLoss = grossRentalIncome * vacancyRate;
-    const totalOtherIncome = otherIncome.reduce((sum, income) => sum + Number(income.annualAmount), 0);
-    const effectiveGrossIncome = grossRentalIncome - vacancyLoss + totalOtherIncome;
-
-    // Calculate operating expenses including management fee
-    const baseOperatingExpenses = this.calculateOperatingExpenses(expenses, effectiveGrossIncome);
-    const managementFee = Number(assumptions.managementFee) || 0.08; // 8% default management fee
-    const managementFeeAmount = effectiveGrossIncome * managementFee;
-    const totalOperatingExpenses = baseOperatingExpenses + managementFeeAmount;
-    const netOperatingIncome = effectiveGrossIncome - totalOperatingExpenses;
-
-    // Calculate debt service from active loan
-    const activeLoan = loans.find(loan => loan.isActive) || loans[0];
-    const monthlyDebtService = activeLoan ? Number(activeLoan.monthlyPayment) : 0;
-    const annualDebtService = monthlyDebtService * 12;
-    const beforeTaxCashFlow = netOperatingIncome - annualDebtService;
-
-    // Calculate project costs
-    const totalRehab = rehabItems.reduce((sum, item) => sum + Number(item.totalCost), 0);
-    const totalClosingCosts = closingCosts.reduce((sum, cost) => sum + Number(cost.amount), 0);
-    const totalHoldingCosts = holdingCosts.reduce((sum, cost) => sum + Number(cost.amount), 0);
-    const allInCost = Number(assumptions.purchasePrice) + totalRehab + totalClosingCosts + totalHoldingCosts;
-
-    // Calculate investment metrics
-    const totalInvestedCapital = this.calculateTotalInvestedCapital(assumptions, totalRehab, totalClosingCosts, totalHoldingCosts);
-    const currentArv = this.calculateCurrentARV(netOperatingIncome, assumptions);
-    const currentLoanBalance = activeLoan ? Number(activeLoan.currentBalance) : 0;
-    const currentEquityValue = currentArv - currentLoanBalance;
-
-    // Calculate ratios and returns
-    const capRate = currentArv > 0 ? netOperatingIncome / currentArv : 0;
-    // Cash-on-Cash Return = Annual Cash Flow / Total Invested Capital (as percentage)
-    const cashOnCashReturn = totalInvestedCapital > 0 ? (beforeTaxCashFlow / totalInvestedCapital) * 100 : 0;
-    // Calculate equity multiple based on property status
-    let equityMultiple = 0;
-    const propertyRecord = await db.select().from(properties).where(eq(properties.id, propertyId)).then(rows => rows[0]);
+    // Use unified calculation engine
+    const metrics = calculateProperty(property);
     
-    if (propertyRecord?.status === 'Sold') {
-      // For sold properties: total profit / capital required
-      const totalProfit = Number(propertyRecord.totalProfits || 0);
-      const capitalRequired = Number(propertyRecord.initialCapitalRequired || 0);
-      equityMultiple = capitalRequired > 0 ? totalProfit / capitalRequired : 0;
-    } else {
-      // For active properties: (ARV - all in cost) / capital required
-      const capitalRequired = Number(propertyRecord?.initialCapitalRequired || 0);
-      equityMultiple = capitalRequired > 0 ? (currentArv - allInCost) / capitalRequired : 0;
-    }
-    const dscr = annualDebtService > 0 ? netOperatingIncome / annualDebtService : 0;
-    const loanToValue = currentArv > 0 ? currentLoanBalance / currentArv : 0;
-    const debtYield = currentLoanBalance > 0 ? netOperatingIncome / currentLoanBalance : 0;
+    // Return metrics (PropertyMetrics extends CalculationResult)
+    return metrics;
+  }
 
-    // Calculate risk metrics
-    const breakEvenOccupancy = this.calculateBreakEvenOccupancy(totalOperatingExpenses, annualDebtService, grossRentalIncome);
-    const operatingExpenseRatio = effectiveGrossIncome > 0 ? totalOperatingExpenses / effectiveGrossIncome : 0;
+  /**
+   * Get property with all necessary data for calculations
+   */
+  private async getPropertyWithData(propertyId: number) {
+    const query = sql`
+      SELECT 
+        p.*,
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object(
+            'id', rr.id,
+            'unitNumber', rr.unit_number,
+            'currentRent', rr.current_rent,
+            'proFormaRent', rr.pro_forma_rent,
+            'isVacant', rr.is_vacant,
+            'leaseStart', rr.lease_start,
+            'leaseEnd', rr.lease_end,
+            'tenantName', rr.tenant_name
+          )) FILTER (WHERE rr.id IS NOT NULL), 
+          '[]'::json
+        ) as rent_roll,
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object(
+            'id', pl.id,
+            'loanName', pl.loan_name,
+            'monthlyPayment', pl.monthly_payment,
+            'currentBalance', pl.current_balance,
+            'originalAmount', pl.original_amount,
+            'interestRate', pl.interest_rate,
+            'isActive', pl.is_active
+          )) FILTER (WHERE pl.id IS NOT NULL),
+          '[]'::json
+        ) as property_loans,
+        COALESCE(
+          (SELECT row_to_json(pa.*) 
+           FROM property_assumptions pa 
+           WHERE pa.property_id = p.id 
+           LIMIT 1),
+          null
+        ) as assumptions_data,
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object(
+            'id', pe.id,
+            'expenseType', pe.expense_type,
+            'expenseName', pe.expense_name,
+            'annualAmount', pe.annual_amount
+          )) FILTER (WHERE pe.id IS NOT NULL),
+          '[]'::json
+        ) as expenses,
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object(
+            'id', ut.id,
+            'unitTypeId', ut.unit_type_id,
+            'name', ut.name,
+            'units', ut.units,
+            'marketRent', ut.market_rent
+          )) FILTER (WHERE ut.id IS NOT NULL),
+          '[]'::json
+        ) as unit_types
+      FROM properties p
+      LEFT JOIN property_rent_roll rr ON rr.property_id = p.id
+      LEFT JOIN property_unit_types ut ON ut.property_id = p.id
+      LEFT JOIN property_loans pl ON pl.property_id = p.id
+      LEFT JOIN property_expenses pe ON pe.property_id = p.id
+      WHERE p.id = ${propertyId}
+      GROUP BY p.id
+    `;
 
-    // Calculate IRR (simplified - assumes current cash flow continues)
-    const irr = this.calculateSimpleIRR(totalInvestedCapital, beforeTaxCashFlow, currentEquityValue, Number(assumptions.holdPeriodYears));
+    const result = await db.execute(query);
+    if (!result.rows || result.rows.length === 0) return null;
 
+    const row = result.rows[0] as any;
+    
+    // Transform the data to match PropertyData interface
     return {
-      grossRentalIncome,
-      effectiveGrossIncome,
-      totalOperatingExpenses,
-      netOperatingIncome,
-      beforeTaxCashFlow,
-      afterTaxCashFlow: beforeTaxCashFlow, // No tax assumptions - use actual tax calculations if needed
-      capRate,
-      cashOnCashReturn,
-      equityMultiple,
-      irr,
-      dscr,
-      debtYield,
-      loanToValue,
-      breakEvenOccupancy,
-      operatingExpenseRatio,
-      currentArv,
-      totalInvestedCapital,
-      currentEquityValue,
-      totalRehab,
-      totalClosingCosts,
-      totalHoldingCosts,
-      allInCost,
-      monthlyDebtService,
-      annualDebtService
+      id: row.id,
+      status: row.status,
+      address: row.address,
+      apartments: row.apartments,
+      acquisitionPrice: row.acquisition_price,
+      initialCapitalRequired: row.initial_capital_required,
+      salePrice: row.sale_price,
+      totalProfits: row.total_profits,
+      arvAtTimePurchased: row.arv_at_time_purchased,
+      rehabCosts: row.rehab_costs,
+      rentRoll: row.rent_roll || [],
+      propertyLoans: row.property_loans || [],
+      assumptions: row.assumptions_data || null,
+      expenses: row.expenses || [],
+      unitTypes: row.unit_types || [],
+      dealAnalyzerData: row.deal_analyzer_data
     };
-  }
-
-  /**
-   * Get property assumptions, creating defaults if none exist
-   */
-  private async getPropertyAssumptions(propertyId: number) {
-    const [existing] = await db.select().from(propertyAssumptions).where(eq(propertyAssumptions.propertyId, propertyId));
-    
-    if (!existing) {
-      // Create default assumptions with market standards
-      const [newAssumptions] = await db.insert(propertyAssumptions).values({
-        propertyId,
-        unitCount: 1,
-        purchasePrice: "0",
-        vacancyRate: "0.05", // 5% default vacancy
-        managementFee: "0.08", // 8% default management fee
-        marketCapRate: "0.055", // 5.5% default cap rate
-        loanPercentage: "0.75", // 75% default LTV
-        holdPeriodYears: "5" // 5 year default hold period
-      }).returning();
-      return newAssumptions;
-    }
-    
-    // Apply defaults to existing assumptions if values are missing or zero
-    return {
-      ...existing,
-      vacancyRate: existing.vacancyRate || "0.05",
-      managementFee: existing.managementFee || "0.08", 
-      marketCapRate: existing.marketCapRate || "0.055",
-      loanPercentage: existing.loanPercentage || "0.75",
-      holdPeriodYears: existing.holdPeriodYears || "5"
-    };
-  }
-
-  /**
-   * Calculate gross rental income from rent roll and unit types
-   */
-  private calculateGrossRentalIncome(rentRoll: any[], unitTypes: any[], assumptions: any): number {
-    if (!rentRoll?.length && !unitTypes?.length) return 0;
-    
-    let totalMonthlyRent = 0;
-    
-    // First check rent roll for actual rents
-    if (rentRoll?.length) {
-      totalMonthlyRent = rentRoll.reduce((sum, unit) => {
-        const unitType = unitTypes.find(ut => ut.unitTypeId === unit.unitTypeId);
-        const rent = unitType ? Number(unitType.marketRent) : Number(unit.proFormaRent || unit.currentRent || 0);
-        return sum + rent;
-      }, 0);
-    }
-    
-    // If no rent roll or total is 0, use unit types
-    if (totalMonthlyRent === 0 && unitTypes?.length) {
-      totalMonthlyRent = unitTypes.reduce((sum, unitType) => {
-        const units = Number(unitType.units || 1);
-        const rent = Number(unitType.marketRent || 0);
-        return sum + (units * rent);
-      }, 0);
-    }
-    
-    return totalMonthlyRent * 12; // Annual income
-  }
-
-  /**
-   * Calculate operating expenses with percentage-based expenses
-   */
-  private calculateOperatingExpenses(expenses: any[], effectiveGrossIncome: number): number {
-    return expenses.reduce((sum, expense) => {
-      if (expense.isPercentage && expense.percentageBase) {
-        const percentageValue = Number(expense.annualAmount) / 100;
-        return sum + (effectiveGrossIncome * percentageValue);
-      }
-      return sum + Number(expense.annualAmount || 0);
-    }, 0);
-  }
-
-  /**
-   * Calculate total invested capital (down payment + closing costs + holding costs)
-   * Note: Rehab costs are excluded as they are financed through the loan
-   */
-  private calculateTotalInvestedCapital(assumptions: any, totalRehab: number, totalClosingCosts: number, totalHoldingCosts: number): number {
-    const purchasePrice = Number(assumptions.purchasePrice);
-    const loanPercentage = Number(assumptions.loanPercentage);
-    const downPayment = purchasePrice * (1 - loanPercentage);
-    return downPayment + totalClosingCosts + totalHoldingCosts;
-  }
-
-  /**
-   * Calculate current ARV using cap rate method
-   */
-  private calculateCurrentARV(netOperatingIncome: number, assumptions: any): number {
-    const marketCapRate = Number(assumptions.marketCapRate) || 0.055; // Default 5.5% cap rate
-    if (netOperatingIncome > 0 && marketCapRate > 0) {
-      return netOperatingIncome / marketCapRate;
-    }
-    return Number(assumptions.purchasePrice); // Fallback to purchase price
-  }
-
-  /**
-   * Calculate break-even occupancy rate
-   */
-  private calculateBreakEvenOccupancy(totalOperatingExpenses: number, annualDebtService: number, grossRentalIncome: number): number {
-    if (grossRentalIncome > 0) {
-      return (totalOperatingExpenses + annualDebtService) / grossRentalIncome;
-    }
-    return 0;
-  }
-
-  /**
-   * Calculate simplified IRR based on current metrics
-   */
-  private calculateSimpleIRR(initialInvestment: number, annualCashFlow: number, terminalValue: number, holdPeriodYears: number): number {
-    if (initialInvestment <= 0 || holdPeriodYears <= 0) return 0;
-    
-    // Simple IRR calculation: solve for rate where NPV = 0
-    // This is a simplified calculation - real IRR would require iterative solving
-    const totalReturn = (annualCashFlow * holdPeriodYears) + terminalValue;
-    const totalMultiple = totalReturn / initialInvestment;
-    return Math.pow(totalMultiple, 1 / holdPeriodYears) - 1;
   }
 
   /**
@@ -302,41 +127,23 @@ export class CalculationService {
     await db.insert(propertyPerformanceMetrics).values({
       propertyId,
       calculationDate: new Date().toISOString().split('T')[0],
-      grossRentalIncome: metrics.grossRentalIncome.toString(),
-      netOperatingIncome: metrics.netOperatingIncome.toString(),
-      annualCashFlow: metrics.beforeTaxCashFlow.toString(),
-      // Convert percentages to decimal format (divide by 100) and cap at 9.9999
-      capRate: Math.min(metrics.capRate / 100, 9.9999).toString(),
-      cashOnCashReturn: Math.min(metrics.cashOnCashReturn / 100, 9.9999).toString(),
+      grossRentalIncome: metrics.annualGrossRent.toString(),
+      netOperatingIncome: metrics.annualNOI.toString(),
+      annualCashFlow: metrics.annualCashFlow.toString(),
+      // Store as decimals (not percentages)
+      capRate: Math.min(metrics.capRate, 0.9999).toString(),
+      cashOnCashReturn: Math.min(metrics.cashOnCashReturn, 0.9999).toString(),
       dscr: metrics.dscr.toString(),
       equityMultiple: metrics.equityMultiple.toString(),
-      irr: Math.min(metrics.irr / 100, 9.9999).toString(),
-      currentArv: metrics.currentArv.toString(),
+      irr: "0", // Not calculated yet
+      currentArv: metrics.currentARV.toString(),
       totalInvestedCapital: metrics.totalInvestedCapital.toString(),
-      currentEquityValue: metrics.currentEquityValue.toString(),
-      breakEvenOccupancy: Math.min(metrics.breakEvenOccupancy / 100, 9.9999).toString(),
-      operatingExpenseRatio: Math.min(metrics.operatingExpenseRatio / 100, 9.9999).toString(),
-      loanToValue: Math.min(metrics.loanToValue / 100, 9.9999).toString(),
-      debtYield: Math.min(metrics.debtYield / 100, 9.9999).toString()
+      currentEquityValue: metrics.currentEquity.toString(),
+      breakEvenOccupancy: "0", // Not calculated yet
+      operatingExpenseRatio: (metrics.annualOperatingExpenses / metrics.effectiveGrossIncome).toString(),
+      loanToValue: (metrics.currentDebt / metrics.currentARV).toString(),
+      debtYield: metrics.currentARV > 0 ? (metrics.annualNOI / metrics.currentARV).toString() : "0"
     });
-  }
-
-  /**
-   * Calculate loan payment based on parameters
-   */
-  private calculateLoanPayment(amount: number, annualRate: number, termYears: number, paymentType: string): number {
-    if (paymentType === 'interest_only') {
-      return (amount * annualRate) / 12;
-    }
-    
-    // Principal and interest calculation
-    const monthlyRate = annualRate / 12;
-    const numPayments = termYears * 12;
-    
-    if (monthlyRate === 0) return amount / numPayments;
-    
-    return amount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
-           (Math.pow(1 + monthlyRate, numPayments) - 1);
   }
 
   /**
@@ -358,13 +165,15 @@ export class CalculationService {
     totalEquity: number;
   }> {
     // Get user's properties through entity memberships
-    const userProperties = await db.select()
-      .from(properties)
-      .where(sql`EXISTS (
+    const userProperties = await db.execute(sql`
+      SELECT DISTINCT p.*
+      FROM properties p
+      WHERE EXISTS (
         SELECT 1 FROM entity_memberships em 
         WHERE em.user_id = ${userId} 
-        AND em.entity_name = ${properties.entity}
-      )`);
+        AND em.entity_name = p.entity
+      )
+    `);
 
     let totalAUM = 0;
     let totalUnits = 0;
@@ -372,14 +181,18 @@ export class CalculationService {
     let totalEquity = 0;
     let weightedCapRate = 0;
 
-    for (const property of userProperties) {
-      const metrics = await this.calculatePropertyMetrics(property.id);
+    for (const row of userProperties.rows) {
+      const property = row as any;
+      const propertyWithData = await this.getPropertyWithData(property.id);
+      if (!propertyWithData) continue;
       
-      totalAUM += metrics.currentArv;
-      totalUnits += property.apartments;
-      totalCashFlow += metrics.beforeTaxCashFlow;
-      totalEquity += metrics.currentEquityValue;
-      weightedCapRate += metrics.capRate * metrics.currentArv;
+      const metrics = calculateProperty(propertyWithData);
+      
+      totalAUM += metrics.currentARV;
+      totalUnits += property.apartments || 0;
+      totalCashFlow += metrics.annualCashFlow;
+      totalEquity += metrics.currentEquity;
+      weightedCapRate += metrics.capRate * metrics.currentARV;
     }
 
     const averageCapRate = totalAUM > 0 ? weightedCapRate / totalAUM : 0;
@@ -394,4 +207,6 @@ export class CalculationService {
   }
 }
 
+// Export singleton instance and formatters
 export const calculationService = new CalculationService();
+export { formatters };
