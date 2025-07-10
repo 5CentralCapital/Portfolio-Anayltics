@@ -13,13 +13,7 @@ import { db } from '../db';
 import { properties, propertyRentRoll, entityMemberships, propertyLoans, documentProcessingHistory, tenantDetails } from '../../shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import Decimal from 'decimal.js-light';
-
-// util
-const toDateString = (v: string | Date | null | undefined): string | null => {
-  if (!v) return null;
-  const d = v instanceof Date ? v : new Date(v);
-  return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
-};
+import { safeJson, toDateString } from '@shared/utils';
 
 const router = Router();
 
@@ -214,15 +208,15 @@ router.get('/history', async (req: Request, res: Response) => {
   try {
     const { propertyId, entityId, limit = 20 } = req.query;
     
-    let query = db.select().from(documentProcessingHistory);
-    
+    let historyQuery = db.select().from(documentProcessingHistory);
+
     if (propertyId) {
-      query = query.where(eq(documentProcessingHistory.propertyId, Number(propertyId)));
+      historyQuery = historyQuery.where(eq(documentProcessingHistory.propertyId, Number(propertyId))) as typeof historyQuery;
     } else if (entityId) {
-      query = query.where(eq(documentProcessingHistory.entityId, Number(entityId)));
+      historyQuery = historyQuery.where(eq(documentProcessingHistory.entityId, Number(entityId))) as typeof historyQuery;
     }
-    
-    const history = await query
+
+    const history = await historyQuery
       .orderBy(desc(documentProcessingHistory.processedAt))
       .limit(Number(limit));
 
@@ -283,7 +277,7 @@ router.post('/apply-updates/:processingId', async (req: Request, res: Response) 
     }
 
     const record = processingRecord[0];
-    const extractedData = JSON.parse(record.extractedData);
+    const extractedData = safeJson<any>(record.extractedData);
 
     // Apply approved updates
     const updateResult = await applyDocumentUpdates(
@@ -407,12 +401,12 @@ async function updateEntityFromLLC(entityId: number, llcData: any, approvedField
   // Update entity memberships
   if (llcData.members && Array.isArray(llcData.members)) {
     // Clear existing memberships
-    await db.delete(entityMemberships).where(eq(entityMemberships.entityId, entityId));
+    await db.delete(entityMemberships as any).where(eq((entityMemberships as any).entity_id, entityId));
 
     // Insert new memberships
     for (const member of llcData.members) {
-      await db.insert(entityMemberships).values({
-        entityId,
+      await db.insert(entityMemberships as any).values({
+        entity_id: entityId,
         memberName: member.name,
         ownershipPercentage: member.ownershipPercentage,
         role: member.role,
