@@ -11,7 +11,15 @@ import { aiDocumentProcessor, ProcessingResult } from '../ai-document-processor.
 import { csvLeaseProcessor } from '../csv-lease-processor.service';
 import { db } from '../db';
 import { properties, propertyRentRoll, entityMemberships, propertyLoans, documentProcessingHistory, tenantDetails } from '../../shared/schema';
-import { eq, and, desc, isNotNull } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
+import Decimal from 'decimal.js-light';
+
+// util
+const toDateString = (v: string | Date | null | undefined): string | null => {
+  if (!v) return null;
+  const d = v instanceof Date ? v : new Date(v);
+  return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+};
 
 const router = Router();
 
@@ -93,12 +101,13 @@ router.post('/process', upload.single('document'), async (req: ProcessDocumentRe
           result = {
             success: true,
             documentType: 'lease',
+            // cast to any to satisfy ProcessingResult structure
             extractedData: {
               tenantNames: csvResult.leaseData.map(lease => lease.tenantName),
               propertyAddress: csvResult.leaseData[0]?.address || '',
               leaseData: csvResult.leaseData,
               propertyMatches: csvResult.propertyMatches
-            },
+            } as any,
             confidence: 0.95,
             warnings: csvResult.warnings,
             suggestedActions: [
@@ -158,7 +167,7 @@ router.post('/process', upload.single('document'), async (req: ProcessDocumentRe
       filePath,
       documentType: result.documentType,
       extractedData: JSON.stringify(result.extractedData),
-      confidence: result.confidence,
+      confidence: new Decimal(result.confidence).toFixed(2),
       success: result.success,
       errors: result.errors,
       warnings: result.warnings,
@@ -363,12 +372,13 @@ async function updatePropertyFromLease(propertyId: number, leaseData: any, appro
     // Update or create rent roll entry with correct field mapping for property modal
     const rentRollData = {
       propertyId,
-      unit: leaseData.unitNumber || '1',
-      currentRent: leaseData.monthlyRent,
-      proFormaRent: leaseData.monthlyRent,
+      unitTypeId: 'generic',
+      unitNumber: leaseData.unitNumber || '1',
+      currentRent: leaseData.monthlyRent?.toString() || '0',
+      proFormaRent: leaseData.monthlyRent?.toString() || '0',
       tenantName: Array.isArray(leaseData.tenantNames) ? leaseData.tenantNames[0] : leaseData.tenantNames,
-      leaseStart: leaseData.leaseStartDate,
-      leaseEnd: leaseData.leaseEndDate
+      leaseStart: toDateString(leaseData.leaseStartDate),
+      leaseEnd: toDateString(leaseData.leaseEndDate)
     };
 
     if (existingRentRoll.length > 0) {
@@ -376,7 +386,7 @@ async function updatePropertyFromLease(propertyId: number, leaseData: any, appro
         .set(rentRollData)
         .where(and(
           eq(propertyRentRoll.propertyId, propertyId),
-          eq(propertyRentRoll.unit, leaseData.unitNumber || '1')
+          eq(propertyRentRoll.unitNumber, leaseData.unitNumber || '1')
         ));
     } else {
       await db.insert(propertyRentRoll).values(rentRollData);
@@ -426,15 +436,20 @@ async function updatePropertyFromMortgage(propertyId: number, mortgageData: any,
   if (mortgageData.currentBalance && mortgageData.lenderName) {
     const loanData = {
       propertyId,
-      lenderName: mortgageData.lenderName,
-      loanNumber: mortgageData.loanNumber,
-      currentBalance: mortgageData.currentBalance,
-      monthlyPayment: mortgageData.monthlyPayment,
-      interestRate: mortgageData.interestRate,
-      escrowBalance: mortgageData.escrowBalance,
-      nextPaymentDate: mortgageData.nextPaymentDate,
-      statementDate: mortgageData.statementDate,
-      maturityDate: mortgageData.maturityDate,
+      loanName: mortgageData.loanNumber || mortgageData.lenderName || 'Loan',
+      loanType: 'acquisition' as const,
+      originalAmount: mortgageData.currentBalance?.toString() || '0',
+      currentBalance: mortgageData.currentBalance?.toString() || '0',
+      interestRate: new Decimal(mortgageData.interestRate || 0).toFixed(4),
+      termYears: 30,
+      monthlyPayment: mortgageData.monthlyPayment?.toString() || '0',
+      paymentType: 'principal_and_interest' as const,
+      maturityDate: toDateString(mortgageData.maturityDate) || toDateString(new Date()),
+      isActive: true,
+      lender: mortgageData.lenderName,
+      escrowBalance: mortgageData.escrowBalance?.toString() || null,
+      nextPaymentDate: toDateString(mortgageData.nextPaymentDate),
+      statementDate: toDateString(mortgageData.statementDate),
       syncStatus: 'success' as const,
       lastSyncDate: new Date()
     };
@@ -444,7 +459,7 @@ async function updatePropertyFromMortgage(propertyId: number, mortgageData: any,
       .from(propertyLoans)
       .where(and(
         eq(propertyLoans.propertyId, propertyId),
-        eq(propertyLoans.loanNumber, mortgageData.loanNumber)
+        eq(propertyLoans.loanName, mortgageData.loanNumber || mortgageData.lenderName)
       ))
       .limit(1);
 
