@@ -159,9 +159,9 @@ router.post('/process', upload.single('document'), async (req: ProcessDocumentRe
     const processingRecord = await db.insert(documentProcessingHistory).values({
       fileName,
       filePath,
-      documentType: result.documentType,
-      extractedData: JSON.stringify(result.extractedData),
-      confidence: new Decimal(result.confidence).toFixed(2),
+      documentType: result.documentType || 'unknown',
+      extractedData: JSON.stringify(result.extractedData ?? {}),
+      confidence: new Decimal(result.confidence ?? 0).toFixed(2),
       success: result.success,
       errors: result.errors,
       warnings: result.warnings,
