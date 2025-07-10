@@ -469,8 +469,32 @@ export class DatabaseStorage implements IStorage {
         }
       }
       
+      // Convert snake_case database fields to camelCase for Property interface
       return {
-        ...row,
+        id: row.id,
+        entity: row.entity,
+        status: row.status,
+        apartments: row.apartments,
+        address: row.address,
+        city: row.city,
+        state: row.state,
+        zipCode: row.zip_code,
+        acquisitionDate: row.acquisition_date,
+        acquisitionPrice: row.acquisition_price,
+        rehabCosts: row.rehab_costs,
+        arvAtTimePurchased: row.arv_at_time_purchased,
+        salePrice: row.sale_price,
+        totalProfits: row.total_profits,
+        initialCapitalRequired: row.initial_capital_required,
+        cashFlow: row.cash_flow,
+        cashOnCashReturn: row.cash_on_cash_return,
+        annualizedReturn: row.annualized_return,
+        yearsHeld: row.years_held,
+        legalNotes: row.legal_notes,
+        broker: row.broker,
+        isFeatured: row.is_featured,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
         dealAnalyzerData: parsedDealAnalyzerData,
         rentRoll: row.rent_roll || [],
         unitTypes: row.unit_types || [],
