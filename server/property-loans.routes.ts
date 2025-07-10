@@ -98,6 +98,37 @@ function toNewLoan(propertyId: number, input: z.infer<typeof loanInputSchema>): 
   } as NewLoan;
 }
 
+// Partial builder for PATCH/PUT operations
+function toLoanUpdate(input: Partial<z.infer<typeof loanInputSchema>>): Partial<NewLoan> {
+  const out: Partial<NewLoan> = {};
+
+  if (input.loanName !== undefined) out.loanName = input.loanName;
+  if (input.loanType !== undefined) out.loanType = input.loanType;
+  if (input.originalAmount !== undefined) out.originalAmount = input.originalAmount.toString();
+  if (input.currentBalance !== undefined) out.currentBalance = input.currentBalance.toString();
+  if (input.interestRate !== undefined) {
+    out.interestRate = typeof input.interestRate === 'number' ? input.interestRate.toFixed(4) : input.interestRate;
+  }
+  if (input.termYears !== undefined) out.termYears = input.termYears;
+  if (input.monthlyPayment !== undefined) out.monthlyPayment = input.monthlyPayment.toString();
+  if (input.paymentType !== undefined) out.paymentType = input.paymentType;
+  if (input.maturityDate !== undefined) out.maturityDate = input.maturityDate;
+  if (input.isActive !== undefined) out.isActive = input.isActive;
+  if (input.lender !== undefined) out.lender = input.lender ?? null;
+  if (input.notes !== undefined) out.notes = input.notes ?? null;
+
+  if (input.externalLoanId !== undefined) out.externalLoanId = input.externalLoanId ?? null;
+  if (input.principalBalance !== undefined) out.principalBalance = input.principalBalance ? input.principalBalance.toString() : null;
+  if (input.nextPaymentDate !== undefined) out.nextPaymentDate = input.nextPaymentDate;
+  if (input.nextPaymentAmount !== undefined) out.nextPaymentAmount = input.nextPaymentAmount ? input.nextPaymentAmount.toString() : null;
+  if (input.lastPaymentDate !== undefined) out.lastPaymentDate = input.lastPaymentDate;
+  if (input.lastPaymentAmount !== undefined) out.lastPaymentAmount = input.lastPaymentAmount ? input.lastPaymentAmount.toString() : null;
+  if (input.escrowBalance !== undefined) out.escrowBalance = input.escrowBalance ? input.escrowBalance.toString() : null;
+  if (input.remainingTerm !== undefined) out.remainingTerm = input.remainingTerm;
+
+  return out;
+}
+
 const router = Router();
 
 // Get all loans for a property
@@ -161,9 +192,8 @@ router.post('/property/:propertyId/loans', authenticateSession, async (req, res)
 router.put('/loans/:loanId', authenticateSession, async (req, res) => {
   try {
     const loanId = parseInt(req.params.loanId);
-    const userId = req.session.user?.id;
-
-    // Get loan with property info (ownership verified through entity memberships)
+    
+    // Verify loan exists and belongs to user via property linkage (left as-is)
     const loanWithProperty = await db.select({
       loanId: propertyLoans.id,
       propertyEntity: properties.entity
@@ -172,23 +202,31 @@ router.put('/loans/:loanId', authenticateSession, async (req, res) => {
       .innerJoin(properties, eq(propertyLoans.propertyId, properties.id))
       .where(eq(propertyLoans.id, loanId))
       .limit(1);
-
+ 
     if (loanWithProperty.length === 0) {
       return res.status(404).json({ error: 'Loan not found' });
     }
+ 
+    const parsed = loanInputSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.errors });
+    }
 
-    const updateData = { ...req.body };
-    delete updateData.id; // Don't allow updating the ID
-    
-    const updatedLoan = await db.update(propertyLoans)
+    const updateData = toLoanUpdate(parsed.data);
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No updatable fields supplied' });
+    }
+ 
+    const [updatedLoan] = await db.update(propertyLoans)
       .set(updateData)
       .where(eq(propertyLoans.id, loanId))
       .returning();
-
-    res.json(updatedLoan[0]);
+ 
+    res.json(updatedLoan);
   } catch (error) {
-    console.error('Error updating property loan:', error);
-    res.status(500).json({ error: 'Failed to update property loan' });
+    const err = error instanceof Error ? error : new Error('Unknown error');
+    console.error('Error updating property loan:', err);
+    res.status(500).json({ error: 'Failed to update property loan', details: err.message });
   }
 });
 
@@ -226,21 +264,24 @@ router.delete('/loans/:loanId', authenticateSession, async (req, res) => {
 router.post('/property/:propertyId/loans/sync', authenticateSession, async (req, res) => {
   try {
     const propertyId = parseInt(req.params.propertyId);
-    const userId = req.session.user?.id;
-
-    // Get property (ownership verified through entity memberships)
+ 
     const property = await db.select()
       .from(properties)
       .where(eq(properties.id, propertyId))
       .limit(1);
-
+ 
     if (property.length === 0) {
       return res.status(404).json({ error: 'Property not found' });
     }
-
-    const { loanData } = req.body; // Expected to be parsed loan data from document parser
-
-    // Update or create loan record with synced data
+ 
+    const { loanData } = req.body;
+    if (!loanData) {
+      return res.status(400).json({ error: 'loanData missing in request body' });
+    }
+ 
+    // Convert incoming lender numbers/strings to table-ready strings
+    const toMoneyString = (v: any) => (v !== undefined && v !== null ? v.toString() : null);
+ 
     const existingLoan = await db.select()
       .from(propertyLoans)
       .where(and(
@@ -248,64 +289,56 @@ router.post('/property/:propertyId/loans/sync', authenticateSession, async (req,
         eq(propertyLoans.externalLoanId, loanData.loanId)
       ))
       .limit(1);
-
+ 
+    const commonFields = {
+      currentBalance: toMoneyString(loanData.currentBalance),
+      principalBalance: toMoneyString(loanData.principalBalance),
+      interestRate: (loanData.interestRate / 100).toFixed(4),
+      monthlyPayment: toMoneyString(loanData.monthlyPayment),
+      nextPaymentDate: parseDate(loanData.nextPaymentDate),
+      nextPaymentAmount: toMoneyString(loanData.nextPaymentAmount),
+      lastPaymentDate: parseDate(loanData.lastPaymentDate),
+      lastPaymentAmount: toMoneyString(loanData.lastPaymentAmount),
+      escrowBalance: toMoneyString(loanData.escrowBalance),
+      remainingTerm: loanData.remainingTerm ?? null,
+      lastSyncDate: new Date(),
+    } as Partial<NewLoan>;
+ 
     if (existingLoan.length > 0) {
-      // Update existing loan
-      const updatedLoan = await db.update(propertyLoans)
-        .set({
-          currentBalance: loanData.currentBalance.toString(),
-          principalBalance: loanData.principalBalance?.toString() || null,
-          interestRate: (loanData.interestRate / 100).toString(),
-          monthlyPayment: loanData.monthlyPayment.toString(),
-          nextPaymentDate: parseDate(loanData.nextPaymentDate),
-          nextPaymentAmount: loanData.nextPaymentAmount?.toString() || null,
-          lastPaymentDate: parseDate(loanData.lastPaymentDate),
-          lastPaymentAmount: loanData.lastPaymentAmount?.toString() || null,
-          escrowBalance: loanData.escrowBalance?.toString() || null,
-          remainingTerm: loanData.remainingTerm || null,
-          lastSyncDate: new Date(),
-          syncStatus: 'success',
-          syncError: null
-        })
+      const [updatedLoan] = await db.update(propertyLoans)
+        .set({ ...commonFields, syncStatus: 'success', syncError: null })
         .where(eq(propertyLoans.id, existingLoan[0].id))
         .returning();
-
-      res.json({ success: true, loan: updatedLoan[0], action: 'updated' });
-    } else {
-      // Create new loan
-      const newLoan = await db.insert(propertyLoans)
-        .values({
-          propertyId,
-          loanName: `${loanData.lenderName} Loan`,
-          loanType: 'acquisition',
-          originalAmount: loanData.currentBalance.toString(),
-          currentBalance: loanData.currentBalance.toString(),
-          interestRate: (loanData.interestRate / 100).toString(),
-          termYears: 30, // Default, can be updated manually
-          monthlyPayment: loanData.monthlyPayment.toString(),
-          paymentType: 'principal_and_interest',
-          maturityDate: new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000),
-          isActive: true, // First loan is active by default
-          lender: loanData.lenderName,
-          externalLoanId: loanData.loanId,
-          principalBalance: loanData.principalBalance?.toString() || null,
-          nextPaymentDate: parseDate(loanData.nextPaymentDate),
-          nextPaymentAmount: loanData.nextPaymentAmount?.toString() || null,
-          lastPaymentDate: parseDate(loanData.lastPaymentDate),
-          lastPaymentAmount: loanData.lastPaymentAmount?.toString() || null,
-          escrowBalance: loanData.escrowBalance?.toString() || null,
-          remainingTerm: loanData.remainingTerm || null,
-          lastSyncDate: new Date(),
-          syncStatus: 'success',
-          syncError: null
-        })
-        .returning();
-
-      res.json({ success: true, loan: newLoan[0], action: 'created' });
+ 
+      return res.json({ success: true, loan: updatedLoan, action: 'updated' });
     }
+ 
+    const newLoan: NewLoan = {
+      propertyId,
+      loanName: `${loanData.lenderName} Loan`,
+      loanType: 'acquisition',
+      originalAmount: toMoneyString(loanData.currentBalance)!,
+      currentBalance: toMoneyString(loanData.currentBalance)!,
+      interestRate: (loanData.interestRate / 100).toFixed(4),
+      termYears: 30,
+      monthlyPayment: toMoneyString(loanData.monthlyPayment)!,
+      paymentType: 'principal_and_interest',
+      maturityDate: new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000),
+      isActive: true,
+      lender: loanData.lenderName,
+      externalLoanId: loanData.loanId,
+      ...commonFields,
+      syncStatus: 'success',
+      syncError: null,
+    };
+ 
+    const [created] = await db.insert(propertyLoans).values(newLoan).returning();
+ 
+    return res.json({ success: true, loan: created, action: 'created' });
   } catch (error) {
-    console.error('Error syncing property loan:', error);
-    res.status(500).json({ error: 'Failed to sync property loan' });
+    const err = error instanceof Error ? error : new Error('Unknown error');
+    console.error('Error syncing property loan:', err);
+    res.status(500).json({ error: 'Failed to sync property loan', details: err.message });
   }
 });
 
