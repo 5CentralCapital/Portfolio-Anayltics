@@ -1,20 +1,7 @@
 import { Router } from 'express';
 import { db } from './db';
-import { propertyLoans } from '../shared/schema';
-
-// Helper function to safely convert dates for PostgreSQL
-function parseDate(dateValue: any): Date | null {
-  if (!dateValue) return null;
-  if (dateValue instanceof Date) return dateValue;
-  
-  // Handle different date formats
-  if (typeof dateValue === 'string') {
-    const parsedDate = new Date(dateValue);
-    return isNaN(parsedDate.getTime()) ? null : parsedDate;
-  }
-  
-  return null;
-}
+import { propertyLoans } from '@shared/schema';
+import { toDateString } from '@shared/utils';
 
 const router = Router();
 
@@ -34,13 +21,13 @@ router.post('/manual-review', async (req, res) => {
       termYears: 30,
       monthlyPayment: editedLoan.monthlyPayment?.toString() || '0',
       paymentType: 'principal_and_interest',
-      maturityDate: parseDate(editedLoan.nextPaymentDate) || new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000),
+      maturityDate: toDateString(editedLoan.nextPaymentDate) || toDateString(new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000))!,
       isActive: true,
       lender: editedLoan.lender,
       externalLoanId: editedLoan.loanId,
       principalBalance: editedLoan.balance.toString(),
-      nextPaymentDate: parseDate(editedLoan.nextPaymentDate),
-      nextPaymentAmount: editedLoan.monthlyPayment?.toString() || '0',
+      nextPaymentDate: toDateString(editedLoan.nextPaymentDate),
+      nextPaymentAmount: (editedLoan.nextPaymentAmount || editedLoan.monthlyPayment || 0).toString(),
       escrowBalance: '0',
       lastSyncDate: new Date(),
       syncStatus: 'success',

@@ -117,8 +117,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Set up session data
-      (req as any).session.userId = user.id;
-      (req as any).session.userEmail = user.email;
+      req.session.userId = user.id;
+      req.session.userEmail = user.email;
 
       // Also create session token for backward compatibility
       const sessionToken = `session_${user.id}_${Date.now()}_${Math.random().toString(36)}`;
