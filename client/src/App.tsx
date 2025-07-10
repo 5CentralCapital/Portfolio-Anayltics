@@ -48,7 +48,6 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/portfolio" element={<Portfolio />} />
                 <Route path="/portfolio-cards" element={<PortfolioCards />} />
-                <Route path="/deals" element={<Portfolio />} /> {/* Redirect old URL */}
                 <Route path="/founder" element={<Founder />} />
                 <Route path="/vision" element={<Vision />} />
                 <Route path="/goals" element={<Vision />} /> {/* Redirect old URL */}
