@@ -240,8 +240,8 @@ router.get('/download/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Document not found' });
     }
     
-    const filePath = record.filePath;
-    if (!fs.existsSync(filePath)) {
+    const filePath: string | null = record.filePath;
+    if (!filePath || !fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'Original file not found' });
     }
     
