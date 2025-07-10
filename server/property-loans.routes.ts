@@ -10,17 +10,14 @@ import { eq, and } from 'drizzle-orm';
 import { InferInsertModel } from 'drizzle-orm';
 import { z } from 'zod';
 
-// Helper function to safely convert dates for PostgreSQL
-function parseDate(dateValue: any): Date | null {
-  if (!dateValue) return null;
-  if (dateValue instanceof Date) return dateValue;
-  
-  // Handle different date formats
-  if (typeof dateValue === 'string') {
-    const parsedDate = new Date(dateValue);
-    return isNaN(parsedDate.getTime()) ? null : parsedDate;
+// Helper – convert many possible inputs to an ISO `YYYY-MM-DD` string (or null)
+function toDateString(value: unknown): string | null {
+  if (!value) return null;
+  if (value instanceof Date) return value.toISOString().split('T')[0];
+  if (typeof value === 'string') {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
   }
-  
   return null;
 }
 // Authentication middleware
@@ -77,16 +74,16 @@ function toNewLoan(propertyId: number, input: z.infer<typeof loanInputSchema>): 
     termYears: input.termYears,
     monthlyPayment: input.monthlyPayment.toString(),
     paymentType: input.paymentType,
-    maturityDate: input.maturityDate ?? new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000),
+    maturityDate: toDateString(input.maturityDate ?? new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000))!,
     isActive: input.isActive,
     lender: input.lender ?? null,
     notes: input.notes ?? null,
 
     externalLoanId: input.externalLoanId ?? null,
     principalBalance: input.principalBalance ? input.principalBalance.toString() : null,
-    nextPaymentDate: input.nextPaymentDate ?? null,
+    nextPaymentDate: toDateString(input.nextPaymentDate),
     nextPaymentAmount: input.nextPaymentAmount ? input.nextPaymentAmount.toString() : null,
-    lastPaymentDate: input.lastPaymentDate ?? null,
+    lastPaymentDate: toDateString(input.lastPaymentDate),
     lastPaymentAmount: input.lastPaymentAmount ? input.lastPaymentAmount.toString() : null,
     escrowBalance: input.escrowBalance ? input.escrowBalance.toString() : null,
     remainingTerm: input.remainingTerm ?? null,
@@ -112,16 +109,16 @@ function toLoanUpdate(input: Partial<z.infer<typeof loanInputSchema>>): Partial<
   if (input.termYears !== undefined) out.termYears = input.termYears;
   if (input.monthlyPayment !== undefined) out.monthlyPayment = input.monthlyPayment.toString();
   if (input.paymentType !== undefined) out.paymentType = input.paymentType;
-  if (input.maturityDate !== undefined) out.maturityDate = input.maturityDate;
+  if (input.maturityDate !== undefined) out.maturityDate = toDateString(input.maturityDate)!;
   if (input.isActive !== undefined) out.isActive = input.isActive;
   if (input.lender !== undefined) out.lender = input.lender ?? null;
   if (input.notes !== undefined) out.notes = input.notes ?? null;
 
   if (input.externalLoanId !== undefined) out.externalLoanId = input.externalLoanId ?? null;
   if (input.principalBalance !== undefined) out.principalBalance = input.principalBalance ? input.principalBalance.toString() : null;
-  if (input.nextPaymentDate !== undefined) out.nextPaymentDate = input.nextPaymentDate;
+  if (input.nextPaymentDate !== undefined) out.nextPaymentDate = toDateString(input.nextPaymentDate);
   if (input.nextPaymentAmount !== undefined) out.nextPaymentAmount = input.nextPaymentAmount ? input.nextPaymentAmount.toString() : null;
-  if (input.lastPaymentDate !== undefined) out.lastPaymentDate = input.lastPaymentDate;
+  if (input.lastPaymentDate !== undefined) out.lastPaymentDate = toDateString(input.lastPaymentDate);
   if (input.lastPaymentAmount !== undefined) out.lastPaymentAmount = input.lastPaymentAmount ? input.lastPaymentAmount.toString() : null;
   if (input.escrowBalance !== undefined) out.escrowBalance = input.escrowBalance ? input.escrowBalance.toString() : null;
   if (input.remainingTerm !== undefined) out.remainingTerm = input.remainingTerm;
@@ -295,9 +292,9 @@ router.post('/property/:propertyId/loans/sync', authenticateSession, async (req,
       principalBalance: toMoneyString(loanData.principalBalance),
       interestRate: (loanData.interestRate / 100).toFixed(4),
       monthlyPayment: toMoneyString(loanData.monthlyPayment),
-      nextPaymentDate: parseDate(loanData.nextPaymentDate),
+      nextPaymentDate: toDateString(loanData.nextPaymentDate),
       nextPaymentAmount: toMoneyString(loanData.nextPaymentAmount),
-      lastPaymentDate: parseDate(loanData.lastPaymentDate),
+      lastPaymentDate: toDateString(loanData.lastPaymentDate),
       lastPaymentAmount: toMoneyString(loanData.lastPaymentAmount),
       escrowBalance: toMoneyString(loanData.escrowBalance),
       remainingTerm: loanData.remainingTerm ?? null,
@@ -323,7 +320,7 @@ router.post('/property/:propertyId/loans/sync', authenticateSession, async (req,
       termYears: 30,
       monthlyPayment: toMoneyString(loanData.monthlyPayment)!,
       paymentType: 'principal_and_interest',
-      maturityDate: new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000),
+      maturityDate: toDateString(new Date(Date.now() + 30 * 365 * 24 * 60 * 60 * 1000))!,
       isActive: true,
       lender: loanData.lenderName,
       externalLoanId: loanData.loanId,
