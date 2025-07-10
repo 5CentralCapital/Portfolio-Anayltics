@@ -13,7 +13,9 @@ import {
   propertyCashFlow,
   propertyIncomeOther
 } from "@shared/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import Decimal from "decimal.js-light";
+import { calculateKpis, IncomeStatement, KpiContext } from "@shared/finance";
 
 export interface PropertyMetrics {
   // Core Financial Metrics
@@ -120,9 +122,26 @@ export class CalculationService {
     const currentEquityValue = currentArv - currentLoanBalance;
 
     // Calculate ratios and returns
-    const capRate = currentArv > 0 ? netOperatingIncome / currentArv : 0;
-    // Cash-on-Cash Return = Annual Cash Flow / Total Invested Capital (as percentage)
-    const cashOnCashReturn = totalInvestedCapital > 0 ? (beforeTaxCashFlow / totalInvestedCapital) * 100 : 0;
+    // Use unified finance kernel --------------------------------------------------
+    const stmt: IncomeStatement = {
+      grossRentalIncome,
+      otherIncome: totalOtherIncome,
+      vacancyRate: new Decimal(vacancyRate),
+      badDebtRate: new Decimal(0), // Assuming no bad debt for now
+      operatingExpenses: totalOperatingExpenses,
+      annualDebtService,
+    };
+
+    const ctx: KpiContext = {
+      purchasePrice: Number(assumptions.purchasePrice),
+      arv: currentArv,
+      investedCapital: totalInvestedCapital,
+    };
+
+    const kpi = calculateKpis(stmt, ctx);
+
+    const capRate = kpi.capRate.toNumber();
+    const cashOnCashReturn = kpi.cashOnCash.mul(100).toNumber();
     // Calculate equity multiple based on property status
     let equityMultiple = 0;
     const propertyRecord = await db.select().from(properties).where(eq(properties.id, propertyId)).then(rows => rows[0]);
@@ -137,7 +156,7 @@ export class CalculationService {
       const capitalRequired = Number(propertyRecord?.initialCapitalRequired || 0);
       equityMultiple = capitalRequired > 0 ? (currentArv - allInCost) / capitalRequired : 0;
     }
-    const dscr = annualDebtService > 0 ? netOperatingIncome / annualDebtService : 0;
+    const dscr = kpi.dscr.toNumber();
     const loanToValue = currentArv > 0 ? currentLoanBalance / currentArv : 0;
     const debtYield = currentLoanBalance > 0 ? netOperatingIncome / currentLoanBalance : 0;
 
