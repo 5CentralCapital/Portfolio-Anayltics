@@ -578,10 +578,13 @@ router.post('/manual-review', async (req, res) => {
         
         // If no unit number found, generate one based on existing rent roll
         if (!unitNumber) {
-          const existingUnits = rentRoll.map(entry => {
-            const num = entry.unitNumber?.replace(/\D/g, '') || entry.unit?.replace(/\D/g, '');
-            return parseInt(num) || 0;
-          }).filter(num => num > 0);
+          const existingUnits = rentRoll
+            .map((entry: { unitNumber?: string; unit?: string }) => {
+              const raw = entry.unitNumber ?? entry.unit ?? '';
+              const digits = raw.replace(/\D/g, '');
+              return Number.parseInt(digits) || 0;
+            })
+            .filter((num: number) => num > 0);
           const maxUnit = Math.max(0, ...existingUnits);
           unitNumber = `${maxUnit + 1}`;
         }
@@ -622,7 +625,7 @@ router.post('/manual-review', async (req, res) => {
             const [createdTenantDetails] = await db.insert(tenantDetails).values(tenantDetailsData).returning();
             
             // Find existing rent roll entry for this tenant or unit
-            let existingEntryIndex = rentRoll.findIndex(entry => 
+            let existingEntryIndex = rentRoll.findIndex((entry: any) => 
               entry.tenantName?.toLowerCase() === tenantName.toLowerCase() ||
               entry.unitNumber === unitNumber ||
               entry.unit === unitNumber
@@ -686,7 +689,7 @@ router.post('/manual-review', async (req, res) => {
           const loans = existingDealData.loans || [];
           
           // Find existing loan or create new one
-          let loanIndex = loans.findIndex(loan => 
+          let loanIndex = loans.findIndex((loan: any) => 
             loan.name?.toLowerCase().includes(extractedData.lenderName?.toLowerCase()) ||
             loan.lender?.toLowerCase().includes(extractedData.lenderName?.toLowerCase())
           );
