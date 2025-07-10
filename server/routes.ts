@@ -462,7 +462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard", authenticateUser, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const properties = await storage.getPropertiesForUser(userId);
+      const properties = await storage.getPropertiesForUserOptimized(userId);
       const latestMetrics = await storage.getLatestCompanyMetrics();
       const investorLeads = await storage.getInvestorLeads();
 
@@ -560,7 +560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/property-performance", authenticateUser, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const properties = await storage.getPropertiesForUser(userId);
+      const properties = await storage.getPropertiesForUserOptimized(userId);
       
       // Transform properties to match the expected format
       const transformedProperties = properties.map(p => ({
@@ -625,7 +625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/properties", authenticateUser, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const properties = await storage.getPropertiesForUser(userId);
+      const properties = await storage.getPropertiesForUserOptimized(userId);
       
       // Debug log to check rent roll data
       if (properties.length > 0) {

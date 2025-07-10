@@ -60,18 +60,12 @@ export class CalculationService {
           '[]'::json
         ) as property_loans,
         COALESCE(
-          json_agg(DISTINCT jsonb_build_object(
-            'id', pa.id,
-            'vacancyRate', pa.vacancy_rate,
-            'expenseRatio', pa.expense_ratio,
-            'managementFee', pa.management_fee,
-            'marketCapRate', pa.market_cap_rate,
-            'loanPercentage', pa.loan_percentage,
-            'interestRate', pa.interest_rate,
-            'loanTermYears', pa.loan_term_years
-          )) FILTER (WHERE pa.id IS NOT NULL),
-          '[]'::json
-        ) as assumptions_array,
+          (SELECT row_to_json(pa.*) 
+           FROM property_assumptions pa 
+           WHERE pa.property_id = p.id 
+           LIMIT 1),
+          null
+        ) as assumptions_data,
         COALESCE(
           json_agg(DISTINCT jsonb_build_object(
             'id', pe.id,
@@ -93,10 +87,9 @@ export class CalculationService {
         ) as unit_types
       FROM properties p
       LEFT JOIN property_rent_roll rr ON rr.property_id = p.id
-      LEFT JOIN property_loans pl ON pl.property_id = p.id
-      LEFT JOIN property_assumptions pa ON pa.property_id = p.id
-      LEFT JOIN property_expenses pe ON pe.property_id = p.id
       LEFT JOIN property_unit_types ut ON ut.property_id = p.id
+      LEFT JOIN property_loans pl ON pl.property_id = p.id
+      LEFT JOIN property_expenses pe ON pe.property_id = p.id
       WHERE p.id = ${propertyId}
       GROUP BY p.id
     `;
@@ -120,7 +113,7 @@ export class CalculationService {
       rehabCosts: row.rehab_costs,
       rentRoll: row.rent_roll || [],
       propertyLoans: row.property_loans || [],
-      assumptions: row.assumptions_array?.[0] || null,
+      assumptions: row.assumptions_data || null,
       expenses: row.expenses || [],
       unitTypes: row.unit_types || [],
       dealAnalyzerData: row.deal_analyzer_data
