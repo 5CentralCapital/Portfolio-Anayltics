@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CalculationsProvider } from './contexts/CalculationsContext';
 import Navigation from './components/Navigation';
@@ -54,7 +54,7 @@ function App() {
                 <Route path="/goals" element={<Vision />} /> {/* Redirect old URL */}
                 <Route path="/investor" element={<Investor />} />
                 <Route path="/investor-portal" element={<InvestorPortal />} />
-                <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/admin-login" element={<Navigate to="/admin-dashboard" replace />} />
                 <Route path="/admin-dashboard" element={<AdminDashboard />} />
                 <Route path="/account-setup" element={<AccountSetup />} />
                 <Route path="/deals" element={<DealsList />} />

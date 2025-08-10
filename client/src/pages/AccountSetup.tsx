@@ -153,7 +153,7 @@ const AccountSetup: React.FC = () => {
       
       // Redirect to login page after 2 seconds
       setTimeout(() => {
-        navigate("/admin-login");
+        navigate("/admin-dashboard");
       }, 2000);
     } catch (error) {
       showMessage('error', error instanceof Error ? error.message : "An error occurred");
@@ -440,7 +440,7 @@ const AccountSetup: React.FC = () => {
           <div className="flex gap-4">
             <button
               type="button"
-              onClick={() => navigate("/admin-login")}
+              onClick={() => navigate("/admin-dashboard")}
               className="flex-1 py-2 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Back to Login

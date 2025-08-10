@@ -36,11 +36,13 @@ export interface MarketRates {
 class FederalReserveService {
   private readonly apiKey: string;
   private readonly baseUrl = 'https://api.stlouisfed.org/fred/series/observations';
+  private readonly enabled: boolean;
 
   constructor() {
     this.apiKey = process.env.FEDERAL_RESERVE_API_KEY || '';
-    if (!this.apiKey) {
-      throw new Error('FEDERAL_RESERVE_API_KEY environment variable is required');
+    this.enabled = !!this.apiKey;
+    if (!this.enabled) {
+      console.warn('FEDERAL_RESERVE_API_KEY not set; market rates will use safe fallbacks.');
     }
   }
 
@@ -49,6 +51,9 @@ class FederalReserveService {
    */
   private async fetchRate(seriesId: string): Promise<number | null> {
     try {
+      if (!this.enabled) {
+        return null;
+      }
       const url = new URL(this.baseUrl);
       url.searchParams.set('series_id', seriesId);
       url.searchParams.set('api_key', this.apiKey);

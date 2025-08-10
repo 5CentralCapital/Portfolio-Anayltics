@@ -1,12 +1,11 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
 import propertyLoansRoutes from "./property-loans.routes";
-import leaseRoutes from "./lease.routes";
-import aiDocumentRoutes from "./routes/ai-documents";
+// removed legacy document/upload routes
 import tenantDetailsRoutes from "./routes/tenant-details";
-import openaiModelsRoutes from "./routes/openai-models";
-import geminiModelsRoutes from "./routes/gemini-models";
+// removed model list routes
 import portfolioRoutes from "./routes/portfolio";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -28,20 +27,12 @@ app.use(session({
 // Register property loans routes
 app.use('/api', propertyLoansRoutes);
 
-// Register lease processing routes
-app.use('/api/leases', leaseRoutes);
-
-// Register AI document processing routes
-app.use('/api/ai-documents', aiDocumentRoutes);
+// removed document routes
 
 // Register tenant details routes
 app.use('/api/tenant-details', tenantDetailsRoutes);
 
-// Register OpenAI models routes  
-app.use('/api/openai/models', openaiModelsRoutes);
-
-// Register Gemini models routes
-app.use('/api/gemini', geminiModelsRoutes);
+// removed model routes
 
 // Register portfolio routes
 app.use('/api/portfolio', portfolioRoutes);
@@ -105,15 +96,9 @@ app.use((req, res, next) => {
       serveStatic(app);
     }
 
-    // ALWAYS serve the app on port 5000
-    // this serves both the API and the client.
-    // It is the only port that is not firewalled.
-    const port = 5000;
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
+    // Use a single, deterministic port
+    const port = Number(process.env.PORT) || 5080;
+    server.listen(port, "0.0.0.0", () => {
       log(`serving on port ${port}`);
     });
   } catch (error) {

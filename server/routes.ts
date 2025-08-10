@@ -1,8 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { kpiService } from "./kpi.service";
+// Unified calculation service (replaces legacy KPI service)
 import { calculationService } from "./calculation.service";
 import { 
   createLinkToken, 
@@ -13,9 +12,7 @@ import {
 } from './plaid';
 import { federalReserveService } from './fed-api';
 import { censusService } from './census-api';
-import statementUploadRoutes from './statement-upload.routes';
-import leaseUploadRoutes from './routes/lease-upload';
-import aiDocumentsRoutes from './routes/ai-documents';
+// Removed legacy upload/document routes
 import { 
   insertUserSchema, insertPropertySchema, insertCompanyMetricSchema, insertInvestorLeadSchema,
   insertDealSchema, insertDealRehabSchema, insertDealUnitsSchema, insertDealExpensesSchema,
@@ -24,53 +21,13 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
-// Simple session storage (in production, use Redis or database)
-const activeSessions = new Map<string, { userId: number; email: string; createdAt: Date }>();
-
-// Middleware to authenticate users
-function authenticateUser(req: any, res: any, next: any) {
-  // First try session-based authentication
-  if (req.session && req.session.userId) {
-    req.user = { id: req.session.userId, email: req.session.userEmail };
-    return next();
-  }
-
-  // Fallback to token-based authentication
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
-    const session = activeSessions.get(token);
-    
-    if (session) {
-      req.user = { id: session.userId, email: session.email };
-      return next();
-    }
-  }
-
-  return res.status(401).json({ error: 'Authentication required' });
+// No-op auth for simplified environment
+function authenticateUser(req: any, _res: any, next: any) {
+  req.user = { id: 1, email: 'anon@example.com' };
+  next();
 }
 
-// WebSocket connections for real-time KPI updates
-const dealConnections = new Map<number, Set<WebSocket>>();
-
-// Helper function to broadcast KPI updates
-async function broadcastKPIUpdate(dealId: number) {
-  const connections = dealConnections.get(dealId);
-  if (!connections || connections.size === 0) return;
-
-  try {
-    const kpis = await kpiService.calculateKPIs(dealId);
-    const message = JSON.stringify({ type: 'kpi_update', dealId, kpis });
-    
-    connections.forEach(ws => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(message);
-      }
-    });
-  } catch (error) {
-    // Error broadcasting KPI update
-  }
-}
+// Removed WebSocket/broadcast system for simplification
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
@@ -269,8 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate and store initial metrics using the enhanced calculation service
       await calculationService.updatePropertyMetrics(newProperty.id);
       
-      // Broadcast KPI update
-      await broadcastKPIUpdate(newProperty.id);
+      // Broadcast removed
       
       res.status(201).json({
         property: newProperty,
@@ -324,8 +280,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Google Places API key endpoint for client
   app.get('/api/google-places-key', (req, res) => {
     try {
-      // Return the API key for client-side use
-      res.json({ apiKey: process.env.GOOGLE_PLACES_API_KEY });
+      const key = process.env.GOOGLE_PLACES_API_KEY;
+      if (!key) {
+        return res.status(204).send(); // no content when not configured
+      }
+      res.json({ apiKey: key });
     } catch (error) {
       console.error('Error fetching Google Places API key:', error);
       res.status(500).json({ error: 'Failed to fetch API key' });
@@ -335,6 +294,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Plaid API endpoints
   app.post('/api/plaid/create-link-token', authenticateUser, async (req: any, res) => {
     try {
+      if (!process.env.PLAID_CLIENT_ID || !process.env.PLAID_SECRET) {
+        return res.status(501).json({ error: 'Plaid not configured' });
+      }
       const userId = req.user.id.toString();
       const linkTokenData = await createLinkToken(userId);
       res.json(linkTokenData);
@@ -346,6 +308,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/plaid/exchange-public-token', authenticateUser, async (req: any, res) => {
     try {
+      if (!process.env.PLAID_CLIENT_ID || !process.env.PLAID_SECRET) {
+        return res.status(501).json({ error: 'Plaid not configured' });
+      }
       const { public_token, metadata } = req.body;
       const userId = req.user.id;
       
@@ -401,6 +366,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/plaid/refresh-balances', authenticateUser, async (req: any, res) => {
     try {
+      if (!process.env.PLAID_CLIENT_ID || !process.env.PLAID_SECRET) {
+        return res.status(501).json({ error: 'Plaid not configured' });
+      }
       const userId = req.user.id;
       const bankAccounts = await storage.getBankAccounts(userId);
       
@@ -433,6 +401,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/plaid/transactions/:accountId', authenticateUser, async (req: any, res) => {
     try {
+      if (!process.env.PLAID_CLIENT_ID || !process.env.PLAID_SECRET) {
+        return res.status(501).json({ error: 'Plaid not configured' });
+      }
       const userId = req.user.id;
       const accountId = req.params.accountId;
       const { start_date, end_date } = req.query;
@@ -461,13 +432,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard data route with dynamic calculations
   app.get("/api/dashboard", authenticateUser, async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const properties = await storage.getPropertiesForUserOptimized(userId);
+      // Show all properties in simplified dev/admin mode
+      const properties = await storage.getProperties();
       const latestMetrics = await storage.getLatestCompanyMetrics();
       const investorLeads = await storage.getInvestorLeads();
 
       // Calculate real-time portfolio statistics using calculation service
-      const portfolioMetrics = await calculationService.calculatePortfolioMetrics(userId);
+      const portfolioMetrics = await calculationService.calculatePortfolioMetrics(1);
       
       const activeProperties = properties.filter(p => p.status === 'Cashflowing' || p.status === 'Rehabbing');
       const soldProperties = properties.filter(p => p.status === 'Sold');
@@ -559,8 +530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Property performance route
   app.get("/api/property-performance", authenticateUser, async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const properties = await storage.getPropertiesForUserOptimized(userId);
+      const properties = await storage.getProperties();
       
       // Transform properties to match the expected format
       const transformedProperties = properties.map(p => ({
@@ -624,8 +594,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Properties routes
   app.get("/api/properties", authenticateUser, async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const properties = await storage.getPropertiesForUserOptimized(userId);
+      const properties = await storage.getProperties();
       
       // Debug log to check rent roll data
       if (properties.length > 0) {
@@ -849,7 +818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Deal not found" });
       }
 
-      const kpis = await kpiService.calculateKPIs(dealId);
+      const kpis = await calculationService.calculateDealKPIs(dealId);
       
       // Get all related data
       const [rehabItems, units, expenses, closingCosts, holdingCosts, loans, otherIncome, comps] = await Promise.all([
@@ -904,7 +873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Deal not found" });
       }
 
-      await broadcastKPIUpdate(dealId);
+      // broadcast removed
       res.json(deal);
     } catch (error) {
       console.error("Update deal error:", error);
@@ -919,7 +888,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const rehabData = insertDealRehabSchema.parse({ ...req.body, dealId });
       const rehab = await storage.createDealRehab(rehabData);
       
-      await broadcastKPIUpdate(dealId);
+      // broadcast removed
       res.status(201).json(rehab);
     } catch (error) {
       console.error("Create rehab error:", error);
@@ -938,7 +907,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Rehab item not found" });
       }
 
-      await broadcastKPIUpdate(dealId);
+      // broadcast removed
       res.json(rehab);
     } catch (error) {
       console.error("Update rehab error:", error);
@@ -956,7 +925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Rehab item not found" });
       }
 
-      await broadcastKPIUpdate(dealId);
+      // broadcast removed
       res.json({ success: true });
     } catch (error) {
       console.error("Delete rehab error:", error);
@@ -971,7 +940,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const unitData = insertDealUnitsSchema.parse({ ...req.body, dealId });
       const unit = await storage.createDealUnits(unitData);
       
-      await broadcastKPIUpdate(dealId);
+      // broadcast removed
       res.status(201).json(unit);
     } catch (error) {
       console.error("Create unit error:", error);
@@ -980,42 +949,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-
-  // WebSocket server for real-time KPI updates
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-
-  wss.on('connection', (ws, req) => {
-    console.log('WebSocket client connected');
-
-    ws.on('message', (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        
-        if (data.type === 'subscribe_deal' && data.dealId) {
-          const dealId = parseInt(data.dealId);
-          
-          if (!dealConnections.has(dealId)) {
-            dealConnections.set(dealId, new Set());
-          }
-          
-          dealConnections.get(dealId)!.add(ws);
-          console.log(`Client subscribed to deal ${dealId}`);
-        }
-      } catch (error) {
-        console.error('WebSocket message error:', error);
-      }
-    });
-
-    ws.on('close', () => {
-      dealConnections.forEach((connections, dealId) => {
-        connections.delete(ws);
-        if (connections.size === 0) {
-          dealConnections.delete(dealId);
-        }
-      });
-      console.log('WebSocket client disconnected');
-    });
-  });
   
   // Federal Reserve API endpoints
   app.get('/api/market-rates', async (req, res) => {
@@ -1090,14 +1023,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Statement upload routes
-  app.use('/api/statements', statementUploadRoutes);
-
-  // Lease upload routes
-  app.use('/api/leases', leaseUploadRoutes);
-
-  // AI document processing routes
-  app.use('/api/ai-documents', aiDocumentsRoutes);
+  // Removed statement, lease, and AI document routes
 
   return httpServer;
 }

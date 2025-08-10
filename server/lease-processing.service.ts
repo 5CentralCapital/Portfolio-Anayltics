@@ -5,7 +5,7 @@ import { properties, propertyRentRoll, tenantDetails } from '../shared/schema';
 import { eq, and, isNotNull, desc } from 'drizzle-orm';
 import { GoogleGenAI } from '@google/genai';
 
-const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const gemini = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
 
 export interface LeaseData {
   tenantName: string;
@@ -174,6 +174,9 @@ ${documentContent}`;
 Extract lease information from the provided document and return JSON with the exact structure specified.
 Always return valid JSON only, no additional text.`;
 
+      if (!gemini) {
+        throw new Error('Gemini is not configured');
+      }
       const response = await gemini.models.generateContent({
         model: "gemini-2.5-pro",
         config: {

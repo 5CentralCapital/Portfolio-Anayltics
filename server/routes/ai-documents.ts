@@ -143,8 +143,19 @@ router.post('/process', upload.single('document'), async (req: ProcessDocumentRe
       }
     } else {
       console.log('📄 Processing with AI (not CSV lease file)');
-      // Process with AI for non-CSV files
-      result = await aiDocumentProcessor.processDocument(filePath, fileName, model || 'gpt-4o');
+      // If AI keys are not configured, short-circuit with a safe response
+      if (!process.env.OPENAI_API_KEY && !process.env.GEMINI_API_KEY) {
+        result = {
+          success: false,
+          documentType: 'unknown',
+          extractedData: null,
+          confidence: 0,
+          errors: ['AI not configured: set OPENAI_API_KEY or GEMINI_API_KEY to enable AI document processing']
+        };
+      } else {
+        // Process with AI for non-CSV files
+        result = await aiDocumentProcessor.processDocument(filePath, fileName, model || 'gpt-4o');
+      }
     }
 
     // Store processing result

@@ -205,6 +205,133 @@ export class CalculationService {
       totalEquity
     };
   }
+
+  /**
+   * Calculate comprehensive KPIs for a deal using unified logic
+   */
+  async calculateDealKPIs(dealId: number) {
+    const { storage } = await import('./storage');
+    const deal = await storage.getDeal(dealId);
+    if (!deal) throw new Error('Deal not found');
+
+    const [rehabItems, units, expenses, closingCosts, holdingCosts, loans, otherIncome] = await Promise.all([
+      storage.getDealRehab(dealId),
+      storage.getDealUnits(dealId),
+      storage.getDealExpenses(dealId),
+      storage.getDealClosingCosts(dealId),
+      storage.getDealHoldingCosts(dealId),
+      storage.getDealLoans(dealId),
+      storage.getDealOtherIncome(dealId)
+    ]);
+
+    // Costs
+    const totalRehab = rehabItems.reduce((sum, item) => sum + Number(item.totalCost), 0);
+    const totalClosingCosts = closingCosts.reduce((sum, cost) => sum + Number(cost.amount), 0);
+    const totalHoldingCosts = holdingCosts.reduce((sum, cost) => sum + Number(cost.monthlyAmount), 0) * (Number(deal.startToStabilizationMonths) || 12);
+    const allInCost = Number(deal.purchasePrice) + totalRehab + totalClosingCosts + totalHoldingCosts;
+
+    // Income
+    const grossRentalIncome = units.reduce((sum, unit) => {
+      const rent = unit.isOccupied ? Number(unit.currentRent) : Number(unit.marketRent);
+      return sum + rent * 12;
+    }, 0);
+    const totalOtherIncome = otherIncome.reduce((sum, income) => sum + Number(income.monthlyAmount) * 12, 0);
+    const vacancyLoss = grossRentalIncome * Number(deal.vacancyRate || 0);
+    const badDebtLoss = grossRentalIncome * Number(deal.badDebtRate || 0);
+    const effectiveGrossIncome = grossRentalIncome + totalOtherIncome - vacancyLoss - badDebtLoss;
+
+    // Expenses
+    const totalOperatingExpenses = expenses.reduce((sum, expense) => {
+      if (expense.isPercentOfRent && expense.percentage) {
+        return sum + grossRentalIncome * Number(expense.percentage);
+      }
+      return sum + Number(expense.monthlyAmount) * 12;
+    }, 0);
+    const capexReserve = Number(deal.capexReservePerUnit || 0) * Number(deal.units || 0);
+    const adjustedOperatingExpenses = totalOperatingExpenses + capexReserve;
+    const netOperatingIncome = effectiveGrossIncome - adjustedOperatingExpenses;
+
+    // Debt service
+    const activeLoan = loans.find(l => l.isActive) || loans.find(l => l.loanType === 'acquisition') || loans[0];
+    let monthlyDebtService = 0;
+    let annualDebtService = 0;
+    if (activeLoan) {
+      const loanAmount = Number(activeLoan.loanAmount);
+      const monthlyRate = Number(activeLoan.interestRate) / 12;
+      const totalPayments = Number(activeLoan.amortizationYears) * 12;
+      if (activeLoan.ioMonths && Number(activeLoan.ioMonths) > 0) {
+        monthlyDebtService = loanAmount * monthlyRate;
+      } else {
+        const numerator = monthlyRate * Math.pow(1 + monthlyRate, totalPayments);
+        const denominator = Math.pow(1 + monthlyRate, totalPayments) - 1;
+        monthlyDebtService = loanAmount * (numerator / denominator);
+      }
+      annualDebtService = monthlyDebtService * 12;
+    }
+
+    // Ratios
+    const arv = netOperatingIncome / Number(deal.marketCapRate || 0.01);
+    const loanPercentage = Number(deal.loanPercentage || 0);
+    const initialLoanAmount = (Number(deal.purchasePrice) + totalRehab) * loanPercentage;
+    const cashFlow = netOperatingIncome - annualDebtService;
+    const capitalRequired = allInCost - initialLoanAmount;
+    const totalCashInvested = capitalRequired + totalHoldingCosts;
+    const cashOnCashReturn = capitalRequired > 0 ? cashFlow / capitalRequired : 0;
+    const capRate = Number(deal.purchasePrice) > 0 ? netOperatingIncome / Number(deal.purchasePrice) : 0;
+    const dscr = annualDebtService > 0 ? netOperatingIncome / annualDebtService : 0;
+    const ltc = allInCost > 0 ? initialLoanAmount / allInCost : 0;
+    const ltv = arv > 0 ? initialLoanAmount / arv : 0;
+
+    // Refi
+    const refiLTV = Number(deal.refinanceLTV || 0);
+    const newLoanAmount = arv * refiLTV;
+    const existingLoanBalance = activeLoan ? Number(activeLoan.loanAmount) * 0.9 : initialLoanAmount * 0.9;
+    const cashOut = Math.max(0, newLoanAmount - existingLoanBalance);
+    const totalProfit = arv - allInCost + cashOut;
+
+    // Risk
+    const breakEvenOccupancy = (() => {
+      const fixedExpenses = totalOperatingExpenses + annualDebtService;
+      const averageRentPerUnit = Number(deal.units || 0) > 0 ? grossRentalIncome / Number(deal.units) : 0;
+      return averageRentPerUnit > 0 && Number(deal.units) > 0 ? (fixedExpenses / (averageRentPerUnit * Number(deal.units))) : 1;
+    })();
+    const isSpeculative = Number(deal.exitCapRate || deal.marketCapRate || 0) < Number(deal.marketCapRate || 0);
+    const dscrWarning = dscr < 1.15;
+    const occupancyRisk = breakEvenOccupancy > 0.90;
+
+    return {
+      totalRehab,
+      totalClosingCosts,
+      totalHoldingCosts,
+      allInCost,
+      grossRentalIncome,
+      effectiveGrossIncome,
+      netOperatingIncome,
+      totalOtherIncome,
+      totalOperatingExpenses: adjustedOperatingExpenses,
+      monthlyDebtService,
+      annualDebtService,
+      arv,
+      cashFlow,
+      cashOnCashReturn,
+      capRate,
+      dscr,
+      ltc,
+      ltv,
+      breakEvenOccupancy,
+      irr: 0,
+      equityMultiple: capitalRequired > 0 ? (arv - initialLoanAmount) / capitalRequired : 0,
+      newLoanAmount,
+      cashOut,
+      totalProfit,
+      capitalRequired,
+      totalCashInvested,
+      initialLoanAmount,
+      isSpeculative,
+      dscrWarning,
+      occupancyRisk
+    };
+  }
 }
 
 // Export singleton instance and formatters

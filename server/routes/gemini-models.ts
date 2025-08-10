@@ -27,14 +27,7 @@ const GEMINI_MODELS = [
 // GET /api/gemini/models - Return available Gemini models
 router.get('/models', async (req, res) => {
   try {
-    // Check if Gemini API key is available
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(400).json({ 
-        error: 'Gemini API key not configured',
-        details: 'GEMINI_API_KEY environment variable is required'
-      });
-    }
-
+    // Always return curated list; external key not required for listing
     res.json(GEMINI_MODELS);
   } catch (error) {
     console.error('Error fetching Gemini models:', error);

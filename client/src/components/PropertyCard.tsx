@@ -39,17 +39,18 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   // Fixed property image mapping with exact file name matches
   const getPropertyImage = (address: string) => {
     const imageMap: { [key: string]: string } = {
-      '1 Harmony St': '/1%20Harmony%20St.jpeg',
-      '145 Crystal Ave': '/145%20Crystal%20Ave.jpg',
-      '149 Crystal Ave': '/149 Crystal ave.jpeg',
-      '29 Brainard St': '/29%20brainard%20st.jpeg',
-      '25 Huntington Pl': '/25%20huntington%20pkl.jpeg',
-      '3408 E Dr MLK BLVD': '/3408%20E%20DR%20MLK%20BLVD.jpeg',
+      '1 Harmony St': '/1 Harmony St.jpeg',
+      '145 Crystal Ave': '/145 Crystal Ave.jpg',
+      '149 Crystal Ave': '/149 Crystal Ave.jpeg',
+      '29 Brainard St': '/29 brainard st.jpeg',
+      '25 Huntington Pl': '/25 Huntington Pl.jpeg',
+      '3408 E Dr MLK BLVD': '/3408 E Dr MLK BLVD.jpeg',
+      '3408 E DR MLK BLVD': '/3408 E Dr MLK BLVD.jpeg',
       '41 Stuart Ave': '/41 Stuart Ave.jpeg',
       '52 Summit Ave': '/52 Summit Ave.jpeg',
       '175 Crystal Ave': '/175 Crystal Ave.jpeg',
       '4809 N Grady Ave': '/attached_assets/4809 N Grady Ave_1752009463748.png',
-      '35 Linden St': '/35 Linden St.jpeg',
+      '35 Linden St': '/35 linden st.jpeg',
       '157 Crystal Ave': '/157 Crystal Ave.jpeg'
     };
     

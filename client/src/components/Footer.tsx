@@ -94,7 +94,7 @@ const Footer = () => {
               </div>
               <div className="hidden md:block">
                 <a
-                  href="/admin-login"
+                  href="/admin-dashboard"
                   className="text-primary-foreground/60 hover:text-primary-foreground transition-colors duration-200 text-xs opacity-60 hover:opacity-100"
                   title="Administrator Access"
                 >

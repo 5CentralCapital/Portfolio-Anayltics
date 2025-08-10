@@ -39,7 +39,6 @@ import EntityDashboard from './EntityDashboard';
 import FinancialDashboard from './FinancialDashboard';
 import AssetManagement from './AssetManagement';
 import NetWorthTracker from './NetWorthTracker';
-import DocumentManagement from './DocumentManagement';
 import OnboardingTour from '../components/OnboardingTour';
 import Roadmap from './Roadmap';
 
@@ -86,22 +85,10 @@ const AdminDashboard: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    if (!apiService.isAuthenticated()) {
-      navigate('/admin-login');
-      return;
-    }
-    
     loadDashboardData();
-    
-    // Check if user has completed onboarding
-    const hasCompletedOnboarding = localStorage.getItem('onboarding_completed') === 'true';
-    if (!hasCompletedOnboarding) {
-      // Delay showing onboarding to let the dashboard load
-      setTimeout(() => {
-        setShowOnboarding(true);
-      }, 1000);
-    }
-  }, [navigate]);
+    // Disable auto-onboarding by default to avoid blocking clicks
+    // You can re-enable by setting setShowOnboarding(true) based on a user action
+  }, []);
 
   const loadDashboardData = async () => {
     setLoading(true);
@@ -251,7 +238,6 @@ const AdminDashboard: React.FC = () => {
               { id: 'dashboard', label: 'Dashboard', icon: Users },
               { id: 'properties', label: 'Asset Management', icon: Building },
               { id: 'deal-analyzer', label: 'Deal Analyzer', icon: Calculator },
-              { id: 'documents', label: 'Documents', icon: FileText },
               { id: 'roadmap', label: 'Roadmap', icon: MapPin },
               { id: 'net-worth', label: 'Net Worth', icon: DollarSign },
               { id: 'reports', label: 'Reports', icon: PieChart },
@@ -290,9 +276,7 @@ const AdminDashboard: React.FC = () => {
           <DealAnalyzer />
         )}
 
-        {activeTab === 'documents' && (
-          <DocumentManagement />
-        )}
+        {/* Documents tab removed */}
 
         {activeTab === 'roadmap' && (
           <Roadmap />
@@ -358,11 +342,13 @@ const AdminDashboard: React.FC = () => {
       </main>
 
       {/* Onboarding Tour */}
-      <OnboardingTour
-        isOpen={showOnboarding}
-        onComplete={() => setShowOnboarding(false)}
-        onSkip={() => setShowOnboarding(false)}
-      />
+      <div className="relative z-40">
+        <OnboardingTour
+          isOpen={showOnboarding}
+          onComplete={() => setShowOnboarding(false)}
+          onSkip={() => setShowOnboarding(false)}
+        />
+      </div>
     </div>
   );
 };

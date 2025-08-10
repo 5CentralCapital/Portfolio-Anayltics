@@ -1,12 +1,18 @@
 import { Configuration, PlaidApi, PlaidEnvironments } from 'plaid';
 
-// Plaid configuration
+// Plaid configuration (disabled if env vars not set)
+const plaidClientId = process.env.PLAID_CLIENT_ID;
+const plaidSecret = process.env.PLAID_SECRET;
+const plaidEnv = (process.env.PLAID_ENV || 'sandbox').toLowerCase();
+
+const basePath = plaidEnv === 'production' ? PlaidEnvironments.production : plaidEnv === 'development' ? PlaidEnvironments.development : PlaidEnvironments.sandbox;
+
 const configuration = new Configuration({
-  basePath: PlaidEnvironments.sandbox, // Use sandbox for development
+  basePath,
   baseOptions: {
     headers: {
-      'PLAID-CLIENT-ID': '686d1ec7090587002223eb4c',
-      'PLAID-SECRET': 'f8f7e833e2f9ea0577c21d79e7317f',
+      ...(plaidClientId ? { 'PLAID-CLIENT-ID': plaidClientId } : {}),
+      ...(plaidSecret ? { 'PLAID-SECRET': plaidSecret } : {}),
     },
   },
 });

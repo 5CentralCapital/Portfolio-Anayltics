@@ -10,8 +10,8 @@ import path from "path";
 import pdfParse from "pdf-parse";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+const gemini = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
 
 export interface DocumentClassification {
   type: 'lease' | 'llc_document' | 'mortgage_statement' | 'insurance_policy' | 'tax_document' | 'property_deed' | 'inspection_report' | 'vendor_invoice' | 'unknown';
@@ -184,6 +184,9 @@ export class AIDocumentProcessor {
     const imageBuffer = fs.readFileSync(filePath);
     const base64Image = imageBuffer.toString('base64');
 
+    if (!openai) {
+      throw new Error('OpenAI is not configured');
+    }
     const response = await openai.chat.completions.create({
       model: model,
       messages: [
@@ -252,6 +255,9 @@ export class AIDocumentProcessor {
     // Read first 2000 characters for classification
     const content = fs.readFileSync(filePath, 'utf-8').substring(0, 2000);
 
+    if (!openai) {
+      throw new Error('OpenAI is not configured');
+    }
     const response = await openai.chat.completions.create({
       model: model,
       messages: [
@@ -298,6 +304,9 @@ export class AIDocumentProcessor {
   private async extractLeaseData(filePath: string, model: string = 'gpt-4o'): Promise<LeaseData> {
     const content = await this.prepareDocumentContent(filePath);
 
+    if (!openai) {
+      throw new Error('OpenAI is not configured');
+    }
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -388,6 +397,9 @@ export class AIDocumentProcessor {
   private async extractLLCData(filePath: string, model: string = 'gpt-4o'): Promise<LLCDocumentData> {
     const content = await this.prepareDocumentContent(filePath);
 
+    if (!openai) {
+      throw new Error('OpenAI is not configured');
+    }
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [

@@ -7,7 +7,8 @@ import { Router, Request, Response } from 'express';
 import OpenAI from 'openai';
 
 const router = Router();
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Lazy client creation only if a key is present; route does not require key
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 /**
  * Get available OpenAI models

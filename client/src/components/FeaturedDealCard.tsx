@@ -25,7 +25,8 @@ const FeaturedDealCard: React.FC<FeaturedDealCardProps> = ({ deal }) => {
   // Fixed image mapping for featured deals
   const getPropertyImage = (address: string) => {
     const imageMap: { [key: string]: string } = {
-      '3408 E DR MLK BLVD': '/3408 E DR MLK BLVD.jpeg',
+      '3408 E Dr MLK BLVD': '/3408 E Dr MLK BLVD.jpeg',
+      '3408 E DR MLK BLVD': '/3408 E Dr MLK BLVD.jpeg',
       '157 Crystal Ave': '/157 Crystal Ave.jpeg',
       '1 Harmony St': '/1 Harmony St.jpeg',
       '4809 N Grady Ave': '/attached_assets/4809 N Grady Ave_1752009463748.png'

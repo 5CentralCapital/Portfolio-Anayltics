@@ -33,7 +33,7 @@ const Navigation = () => {
   ];
 
   return (
-    <nav className={`bg-white shadow-lg sticky top-0 z-50 transition-all duration-300 ${
+    <nav className={`bg-white shadow-lg sticky top-0 z-60 transition-all duration-300 ${
       isScrolled ? 'shadow-xl backdrop-blur-sm bg-white/95' : ''
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,7 +70,7 @@ const Navigation = () => {
               Invest
             </Link>
             <Link
-              to="/admin-login"
+              to="/admin-dashboard"
               className="text-gray-700 hover:text-primary text-sm font-medium transition-all duration-200"
             >
               Log in
@@ -116,7 +116,7 @@ const Navigation = () => {
               Invest
             </Link>
             <Link
-              to="/admin-login"
+              to="/admin-dashboard"
               onClick={() => setIsOpen(false)}
               className="text-gray-700 hover:text-primary py-3 px-4 text-sm font-medium transition-all duration-200"
             >

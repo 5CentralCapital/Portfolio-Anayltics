@@ -33,10 +33,12 @@ export interface MarketIndicators {
 class CensusService {
   private readonly apiKey: string;
   private readonly baseUrl = 'https://api.census.gov/data';
+  private readonly enabled: boolean;
 
   constructor() {
     this.apiKey = process.env.CENSUS_API_KEY || '';
-    if (!this.apiKey) {
+    this.enabled = !!this.apiKey;
+    if (!this.enabled) {
       console.warn('Census API key not found. Demographic analysis will be limited.');
     }
   }
@@ -46,6 +48,9 @@ class CensusService {
    */
   private async fetchACSData(variables: string[], geography: string): Promise<any> {
     try {
+      if (!this.enabled) {
+        return null;
+      }
       const variableString = variables.join(',');
       const url = `${this.baseUrl}/2022/acs/acs5?get=${variableString}&for=${geography}&key=${this.apiKey}`;
       
